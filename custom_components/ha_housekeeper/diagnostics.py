@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .door_guard import DoorGuardController
 from .mailbox import MailboxController
 
 TO_REDACT: set[str] = set()
@@ -30,5 +31,19 @@ async def async_get_config_entry_diagnostics(
             if controller.last_delivery
             else None,
             "vibration_sensor_state": sensor.state if sensor else None,
+        }
+    if isinstance(controller, DoorGuardController):
+        contact = controller._opt("contact")  # noqa: SLF001
+        lock = hass.states.get(controller._opt("lock"))  # noqa: SLF001
+        contact_state = hass.states.get(contact) if contact else None
+        result["state"] = {
+            "automation_enabled": controller.automation_enabled,
+            "paused_until": controller.paused_until.isoformat()
+            if controller.paused_until
+            else None,
+            "open_too_long": controller.open_too_long,
+            "last_action": controller.last_action,
+            "lock_state": lock.state if lock else None,
+            "contact_state": contact_state.state if contact_state else None,
         }
     return result

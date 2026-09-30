@@ -13,64 +13,223 @@
         "data": {
           "name": "Name",
           "vibration_sensor": "Vibration sensor",
+          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+          "message": "Message text",
+          "debounce_seconds": "Debounce time",
+          "auto_reset_hours": "Reset automatically after (0 = off)",
           "mobile_enabled": "Enable app push",
           "mobile_targets": "Push targets (notify services)",
-          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
           "tts_enabled": "Enable voice announcement",
           "tts_entity": "TTS service",
           "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant",
-          "message": "Message text",
-          "debounce_seconds": "Debounce time",
-          "auto_reset_hours": "Reset automatically after (0 = off)"
+          "persistent_enabled": "Persistent notification in Home Assistant"
         },
         "data_description": {
           "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
           "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
-          "debounce_seconds": "Further vibrations within this time are ignored."
+          "debounce_seconds": "Further vibrations within this time are ignored.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        }
+      },
+      "door_guard": {
+        "title": "Door guard",
+        "data": {
+          "name": "Name",
+          "lock": "Lock",
+          "contact": "Door contact (optional)",
+          "block_action": "If the door is open when locking",
+          "retry_minutes": "Retry locking for (minutes)",
+          "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+          "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+          "verify_seconds": "Verify lock after (seconds, 0 = off)",
+          "manual_override": "When the lock is operated manually",
+          "manual_pause_minutes": "Pause automation for (minutes)",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant"
+        },
+        "data_description": {
+          "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+          "block_action": "Only notify, or lock automatically once the door is closed.",
+          "retry_minutes": "Only applies to \"Lock after closing\".",
+          "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+          "manual_pause_minutes": "Only applies to \"Pause automation\".",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
         }
       }
     },
     "error": {
       "no_method": "At least one notification method with a target must be enabled.",
-      "tts_incomplete": "Voice announcement needs a TTS service and a speaker."
+      "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+      "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+      "no_contact": "This trigger needs a door contact in the settings.",
+      "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+      "no_weekday": "Select at least one weekday."
     }
   },
   "options": {
     "step": {
-      "init": {
+      "mailbox": {
         "title": "Mailbox notification",
         "data": {
           "vibration_sensor": "Vibration sensor",
+          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+          "message": "Message text",
+          "debounce_seconds": "Debounce time",
+          "auto_reset_hours": "Reset automatically after (0 = off)",
           "mobile_enabled": "Enable app push",
           "mobile_targets": "Push targets (notify services)",
-          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
           "tts_enabled": "Enable voice announcement",
           "tts_entity": "TTS service",
           "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant",
-          "message": "Message text",
-          "debounce_seconds": "Debounce time",
-          "auto_reset_hours": "Reset automatically after (0 = off)"
+          "persistent_enabled": "Persistent notification in Home Assistant"
         },
         "data_description": {
           "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
           "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
-          "debounce_seconds": "Further vibrations within this time are ignored."
+          "debounce_seconds": "Further vibrations within this time are ignored.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        }
+      },
+      "menu": {
+        "title": "Door guard",
+        "description": "Settings and rules of the door guard.",
+        "menu_options": {
+          "general": "Settings",
+          "add_rule": "Add rule",
+          "edit_rule": "Edit rule",
+          "delete_rule": "Delete rule",
+          "done": "Done"
+        }
+      },
+      "general": {
+        "title": "Settings",
+        "data": {
+          "lock": "Lock",
+          "contact": "Door contact (optional)",
+          "block_action": "If the door is open when locking",
+          "retry_minutes": "Retry locking for (minutes)",
+          "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+          "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+          "verify_seconds": "Verify lock after (seconds, 0 = off)",
+          "manual_override": "When the lock is operated manually",
+          "manual_pause_minutes": "Pause automation for (minutes)",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant"
+        },
+        "data_description": {
+          "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+          "block_action": "Only notify, or lock automatically once the door is closed.",
+          "retry_minutes": "Only applies to \"Lock after closing\".",
+          "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+          "manual_pause_minutes": "Only applies to \"Pause automation\".",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        }
+      },
+      "edit_rule": {
+        "title": "Edit rule",
+        "data": {
+          "rule": "Rule"
+        }
+      },
+      "delete_rule": {
+        "title": "Delete rule",
+        "data": {
+          "rule": "Rule"
+        }
+      },
+      "rule_type": {
+        "title": "Rule",
+        "data": {
+          "action": "Action",
+          "trigger": "Trigger"
+        }
+      },
+      "rule_state": {
+        "title": "Trigger: entity state",
+        "data": {
+          "entity_id": "Entity",
+          "to_state": "Target state",
+          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+        },
+        "data_description": {
+          "to_state": "State text, e.g. home, on, armed_away. The rule fires on the change into this state."
+        }
+      },
+      "rule_time": {
+        "title": "Trigger: time",
+        "data": {
+          "time": "Time",
+          "weekdays": "Weekdays"
+        }
+      },
+      "rule_door_closed": {
+        "title": "Trigger: door closed",
+        "data": {
+          "delay_seconds": "Lock after (seconds)"
+        },
+        "data_description": {
+          "delay_seconds": "How long the door has to stay closed."
         }
       }
     },
     "error": {
       "no_method": "At least one notification method with a target must be enabled.",
-      "tts_incomplete": "Voice announcement needs a TTS service and a speaker."
+      "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+      "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+      "no_contact": "This trigger needs a door contact in the settings.",
+      "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+      "no_weekday": "Select at least one weekday."
     }
   },
   "selector": {
     "function_type": {
       "options": {
-        "mailbox": "Mailbox notification"
+        "mailbox": "Mailbox notification",
+        "door_guard": "Door guard"
+      }
+    },
+    "block_action": {
+      "options": {
+        "notify": "Only notify",
+        "retry": "Lock after closing"
+      }
+    },
+    "manual_override": {
+      "options": {
+        "ignore": "Keep automation running",
+        "pause": "Pause automation"
+      }
+    },
+    "rule_action": {
+      "options": {
+        "lock": "Lock",
+        "unlock": "Unlock"
+      }
+    },
+    "rule_trigger": {
+      "options": {
+        "state": "Entity state",
+        "time": "Time",
+        "door_closed": "Door closed for"
+      }
+    },
+    "weekday": {
+      "options": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
       }
     }
   },
@@ -78,16 +237,27 @@
     "binary_sensor": {
       "has_mail": {
         "name": "Mail present"
+      },
+      "open_too_long": {
+        "name": "Door open too long"
       }
     },
     "sensor": {
       "last_delivery": {
         "name": "Last delivery"
+      },
+      "last_action": {
+        "name": "Last action"
       }
     },
     "button": {
       "emptied": {
         "name": "Mailbox emptied"
+      }
+    },
+    "switch": {
+      "automation": {
+        "name": "Automation"
       }
     }
   }

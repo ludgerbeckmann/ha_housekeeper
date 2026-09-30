@@ -22,12 +22,6 @@ from .const import (
     CONF_DEBOUNCE,
     CONF_MESSAGE,
     CONF_MOBILE_ACTION,
-    CONF_MOBILE_ENABLED,
-    CONF_MOBILE_TARGETS,
-    CONF_PERSISTENT_ENABLED,
-    CONF_TTS_ENABLED,
-    CONF_TTS_ENTITY,
-    CONF_TTS_PLAYER,
     CONF_VIBRATION_SENSOR,
     DEFAULT_AUTO_RESET_HOURS,
     DEFAULT_DEBOUNCE,
@@ -38,6 +32,7 @@ from .const import (
     MOBILE_ACTION_EVENT,
     signal_update,
 )
+from .notify import Notifier, entry_opt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,16 +51,22 @@ class MailboxController:
         self._unsubs: list = []
         self._reset_unsub = None
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
+        self._get = entry_opt(entry)
+        self._notifier = Notifier(
+            hass,
+            self._get,
+            f"{DOMAIN}_{entry.entry_id}",
+            lambda: entry.title or DEFAULT_TITLE,
+        )
+
+    model = "Benachrichtigung Briefkasten"
 
     @property
     def action_id(self) -> str:
         return f"{ACTION_PREFIX}{self.entry.entry_id}"
 
     def _opt(self, key: str, default: Any = None) -> Any:
-        """Optionen haben Vorrang vor den Daten aus der Ersteinrichtung."""
-        if key in self.entry.options:
-            return self.entry.options[key]
-        return self.entry.data.get(key, default)
+        return self._get(key, default)
 
     async def async_start(self) -> None:
         stored = await self._store.async_load() or {}
@@ -170,67 +171,13 @@ class MailboxController:
 
     # --- Benachrichtigung ------------------------------------------------
 
-    @property
-    def _tag(self) -> str:
-        return f"{DOMAIN}_{self.entry.entry_id}"
-
-    async def _async_call(self, domain: str, service: str, data: dict) -> None:
-        try:
-            await self.hass.services.async_call(domain, service, data, blocking=True)
-        except Exception:  # noqa: BLE001 - ein Kanal darf die anderen nicht stoppen
-            _LOGGER.exception("Aufruf von %s.%s fehlgeschlagen", domain, service)
-
     async def _async_notify(self) -> None:
-        message = self._opt(CONF_MESSAGE) or DEFAULT_MESSAGE
-        title = self.entry.title or DEFAULT_TITLE
-
-        if self._opt(CONF_MOBILE_ENABLED, False):
-            data: dict[str, Any] = {"tag": self._tag}
-            if self._opt(CONF_MOBILE_ACTION, DEFAULT_MOBILE_ACTION):
-                data["actions"] = [{"action": self.action_id, "title": ACTION_TITLE}]
-            for target in self._opt(CONF_MOBILE_TARGETS, []) or []:
-                await self._async_call(
-                    "notify",
-                    target.removeprefix("notify."),
-                    {"title": title, "message": message, "data": data},
-                )
-
-        if self._opt(CONF_TTS_ENABLED, False):
-            tts_entity = self._opt(CONF_TTS_ENTITY)
-            player = self._opt(CONF_TTS_PLAYER)
-            if tts_entity and player:
-                await self._async_call(
-                    "tts",
-                    "speak",
-                    {
-                        "entity_id": tts_entity,
-                        "media_player_entity_id": player,
-                        "message": message,
-                    },
-                )
-
-        if self._opt(CONF_PERSISTENT_ENABLED, False):
-            await self._async_call(
-                "persistent_notification",
-                "create",
-                {
-                    "title": title,
-                    "message": message,
-                    "notification_id": self._tag,
-                },
-            )
+        actions = None
+        if self._opt(CONF_MOBILE_ACTION, DEFAULT_MOBILE_ACTION):
+            actions = [{"action": self.action_id, "title": ACTION_TITLE}]
+        await self._notifier.async_send(
+            self._opt(CONF_MESSAGE) or DEFAULT_MESSAGE, actions=actions
+        )
 
     async def _async_clear_notifications(self) -> None:
-        if self._opt(CONF_MOBILE_ENABLED, False):
-            for target in self._opt(CONF_MOBILE_TARGETS, []) or []:
-                await self._async_call(
-                    "notify",
-                    target.removeprefix("notify."),
-                    {"message": "clear_notification", "data": {"tag": self._tag}},
-                )
-        if self._opt(CONF_PERSISTENT_ENABLED, False):
-            await self._async_call(
-                "persistent_notification",
-                "dismiss",
-                {"notification_id": self._tag},
-            )
+        await self._notifier.async_clear()
