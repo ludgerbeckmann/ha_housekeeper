@@ -13,6 +13,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
+from .helpers import sectioned
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -339,13 +340,13 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     assert result["step_id"] == "updater"
     data = {"name": "Updater", "timeout_minutes": 30, "mobile_enabled": False,
             "tts_enabled": False, "persistent_enabled": False}
-    bad = await hass.config_entries.flow.async_configure(result["flow_id"], data)
+    bad = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(data))
     assert bad["errors"] == {"base": "no_method"}
     no_target = await hass.config_entries.flow.async_configure(
-        bad["flow_id"], {**data, "mobile_enabled": True})
+        bad["flow_id"], sectioned({**data, "mobile_enabled": True}))
     assert no_target["errors"] == {"base": "no_targets"}
     ok = await hass.config_entries.flow.async_configure(
-        no_target["flow_id"], {**data, "persistent_enabled": True})
+        no_target["flow_id"], sectioned({**data, "persistent_enabled": True}))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "updater" and ok["data"]["schedules"] == []
 
@@ -379,13 +380,13 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
 
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
     bad = await flow.async_configure(
-        result["flow_id"], {"timeout_minutes": 10, "mobile_enabled": False,
-                            "tts_enabled": False, "persistent_enabled": False})
+        result["flow_id"], sectioned({"timeout_minutes": 10, "mobile_enabled": False,
+                                      "tts_enabled": False, "persistent_enabled": False}))
     assert bad["errors"] == {"base": "no_method"}
     result = await flow.async_configure(
-        bad["flow_id"], {"timeout_minutes": 10, "mobile_enabled": True,
-                         "mobile_targets": ["mobile_app_phone"],
-                         "tts_enabled": False, "persistent_enabled": False})
+        bad["flow_id"], sectioned({"timeout_minutes": 10, "mobile_enabled": True,
+                                   "mobile_targets": ["mobile_app_phone"],
+                                   "tts_enabled": False, "persistent_enabled": False}))
     assert entry.options["timeout_minutes"] == 10
 
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_schedule"})

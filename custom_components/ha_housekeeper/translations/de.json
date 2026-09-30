@@ -49,49 +49,77 @@
       },
       "door_guard": {
         "title": "Türwächter",
-        "data": {
-          "name": "Name",
-          "lock": "Schloss",
-          "contact": "Türkontakt (optional)",
-          "block_action": "Wenn beim Abschließen die Tür offen ist",
-          "retry_minutes": "Abschließen nachholen bis (Minuten)",
-          "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
-          "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
-          "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
-          "manual_override": "Bei manueller Bedienung des Schlosses",
-          "manual_pause_minutes": "Automatik pausieren für (Minuten)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
-          "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
-          "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
-          "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-          "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+            "data": {
+              "name": "Name",
+              "lock": "Schloss",
+              "contact": "Türkontakt (optional)",
+              "block_action": "Wenn beim Abschließen die Tür offen ist",
+              "retry_minutes": "Abschließen nachholen bis (Minuten)",
+              "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+              "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+              "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+              "manual_override": "Bei manueller Bedienung des Schlosses",
+              "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+            },
+            "data_description": {
+              "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+              "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+              "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+              "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+              "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit der Türwächter meldet.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "doorbell": {
         "title": "Türklingel",
-        "data": {
-          "name": "Name",
-          "trigger_entity": "Auslöser (Sensor oder Ereignis)",
-          "debounce_seconds": "Sperrzeit",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "message": "Push-Text",
-          "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
-        },
-        "data_description": {
-          "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
-          "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
-          "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Auslöser und Entprellzeit.",
+            "data": {
+              "name": "Name",
+              "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+              "debounce_seconds": "Sperrzeit"
+            },
+            "data_description": {
+              "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+              "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "message": "Push-Text",
+              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+            }
+          }
         }
       },
       "pool_pump": {
@@ -112,37 +140,63 @@
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "data": {
-          "name": "Name",
-          "timeout_minutes": "Zeitlimit pro Update (Minuten)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-        },
-        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege."
+        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Name und Zeitlimit.",
+            "data": {
+              "name": "Name",
+              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+            },
+            "data_description": {
+              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit über Update-Läufe informiert wird.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
+        }
       },
       "task_planner": {
         "title": "Aufgabenplaner",
-        "data": {
-          "name": "Name",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-        },
-        "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege."
+        "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Name des Aufgabenplaners.",
+            "data": {
+              "name": "Name"
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
+        }
       }
     },
     "error": {
@@ -225,30 +279,44 @@
       },
       "general": {
         "title": "Einstellungen",
-        "data": {
-          "lock": "Schloss",
-          "contact": "Türkontakt (optional)",
-          "block_action": "Wenn beim Abschließen die Tür offen ist",
-          "retry_minutes": "Abschließen nachholen bis (Minuten)",
-          "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
-          "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
-          "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
-          "manual_override": "Bei manueller Bedienung des Schlosses",
-          "manual_pause_minutes": "Automatik pausieren für (Minuten)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
-          "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
-          "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
-          "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-          "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+            "data": {
+              "lock": "Schloss",
+              "contact": "Türkontakt (optional)",
+              "block_action": "Wenn beim Abschließen die Tür offen ist",
+              "retry_minutes": "Abschließen nachholen bis (Minuten)",
+              "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+              "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+              "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+              "manual_override": "Bei manueller Bedienung des Schlosses",
+              "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+            },
+            "data_description": {
+              "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+              "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+              "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+              "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+              "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit der Türwächter meldet.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "edit_rule": {
@@ -310,19 +378,33 @@
       },
       "bell_general": {
         "title": "Einstellungen",
-        "data": {
-          "trigger_entity": "Auslöser (Sensor oder Ereignis)",
-          "debounce_seconds": "Sperrzeit",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "message": "Push-Text",
-          "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
-        },
-        "data_description": {
-          "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
-          "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
-          "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Auslöser und Entprellzeit.",
+            "data": {
+              "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+              "debounce_seconds": "Sperrzeit"
+            },
+            "data_description": {
+              "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+              "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "message": "Push-Text",
+              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+            }
+          }
         }
       },
       "edit_profile": {
@@ -409,23 +491,37 @@
       "dry_run": {
         "title": "Trockenlauferkennung",
         "description": "Erkennt eine trocken laufende Pumpe: Die Pumpe ist an und die Leistung bleibt die eingestellte Dauer zwischen unterer und oberer Grenze. Ohne Leistungssensor ist die Funktion aus. Ein Alarm bleibt gehalten, bis er quittiert oder die Pumpe neu gestartet wird.",
-        "data": {
-          "power_entity": "Leistungssensor (W)",
-          "dry_min_power": "Untere Grenze",
-          "dry_max_power": "Obere Grenze",
-          "dry_duration": "Dauer",
-          "dry_auto_off": "Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "dry_auto_off": "Der Zeitplan wird erst nach dem Quittieren (Button) wieder aktiviert.",
-          "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Leistungssensor und Grenzen für die Trockenlauf-Erkennung.",
+            "data": {
+              "power_entity": "Leistungssensor (W)",
+              "dry_min_power": "Untere Grenze",
+              "dry_max_power": "Obere Grenze",
+              "dry_duration": "Dauer",
+              "dry_auto_off": "Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren"
+            },
+            "data_description": {
+              "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
+              "dry_auto_off": "Der Zeitplan wird erst nach dem Quittieren (Button) wieder aktiviert."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit bei Trockenlauf gemeldet wird.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "knx_menu": {
@@ -531,18 +627,32 @@
       },
       "upd_general": {
         "title": "Einstellungen",
-        "data": {
-          "timeout_minutes": "Zeitlimit pro Update (Minuten)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Name und Zeitlimit.",
+            "data": {
+              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+            },
+            "data_description": {
+              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit über Update-Läufe informiert wird.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "edit_schedule": {
@@ -586,16 +696,22 @@
       },
       "tp_general": {
         "title": "Einstellungen",
-        "data": {
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "edit_task": {

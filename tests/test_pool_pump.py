@@ -9,6 +9,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
+from .helpers import sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PUMP = "switch.pool_pump"
@@ -435,18 +436,18 @@ async def test_options_dry_run_set_validate_and_clear(hass):
     r = await open_dry()
     bad = await flow.async_configure(
         r["flow_id"],
-        {**base, "power_entity": "sensor.p", "dry_min_power": 100, "dry_max_power": 75},
+        sectioned({**base, "power_entity": "sensor.p", "dry_min_power": 100, "dry_max_power": 75}),
     )
     assert bad["errors"] == {"base": "min_ge_max"}
     no_target = await flow.async_configure(
         bad["flow_id"],
-        {**base, "power_entity": "sensor.p", "dry_min_power": 75, "dry_max_power": 100,
-         "mobile_enabled": True},
+        sectioned({**base, "power_entity": "sensor.p", "dry_min_power": 75, "dry_max_power": 100,
+                   "mobile_enabled": True}),
     )
     assert no_target["errors"] == {"base": "no_targets"}
     ok = await flow.async_configure(
         no_target["flow_id"],
-        {**base, "power_entity": "sensor.p", "dry_min_power": 75, "dry_max_power": 100},
+        sectioned({**base, "power_entity": "sensor.p", "dry_min_power": 75, "dry_max_power": 100}),
     )
     assert ok["type"] is FlowResultType.MENU
     assert entry.options["power_entity"] == "sensor.p"
@@ -457,7 +458,7 @@ async def test_options_dry_run_set_validate_and_clear(hass):
 
     r = await open_dry()
     cleared = await flow.async_configure(
-        r["flow_id"], {**base, "dry_min_power": 75, "dry_max_power": 100}
+        r["flow_id"], sectioned({**base, "dry_min_power": 75, "dry_max_power": 100})
     )
     assert cleared["type"] is FlowResultType.MENU
     assert entry.options["power_entity"] is None

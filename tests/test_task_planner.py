@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
+from .helpers import sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.task_planner import (
     month_day_matches,
@@ -279,12 +280,12 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     )
     assert result["step_id"] == "task_planner"
     bad = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "Planer", "mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False}
+        result["flow_id"], sectioned({"name": "Planer", "mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False})
     )
     assert bad["errors"] == {"base": "no_targets"}
     ok = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {"name": "Planer", "mobile_enabled": False, "tts_enabled": False, "persistent_enabled": True},
+        sectioned({"name": "Planer", "mobile_enabled": False, "tts_enabled": False, "persistent_enabled": True}),
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "task_planner" and ok["data"]["tasks"] == []

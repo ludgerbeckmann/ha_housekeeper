@@ -49,49 +49,77 @@
       },
       "door_guard": {
         "title": "Door guard",
-        "data": {
-          "name": "Name",
-          "lock": "Lock",
-          "contact": "Door contact (optional)",
-          "block_action": "If the door is open when locking",
-          "retry_minutes": "Retry locking for (minutes)",
-          "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
-          "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
-          "verify_seconds": "Verify lock after (seconds, 0 = off)",
-          "manual_override": "When the lock is operated manually",
-          "manual_pause_minutes": "Pause automation for (minutes)",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
-          "block_action": "Only notify, or lock automatically once the door is closed.",
-          "retry_minutes": "Only applies to \"Lock after closing\".",
-          "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-          "manual_pause_minutes": "Only applies to \"Pause automation\".",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Lock, door contact and behaviour of the door guard.",
+            "data": {
+              "name": "Name",
+              "lock": "Lock",
+              "contact": "Door contact (optional)",
+              "block_action": "If the door is open when locking",
+              "retry_minutes": "Retry locking for (minutes)",
+              "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+              "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+              "verify_seconds": "Verify lock after (seconds, 0 = off)",
+              "manual_override": "When the lock is operated manually",
+              "manual_pause_minutes": "Pause automation for (minutes)"
+            },
+            "data_description": {
+              "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+              "block_action": "Only notify, or lock automatically once the door is closed.",
+              "retry_minutes": "Only applies to \"Lock after closing\".",
+              "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+              "manual_pause_minutes": "Only applies to \"Pause automation\"."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what the door guard reports.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "doorbell": {
         "title": "Doorbell",
-        "data": {
-          "name": "Name",
-          "trigger_entity": "Trigger (sensor or event)",
-          "debounce_seconds": "Lockout time",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "message": "Push text",
-          "clear_after_hours": "Clear push after X hours (0 = never)"
-        },
-        "data_description": {
-          "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-          "debounce_seconds": "Further rings within this time are ignored.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
-          "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Trigger and debounce time.",
+            "data": {
+              "name": "Name",
+              "trigger_entity": "Trigger (sensor or event)",
+              "debounce_seconds": "Lockout time"
+            },
+            "data_description": {
+              "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+              "debounce_seconds": "Further rings within this time are ignored."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "Push message to the devices and when it is cleared again.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "message": "Push text",
+              "clear_after_hours": "Clear push after X hours (0 = never)"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+            }
+          }
         }
       },
       "pool_pump": {
@@ -112,37 +140,63 @@
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "data": {
-          "name": "Name",
-          "timeout_minutes": "Time limit per update (minutes)",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "timeout_minutes": "After this time an update counts as failed and the run continues.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-        },
-        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications go to the channels selected here."
+        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications go to the channels selected here.",
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Name and time limit.",
+            "data": {
+              "name": "Name",
+              "timeout_minutes": "Time limit per update (minutes)"
+            },
+            "data_description": {
+              "timeout_minutes": "After this time an update counts as failed and the run continues."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what update runs are reported.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
+        }
       },
       "task_planner": {
         "title": "Task planner",
-        "data": {
-          "name": "Name",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-        },
-        "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here."
+        "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here.",
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Name of the task planner.",
+            "data": {
+              "name": "Name"
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
+        }
       }
     },
     "error": {
@@ -225,30 +279,44 @@
       },
       "general": {
         "title": "Settings",
-        "data": {
-          "lock": "Lock",
-          "contact": "Door contact (optional)",
-          "block_action": "If the door is open when locking",
-          "retry_minutes": "Retry locking for (minutes)",
-          "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
-          "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
-          "verify_seconds": "Verify lock after (seconds, 0 = off)",
-          "manual_override": "When the lock is operated manually",
-          "manual_pause_minutes": "Pause automation for (minutes)",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
-          "block_action": "Only notify, or lock automatically once the door is closed.",
-          "retry_minutes": "Only applies to \"Lock after closing\".",
-          "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-          "manual_pause_minutes": "Only applies to \"Pause automation\".",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Lock, door contact and behaviour of the door guard.",
+            "data": {
+              "lock": "Lock",
+              "contact": "Door contact (optional)",
+              "block_action": "If the door is open when locking",
+              "retry_minutes": "Retry locking for (minutes)",
+              "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+              "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+              "verify_seconds": "Verify lock after (seconds, 0 = off)",
+              "manual_override": "When the lock is operated manually",
+              "manual_pause_minutes": "Pause automation for (minutes)"
+            },
+            "data_description": {
+              "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+              "block_action": "Only notify, or lock automatically once the door is closed.",
+              "retry_minutes": "Only applies to \"Lock after closing\".",
+              "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+              "manual_pause_minutes": "Only applies to \"Pause automation\"."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what the door guard reports.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "edit_rule": {
@@ -310,19 +378,33 @@
       },
       "bell_general": {
         "title": "Settings",
-        "data": {
-          "trigger_entity": "Trigger (sensor or event)",
-          "debounce_seconds": "Lockout time",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "message": "Push text",
-          "clear_after_hours": "Clear push after X hours (0 = never)"
-        },
-        "data_description": {
-          "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-          "debounce_seconds": "Further rings within this time are ignored.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
-          "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Trigger and debounce time.",
+            "data": {
+              "trigger_entity": "Trigger (sensor or event)",
+              "debounce_seconds": "Lockout time"
+            },
+            "data_description": {
+              "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+              "debounce_seconds": "Further rings within this time are ignored."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "Push message to the devices and when it is cleared again.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "message": "Push text",
+              "clear_after_hours": "Clear push after X hours (0 = never)"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+            }
+          }
         }
       },
       "edit_profile": {
@@ -409,23 +491,37 @@
       "dry_run": {
         "title": "Dry-run detection",
         "description": "Detects a pump running dry: the pump is on and the power stays between the lower and upper limit for the set duration. Without a power sensor the feature is off. An alarm stays until acknowledged or the pump is restarted.",
-        "data": {
-          "power_entity": "Power sensor (W)",
-          "dry_min_power": "Lower limit",
-          "dry_max_power": "Upper limit",
-          "dry_duration": "Duration",
-          "dry_auto_off": "Switch the pump off on dry run and pause the schedule",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "dry_auto_off": "The schedule is only re-enabled after acknowledging (button).",
-          "power_entity": "Without a power sensor the detection is off.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Power sensor and limits for dry-run detection.",
+            "data": {
+              "power_entity": "Power sensor (W)",
+              "dry_min_power": "Lower limit",
+              "dry_max_power": "Upper limit",
+              "dry_duration": "Duration",
+              "dry_auto_off": "Switch the pump off on dry run and pause the schedule"
+            },
+            "data_description": {
+              "power_entity": "Without a power sensor the detection is off.",
+              "dry_auto_off": "The schedule is only re-enabled after acknowledging (button)."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what a dry run is reported.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "knx_menu": {
@@ -531,18 +627,32 @@
       },
       "upd_general": {
         "title": "Settings",
-        "data": {
-          "timeout_minutes": "Time limit per update (minutes)",
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "timeout_minutes": "After this time an update counts as failed and the run continues.",
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Name and time limit.",
+            "data": {
+              "timeout_minutes": "Time limit per update (minutes)"
+            },
+            "data_description": {
+              "timeout_minutes": "After this time an update counts as failed and the run continues."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what update runs are reported.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "edit_schedule": {
@@ -586,16 +696,22 @@
       },
       "tp_general": {
         "title": "Settings",
-        "data": {
-          "mobile_enabled": "Enable app push",
-          "mobile_targets": "Push targets (notify services)",
-          "tts_enabled": "Enable voice announcement",
-          "tts_entity": "TTS service",
-          "tts_player": "Speaker (media_player)",
-          "persistent_enabled": "Persistent notification in Home Assistant"
-        },
-        "data_description": {
-          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        "sections": {
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "edit_task": {

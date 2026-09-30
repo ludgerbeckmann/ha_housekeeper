@@ -63,6 +63,11 @@ Der Dialog ist in zwei ausgeklappte Abschnitte gegliedert.
 
 Alle Einstellungen lassen sich später über *Konfigurieren* ändern.
 
+Die Grunddialoge der anderen Funktionen (Türwächter, Türklingel, Home Assistant Updater,
+Aufgabenplaner und die Trockenlauf-Erkennung der Poolsteuerung) haben dieselbe Gliederung
+in **Allgemein** und **Benachrichtigungen**. Die Auswahl der Push-Ziele zeigt überall den
+Gerätenamen; eine freie Eingabe gibt es nur, wenn keine `mobile_app_*`-Dienste gefunden werden.
+
 ### Entitäten
 
 - `binary_sensor` **Post vorhanden**

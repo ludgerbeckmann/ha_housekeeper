@@ -222,6 +222,47 @@ def _mobile_services(hass: HomeAssistant) -> list[selector.SelectOptionDict]:
     return sorted(options, key=lambda option: option["label"].lower())
 
 
+def _mobile_selector(
+    hass: HomeAssistant, current: list[str] | None = None
+) -> selector.SelectSelector:
+    """Mehrfachauswahl der Push-Dienste.
+
+    Mit freier Eingabe (`custom_value`) zeigt die Oberfläche nur die Werte statt der
+    Beschriftungen. Deshalb gibt es sie nur, wenn keine Dienste gefunden wurden;
+    bereits gespeicherte Ziele bleiben auch dann auswählbar.
+    """
+    options = _mobile_services(hass)
+    known = {option["value"] for option in options}
+    for target in current or []:
+        target = str(target).removeprefix("notify.")
+        if target not in known:
+            options.append(selector.SelectOptionDict(value=target, label=target))
+            known.add(target)
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=options,
+            multiple=True,
+            custom_value=not options,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
+def _sections_schema(
+    general: dict[Any, Any], notifications: dict[Any, Any]
+) -> vol.Schema:
+    """Formular in zwei ausgeklappte Abschnitte: Allgemein und Benachrichtigungen.
+
+    Ein Abschnitt ohne Felder (z. B. „Allgemein“ des Aufgabenplaners in den
+    Einstellungen, wo der Name entfällt) wird weggelassen.
+    """
+    sections: dict[Any, Any] = {}
+    for key, fields in ((SECTION_GENERAL, general), (SECTION_NOTIFICATIONS, notifications)):
+        if fields:
+            sections[vol.Required(key)] = section(vol.Schema(fields), {"collapsed": False})
+    return vol.Schema(sections)
+
+
 def _suggest(key: str, defaults: dict[str, Any]) -> dict[str, Any]:
     return {"suggested_value": defaults[key]} if key in defaults else {}
 
@@ -261,14 +302,7 @@ def _notify_fields(
         ): bool,
         vol.Optional(
             CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
-        ): selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=_mobile_services(hass),
-                multiple=True,
-                custom_value=True,
-                mode=selector.SelectSelectorMode.DROPDOWN,
-            )
-        ),
+        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
     }
     if with_action:
         fields[
@@ -378,16 +412,7 @@ def _mailbox_schema(
         )
     ] = str
 
-    return vol.Schema(
-        {
-            vol.Required(SECTION_GENERAL): section(
-                vol.Schema(general), {"collapsed": False}
-            ),
-            vol.Required(SECTION_NOTIFICATIONS): section(
-                vol.Schema(notifications), {"collapsed": False}
-            ),
-        }
-    )
+    return _sections_schema(general, notifications)
 
 
 # --- Türwächter -----------------------------------------------------------------
@@ -438,8 +463,7 @@ def _door_schema(
             ): _number(1, 1440, "min"),
         }
     )
-    fields.update(_notify_fields(hass, defaults, with_action=False))
-    return vol.Schema(fields)
+    return _sections_schema(fields, _notify_fields(hass, defaults, with_action=False))
 
 
 def _validate_door(user_input: dict[str, Any]) -> dict[str, str]:
@@ -470,39 +494,30 @@ def _bell_schema(
             CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_RING_DEBOUNCE)
         )
     ] = _number(0, 3600, "s")
-    fields.update(
-        {
-            vol.Required(
-                CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
-            ): bool,
-            vol.Optional(
-                CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=_mobile_services(hass),
-                    multiple=True,
-                    custom_value=True,
-                    mode=selector.SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Required(
-                CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_RING_MESSAGE)
-            ): str,
-            vol.Required(
-                CONF_CLEAR_HOURS,
-                default=defaults.get(CONF_CLEAR_HOURS, DEFAULT_CLEAR_HOURS),
-            ): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=0,
-                    max=168,
-                    step=0.5,
-                    unit_of_measurement="h",
-                    mode=selector.NumberSelectorMode.BOX,
-                )
-            ),
-        }
-    )
-    return vol.Schema(fields)
+    notifications: dict[Any, Any] = {
+        vol.Required(
+            CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
+        ): bool,
+        vol.Optional(
+            CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
+        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
+        vol.Required(
+            CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_RING_MESSAGE)
+        ): str,
+        vol.Required(
+            CONF_CLEAR_HOURS,
+            default=defaults.get(CONF_CLEAR_HOURS, DEFAULT_CLEAR_HOURS),
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0,
+                max=168,
+                step=0.5,
+                unit_of_measurement="h",
+                mode=selector.NumberSelectorMode.BOX,
+            )
+        ),
+    }
+    return _sections_schema(fields, notifications)
 
 
 def _validate_bell(user_input: dict[str, Any]) -> dict[str, str]:
@@ -544,10 +559,10 @@ def _dry_run_schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema
             CONF_DRY_AUTO_OFF, default=defaults.get(CONF_DRY_AUTO_OFF, False)
         ): bool,
     }
-    fields.update(
-        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+    return _sections_schema(
+        fields,
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False),
     )
-    return vol.Schema(fields)
 
 
 def _validate_dry_run(user_input: dict[str, Any]) -> dict[str, str]:
@@ -622,10 +637,10 @@ def _updater_schema(
             default=defaults.get(CONF_TIMEOUT_MINUTES, DEFAULT_TIMEOUT_MINUTES),
         )
     ] = _number(1, 720, "min")
-    fields.update(
-        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+    return _sections_schema(
+        fields,
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False),
     )
-    return vol.Schema(fields)
 
 
 def _validate_updater(user_input: dict[str, Any]) -> dict[str, str]:
@@ -646,10 +661,10 @@ def _planner_schema(
         fields[
             vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Aufgabenplaner"))
         ] = str
-    fields.update(
-        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+    return _sections_schema(
+        fields,
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False),
     )
-    return vol.Schema(fields)
 
 
 def _validate_planner(user_input: dict[str, Any]) -> dict[str, str]:
@@ -715,6 +730,7 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         defaults: dict[str, Any] = {}
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_door(user_input)
             if not errors:
                 return self.async_create_entry(
@@ -738,6 +754,7 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         defaults: dict[str, Any] = {}
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_bell(user_input)
             if not errors:
                 return self.async_create_entry(
@@ -812,6 +829,7 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         defaults: dict[str, Any] = {}
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_updater(user_input)
             if not errors:
                 return self.async_create_entry(
@@ -835,6 +853,7 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         defaults: dict[str, Any] = {}
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_planner(user_input)
             if not errors:
                 return self.async_create_entry(
@@ -939,6 +958,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_door(user_input)
             if not errors:
                 self._save(_with_cleared(user_input))
@@ -1140,6 +1160,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_bell(user_input)
             if not errors:
                 self._save(_with_cleared(user_input))
@@ -1449,6 +1470,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_dry_run(user_input)
             if not errors:
                 self._save(_with_cleared(user_input))
@@ -1728,6 +1750,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_updater(user_input)
             if not errors:
                 self._save(_with_cleared(user_input))
@@ -1870,6 +1893,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
+            user_input = _flatten_sections(user_input)
             errors = _validate_planner(user_input)
             if not errors:
                 self._save(_with_cleared(user_input))
