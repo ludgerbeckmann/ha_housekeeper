@@ -37,7 +37,9 @@ wird ersetzt) mit der Möglichkeit, den Briefkasten als geleert zu bestätigen.
 ### Einstellungen
 
 - **Vibrationssensor** (`binary_sensor`)
-- **App-Push**: ein oder mehrere `notify.mobile_app_*`-Dienste. Optional mit
+- **App-Push**: ein oder mehrere `notify.mobile_app_*`-Dienste; die Auswahl
+  zeigt zusätzlich den Gerätenamen der Companion-App (z. B. „iPhone Ludger
+  (mobile_app_iphone_ludger)“). Optional mit
   der **Aktion „Briefkasten geleert“** direkt in der Meldung (iOS und
   Android): Tippen/Halten auf die Meldung zeigt den Knopf, der den
   Briefkasten zurücksetzt und die Meldung wieder entfernt.
