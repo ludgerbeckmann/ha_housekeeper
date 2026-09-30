@@ -14,9 +14,10 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
 | Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
-| Poolpumpe | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
+| Poolsteuerung | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
 | KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
-| Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
+| Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
+| Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 
 ## Installation
 
@@ -158,7 +159,7 @@ Löschfrist neu. Push ist unabhängig von den Audio-Zeitfenstern.
 - `button` **Test-Klingeln** (spielt aus, was jetzt im Zeitfenster passt, und
   sendet den Push; umgeht Schalter und Sperrzeit)
 
-## Poolpumpe
+## Poolsteuerung
 
 Übernommen aus der Integration
 [ha_pool_manager](https://github.com/ludgerbeckmann/ha_pool_manager). Pro Pumpe
@@ -312,7 +313,7 @@ gesendet, solange der Lautsprecher nicht spielt.
   [KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935),
   ohne dessen Music-Assistant-, Squeezebox- und Denon-Erweiterungen.
 
-## Updater
+## Home Assistant Updater
 
 Meldet oder installiert Updates **zeitgesteuert**. Er arbeitet mit den
 `update`-Entitäten von Home Assistant (Home Assistant OS: Core, Supervisor,
@@ -372,6 +373,58 @@ Zur eingestellten Zeit werden nur Updates berücksichtigt, die gerade bereitsteh
 Die Erkennung von Supervisor, Core und OS beruht auf den Standard-Entity-IDs
 `update.home_assistant_supervisor_update`, `update.home_assistant_core_update` und
 `update.home_assistant_operating_system_update`.
+
+## Aufgabenplaner
+
+Führt **Aktionen** aus, sobald ein **Auslöser** eintritt. Ein Eintrag enthält **mehrere
+Aufgaben**; Benachrichtigungen gehen an die im Eintrag gewählten Wege (App-Push,
+Sprachausgabe, persistente Meldung).
+
+### Aufgaben
+
+Unter *Konfigurieren* pflegst du die Aufgaben (hinzufügen, bearbeiten, löschen). Eine
+Aufgabe hat:
+
+- **Name** und einen Schalter *Aufgabe aktiv*
+- **Aktionen**: der Aktionseditor von Home Assistant (Dienstaufrufe, Verzögerungen,
+  Bedingungen, Benachrichtigungen …). In den Aktionen stehen die Variablen `trigger`
+  (`type`, bei Entitäten außerdem `entity_id`, `from_state`, `to_state`) und `task`
+  zur Verfügung.
+- **Auslöser** (einer oder mehrere, jeder löst die Aufgabe aus)
+- **Benachrichtigung** bei Start, Erfolg und Fehler, einzeln schaltbar
+  (Standard: nur bei Fehler)
+
+### Auslöser
+
+| Art | Beschreibung |
+| --- | --- |
+| Wochentag und Uhrzeit | Uhrzeit an den gewählten Wochentagen |
+| Monat | Uhrzeit am **ersten**, **letzten** oder einem **bestimmten Tag** des Monats (hat der Monat weniger Tage, gilt der letzte Tag) |
+| Einmaliger Zeitpunkt | Datum und Uhrzeit, liegt in der Zukunft |
+| Intervall | alle N Minuten, gezählt ab dem Start (Home-Assistant-Start oder Neuladen) |
+| Zustand einer Entität | Wechsel in einen Zielzustand (leer = jede Änderung), optional erst nach N Minuten |
+| Grenzwert eines Sensors | Wert steigt über / fällt unter einen Wert (oder Bereich), optional erst nach N Minuten |
+
+Zustands- und Grenzwertauslöser lösen nur bei der **Flanke** aus (beim Übergang in die
+Bedingung), nicht bei jeder weiteren Änderung. Hält die Bedingung die Mindestdauer nicht
+ein, wird nichts ausgelöst. Auslöser einer Aufgabe lassen sich hinzufügen und entfernen;
+zum Ändern entfernst du einen Auslöser und legst ihn neu an.
+
+### Hinweise
+
+- Eine Aufgabe läuft nie doppelt gleichzeitig; ein neuer Auslöser während des Laufs wird
+  ignoriert.
+- Ein Fehler in den Aktionen (z. B. unbekannter Dienst) gilt als fehlgeschlagen und wird
+  gemeldet.
+- Zeitpunkte, die während eines Neustarts von Home Assistant verstreichen, werden nicht
+  nachgeholt.
+
+### Entitäten
+
+- `switch` **Aufgabenplaner aktiv** (aus = Auslöser starten nichts)
+- `button` je Aufgabe (Name der Aufgabe): führt sie sofort aus, auch bei Pause
+- `sensor` **Letzte Aufgabe** (Zeitstempel; Attribute: Aufgabe, Auslöser, Ergebnis, Fehler)
+- `sensor` **Nächste Aufgabe** (nächster Zeitpunkt aller zeitgesteuerten Aufgaben)
 
 ## Entwicklung
 
