@@ -14,6 +14,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
 | Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
+| Poolpumpe | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
 
 ## Installation
 
@@ -146,6 +147,90 @@ Löschfrist neu. Push ist unabhängig von den Audio-Zeitfenstern.
 - `sensor` **Letztes Klingeln** (Zeitstempel)
 - `button` **Test-Klingeln** (spielt aus, was jetzt im Zeitfenster passt, und
   sendet den Push; umgeht Schalter und Sperrzeit)
+
+## Poolpumpe
+
+Übernommen aus der Integration
+[ha_pool_manager](https://github.com/ludgerbeckmann/ha_pool_manager). Pro Pumpe
+ein Eintrag (Name und Pumpen-Schalter, `switch` oder `input_boolean`).
+
+### Zeitfenster
+
+Unter *Konfigurieren* pflegst du bis zu 8 **Zeitfenster** (Menü: Pumpe ändern,
+Zeitfenster hinzufügen/bearbeiten/löschen, Trockenlauferkennung, Fertig). Ein
+Fenster hat Beginn, Ende und Wochentage. Liegt das Ende vor dem Beginn, läuft es
+über Mitternacht (die Wochentage beziehen sich dann auf den Tag des Beginns).
+
+- Die Pumpe wird zu **Fensterbeginn eingeschaltet** und zu **Fensterende
+  ausgeschaltet**; geprüft wird jede Minute.
+- Geschaltet wird **nur bei einem Wechsel**: Schaltest du die Pumpe von Hand
+  während eines Fensters aus (oder außerhalb an), bleibt das bis zum nächsten
+  Fensterwechsel bestehen.
+- Ohne Zeitfenster schaltet der Zeitplan die Pumpe nie.
+- Nach einem **Neustart** bzw. beim Aktivieren der Automatik wird die Pumpe
+  einmalig an den Soll-Zustand angeglichen.
+- Ist die Pumpe `unavailable`/`unknown`, wird der Schaltvorgang **vorgemerkt**
+  und nachgeholt, sobald sie wieder erreichbar ist.
+
+### Trockenlauf-Erkennung
+
+Unter *Trockenlauferkennung* hinterlegst du einen **Leistungssensor** (`sensor`,
+Geräteklasse Leistung, W oder kW). Ohne Sensor ist die Funktion aus, die
+zugehörigen Entitäten werden dann nicht angelegt bzw. entfernt.
+
+| Einstellung | Beispiel |
+|---|---|
+| Untere Grenze | 75 W |
+| Obere Grenze | 100 W |
+| Dauer | 5 min |
+| Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren (Standard: aus) | – |
+
+Ein Trockenlauf wird erkannt, wenn die Pumpe **an** ist und die Leistung
+**durchgehend** (Grenzen inklusive) für die Dauer im Bereich liegt. Verlässt die
+Leistung den Bereich, geht die Pumpe aus oder ist der Sensor
+`unavailable`/`unknown`, beginnt die Zeitmessung neu, ein Sensorausfall löst
+also keinen Alarm aus.
+
+Bei Erkennung geht der Binärsensor **Trockenlauf erkannt** auf `on` (gehalten,
+bis über den Button **Trockenlauf quittieren** quittiert oder die Pumpe neu
+gestartet wird) und es wird benachrichtigt. Mit der automatischen Abschaltung wird
+zusätzlich die Pumpe ausgeschaltet und der Zeitplan pausiert; der Button
+aktiviert ihn wieder. Nach einem Neustart bleibt *Zeitplan aktiv* aus, bis du es
+wieder einschaltest.
+
+**Benachrichtigung bei Trockenlauf:** persistente Meldung in Home Assistant
+(Standard), optional zusätzlich App-Push und Sprachausgabe, einstellbar im
+Schritt *Trockenlauferkennung*. Beim Quittieren werden die Meldungen wieder
+entfernt.
+
+### Entitäten
+
+| Entität | Beschreibung |
+|---|---|
+| `switch` **Zeitplan aktiv** | Automatik an/aus, bleibt nach einem Neustart erhalten. Beim Ausschalten wird die Pumpe nicht angefasst. |
+| `binary_sensor` **Pumpe soll laufen** | `on`, solange die Pumpe laut Zeitplan (oder manuellem Lauf) laufen soll |
+| `sensor` **Nächster Start** | Zeitstempel des nächsten Fensterbeginns |
+| `sensor` **Laufzeit heute** | bisherige Laufzeit heute in Minuten (bleibt über Neustarts erhalten) |
+| `binary_sensor` **Trockenlauf erkannt**, `button` **Trockenlauf quittieren** | nur mit Leistungssensor |
+
+### Aktion `ha_housekeeper.run_pump`
+
+Lässt die Pumpe unabhängig vom Zeitplan für eine bestimmte Zeit laufen (auch bei
+ausgeschaltetem Zeitplan). Danach gilt wieder der Zeitplan.
+
+```yaml
+action: ha_housekeeper.run_pump
+data:
+  duration: 30        # Minuten (1–1440)
+  # entry_id: ...     # optional; ohne Angabe sind alle Poolpumpen betroffen
+```
+
+### Umstieg von ha_pool_manager
+
+Die Einträge der alten Integration werden nicht automatisch übernommen. Lege
+die Poolpumpe hier neu an (Pumpe, Zeitfenster, Trockenlauf-Einstellungen), passe
+Automationen und Dashboards an die neuen Entity-IDs und die Aktion
+`ha_housekeeper.run_pump` an und entferne danach die alte Integration.
 
 ## Entwicklung
 

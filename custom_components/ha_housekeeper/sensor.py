@@ -1,11 +1,16 @@
-"""Sensoren: letzter Posteinwurf (Briefkasten), letzte Aktion (Türwächter)."""
+"""Sensoren der Funktionen (Briefkasten, Türwächter, Türklingel, Poolpumpe)."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.const import UnitOfTime
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -15,6 +20,7 @@ from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
+from .pool_pump import PoolPumpController
 
 
 async def async_setup_entry(
@@ -25,6 +31,10 @@ async def async_setup_entry(
         async_add_entities([DoorLastActionSensor(controller)])
     elif isinstance(controller, DoorbellController):
         async_add_entities([DoorbellLastRingSensor(controller)])
+    elif isinstance(controller, PoolPumpController):
+        async_add_entities(
+            [PoolNextStartSensor(controller), PoolRuntimeTodaySensor(controller)]
+        )
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
 
@@ -69,3 +79,33 @@ class DoorbellLastRingSensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self._controller.last_ring
+
+
+class PoolNextStartSensor(FunctionEntity, SensorEntity):
+    """Nächster geplanter Pumpenstart."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-start"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "next_start")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.next_start
+
+
+class PoolRuntimeTodaySensor(FunctionEntity, SensorEntity):
+    """Bisherige Pumpenlaufzeit des heutigen Tages."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "runtime_today")
+
+    @property
+    def native_value(self) -> float:
+        return self._controller.runtime_today_minutes()

@@ -20,6 +20,10 @@ from .const import (
     CONF_CLEAR_HOURS,
     CONF_CONTACT,
     CONF_DEBOUNCE,
+    CONF_DRY_AUTO_OFF,
+    CONF_DRY_DURATION,
+    CONF_DRY_MAX_POWER,
+    CONF_DRY_MIN_POWER,
     CONF_FUNCTION_TYPE,
     CONF_LOCK,
     CONF_MANUAL_OVERRIDE,
@@ -31,7 +35,9 @@ from .const import (
     CONF_NAME,
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
+    CONF_POWER_ENTITY,
     CONF_PROFILES,
+    CONF_PUMP_ENTITY,
     CONF_PERSISTENT_ENABLED,
     CONF_REPEAT_MESSAGE,
     CONF_RETRY_MINUTES,
@@ -42,9 +48,13 @@ from .const import (
     CONF_TRIGGER_ENTITY,
     CONF_VERIFY_SECONDS,
     CONF_VIBRATION_SENSOR,
+    CONF_WINDOWS,
     DEFAULT_AUTO_RESET_HOURS,
     DEFAULT_CLEAR_HOURS,
     DEFAULT_DEBOUNCE,
+    DEFAULT_DRY_DURATION,
+    DEFAULT_DRY_MAX_POWER,
+    DEFAULT_DRY_MIN_POWER,
     DEFAULT_MANUAL_PAUSE_MINUTES,
     DEFAULT_MESSAGE,
     DEFAULT_MOBILE_ACTION,
@@ -60,8 +70,10 @@ from .const import (
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_MAILBOX,
+    FUNCTION_POOL,
     FUNCTION_PLATFORMS,
     MANUAL_IGNORE,
+    MAX_WINDOWS,
     MANUAL_PAUSE,
     MODE_KEYS,
     MODE_RINGTONE,
@@ -93,10 +105,15 @@ from .const import (
     TRIGGER_KEYS,
     TRIGGER_STATE,
     TRIGGER_TIME,
+    W_DAYS,
+    W_END,
+    W_ID,
+    W_START,
     WEEKDAYS,
 )
 from .door_guard import rule_summary
 from .doorbell import profile_summary
+from .pool_schedule import describe_window, parse_time, parse_windows
 
 
 def _mobile_services(hass: HomeAssistant) -> list[selector.SelectOptionDict]:
@@ -124,13 +141,13 @@ def _suggest(key: str, defaults: dict[str, Any]) -> dict[str, Any]:
 
 
 def _number(
-    minimum: float, maximum: float, unit: str | None = None
+    minimum: float, maximum: float, unit: str | None = None, step: float | str = 1
 ) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=minimum,
             max=maximum,
-            step=1,
+            step=step,
             unit_of_measurement=unit,
             mode=selector.NumberSelectorMode.BOX,
         )
@@ -377,6 +394,56 @@ def _validate_bell(user_input: dict[str, Any]) -> dict[str, str]:
     return {}
 
 
+# --- Poolpumpe -------------------------------------------------------------------
+
+_PUMP_SELECTOR = selector.EntitySelector(
+    selector.EntitySelectorConfig(domain=["switch", "input_boolean"])
+)
+
+# Standard der Benachrichtigung bei Trockenlauf: nur persistente Meldung
+_POOL_NOTIFY_DEFAULTS = {CONF_MOBILE_ENABLED: False, CONF_PERSISTENT_ENABLED: True}
+
+
+def _dry_run_schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
+    fields: dict[Any, Any] = {
+        vol.Optional(
+            CONF_POWER_ENTITY, description=_suggest(CONF_POWER_ENTITY, defaults)
+        ): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="power")
+        ),
+        vol.Required(
+            CONF_DRY_MIN_POWER,
+            default=defaults.get(CONF_DRY_MIN_POWER, DEFAULT_DRY_MIN_POWER),
+        ): _number(0, 100000, "W", "any"),
+        vol.Required(
+            CONF_DRY_MAX_POWER,
+            default=defaults.get(CONF_DRY_MAX_POWER, DEFAULT_DRY_MAX_POWER),
+        ): _number(0, 100000, "W", "any"),
+        vol.Required(
+            CONF_DRY_DURATION,
+            default=defaults.get(CONF_DRY_DURATION, DEFAULT_DRY_DURATION),
+        ): _number(1, 120, "min", "any"),
+        vol.Required(
+            CONF_DRY_AUTO_OFF, default=defaults.get(CONF_DRY_AUTO_OFF, False)
+        ): bool,
+    }
+    fields.update(
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+    )
+    return vol.Schema(fields)
+
+
+def _validate_dry_run(user_input: dict[str, Any]) -> dict[str, str]:
+    errors = _validate_notify(user_input, require_method=False)
+    if user_input.get(CONF_MOBILE_ENABLED) and not user_input.get(CONF_MOBILE_TARGETS):
+        errors["base"] = "no_targets"
+    if user_input.get(CONF_POWER_ENTITY) and float(
+        user_input[CONF_DRY_MIN_POWER]
+    ) >= float(user_input[CONF_DRY_MAX_POWER]):
+        errors["base"] = "min_ge_max"
+    return errors
+
+
 # --- Config-Flow ---------------------------------------------------------------
 
 
@@ -472,6 +539,29 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_pool_pump(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            await self.async_set_unique_id(f"{FUNCTION_POOL}:{user_input[CONF_PUMP_ENTITY]}")
+            self._abort_if_unique_id_configured()
+            return self.async_create_entry(
+                title=user_input[CONF_NAME],
+                data={
+                    CONF_FUNCTION_TYPE: FUNCTION_POOL,
+                    CONF_PUMP_ENTITY: user_input[CONF_PUMP_ENTITY],
+                },
+            )
+        return self.async_show_form(
+            step_id="pool_pump",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME, default="Pool"): str,
+                    vol.Required(CONF_PUMP_ENTITY): _PUMP_SELECTOR,
+                }
+            ),
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry) -> OptionsFlow:
@@ -508,6 +598,8 @@ class HousekeeperOptionsFlow(OptionsFlow):
             return await self.async_step_menu()
         if function_type == FUNCTION_DOORBELL:
             return await self.async_step_bell_menu()
+        if function_type == FUNCTION_POOL:
+            return await self.async_step_pool_menu()
         return await self.async_step_mailbox()
 
     # Briefkasten
@@ -919,3 +1011,154 @@ class HousekeeperOptionsFlow(OptionsFlow):
             profiles.append(profile)
         self._save({CONF_PROFILES: profiles})
         return await self.async_step_bell_menu()
+
+    # Poolpumpe: Menü, Zeitfenster, Trockenlauf
+
+    def _windows(self) -> list[dict[str, Any]]:
+        return list(self._current.get(CONF_WINDOWS) or [])
+
+    async def async_step_pool_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        options = ["pool_general", "add_window"]
+        if self._windows():
+            options += ["edit_window", "delete_window"]
+        options += ["dry_run", "done"]
+        return self.async_show_menu(step_id="pool_menu", menu_options=options)
+
+    async def async_step_pool_general(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._save({CONF_PUMP_ENTITY: user_input[CONF_PUMP_ENTITY]})
+            return await self.async_step_pool_menu()
+        return self.async_show_form(
+            step_id="pool_general",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_PUMP_ENTITY, default=self._current[CONF_PUMP_ENTITY]
+                    ): _PUMP_SELECTOR
+                }
+            ),
+        )
+
+    async def async_step_add_window(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        self._edit_id = None
+        self._draft = {}
+        return await self.async_step_window_edit()
+
+    async def async_step_edit_window(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            window = next(w for w in self._windows() if w[W_ID] == user_input["window"])
+            self._edit_id = window[W_ID]
+            self._draft = dict(window)
+            return await self.async_step_window_edit()
+        return self.async_show_form(
+            step_id="edit_window", data_schema=self._window_picker_schema()
+        )
+
+    async def async_step_delete_window(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._save(
+                {
+                    CONF_WINDOWS: [
+                        w for w in self._windows() if w[W_ID] != user_input["window"]
+                    ]
+                }
+            )
+            return await self.async_step_pool_menu()
+        return self.async_show_form(
+            step_id="delete_window", data_schema=self._window_picker_schema()
+        )
+
+    def _window_picker_schema(self) -> vol.Schema:
+        options = []
+        for raw in self._windows():
+            window = next(iter(parse_windows([raw])), None)
+            label = (
+                describe_window(window, self.hass.config.language)
+                if window
+                else str(raw)
+            )
+            options.append(selector.SelectOptionDict(value=raw[W_ID], label=label))
+        return vol.Schema(
+            {
+                vol.Required("window"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=options, mode=selector.SelectSelectorMode.LIST
+                    )
+                )
+            }
+        )
+
+    async def async_step_window_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        d = self._draft
+        if user_input is not None:
+            windows = self._windows()
+            if self._edit_id is None and len(windows) >= MAX_WINDOWS:
+                errors["base"] = "too_many_windows"
+            elif parse_time(user_input[W_START]) == parse_time(user_input[W_END]):
+                errors["base"] = "start_equals_end"
+            elif not user_input[W_DAYS]:
+                errors["base"] = "no_weekday"
+            else:
+                window = {
+                    W_ID: self._edit_id or uuid.uuid4().hex[:8],
+                    W_START: user_input[W_START],
+                    W_END: user_input[W_END],
+                    W_DAYS: user_input[W_DAYS],
+                }
+                if self._edit_id:
+                    windows = [window if w[W_ID] == self._edit_id else w for w in windows]
+                else:
+                    windows.append(window)
+                self._save({CONF_WINDOWS: windows})
+                return await self.async_step_pool_menu()
+            d = user_input
+        return self.async_show_form(
+            step_id="window_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        W_START, default=d.get(W_START, "08:00:00")
+                    ): selector.TimeSelector(),
+                    vol.Required(
+                        W_END, default=d.get(W_END, "10:00:00")
+                    ): selector.TimeSelector(),
+                    vol.Required(W_DAYS, default=d.get(W_DAYS, WEEKDAYS)): _select(
+                        WEEKDAYS,
+                        "weekday",
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_dry_run(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults = self._current
+        if user_input is not None:
+            errors = _validate_dry_run(user_input)
+            if not errors:
+                self._save(_with_cleared(user_input))
+                return await self.async_step_pool_menu()
+            defaults = user_input
+        return self.async_show_form(
+            step_id="dry_run",
+            data_schema=_dry_run_schema(self.hass, defaults),
+            errors=errors,
+        )

@@ -1,0 +1,15 @@
+run_pump:
+  fields:
+    duration:
+      required: true
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: min
+          mode: box
+    entry_id:
+      required: false
+      selector:
+        text:

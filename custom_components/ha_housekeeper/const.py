@@ -13,11 +13,18 @@ CONF_FUNCTION_TYPE = "function_type"
 FUNCTION_MAILBOX = "mailbox"
 FUNCTION_DOOR_GUARD = "door_guard"
 FUNCTION_DOORBELL = "doorbell"
+FUNCTION_POOL = "pool_pump"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
+    FUNCTION_POOL: [
+        Platform.BINARY_SENSOR,
+        Platform.BUTTON,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -96,13 +103,6 @@ TRIGGER_KEYS: dict[str, list[str]] = {
 
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-# Felder, die im Formular geleert werden können
-OPTIONAL_KEYS = [
-    CONF_MOBILE_TARGETS,
-    CONF_TTS_ENTITY,
-    CONF_TTS_PLAYER,
-    CONF_CONTACT,
-]
 
 # --- Türklingel ---
 CONF_TRIGGER_ENTITY = "trigger_entity"
@@ -134,6 +134,39 @@ MODE_KEYS: dict[str, list[str]] = {
     MODE_TTS: [P_TTS_ENTITY, P_TEXT],
     MODE_RINGTONE: [P_MEDIA],
 }
+
+# --- Poolpumpe ---
+CONF_PUMP_ENTITY = "pump_entity"
+CONF_WINDOWS = "windows"
+CONF_POWER_ENTITY = "power_entity"
+CONF_DRY_MIN_POWER = "dry_min_power"
+CONF_DRY_MAX_POWER = "dry_max_power"
+CONF_DRY_DURATION = "dry_duration"
+CONF_DRY_AUTO_OFF = "dry_auto_off"
+
+DEFAULT_DRY_MIN_POWER = 75
+DEFAULT_DRY_MAX_POWER = 100
+DEFAULT_DRY_DURATION = 5
+
+# Zeitfenster der Pumpe: Schlüssel (id ist neu und dient dem Bearbeiten/Löschen)
+W_ID = "id"
+W_START = "start"
+W_END = "end"
+W_DAYS = "days"
+MAX_WINDOWS = 8
+
+SERVICE_RUN_PUMP = "run_pump"
+ATTR_DURATION = "duration"
+ATTR_ENTRY_ID = "entry_id"
+
+# Felder, die im Formular geleert werden können
+OPTIONAL_KEYS = [
+    CONF_MOBILE_TARGETS,
+    CONF_TTS_ENTITY,
+    CONF_TTS_PLAYER,
+    CONF_CONTACT,
+    CONF_POWER_ENTITY,
+]
 
 
 def signal_update(entry_id: str) -> str:

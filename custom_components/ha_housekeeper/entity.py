@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
@@ -35,3 +37,15 @@ class FunctionEntity(Entity):
                 self.async_write_ha_state,
             )
         )
+
+
+def remove_unconfigured(
+    hass: HomeAssistant, platform: str, controller, key: str
+) -> None:
+    """Entität aus der Registry entfernen, wenn ihre Funktion nicht (mehr) konfiguriert ist."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        platform, DOMAIN, f"{controller.entry.entry_id}_{key}"
+    )
+    if entity_id:
+        registry.async_remove(entity_id)
