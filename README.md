@@ -12,6 +12,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Typ | Beschreibung |
 | --- | --- |
 | Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
+| Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 
 ## Installation
 
@@ -52,6 +53,56 @@ Alle Einstellungen lassen sich später über *Konfigurieren* ändern.
 - `button` **Briefkasten geleert**
 
 Der Zustand bleibt über Neustarts erhalten.
+
+## Türwächter
+
+Pro Tür ein Eintrag: ein **Schloss** (`lock`) und optional ein **Türkontakt**
+(`binary_sensor`, `on` = offen). Das Auf- und Abschließen steuerst du über
+**Regeln**, die du unter *Konfigurieren* verwaltest (Menü: Einstellungen,
+Regel hinzufügen/bearbeiten/löschen).
+
+### Regeln
+
+Jede Regel hat eine Aktion (**Abschließen** oder **Aufschließen**) und einen Auslöser:
+
+- **Zustand einer Entität**: löst beim *Wechsel* in den Zielzustand aus
+  (z. B. `person.ludger` → `home`, Alarmanlage → `armed_away`), optional erst
+  nach X Minuten in diesem Zustand. Wechselt die Entität vorher zurück, wird
+  abgebrochen.
+- **Uhrzeit**: zu einer Uhrzeit an den gewählten Wochentagen.
+- **Tür geschlossen seit X Sekunden**: nur zum Abschließen, braucht den Türkontakt.
+
+### Türkontakt-Prüfungen
+
+- **Abschließen nur bei geschlossener Tür:** Ist der Kontakt `on` (offen)
+  oder nicht verfügbar, wird nicht abgeschlossen und benachrichtigt. Wählbar:
+  *Nur melden* oder *Nach dem Schließen abschließen* (bis zum eingestellten
+  Zeitlimit).
+- **Tür zu lange offen:** Nach X Minuten Warnung, optional wiederholt.
+  Setze den Wert auf 0, wenn du keinen Türkontakt hast.
+- **Schloss prüfen:** Steht das Schloss nach der Aktion nicht im Zielzustand
+  (z. B. klemmt), gibt es nach X Sekunden eine Meldung.
+
+### Manuelle Bedienung
+
+Auswahl *Bei manueller Bedienung des Schlosses*:
+**Automatik weiterlaufen lassen** oder **Automatik pausieren** (für X Minuten).
+Als manuell gilt jede Änderung des Schlosszustands, die nicht vom Türwächter
+selbst ausging (Schlüssel, Taster, App, andere Automationen).
+
+### Benachrichtigung
+
+App-Push, Sprachausgabe und persistente Meldung wie beim Briefkasten
+(ohne die Aktion „geleert“). Die Meldungstexte sind deutsch bzw. englisch
+je nach Systemsprache.
+
+### Entitäten
+
+- `binary_sensor` **Tür zu lange offen**
+- `switch` **Automatik** (aus = alle Regeln pausieren; Attribut `paused_until`)
+- `sensor` **Letzte Aktion** (Zeitstempel; Attribute `action`, `reason`, `result`)
+
+Der Zustand (Automatik an/aus, Pause, letzte Aktion) bleibt über Neustarts erhalten.
 
 ## Entwicklung
 

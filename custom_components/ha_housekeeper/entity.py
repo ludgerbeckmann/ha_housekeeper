@@ -1,4 +1,4 @@
-"""Gemeinsame Basisklasse der Briefkasten-Entitäten."""
+"""Gemeinsame Basisklasse der Entitäten einer Funktion."""
 
 from __future__ import annotations
 
@@ -7,16 +7,15 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, signal_update
-from .mailbox import MailboxController
 
 
-class MailboxEntity(Entity):
+class FunctionEntity(Entity):
     """Entität, die den Zustand des Controllers spiegelt."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, controller: MailboxController, key: str) -> None:
+    def __init__(self, controller, key: str) -> None:
         self._controller = controller
         self._attr_translation_key = key
         entry = controller.entry
@@ -25,7 +24,7 @@ class MailboxEntity(Entity):
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
             manufacturer="Housekeeper",
-            model="Benachrichtigung Briefkasten",
+            model=controller.model,
         )
 
     async def async_added_to_hass(self) -> None:

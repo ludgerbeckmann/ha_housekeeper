@@ -13,64 +13,223 @@
         "data": {
           "name": "Name",
           "vibration_sensor": "Vibrationssensor",
+          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+          "message": "Nachrichtentext",
+          "debounce_seconds": "Entprellzeit",
+          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
           "mobile_enabled": "App-Push aktivieren",
           "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
           "tts_enabled": "Sprachausgabe aktivieren",
           "tts_entity": "TTS-Dienst",
           "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant",
-          "message": "Nachrichtentext",
-          "debounce_seconds": "Entprellzeit",
-          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
         },
         "data_description": {
           "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
           "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
-          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        }
+      },
+      "door_guard": {
+        "title": "Türwächter",
+        "data": {
+          "name": "Name",
+          "lock": "Schloss",
+          "contact": "Türkontakt (optional)",
+          "block_action": "Wenn beim Abschließen die Tür offen ist",
+          "retry_minutes": "Abschließen nachholen bis (Minuten)",
+          "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+          "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+          "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+          "manual_override": "Bei manueller Bedienung des Schlosses",
+          "manual_pause_minutes": "Automatik pausieren für (Minuten)",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+        },
+        "data_description": {
+          "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+          "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+          "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+          "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+          "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         }
       }
     },
     "error": {
       "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
-      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt."
+      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+      "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+      "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+      "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+      "no_weekday": "Mindestens ein Wochentag muss gewählt sein."
     }
   },
   "options": {
     "step": {
-      "init": {
+      "mailbox": {
         "title": "Benachrichtigung Briefkasten",
         "data": {
           "vibration_sensor": "Vibrationssensor",
+          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+          "message": "Nachrichtentext",
+          "debounce_seconds": "Entprellzeit",
+          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
           "mobile_enabled": "App-Push aktivieren",
           "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
           "tts_enabled": "Sprachausgabe aktivieren",
           "tts_entity": "TTS-Dienst",
           "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant",
-          "message": "Nachrichtentext",
-          "debounce_seconds": "Entprellzeit",
-          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
         },
         "data_description": {
           "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
           "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
-          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        }
+      },
+      "menu": {
+        "title": "Türwächter",
+        "description": "Einstellungen und Regeln des Türwächters.",
+        "menu_options": {
+          "general": "Einstellungen",
+          "add_rule": "Regel hinzufügen",
+          "edit_rule": "Regel bearbeiten",
+          "delete_rule": "Regel löschen",
+          "done": "Fertig"
+        }
+      },
+      "general": {
+        "title": "Einstellungen",
+        "data": {
+          "lock": "Schloss",
+          "contact": "Türkontakt (optional)",
+          "block_action": "Wenn beim Abschließen die Tür offen ist",
+          "retry_minutes": "Abschließen nachholen bis (Minuten)",
+          "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+          "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+          "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+          "manual_override": "Bei manueller Bedienung des Schlosses",
+          "manual_pause_minutes": "Automatik pausieren für (Minuten)",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+        },
+        "data_description": {
+          "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+          "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+          "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+          "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+          "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        }
+      },
+      "edit_rule": {
+        "title": "Regel bearbeiten",
+        "data": {
+          "rule": "Regel"
+        }
+      },
+      "delete_rule": {
+        "title": "Regel löschen",
+        "data": {
+          "rule": "Regel"
+        }
+      },
+      "rule_type": {
+        "title": "Regel",
+        "data": {
+          "action": "Aktion",
+          "trigger": "Auslöser"
+        }
+      },
+      "rule_state": {
+        "title": "Auslöser: Zustand einer Entität",
+        "data": {
+          "entity_id": "Entität",
+          "to_state": "Zielzustand",
+          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+        },
+        "data_description": {
+          "to_state": "Zustandstext, z. B. home, on, armed_away. Die Regel löst beim Wechsel in diesen Zustand aus."
+        }
+      },
+      "rule_time": {
+        "title": "Auslöser: Uhrzeit",
+        "data": {
+          "time": "Uhrzeit",
+          "weekdays": "Wochentage"
+        }
+      },
+      "rule_door_closed": {
+        "title": "Auslöser: Tür geschlossen",
+        "data": {
+          "delay_seconds": "Abschließen nach (Sekunden)"
+        },
+        "data_description": {
+          "delay_seconds": "Zeit, die die Tür geschlossen sein muss."
         }
       }
     },
     "error": {
       "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
-      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt."
+      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+      "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+      "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+      "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+      "no_weekday": "Mindestens ein Wochentag muss gewählt sein."
     }
   },
   "selector": {
     "function_type": {
       "options": {
-        "mailbox": "Benachrichtigung Briefkasten"
+        "mailbox": "Benachrichtigung Briefkasten",
+        "door_guard": "Türwächter"
+      }
+    },
+    "block_action": {
+      "options": {
+        "notify": "Nur melden",
+        "retry": "Nach dem Schließen abschließen"
+      }
+    },
+    "manual_override": {
+      "options": {
+        "ignore": "Automatik weiterlaufen lassen",
+        "pause": "Automatik pausieren"
+      }
+    },
+    "rule_action": {
+      "options": {
+        "lock": "Abschließen",
+        "unlock": "Aufschließen"
+      }
+    },
+    "rule_trigger": {
+      "options": {
+        "state": "Zustand einer Entität",
+        "time": "Uhrzeit",
+        "door_closed": "Tür geschlossen seit"
+      }
+    },
+    "weekday": {
+      "options": {
+        "mon": "Montag",
+        "tue": "Dienstag",
+        "wed": "Mittwoch",
+        "thu": "Donnerstag",
+        "fri": "Freitag",
+        "sat": "Samstag",
+        "sun": "Sonntag"
       }
     }
   },
@@ -78,16 +237,27 @@
     "binary_sensor": {
       "has_mail": {
         "name": "Post vorhanden"
+      },
+      "open_too_long": {
+        "name": "Tür zu lange offen"
       }
     },
     "sensor": {
       "last_delivery": {
         "name": "Letzter Posteinwurf"
+      },
+      "last_action": {
+        "name": "Letzte Aktion"
       }
     },
     "button": {
       "emptied": {
         "name": "Briefkasten geleert"
+      }
+    },
+    "switch": {
+      "automation": {
+        "name": "Automatik"
       }
     }
   }

@@ -2,7 +2,8 @@
 
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
-`function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“).
+`function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
+`door_guard` („Türwächter“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -22,9 +23,19 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Config-Flow-Schritt
   `async_step_<typ>`, Controller-Klasse, Plattformdateien, Übersetzungen
   (`selector.function_type.options.<typ>`), Setup/Unload in `__init__.py`.
-- `mailbox.py`: `MailboxController` (Logik, Zustand in `Store`, Benachrichtigung).
-  Entitäten (`binary_sensor.py`, `sensor.py`, `button.py`, Basis in `entity.py`)
-  spiegeln nur den Controller über ein Dispatcher-Signal.
+- `mailbox.py` / `door_guard.py`: je ein Controller pro Funktion (Logik, Zustand
+  in `Store`). Registry Typ → Controller in `__init__.py` (`CONTROLLERS`).
+  Entitäten (`binary_sensor.py`, `sensor.py`, `button.py`, `switch.py`, Basis
+  `FunctionEntity` in `entity.py`) spiegeln nur den Controller über ein
+  Dispatcher-Signal; `binary_sensor.py`/`sensor.py` wählen per `isinstance`.
+- `notify.py`: gemeinsame Benachrichtigungswege (`Notifier`) und `entry_opt()`.
+  Ein in den Optionen auf `None` gesetzter Wert überdeckt den Wert aus den
+  Daten (so lassen sich optionale Felder leeren, siehe `_with_cleared`).
+- Türwächter-Regeln liegen als Liste in `options["rules"]` (Schlüssel
+  `R_*` in `const.py`); der Options-Flow ist ein Menü und speichert Regeln
+  sofort über `async_update_entry` (Eintrag lädt bei jeder Speicherung neu).
+  Manuelle Bedienung = Schlosswechsel außerhalb des `OWN_ACTION_WINDOW`
+  nach einem eigenen Befehl.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.
 - iOS/Android-Aktion „Briefkasten geleert“: `data.actions` in der

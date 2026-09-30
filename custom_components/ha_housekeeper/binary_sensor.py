@@ -1,23 +1,31 @@
-"""Binary Sensor: Post vorhanden."""
+"""Binary Sensoren: Post vorhanden (Briefkasten), Tür zu lange offen (Türwächter)."""
 
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import MailboxEntity
+from .door_guard import DoorGuardController
+from .entity import FunctionEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([MailboxHasMailSensor(hass.data[DOMAIN][entry.entry_id])])
+    controller = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(controller, DoorGuardController):
+        async_add_entities([DoorOpenTooLongSensor(controller)])
+    else:
+        async_add_entities([MailboxHasMailSensor(controller)])
 
 
-class MailboxHasMailSensor(MailboxEntity, BinarySensorEntity):
+class MailboxHasMailSensor(FunctionEntity, BinarySensorEntity):
     """on = Post im Briefkasten."""
 
     def __init__(self, controller) -> None:
@@ -30,3 +38,20 @@ class MailboxHasMailSensor(MailboxEntity, BinarySensorEntity):
     @property
     def icon(self) -> str:
         return "mdi:mailbox-up" if self.is_on else "mdi:mailbox-outline"
+
+
+class DoorOpenTooLongSensor(FunctionEntity, BinarySensorEntity):
+    """on = Tür steht länger offen als eingestellt."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "open_too_long")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.open_too_long
+
+    @property
+    def icon(self) -> str:
+        return "mdi:door-open" if self.is_on else "mdi:door-closed"

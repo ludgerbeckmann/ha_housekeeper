@@ -5,22 +5,33 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.storage import Store
 
-from .const import CONF_FUNCTION_TYPE, DOMAIN, FUNCTION_MAILBOX, FUNCTION_PLATFORMS
+from .const import (
+    CONF_FUNCTION_TYPE,
+    DOMAIN,
+    FUNCTION_DOOR_GUARD,
+    FUNCTION_MAILBOX,
+    FUNCTION_PLATFORMS,
+)
+from .door_guard import DoorGuardController
 from .mailbox import MailboxController
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+# Registry: Funktionstyp -> Controller-Klasse
+CONTROLLERS = {
+    FUNCTION_MAILBOX: MailboxController,
+    FUNCTION_DOOR_GUARD: DoorGuardController,
+}
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Eintrag einrichten - je nach Funktionstyp."""
     function_type = entry.data[CONF_FUNCTION_TYPE]
-    domain_data = hass.data.setdefault(DOMAIN, {})
-
-    if function_type == FUNCTION_MAILBOX:
-        controller = MailboxController(hass, entry)
-        await controller.async_start()
-        domain_data[entry.entry_id] = controller
+    controller = CONTROLLERS[function_type](hass, entry)
+    await controller.async_start()
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = controller
 
     await hass.config_entries.async_forward_entry_setups(
         entry, FUNCTION_PLATFORMS[function_type]
@@ -48,5 +59,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Gespeicherten Zustand beim Löschen entfernen."""
-    if entry.data.get(CONF_FUNCTION_TYPE) == FUNCTION_MAILBOX:
-        await MailboxController(hass, entry).async_remove_data()
+    await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}").async_remove()

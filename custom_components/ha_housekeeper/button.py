@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import MailboxEntity
+from .entity import FunctionEntity
 
 
 async def async_setup_entry(
@@ -17,7 +17,7 @@ async def async_setup_entry(
     async_add_entities([MailboxEmptiedButton(hass.data[DOMAIN][entry.entry_id])])
 
 
-class MailboxEmptiedButton(MailboxEntity, ButtonEntity):
+class MailboxEmptiedButton(FunctionEntity, ButtonEntity):
     _attr_icon = "mdi:mailbox-open-outline"
 
     def __init__(self, controller) -> None:
