@@ -9,6 +9,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 from homeassistant.util import slugify
 
@@ -291,37 +292,68 @@ def _with_cleared(user_input: dict[str, Any]) -> dict[str, Any]:
 # --- Briefkasten ---------------------------------------------------------------
 
 
+SECTION_GENERAL = "general"
+SECTION_NOTIFICATIONS = "notifications"
+
+
+def _flatten_sections(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Abschnitte des Formulars zu den flachen Schlüsseln der Einstellungen auflösen."""
+    flat: dict[str, Any] = {}
+    for key, value in user_input.items():
+        if isinstance(value, dict):
+            flat.update(value)
+        else:
+            flat[key] = value
+    return flat
+
+
 def _mailbox_schema(
     hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
 ) -> vol.Schema:
-    fields: dict[Any, Any] = {}
+    """Formular in zwei ausgeklappte Abschnitte: Allgemein und Benachrichtigungen."""
+    general: dict[Any, Any] = {}
     if with_name:
-        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME))] = str
-    fields[
+        general[
+            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME))
+        ] = str
+    general[
         vol.Required(
             CONF_VIBRATION_SENSOR, description=_suggest(CONF_VIBRATION_SENSOR, defaults)
         )
     ] = selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
-    fields.update(_notify_fields(hass, defaults, with_action=True))
-    fields.update(
+    general[
+        vol.Required(
+            CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_DEBOUNCE)
+        )
+    ] = _number(0, 3600, "s")
+    general[
+        vol.Required(
+            CONF_AUTO_RESET_HOURS,
+            default=defaults.get(CONF_AUTO_RESET_HOURS, DEFAULT_AUTO_RESET_HOURS),
+        )
+    ] = _number(0, 168, "h")
+
+    notifications: dict[Any, Any] = dict(_notify_fields(hass, defaults, with_action=True))
+    notifications[
+        vol.Required(CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_MESSAGE))
+    ] = str
+    notifications[
+        vol.Required(
+            CONF_REPEAT_MESSAGE,
+            default=defaults.get(CONF_REPEAT_MESSAGE, DEFAULT_REPEAT_MESSAGE),
+        )
+    ] = str
+
+    return vol.Schema(
         {
-            vol.Required(
-                CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_MESSAGE)
-            ): str,
-            vol.Required(
-                CONF_REPEAT_MESSAGE,
-                default=defaults.get(CONF_REPEAT_MESSAGE, DEFAULT_REPEAT_MESSAGE),
-            ): str,
-            vol.Required(
-                CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_DEBOUNCE)
-            ): _number(0, 3600, "s"),
-            vol.Required(
-                CONF_AUTO_RESET_HOURS,
-                default=defaults.get(CONF_AUTO_RESET_HOURS, DEFAULT_AUTO_RESET_HOURS),
-            ): _number(0, 168, "h"),
+            vol.Required(SECTION_GENERAL): section(
+                vol.Schema(general), {"collapsed": False}
+            ),
+            vol.Required(SECTION_NOTIFICATIONS): section(
+                vol.Schema(notifications), {"collapsed": False}
+            ),
         }
     )
-    return vol.Schema(fields)
 
 
 # --- Türwächter -----------------------------------------------------------------
@@ -605,13 +637,14 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         defaults: dict[str, Any] = {}
         if user_input is not None:
-            errors = _validate_notify(user_input, require_method=True)
+            flat = _flatten_sections(user_input)
+            errors = _validate_notify(flat, require_method=True)
             if not errors:
                 return self.async_create_entry(
-                    title=user_input[CONF_NAME],
-                    data={CONF_FUNCTION_TYPE: FUNCTION_MAILBOX, **user_input},
+                    title=flat[CONF_NAME],
+                    data={CONF_FUNCTION_TYPE: FUNCTION_MAILBOX, **flat},
                 )
-            defaults = user_input
+            defaults = flat
         return self.async_show_form(
             step_id="mailbox",
             data_schema=_mailbox_schema(self.hass, defaults, with_name=True),
@@ -790,10 +823,11 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         defaults = self._current
         if user_input is not None:
-            errors = _validate_notify(user_input, require_method=True)
+            flat = _flatten_sections(user_input)
+            errors = _validate_notify(flat, require_method=True)
             if not errors:
-                return self.async_create_entry(data=_with_cleared(user_input))
-            defaults = user_input
+                return self.async_create_entry(data=_with_cleared(flat))
+            defaults = flat
         return self.async_show_form(
             step_id="mailbox",
             data_schema=_mailbox_schema(self.hass, defaults, with_name=False),

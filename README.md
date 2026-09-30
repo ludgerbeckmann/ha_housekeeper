@@ -40,7 +40,16 @@ wird ersetzt) mit der Möglichkeit, den Briefkasten als geleert zu bestätigen.
 
 ### Einstellungen
 
+Der Dialog ist in zwei ausgeklappte Abschnitte gegliedert.
+
+**Allgemein**
+
 - **Vibrationssensor** (`binary_sensor`)
+- **Entprellzeit** (Standard 60 s; weitere Vibrationen in dieser Zeit werden ignoriert)
+- **Auto-Reset** nach X Stunden (0 = aus)
+
+**Benachrichtigungen**
+
 - **App-Push**: ein oder mehrere `notify.mobile_app_*`-Dienste; die Auswahl
   zeigt zusätzlich den Gerätenamen der Companion-App (z. B. „iPhone Ludger
   (mobile_app_iphone_ludger)“). Optional mit
@@ -49,8 +58,7 @@ wird ersetzt) mit der Möglichkeit, den Briefkasten als geleert zu bestätigen.
   Briefkasten zurücksetzt und die Meldung wieder entfernt.
 - **Sprachausgabe**: TTS-Dienst + Lautsprecher (`media_player`)
 - **Persistente Benachrichtigung** in Home Assistant
-- **Nachrichtentext** und **Text bei erneutem Auslösen**, **Entprellzeit** (Standard 60 s; weitere Vibrationen
-  in dieser Zeit werden ignoriert), **Auto-Reset** nach X Stunden (0 = aus)
+- **Nachrichtentext** und **Text bei erneutem Auslösen**
 
 Alle Einstellungen lassen sich später über *Konfigurieren* ändern.
 
