@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
+from .helpers import sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 
 LOCK = "lock.front_door"
@@ -63,10 +64,10 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     assert result["step_id"] == "door_guard"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules")}
     bad = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {k: v for k, v in data.items() if k != "contact"}
+        result["flow_id"], sectioned({k: v for k, v in data.items() if k != "contact"})
     )
     assert bad["errors"] == {"base": "alert_needs_contact"}
-    ok = await hass.config_entries.flow.async_configure(result["flow_id"], data)
+    ok = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(data))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "door_guard"
     assert ok["data"]["rules"] == []

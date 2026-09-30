@@ -77,22 +77,20 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   zu 10 Minuten auf die Entität). `backup` wird nur gesetzt, wenn die Entität
   `UpdateEntityFeature.BACKUP` (8) unterstützt.
 - Formular-Abschnitte (`section` aus `homeassistant.data_entry_flow`, standardmäßig
-  `collapsed: False`): Der Briefkasten-Dialog hat die Abschnitte `general` und
-  `notifications`. Das Formular liefert **verschachtelte** Daten, gespeichert wird aber
-  flach (`_flatten_sections()` in `config_flow.py`), damit bestehende Einträge und die
-  Controller unverändert bleiben. Übersetzungen stehen je Abschnitt unter
-  `...step.<schritt>.sections.<abschnitt>` (`name`, `description`, `data`,
-  `data_description`); das Top-Level-`data` entfällt dann. In Tests die Eingaben
-  verschachtelt übergeben.
-- `task_planner.py`: Aufgaben in `options["tasks"]` (Schlüssel `TASK_*`, Auslöser `TR_*`),
-  je Aufgabe mehrere Auslöser (weekly, monthly, once, interval, state, threshold) und eine
-  Aktionsliste aus dem `ActionSelector`, ausgeführt über `helpers.script.Script` (Variablen
-  `trigger`, `task`; Fehler werden abgefangen und gemeldet). `month_day_matches`,
-  `state_fires`, `trigger_next` sind reine Funktionen. Zustands-/Grenzwertauslöser feuern
-  nur bei der Flanke, `for_minutes` über Timer je (Aufgabe, Auslöser). Options-Flow: Aufgabe
-  → Auslöser-Menü (`task_triggers`) → `task_save`; die Aufgabe wird erst dort gespeichert.
-  Je Aufgabe ein Button (Unique-ID `<entry>_task_<id>`), verwaiste werden in `button.py`
-  entfernt. Das Menü `task_triggers` nutzt echte Platzhalter (`{task}`, `{triggers}`).
+  `collapsed: False`): Die Grunddialoge von Briefkasten, Türwächter, Türklingel,
+  Home Assistant Updater, Aufgabenplaner und der Trockenlauf-Dialog der Poolsteuerung haben die
+  Abschnitte `general` und `notifications` (Helfer `_sections_schema()`; ein Abschnitt ohne
+  Felder entfällt, z. B. „Allgemein“ des Aufgabenplaners in den Einstellungen). Das Formular
+  liefert **verschachtelte** Daten, gespeichert wird aber flach (`_flatten_sections()` am
+  Anfang jedes Handlers), damit bestehende Einträge und die Controller unverändert bleiben.
+  Übersetzungen stehen je Abschnitt unter `...step.<schritt>.sections.<abschnitt>` (`name`,
+  `description`, `data`, `data_description`); das Top-Level-`data` entfällt dann. In Tests die
+  Eingaben verschachtelt übergeben (`tests/helpers.py: sectioned()`). Die Übersetzungen
+  werden aus den Feldschlüsseln verteilt: Benachrichtigungsfelder gehören zu `notifications`.
+- Push-Ziele (`_mobile_selector()`): Mit `custom_value` zeigt die Oberfläche nur die Werte
+  statt der Beschriftungen („Gerätename (Dienst)“). Deshalb gibt es freie Eingabe nur, wenn
+  keine `mobile_app_*`-Dienste gefunden werden; bereits gespeicherte Ziele bleiben als
+  Option erhalten.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.
