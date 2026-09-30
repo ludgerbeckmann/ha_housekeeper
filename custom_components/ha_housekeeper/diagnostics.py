@@ -14,6 +14,7 @@ from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
+from .updater import UpdaterController
 
 TO_REDACT: set[str] = set()
 
@@ -86,5 +87,14 @@ async def async_get_config_entry_diagnostics(
             "registered_addresses": sorted(
                 {*controller._commands_by_ga, *controller._status_by_ga}  # noqa: SLF001
             ),
+        }
+    if isinstance(controller, UpdaterController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "running": controller.running,
+            "last_run": controller.last_run,
+            "pending": controller.pending,
+            "next_run": controller.next_run.isoformat() if controller.next_run else None,
+            "available": controller.available_updates(),
         }
     return result

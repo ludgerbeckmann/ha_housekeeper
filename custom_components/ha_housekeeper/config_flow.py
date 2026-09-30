@@ -50,8 +50,10 @@ from .const import (
     CONF_REPEAT_MESSAGE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
+    CONF_SCHEDULES,
     CONF_STATUS,
     CONF_STOP_INSTEAD,
+    CONF_TIMEOUT_MINUTES,
     CONF_TRIGGER_ENTITY,
     CONF_TTS_ENABLED,
     CONF_TTS_ENTITY,
@@ -77,6 +79,7 @@ from .const import (
     DEFAULT_RETRY_MINUTES,
     DEFAULT_RING_DEBOUNCE,
     DEFAULT_RING_MESSAGE,
+    DEFAULT_TIMEOUT_MINUTES,
     DEFAULT_VERIFY_SECONDS,
     DEFAULT_VOLUME_STEP,
     DOMAIN,
@@ -91,6 +94,7 @@ from .const import (
     FUNCTION_MAILBOX,
     FUNCTION_PLATFORMS,
     FUNCTION_POOL,
+    FUNCTION_UPDATER,
     K_ACTION,
     K_ADDRESS,
     K_DPT,
@@ -138,6 +142,15 @@ from .const import (
     TRIGGER_KEYS,
     TRIGGER_STATE,
     TRIGGER_TIME,
+    UPDATE_MODES,
+    UPDATE_MODE_NOTIFY,
+    U_BACKUP,
+    U_ID,
+    U_MODE,
+    U_NAME,
+    U_TARGETS,
+    U_TIME,
+    U_WEEKDAYS,
     WEEKDAYS,
     WHENS,
     WHEN_ON,
@@ -150,6 +163,7 @@ from .door_guard import rule_summary
 from .doorbell import profile_summary
 from .knx_codec import is_valid_ga
 from .knx_sonos import command_summary, status_summary
+from .updater import schedule_summary
 from .pool_schedule import describe_window, parse_time, parse_windows
 
 
@@ -527,6 +541,34 @@ def _command_needs_params(draft: dict[str, Any]) -> bool:
     )
 
 
+# --- Updater ----------------------------------------------------------------------
+
+
+def _updater_schema(
+    hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
+) -> vol.Schema:
+    fields: dict[Any, Any] = {}
+    if with_name:
+        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Updater"))] = str
+    fields[
+        vol.Required(
+            CONF_TIMEOUT_MINUTES,
+            default=defaults.get(CONF_TIMEOUT_MINUTES, DEFAULT_TIMEOUT_MINUTES),
+        )
+    ] = _number(1, 720, "min")
+    fields.update(
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+    )
+    return vol.Schema(fields)
+
+
+def _validate_updater(user_input: dict[str, Any]) -> dict[str, str]:
+    errors = _validate_notify(user_input, require_method=True)
+    if user_input.get(CONF_MOBILE_ENABLED) and not user_input.get(CONF_MOBILE_TARGETS):
+        errors["base"] = "no_targets"
+    return errors
+
+
 # --- Config-Flow ---------------------------------------------------------------
 
 
@@ -673,6 +715,29 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
+    async def async_step_updater(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            errors = _validate_updater(user_input)
+            if not errors:
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME],
+                    data={
+                        CONF_FUNCTION_TYPE: FUNCTION_UPDATER,
+                        CONF_SCHEDULES: [],
+                        **user_input,
+                    },
+                )
+            defaults = user_input
+        return self.async_show_form(
+            step_id="updater",
+            data_schema=_updater_schema(self.hass, defaults, with_name=True),
+            errors=errors,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry) -> OptionsFlow:
@@ -713,6 +778,8 @@ class HousekeeperOptionsFlow(OptionsFlow):
             return await self.async_step_pool_menu()
         if function_type == FUNCTION_KNX_SONOS:
             return await self.async_step_knx_menu()
+        if function_type == FUNCTION_UPDATER:
+            return await self.async_step_upd_menu()
         return await self.async_step_mailbox()
 
     # Briefkasten
@@ -1519,6 +1586,147 @@ class HousekeeperOptionsFlow(OptionsFlow):
                     ),
                     vol.Required(K_ADDRESS, description=_suggest(K_ADDRESS, d)): str,
                     vol.Optional(K_IDLE_TEXT, default=d.get(K_IDLE_TEXT, "")): str,
+                }
+            ),
+            errors=errors,
+        )
+
+    # Updater: Menü und Zeitpläne
+
+    def _schedules(self) -> list[dict[str, Any]]:
+        return list(self._current.get(CONF_SCHEDULES) or [])
+
+    async def async_step_upd_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        options = ["upd_general", "add_schedule"]
+        if self._schedules():
+            options += ["edit_schedule", "delete_schedule"]
+        options.append("done")
+        return self.async_show_menu(step_id="upd_menu", menu_options=options)
+
+    async def async_step_upd_general(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults = self._current
+        if user_input is not None:
+            errors = _validate_updater(user_input)
+            if not errors:
+                self._save(_with_cleared(user_input))
+                return await self.async_step_upd_menu()
+            defaults = user_input
+        return self.async_show_form(
+            step_id="upd_general",
+            data_schema=_updater_schema(self.hass, defaults, with_name=False),
+            errors=errors,
+        )
+
+    async def async_step_add_schedule(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        self._edit_id = None
+        self._draft = {}
+        return await self.async_step_schedule_edit()
+
+    async def async_step_edit_schedule(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            schedule = next(s for s in self._schedules() if s[U_ID] == user_input["schedule"])
+            self._edit_id = schedule[U_ID]
+            self._draft = dict(schedule)
+            return await self.async_step_schedule_edit()
+        return self.async_show_form(
+            step_id="edit_schedule", data_schema=self._schedule_picker_schema()
+        )
+
+    async def async_step_delete_schedule(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._save(
+                {
+                    CONF_SCHEDULES: [
+                        s for s in self._schedules() if s[U_ID] != user_input["schedule"]
+                    ]
+                }
+            )
+            return await self.async_step_upd_menu()
+        return self.async_show_form(
+            step_id="delete_schedule", data_schema=self._schedule_picker_schema()
+        )
+
+    def _schedule_picker_schema(self) -> vol.Schema:
+        return vol.Schema(
+            {
+                vol.Required("schedule"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(
+                                value=s[U_ID], label=schedule_summary(self.hass, s)
+                            )
+                            for s in self._schedules()
+                        ],
+                        mode=selector.SelectSelectorMode.LIST,
+                    )
+                )
+            }
+        )
+
+    async def async_step_schedule_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        d = self._draft
+        if user_input is not None:
+            if not user_input.get(U_TARGETS):
+                errors["base"] = "no_update_selected"
+            elif not user_input.get(U_WEEKDAYS):
+                errors["base"] = "no_weekday"
+            else:
+                schedule = {
+                    U_ID: self._edit_id or uuid.uuid4().hex[:8],
+                    U_NAME: user_input[U_NAME],
+                    U_TIME: user_input[U_TIME],
+                    U_WEEKDAYS: user_input[U_WEEKDAYS],
+                    U_MODE: user_input[U_MODE],
+                    U_TARGETS: user_input[U_TARGETS],
+                    U_BACKUP: user_input[U_BACKUP],
+                }
+                schedules = self._schedules()
+                if self._edit_id:
+                    schedules = [
+                        schedule if s[U_ID] == self._edit_id else s for s in schedules
+                    ]
+                else:
+                    schedules.append(schedule)
+                self._save({CONF_SCHEDULES: schedules})
+                return await self.async_step_upd_menu()
+            d = user_input
+        return self.async_show_form(
+            step_id="schedule_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(U_NAME, description=_suggest(U_NAME, d)): str,
+                    vol.Required(
+                        U_TIME, default=d.get(U_TIME, "03:00:00")
+                    ): selector.TimeSelector(),
+                    vol.Required(U_WEEKDAYS, default=d.get(U_WEEKDAYS, ["sun"])): _select(
+                        WEEKDAYS,
+                        "weekday",
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    ),
+                    vol.Required(U_MODE, default=d.get(U_MODE, UPDATE_MODE_NOTIFY)): _select(
+                        UPDATE_MODES, "update_mode", mode=selector.SelectSelectorMode.LIST
+                    ),
+                    vol.Required(
+                        U_TARGETS, description=_suggest(U_TARGETS, d)
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="update", multiple=True)
+                    ),
+                    vol.Required(U_BACKUP, default=d.get(U_BACKUP, False)): bool,
                 }
             ),
             errors=errors,

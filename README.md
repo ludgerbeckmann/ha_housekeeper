@@ -16,6 +16,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 | Poolpumpe | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
 | KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
+| Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
 
 ## Installation
 
@@ -302,6 +303,67 @@ gesendet, solange der Lautsprecher nicht spielt.
   Runterfahren über eine Zeit). Anregungen stammen u. a. aus dem Blueprint
   [KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935),
   ohne dessen Music-Assistant-, Squeezebox- und Denon-Erweiterungen.
+
+## Updater
+
+Meldet oder installiert Updates **zeitgesteuert**. Er arbeitet mit den
+`update`-Entitäten von Home Assistant (Home Assistant OS: Core, Supervisor,
+Betriebssystem, Add-ons wie ESPHome, außerdem die Firmware-Entitäten der
+ESPHome-Geräte). Die Update-Entitäten der ESPHome-Geräte sind in Home Assistant
+standardmäßig **deaktiviert** und müssen aktiviert sein.
+
+Ein Eintrag enthält **mehrere Zeitpläne**; Benachrichtigungen gehen an die im Eintrag
+gewählten Wege (App-Push, Sprachausgabe, persistente Meldung) und das Zeitlimit pro
+Update ist dort einstellbar.
+
+### Zeitpläne
+
+Unter *Konfigurieren* pflegst du die Zeitpläne (hinzufügen, bearbeiten, löschen). Ein
+Zeitplan hat:
+
+- Name, **Uhrzeit** und **Wochentage**
+- **Aktion**: *Nur benachrichtigen* (Standard) oder *Automatisch installieren*
+- die **Updates**: eine oder mehrere `update`-Entitäten (jeder Zeitplan hat seine eigene Auswahl)
+- **Sicherung vor dem Installieren** (Standard: aus; nur bei Updates, die das unterstützen)
+
+Zur eingestellten Zeit werden nur Updates berücksichtigt, die gerade bereitstehen
+(ein bewusst übersprungenes Update bleibt übersprungen).
+
+### Ablauf beim Installieren
+
+- Die Updates werden **nacheinander** installiert (wichtig bei ESPHome-Geräten, die je
+  einige Minuten brauchen), in der gewählten Reihenfolge. **Supervisor, Core und OS**
+  stehen immer am Ende.
+- Schlägt ein Update fehl, laufen die übrigen Add-ons und Geräte weiter; **Supervisor,
+  Core und OS werden dann ausgelassen**.
+- Pro Lauf wird **höchstens ein Neustart** (Core oder OS) ausgeführt, ein weiterer
+  bleibt für den nächsten Lauf übrig.
+- Ein Update gilt nach dem **Zeitlimit** als fehlgeschlagen (Standard 30 Minuten); eine
+  laufende Installation wird dabei nicht abgebrochen. Ein Update gilt außerdem als
+  fehlgeschlagen, wenn die neue Version danach nicht übernommen wurde.
+- Startet ein Core-/OS-Update Home Assistant neu, wird der **Bericht nach dem Start**
+  nachgeholt (erfolgreich oder nicht).
+
+### Benachrichtigung
+
+- *Nur benachrichtigen*: Liste der verfügbaren Updates mit Versionen (nur wenn welche
+  bereitstehen).
+- *Installieren*: eine Meldung beim Start des Laufs und eine Zusammenfassung mit Ergebnis
+  je Update (installiert, fehlgeschlagen, übersprungen, verschoben).
+
+### Entitäten
+
+- `switch` **Updater aktiv** (aus = keine Zeitpläne laufen)
+- `button` **Jetzt prüfen**: meldet sofort den Stand aller gewählten Updates und
+  installiert nie
+- `sensor` **Letzter Update-Lauf** (Zeitstempel; Attribute: Zeitplan, Aktion, Anzahl
+  installiert/fehlgeschlagen/übersprungen, Zusammenfassung)
+- `sensor` **Nächster Update-Lauf**
+- `sensor` **Verfügbare Updates** (Anzahl, Attribut `updates` mit den Namen)
+
+Die Erkennung von Supervisor, Core und OS beruht auf den Standard-Entity-IDs
+`update.home_assistant_supervisor_update`, `update.home_assistant_core_update` und
+`update.home_assistant_operating_system_update`.
 
 ## Entwicklung
 

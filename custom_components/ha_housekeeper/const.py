@@ -15,12 +15,14 @@ FUNCTION_DOOR_GUARD = "door_guard"
 FUNCTION_DOORBELL = "doorbell"
 FUNCTION_POOL = "pool_pump"
 FUNCTION_KNX_SONOS = "knx_sonos"
+FUNCTION_UPDATER = "updater"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
+    FUNCTION_UPDATER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_POOL: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
@@ -252,6 +254,24 @@ STATUS_SOURCES = [
     SRC_SOURCE,
 ]
 TEXT_SOURCES = [SRC_TITLE, SRC_ARTIST, SRC_ALBUM, SRC_SOURCE]
+
+# --- Updater ---
+CONF_SCHEDULES = "schedules"
+CONF_TIMEOUT_MINUTES = "timeout_minutes"
+DEFAULT_TIMEOUT_MINUTES = 30
+
+# Zeitplan: Schlüssel und Werte
+U_ID = "id"
+U_NAME = "name"
+U_TIME = "time"
+U_WEEKDAYS = "weekdays"
+U_MODE = "mode"
+U_TARGETS = "targets"
+U_BACKUP = "backup"
+
+UPDATE_MODE_NOTIFY = "notify"
+UPDATE_MODE_INSTALL = "install"
+UPDATE_MODES = [UPDATE_MODE_NOTIFY, UPDATE_MODE_INSTALL]
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [

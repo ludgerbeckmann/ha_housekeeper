@@ -11,6 +11,7 @@ from .const import DOMAIN
 from .doorbell import DoorbellController
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
+from .updater import UpdaterController
 
 
 async def async_setup_entry(
@@ -19,6 +20,8 @@ async def async_setup_entry(
     controller = hass.data[DOMAIN][entry.entry_id]
     if isinstance(controller, DoorbellController):
         async_add_entities([DoorbellTestButton(controller)])
+    elif isinstance(controller, UpdaterController):
+        async_add_entities([UpdaterCheckNowButton(controller)])
     elif isinstance(controller, PoolPumpController):
         if controller.dry_run_configured:
             async_add_entities([DryRunAcknowledgeButton(controller)])
@@ -60,3 +63,15 @@ class DryRunAcknowledgeButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_acknowledge_dry_run()
+
+
+class UpdaterCheckNowButton(FunctionEntity, ButtonEntity):
+    """Prüft sofort auf Updates und meldet das Ergebnis (installiert nie)."""
+
+    _attr_icon = "mdi:magnify"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "updater_check_now")
+
+    async def async_press(self) -> None:
+        await self._controller.async_check_now()

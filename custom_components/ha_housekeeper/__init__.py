@@ -23,6 +23,7 @@ from .const import (
     FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
     FUNCTION_POOL,
+    FUNCTION_UPDATER,
     FUNCTION_PLATFORMS,
     SERVICE_RUN_PUMP,
 )
@@ -31,6 +32,7 @@ from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
+from .updater import UpdaterController
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -41,6 +43,7 @@ CONTROLLERS = {
     FUNCTION_DOORBELL: DoorbellController,
     FUNCTION_POOL: PoolPumpController,
     FUNCTION_KNX_SONOS: KnxSonosController,
+    FUNCTION_UPDATER: UpdaterController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(
