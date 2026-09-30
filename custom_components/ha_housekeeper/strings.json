@@ -79,6 +79,14 @@
           "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
           "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
         }
+      },
+      "pool_pump": {
+        "title": "Add pool",
+        "description": "Set up a pool and select the switch that controls the pump.",
+        "data": {
+          "name": "Name",
+          "pump_entity": "Pump (switch)"
+        }
       }
     },
     "error": {
@@ -89,7 +97,13 @@
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
       "no_weekday": "Select at least one weekday.",
       "no_targets": "Select at least one target for app push.",
-      "no_players": "Select at least one media player."
+      "no_players": "Select at least one media player.",
+      "too_many_windows": "Maximum number of time windows reached.",
+      "start_equals_end": "Start and end must differ.",
+      "min_ge_max": "The lower limit must be below the upper limit."
+    },
+    "abort": {
+      "already_configured": "This pump is already configured for another pool."
     }
   },
   "options": {
@@ -272,6 +286,67 @@
           "media": "Ringtone",
           "volume": "Volume (0 = unchanged)"
         }
+      },
+      "pool_menu": {
+        "title": "Pool pump",
+        "description": "Pump, time windows and dry-run detection of the pool pump.",
+        "menu_options": {
+          "pool_general": "Change pump",
+          "add_window": "Add time window",
+          "edit_window": "Edit time window",
+          "delete_window": "Delete time window",
+          "dry_run": "Dry-run detection",
+          "done": "Done"
+        }
+      },
+      "pool_general": {
+        "title": "Pump",
+        "data": {
+          "pump_entity": "Pump (switch)"
+        }
+      },
+      "edit_window": {
+        "title": "Edit time window",
+        "data": {
+          "window": "Time window"
+        }
+      },
+      "delete_window": {
+        "title": "Delete time window",
+        "data": {
+          "window": "Time window"
+        }
+      },
+      "window_edit": {
+        "title": "Time window",
+        "description": "The pump is switched on at the start and off at the end. If the end is earlier than the start, the window runs past midnight. The days refer to the day the window starts.",
+        "data": {
+          "start": "Start",
+          "end": "End",
+          "days": "Days"
+        }
+      },
+      "dry_run": {
+        "title": "Dry-run detection",
+        "description": "Detects a pump running dry: the pump is on and the power stays between the lower and upper limit for the set duration. Without a power sensor the feature is off. An alarm stays until acknowledged or the pump is restarted.",
+        "data": {
+          "power_entity": "Power sensor (W)",
+          "dry_min_power": "Lower limit",
+          "dry_max_power": "Upper limit",
+          "dry_duration": "Duration",
+          "dry_auto_off": "Switch the pump off on dry run and pause the schedule",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant"
+        },
+        "data_description": {
+          "dry_auto_off": "The schedule is only re-enabled after acknowledging (button).",
+          "power_entity": "Without a power sensor the detection is off.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        }
       }
     },
     "error": {
@@ -282,7 +357,10 @@
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
       "no_weekday": "Select at least one weekday.",
       "no_targets": "Select at least one target for app push.",
-      "no_players": "Select at least one media player."
+      "no_players": "Select at least one media player.",
+      "too_many_windows": "Maximum number of time windows reached.",
+      "start_equals_end": "Start and end must differ.",
+      "min_ge_max": "The lower limit must be below the upper limit."
     }
   },
   "selector": {
@@ -290,7 +368,8 @@
       "options": {
         "mailbox": "Mailbox notification",
         "door_guard": "Door guard",
-        "doorbell": "Doorbell"
+        "doorbell": "Doorbell",
+        "pool_pump": "Pool pump"
       }
     },
     "block_action": {
@@ -343,6 +422,12 @@
       },
       "open_too_long": {
         "name": "Door open too long"
+      },
+      "pump_should_run": {
+        "name": "Pump should run"
+      },
+      "dry_run_detected": {
+        "name": "Dry run detected"
       }
     },
     "sensor": {
@@ -354,6 +439,12 @@
       },
       "last_ring": {
         "name": "Last ring"
+      },
+      "next_start": {
+        "name": "Next start"
+      },
+      "runtime_today": {
+        "name": "Runtime today"
       }
     },
     "button": {
@@ -362,6 +453,9 @@
       },
       "test_ring": {
         "name": "Test ring"
+      },
+      "dry_run_acknowledge": {
+        "name": "Acknowledge dry run"
       }
     },
     "switch": {
@@ -370,6 +464,25 @@
       },
       "active": {
         "name": "Doorbell active"
+      },
+      "schedule_enabled": {
+        "name": "Schedule active"
+      }
+    }
+  },
+  "services": {
+    "run_pump": {
+      "name": "Run pump",
+      "description": "Runs the pump for a set time, independent of the schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Run time in minutes."
+        },
+        "entry_id": {
+          "name": "Pool pump (config entry ID)",
+          "description": "Optional. Without it, all pool pumps are affected."
+        }
       }
     }
   }

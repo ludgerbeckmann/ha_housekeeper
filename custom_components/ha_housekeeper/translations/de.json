@@ -79,6 +79,14 @@
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
           "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
         }
+      },
+      "pool_pump": {
+        "title": "Pool hinzufügen",
+        "description": "Einen Pool anlegen und den Schalter der Pumpe wählen.",
+        "data": {
+          "name": "Name",
+          "pump_entity": "Pumpe (Schalter)"
+        }
       }
     },
     "error": {
@@ -89,7 +97,13 @@
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
       "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
       "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-      "no_players": "Mindestens ein Media Player muss gewählt sein."
+      "no_players": "Mindestens ein Media Player muss gewählt sein.",
+      "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+      "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+      "min_ge_max": "Die untere Grenze muss unter der oberen liegen."
+    },
+    "abort": {
+      "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet."
     }
   },
   "options": {
@@ -272,6 +286,67 @@
           "media": "Klingelton",
           "volume": "Lautstärke (0 = unverändert)"
         }
+      },
+      "pool_menu": {
+        "title": "Poolpumpe",
+        "description": "Pumpe, Zeitfenster und Trockenlauf-Erkennung der Poolpumpe.",
+        "menu_options": {
+          "pool_general": "Pumpe ändern",
+          "add_window": "Zeitfenster hinzufügen",
+          "edit_window": "Zeitfenster bearbeiten",
+          "delete_window": "Zeitfenster löschen",
+          "dry_run": "Trockenlauferkennung",
+          "done": "Fertig"
+        }
+      },
+      "pool_general": {
+        "title": "Pumpe",
+        "data": {
+          "pump_entity": "Pumpe (Schalter)"
+        }
+      },
+      "edit_window": {
+        "title": "Zeitfenster bearbeiten",
+        "data": {
+          "window": "Zeitfenster"
+        }
+      },
+      "delete_window": {
+        "title": "Zeitfenster löschen",
+        "data": {
+          "window": "Zeitfenster"
+        }
+      },
+      "window_edit": {
+        "title": "Zeitfenster",
+        "description": "Die Pumpe wird zum Beginn ein- und zum Ende ausgeschaltet. Liegt das Ende vor dem Beginn, läuft das Fenster über Mitternacht. Die Wochentage beziehen sich auf den Tag des Beginns.",
+        "data": {
+          "start": "Beginn",
+          "end": "Ende",
+          "days": "Wochentage"
+        }
+      },
+      "dry_run": {
+        "title": "Trockenlauferkennung",
+        "description": "Erkennt eine trocken laufende Pumpe: Die Pumpe ist an und die Leistung bleibt die eingestellte Dauer zwischen unterer und oberer Grenze. Ohne Leistungssensor ist die Funktion aus. Ein Alarm bleibt gehalten, bis er quittiert oder die Pumpe neu gestartet wird.",
+        "data": {
+          "power_entity": "Leistungssensor (W)",
+          "dry_min_power": "Untere Grenze",
+          "dry_max_power": "Obere Grenze",
+          "dry_duration": "Dauer",
+          "dry_auto_off": "Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+        },
+        "data_description": {
+          "dry_auto_off": "Der Zeitplan wird erst nach dem Quittieren (Button) wieder aktiviert.",
+          "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        }
       }
     },
     "error": {
@@ -282,7 +357,10 @@
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
       "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
       "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-      "no_players": "Mindestens ein Media Player muss gewählt sein."
+      "no_players": "Mindestens ein Media Player muss gewählt sein.",
+      "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+      "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+      "min_ge_max": "Die untere Grenze muss unter der oberen liegen."
     }
   },
   "selector": {
@@ -290,7 +368,8 @@
       "options": {
         "mailbox": "Benachrichtigung Briefkasten",
         "door_guard": "Türwächter",
-        "doorbell": "Türklingel"
+        "doorbell": "Türklingel",
+        "pool_pump": "Poolpumpe"
       }
     },
     "block_action": {
@@ -343,6 +422,12 @@
       },
       "open_too_long": {
         "name": "Tür zu lange offen"
+      },
+      "pump_should_run": {
+        "name": "Pumpe soll laufen"
+      },
+      "dry_run_detected": {
+        "name": "Trockenlauf erkannt"
       }
     },
     "sensor": {
@@ -354,6 +439,12 @@
       },
       "last_ring": {
         "name": "Letztes Klingeln"
+      },
+      "next_start": {
+        "name": "Nächster Start"
+      },
+      "runtime_today": {
+        "name": "Laufzeit heute"
       }
     },
     "button": {
@@ -362,6 +453,9 @@
       },
       "test_ring": {
         "name": "Test-Klingeln"
+      },
+      "dry_run_acknowledge": {
+        "name": "Trockenlauf quittieren"
       }
     },
     "switch": {
@@ -370,6 +464,25 @@
       },
       "active": {
         "name": "Klingel aktiv"
+      },
+      "schedule_enabled": {
+        "name": "Zeitplan aktiv"
+      }
+    }
+  },
+  "services": {
+    "run_pump": {
+      "name": "Pumpe laufen lassen",
+      "description": "Lässt die Pumpe unabhängig vom Zeitplan für eine bestimmte Zeit laufen.",
+      "fields": {
+        "duration": {
+          "name": "Dauer",
+          "description": "Laufzeit in Minuten."
+        },
+        "entry_id": {
+          "name": "Poolpumpe (Config-Entry-ID)",
+          "description": "Optional. Ohne Angabe sind alle Poolpumpen betroffen."
+        }
       }
     }
   }

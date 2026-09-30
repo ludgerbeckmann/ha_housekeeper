@@ -1,4 +1,4 @@
-"""Schalter: Automatik des Türwächters, Klingel aktiv."""
+"""Schalter: Automatik des Türwächters, Klingel aktiv, Zeitplan der Poolpumpe."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
+from .pool_pump import PoolPumpController
 
 
 async def async_setup_entry(
@@ -21,6 +22,8 @@ async def async_setup_entry(
     controller = hass.data[DOMAIN][entry.entry_id]
     if isinstance(controller, DoorbellController):
         async_add_entities([DoorbellActiveSwitch(controller)])
+    elif isinstance(controller, PoolPumpController):
+        async_add_entities([ScheduleEnabledSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -58,6 +61,25 @@ class DoorbellActiveSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class ScheduleEnabledSwitch(FunctionEntity, SwitchEntity):
+    """Aktiviert bzw. deaktiviert die Zeitplan-Automatik der Pumpe."""
+
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "schedule_enabled")
 
     @property
     def is_on(self) -> bool:

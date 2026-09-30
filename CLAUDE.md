@@ -3,7 +3,8 @@
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
-`door_guard` („Türwächter“) und `doorbell` („Türklingel“).
+`door_guard` („Türwächter“) `doorbell` („Türklingel“) und `pool_pump` („Poolpumpe“, portiert aus
+`ludgerbeckmann/ha_pool_manager`).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -41,6 +42,19 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Funktionen (Fenster über Mitternacht gehören zum Starttag, ein Player wird
   nur vom ersten passenden Profil bedient). Push über `Notifier`, Audio über
   `async_safe_call`. Löschzeitpunkt (`clear_at`) wird im `Store` gehalten.
+- `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und
+  `pool_dry_run.py` sind reine Logik ohne HA-Imports und unverändert aus dem
+  Ursprungsprojekt. Der Controller ist der einzige mit `async def async_stop`
+  (speichert den Zustand); `__init__.async_unload_entry` wartet darauf, falls
+  das Ergebnis awaitable ist. Die Aktion `run_pump` wird in `async_setup`
+  registriert und wirkt auf alle `PoolPumpController`.
+- Poolpumpe: Geschaltet wird nur beim Wechsel des Soll-Zustands
+  (`_last_desired`), eine nicht erreichbare Pumpe bleibt in `_pending`,
+  Trockenlauf-Alarm ist ein Latch, ohne Zeitfenster greift der Zeitplan nie ein.
+  „Zeitplan aktiv“ liegt im `Store` (nicht RestoreEntity), wird in `async_start`
+  geladen. Optionale Entitäten (Trockenlauf) werden per `remove_unconfigured()`
+  aus der Registry entfernt, wenn kein Leistungssensor gesetzt ist; ein
+  geleerter Sensor steht als `None` in den Optionen.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.
