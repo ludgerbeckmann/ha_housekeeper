@@ -269,12 +269,8 @@
       "menu": {
         "title": "Door guard",
         "description": "Settings and rules of the door guard.",
-        "menu_options": {
-          "general": "Settings",
-          "add_rule": "Add rule",
-          "edit_rule": "Edit rule",
-          "delete_rule": "Delete rule",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "general": {
@@ -368,12 +364,8 @@
       "bell_menu": {
         "title": "Doorbell",
         "description": "Settings and time window profiles of the doorbell.",
-        "menu_options": {
-          "bell_general": "Settings",
-          "add_profile": "Add profile",
-          "edit_profile": "Edit profile",
-          "delete_profile": "Delete profile",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "bell_general": {
@@ -452,13 +444,8 @@
       "pool_menu": {
         "title": "Pool control",
         "description": "Pump, time windows and dry-run detection of the pool control.",
-        "menu_options": {
-          "pool_general": "Change pump",
-          "add_window": "Add time window",
-          "edit_window": "Edit time window",
-          "delete_window": "Delete time window",
-          "dry_run": "Dry-run detection",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "pool_general": {
@@ -527,15 +514,8 @@
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
         "description": "Commands (KNX to Sonos) and status feedback (Sonos to KNX) of the speaker.",
-        "menu_options": {
-          "knx_general": "Settings",
-          "add_command": "Add command",
-          "edit_command": "Edit command",
-          "delete_command": "Delete command",
-          "add_status": "Add status feedback",
-          "edit_status": "Edit status feedback",
-          "delete_status": "Delete status feedback",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "knx_general": {
@@ -617,12 +597,8 @@
       "upd_menu": {
         "title": "Home Assistant Updater",
         "description": "Schedules and settings of the updater.",
-        "menu_options": {
-          "upd_general": "Settings",
-          "add_schedule": "Add schedule",
-          "edit_schedule": "Edit schedule",
-          "delete_schedule": "Delete schedule",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "upd_general": {
@@ -688,12 +664,8 @@
       "tp_menu": {
         "title": "Task planner",
         "description": "Tasks and settings of the task planner.",
-        "menu_options": {
-          "tp_general": "Settings",
-          "add_task": "Add task",
-          "edit_task": "Edit task",
-          "delete_task": "Delete task",
-          "done": "Done"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "tp_general": {
@@ -746,10 +718,8 @@
       "task_triggers": {
         "title": "Triggers",
         "description": "Task \"{task}\". As soon as one of these triggers occurs, the task runs:\n{triggers}",
-        "menu_options": {
-          "add_trigger": "Add trigger",
-          "delete_trigger": "Remove trigger",
-          "task_save": "Save task"
+        "data": {
+          "action": "What would you like to do?"
         }
       },
       "add_trigger": {
@@ -976,6 +946,42 @@
         "first": "First day of the month",
         "last": "Last day of the month",
         "day": "Specific day"
+      }
+    },
+    "menu_action": {
+      "options": {
+        "general": "Settings",
+        "add_rule": "Add rule",
+        "edit_rule": "Edit rule",
+        "delete_rule": "Delete rule",
+        "done": "Save & close",
+        "bell_general": "Settings",
+        "add_profile": "Add profile",
+        "edit_profile": "Edit profile",
+        "delete_profile": "Delete profile",
+        "pool_general": "Change pump",
+        "add_window": "Add time window",
+        "edit_window": "Edit time window",
+        "delete_window": "Delete time window",
+        "dry_run": "Dry-run detection",
+        "knx_general": "Settings",
+        "add_command": "Add command",
+        "edit_command": "Edit command",
+        "delete_command": "Delete command",
+        "add_status": "Add status feedback",
+        "edit_status": "Edit status feedback",
+        "delete_status": "Delete status feedback",
+        "upd_general": "Settings",
+        "add_schedule": "Add schedule",
+        "edit_schedule": "Edit schedule",
+        "delete_schedule": "Delete schedule",
+        "tp_general": "Settings",
+        "add_task": "Add task",
+        "edit_task": "Edit task",
+        "delete_task": "Delete task",
+        "add_trigger": "Add trigger",
+        "delete_trigger": "Remove trigger",
+        "task_save": "Save task"
       }
     }
   },

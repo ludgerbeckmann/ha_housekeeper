@@ -13,7 +13,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import sectioned
+from .helpers import is_menu, menu_options, sectioned
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -355,9 +355,9 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    assert result["step_id"] == "upd_menu" and "edit_schedule" not in result["menu_options"]
+    assert result["step_id"] == "upd_menu" and "edit_schedule" not in menu_options(result)
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
     form = {"name": "Sonntag", "time": "03:00:00", "weekdays": ["sun"], "mode": "notify",
             "targets": [ADDON, DEVICE], "backup": False}
     bad = await flow.async_configure(result["flow_id"], {**form, "targets": []})
@@ -365,12 +365,12 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     none = await flow.async_configure(bad["flow_id"], {**form, "weekdays": []})
     assert none["errors"] == {"base": "no_weekday"}
     result = await flow.async_configure(none["flow_id"], form)
-    assert result["type"] is FlowResultType.MENU
+    assert is_menu(result)
     (created,) = entry.options["schedules"]
     assert created["targets"] == [ADDON, DEVICE] and created["mode"] == "notify"
     assert created["backup"] is False
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"action": "edit_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
     result = await flow.async_configure(
         result["flow_id"], {**form, "mode": "install", "backup": True, "targets": [CORE]})
@@ -378,7 +378,7 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert edited["id"] == created["id"] and edited["mode"] == "install"
     assert edited["targets"] == [CORE] and edited["backup"] is True
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
+    result = await flow.async_configure(result["flow_id"], {"action": "upd_general"})
     bad = await flow.async_configure(
         result["flow_id"], sectioned({"timeout_minutes": 10, "mobile_enabled": False,
                                       "tts_enabled": False, "persistent_enabled": False}))
@@ -389,10 +389,10 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
                                    "tts_enabled": False, "persistent_enabled": False}))
     assert entry.options["timeout_minutes"] == 10
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
     assert entry.options["schedules"] == []
-    done = await flow.async_configure(result["flow_id"], {"next_step_id": "done"})
+    done = await flow.async_configure(result["flow_id"], {"action": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
@@ -480,12 +480,12 @@ async def test_options_flow_components_only(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
     form = {"name": "Nachts", "time": "03:00:00", "weekdays": ["sun"], "mode": "install",
             "backup": False}
     bad = await flow.async_configure(result["flow_id"], form)
     assert bad["errors"] == {"base": "no_update_selected"}
     ok = await flow.async_configure(bad["flow_id"], {**form, "components": ["addons", "esphome"]})
-    assert ok["type"] is FlowResultType.MENU
+    assert is_menu(ok)
     (created,) = entry.options["schedules"]
     assert created["components"] == ["addons", "esphome"] and created["targets"] == []

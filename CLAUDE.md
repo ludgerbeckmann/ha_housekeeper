@@ -92,6 +92,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `description`, `data`, `data_description`); das Top-Level-`data` entfällt dann. In Tests die
   Eingaben verschachtelt übergeben (`tests/helpers.py: sectioned()`). Die Übersetzungen
   werden aus den Feldschlüsseln verteilt: Benachrichtigungsfelder gehören zu `notifications`.
+- Menüs im Options-Flow sind **Formulare**, keine `async_show_menu`-Menüs: `_menu()` zeigt
+  ein Formular mit dem Feld `action` (Auswahlliste, `SelectSelector` LIST, Übersetzungs-
+  schlüssel `menu_action`) und „Weiter“ unten rechts; die Auswahl ist der Schritt
+  (`async_step_<aktion>`), `done` heißt „Speichern & schließen“. Die Beschriftungen der
+  Einträge stehen gesammelt unter `selector.menu_action.options`, in den Menüschritten nur
+  `title`, `description` und `data.action`. Neuer Menüeintrag = Schritt + Beschriftung dort.
+  Tests: `tests/helpers.py` (`is_menu()`, `menu_options()`), Auswahl über `{"action": ...}`.
 - Push-Ziele (`_mobile_selector()`): Mit `custom_value` zeigt die Oberfläche nur die Werte
   statt der Beschriftungen („Gerätename (Dienst)“). Deshalb gibt es freie Eingabe nur, wenn
   keine `mobile_app_*`-Dienste gefunden werden; bereits gespeicherte Ziele bleiben als

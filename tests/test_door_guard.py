@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import sectioned
+from .helpers import is_menu, menu_options, sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 
 LOCK = "lock.front_door"
@@ -236,10 +236,10 @@ async def test_verify_failure_notifies(hass: HomeAssistant) -> None:
 async def test_options_flow_rules(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    assert result["type"] is FlowResultType.MENU
-    assert "edit_rule" not in result["menu_options"]
+    assert is_menu(result)
+    assert "edit_rule" not in menu_options(result)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
+        result["flow_id"], {"action": "add_rule"}
     )
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"action": "unlock", "trigger": "state"}
@@ -248,20 +248,20 @@ async def test_options_flow_rules(hass: HomeAssistant) -> None:
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"entity_id": PERSON, "to_state": "home", "for_minutes": 0}
     )
-    assert result["type"] is FlowResultType.MENU
-    assert "edit_rule" in result["menu_options"]
+    assert is_menu(result)
+    assert "edit_rule" in menu_options(result)
     assert len(entry.options["rules"]) == 1
     rule_id = entry.options["rules"][0]["id"]
 
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"next_step_id": "delete_rule"}
+        result["flow_id"], {"action": "delete_rule"}
     )
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"rule": rule_id}
     )
     assert entry.options["rules"] == []
     done = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"next_step_id": "done"}
+        result["flow_id"], {"action": "done"}
     )
     assert done["type"] is FlowResultType.CREATE_ENTRY
 
@@ -270,7 +270,7 @@ async def test_options_flow_door_closed_needs_contact(hass: HomeAssistant) -> No
     entry = await _setup(hass, contact=None)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
+        result["flow_id"], {"action": "add_rule"}
     )
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"action": "lock", "trigger": "door_closed"}

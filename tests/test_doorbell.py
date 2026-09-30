@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import sectioned
+from .helpers import is_menu, menu_options, sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import (
     assign_players,
@@ -251,10 +251,10 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     entry = await _setup(hass, profiles=[])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    assert result["type"] is FlowResultType.MENU and result["step_id"] == "bell_menu"
-    assert "edit_profile" not in result["menu_options"]
+    assert is_menu(result) and result["step_id"] == "bell_menu"
+    assert "edit_profile" not in menu_options(result)
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
     bad = await flow.async_configure(
         result["flow_id"],
         {"name": "Tag", "from": "07:00:00", "to": "22:00:00", "weekdays": ALL_DAYS,
@@ -270,13 +270,13 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     result = await flow.async_configure(
         result["flow_id"], {"tts_entity": "tts.home", "text": "Hallo", "volume": 20}
     )
-    assert result["type"] is FlowResultType.MENU
+    assert is_menu(result)
     assert len(entry.options["profiles"]) == 1
     tts_profile = entry.options["profiles"][0]
     assert tts_profile["text"] == "Hallo" and tts_profile["mode"] == "tts"
 
     # Profil auf Klingelton umstellen: alte TTS-Schlüssel verschwinden
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_profile"})
+    result = await flow.async_configure(result["flow_id"], {"action": "edit_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": tts_profile["id"]})
     result = await flow.async_configure(
         result["flow_id"],
@@ -291,8 +291,8 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert profile["media"]["media_content_id"] == MEDIA["media_content_id"]
     assert "Tag" in profile_summary(hass, profile)
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_profile"})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": profile["id"]})
     assert entry.options["profiles"] == []
-    done = await flow.async_configure(result["flow_id"], {"next_step_id": "done"})
+    done = await flow.async_configure(result["flow_id"], {"action": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
