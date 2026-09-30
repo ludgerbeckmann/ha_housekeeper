@@ -4,7 +4,7 @@ Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolpumpe“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) und `knx_sonos` („KNX/Sonos-Connector“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) und `updater` („Updater“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -67,6 +67,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   in `options["commands"]`/`options["status"]` (Schlüssel `K_*`). `mute_set` hat keine
   Bedingung (folgt dem Wert). Der Übersetzungsschlüssel des Schalters ist
   `connector_active` (nicht `active`, der gehört zur Türklingel).
+- `updater.py`: Zeitpläne in `options["schedules"]` (Schlüssel `U_*`), je Zeitplan eigene
+  Zielliste (`update`-Entitäten), Modus (melden/installieren) und Sicherung. Installiert
+  wird über `update.install` **nacheinander**; Supervisor, Core und OS (Entity-IDs in
+  `CRITICAL_ORDER`) immer zuletzt, nach einem Fehler ausgelassen, höchstens ein Neustart
+  (`RESTARTING`) pro Lauf. Die Installation läuft als eigene Task hinter `asyncio.shield`
+  und wird bei Zeitüberschreitung nie abgebrochen. Vor Core/OS wird `pending` im `Store`
+  gesichert; `_async_finalize_pending` meldet nach dem Neustart das Ergebnis (wartet bis
+  zu 10 Minuten auf die Entität). `backup` wird nur gesetzt, wenn die Entität
+  `UpdateEntityFeature.BACKUP` (8) unterstützt.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.

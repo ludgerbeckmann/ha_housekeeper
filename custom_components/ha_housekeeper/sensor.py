@@ -1,4 +1,4 @@
-"""Sensoren der Funktionen (Briefkasten, Türwächter, Türklingel, Poolpumpe, KNX/Sonos)."""
+"""Sensoren der Funktionen."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from .doorbell import DoorbellController
 from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
+from .updater import UpdaterController
 
 
 async def async_setup_entry(
@@ -38,6 +39,14 @@ async def async_setup_entry(
         )
     elif isinstance(controller, KnxSonosController):
         async_add_entities([KnxLastCommandSensor(controller)])
+    elif isinstance(controller, UpdaterController):
+        async_add_entities(
+            [
+                UpdaterLastRunSensor(controller),
+                UpdaterNextRunSensor(controller),
+                UpdatesAvailableSensor(controller),
+            ]
+        )
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
 
@@ -132,3 +141,60 @@ class KnxLastCommandSensor(FunctionEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         last = self._controller.last_command or {}
         return {k: last.get(k) for k in ("name", "address", "action", "value")}
+
+
+class UpdaterLastRunSensor(FunctionEntity, SensorEntity):
+    """Zeitpunkt des letzten Update-Laufs, mit Ergebnis als Attribute."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:update"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "updater_last_run")
+
+    @property
+    def native_value(self) -> datetime | None:
+        last = self._controller.last_run
+        return dt_util.parse_datetime(last["time"]) if last else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self._controller.last_run or {}
+        attrs = {
+            k: last.get(k)
+            for k in ("schedule", "mode", "installed", "failed", "skipped", "summary")
+        }
+        attrs["running"] = self._controller.running
+        return attrs
+
+
+class UpdaterNextRunSensor(FunctionEntity, SensorEntity):
+    """Nächster geplanter Lauf über alle Zeitpläne."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "updater_next_run")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.next_run
+
+
+class UpdatesAvailableSensor(FunctionEntity, SensorEntity):
+    """Anzahl der verfügbaren Updates unter den gewählten Zielen."""
+
+    _attr_icon = "mdi:package-up"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "updates_available")
+
+    @property
+    def native_value(self) -> int:
+        return len(self._controller.available_updates())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"updates": self._controller.available_updates()}
