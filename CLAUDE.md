@@ -3,8 +3,8 @@
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
-`door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolpumpe“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) und `updater` („Updater“).
+`door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) und `task_planner` („Aufgabenplaner“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -84,6 +84,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `...step.<schritt>.sections.<abschnitt>` (`name`, `description`, `data`,
   `data_description`); das Top-Level-`data` entfällt dann. In Tests die Eingaben
   verschachtelt übergeben.
+- `task_planner.py`: Aufgaben in `options["tasks"]` (Schlüssel `TASK_*`, Auslöser `TR_*`),
+  je Aufgabe mehrere Auslöser (weekly, monthly, once, interval, state, threshold) und eine
+  Aktionsliste aus dem `ActionSelector`, ausgeführt über `helpers.script.Script` (Variablen
+  `trigger`, `task`; Fehler werden abgefangen und gemeldet). `month_day_matches`,
+  `state_fires`, `trigger_next` sind reine Funktionen. Zustands-/Grenzwertauslöser feuern
+  nur bei der Flanke, `for_minutes` über Timer je (Aufgabe, Auslöser). Options-Flow: Aufgabe
+  → Auslöser-Menü (`task_triggers`) → `task_save`; die Aufgabe wird erst dort gespeichert.
+  Je Aufgabe ein Button (Unique-ID `<entry>_task_<id>`), verwaiste werden in `button.py`
+  entfernt. Das Menü `task_triggers` nutzt echte Platzhalter (`{task}`, `{triggers}`).
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.

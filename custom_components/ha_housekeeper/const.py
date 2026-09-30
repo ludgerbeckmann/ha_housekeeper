@@ -16,6 +16,7 @@ FUNCTION_DOORBELL = "doorbell"
 FUNCTION_POOL = "pool_pump"
 FUNCTION_KNX_SONOS = "knx_sonos"
 FUNCTION_UPDATER = "updater"
+FUNCTION_TASK_PLANNER = "task_planner"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
@@ -23,6 +24,7 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
     FUNCTION_UPDATER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
+    FUNCTION_TASK_PLANNER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_POOL: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
@@ -272,6 +274,53 @@ U_BACKUP = "backup"
 UPDATE_MODE_NOTIFY = "notify"
 UPDATE_MODE_INSTALL = "install"
 UPDATE_MODES = [UPDATE_MODE_NOTIFY, UPDATE_MODE_INSTALL]
+
+# --- Aufgabenplaner ---
+CONF_TASKS = "tasks"
+
+# Aufgabe: Schlüssel
+TASK_ID = "id"
+TASK_NAME = "name"
+TASK_ENABLED = "enabled"
+TASK_TRIGGERS = "triggers"
+TASK_ACTIONS = "actions"
+TASK_NOTIFY_START = "notify_start"
+TASK_NOTIFY_SUCCESS = "notify_success"
+TASK_NOTIFY_ERROR = "notify_error"
+
+# Auslöser einer Aufgabe: Schlüssel
+TR_TYPE = "type"
+TR_TIME = "time"
+TR_WEEKDAYS = "weekdays"
+TR_MONTH_MODE = "month_mode"
+TR_MONTH_DAY = "month_day"
+TR_AT = "at"
+TR_MINUTES = "minutes"
+TR_ENTITY = "entity_id"
+TR_TO_STATE = "to_state"
+TR_FOR = "for_minutes"
+TR_ABOVE = "above"
+TR_BELOW = "below"
+
+TRIG_WEEKLY = "weekly"
+TRIG_MONTHLY = "monthly"
+TRIG_ONCE = "once"
+TRIG_INTERVAL = "interval"
+TRIG_STATE = "state"
+TRIG_THRESHOLD = "threshold"
+TRIGGER_TYPES = [
+    TRIG_WEEKLY,
+    TRIG_MONTHLY,
+    TRIG_ONCE,
+    TRIG_INTERVAL,
+    TRIG_STATE,
+    TRIG_THRESHOLD,
+]
+
+MONTH_FIRST = "first"
+MONTH_LAST = "last"
+MONTH_DAY = "day"
+MONTH_MODES = [MONTH_FIRST, MONTH_LAST, MONTH_DAY]
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [

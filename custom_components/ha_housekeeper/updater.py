@@ -148,7 +148,7 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
 class UpdaterController:
     """Führt die Update-Zeitpläne aus."""
 
-    model = "Updater"
+    model = "Home Assistant Updater"
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass

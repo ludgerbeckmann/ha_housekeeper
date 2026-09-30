@@ -54,7 +54,7 @@ DRY_RUN_KIND = "dry_run"
 class PoolPumpController:
     """Verwaltet Zeitplan, manuellen Lauf und Laufzeitzähler einer Poolpumpe."""
 
-    model = "Poolpumpe"
+    model = "Poolsteuerung"
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass

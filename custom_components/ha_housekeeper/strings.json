@@ -111,7 +111,7 @@
         "description": "Builds on the KNX integration of Home Assistant. One entry per speaker; commands and status feedback follow afterwards under Configure."
       },
       "updater": {
-        "title": "Updater",
+        "title": "Home Assistant Updater",
         "data": {
           "name": "Name",
           "timeout_minutes": "Time limit per update (minutes)",
@@ -127,6 +127,22 @@
           "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
         },
         "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications go to the channels selected here."
+      },
+      "task_planner": {
+        "title": "Task planner",
+        "data": {
+          "name": "Name",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant"
+        },
+        "data_description": {
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        },
+        "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here."
       }
     },
     "error": {
@@ -144,7 +160,12 @@
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
-      "no_update_selected": "Select at least one update."
+      "no_update_selected": "Select at least one update.",
+      "no_actions": "Define at least one action.",
+      "invalid_datetime": "Invalid date.",
+      "in_past": "The time is in the past.",
+      "for_needs_state": "A minimum duration needs a target state.",
+      "no_threshold": "Set at least \"Above\" or \"Below\"."
     },
     "abort": {
       "already_configured": "This pump is already configured for another pool.",
@@ -347,8 +368,8 @@
         }
       },
       "pool_menu": {
-        "title": "Pool pump",
-        "description": "Pump, time windows and dry-run detection of the pool pump.",
+        "title": "Pool control",
+        "description": "Pump, time windows and dry-run detection of the pool control.",
         "menu_options": {
           "pool_general": "Change pump",
           "add_window": "Add time window",
@@ -498,7 +519,7 @@
         }
       },
       "upd_menu": {
-        "title": "Updater",
+        "title": "Home Assistant Updater",
         "description": "Schedules and settings of the updater.",
         "menu_options": {
           "upd_general": "Settings",
@@ -551,6 +572,136 @@
           "targets": "One or more update entities, e.g. Home Assistant Core, add-ons or ESPHome devices. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
           "backup": "Only for updates that support a backup."
         }
+      },
+      "tp_menu": {
+        "title": "Task planner",
+        "description": "Tasks and settings of the task planner.",
+        "menu_options": {
+          "tp_general": "Settings",
+          "add_task": "Add task",
+          "edit_task": "Edit task",
+          "delete_task": "Delete task",
+          "done": "Done"
+        }
+      },
+      "tp_general": {
+        "title": "Settings",
+        "data": {
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant"
+        },
+        "data_description": {
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+        }
+      },
+      "edit_task": {
+        "title": "Edit task",
+        "data": {
+          "task": "Task"
+        }
+      },
+      "delete_task": {
+        "title": "Delete task",
+        "data": {
+          "task": "Task"
+        }
+      },
+      "task_edit": {
+        "title": "Task",
+        "description": "The actions run as soon as one of the triggers (next step) occurs. Messages go to the channels selected in the settings.",
+        "data": {
+          "name": "Name",
+          "enabled": "Task enabled",
+          "actions": "Actions",
+          "notify_start": "Notify on start",
+          "notify_success": "Notify on success",
+          "notify_error": "Notify on error"
+        },
+        "data_description": {
+          "actions": "Any Home Assistant actions, e.g. service calls, delays, conditions or a notification. The variables trigger and task are available in the actions."
+        }
+      },
+      "task_triggers": {
+        "title": "Triggers",
+        "description": "Task \"{task}\". As soon as one of these triggers occurs, the task runs:\n{triggers}",
+        "menu_options": {
+          "add_trigger": "Add trigger",
+          "delete_trigger": "Remove trigger",
+          "task_save": "Save task"
+        }
+      },
+      "add_trigger": {
+        "title": "Add trigger",
+        "data": {
+          "type": "Type of trigger"
+        }
+      },
+      "delete_trigger": {
+        "title": "Remove trigger",
+        "data": {
+          "trigger": "Trigger"
+        }
+      },
+      "trigger_weekly": {
+        "title": "Trigger: weekday and time",
+        "data": {
+          "time": "Time",
+          "weekdays": "Weekdays"
+        }
+      },
+      "trigger_monthly": {
+        "title": "Trigger: month",
+        "data": {
+          "month_mode": "Day of the month",
+          "month_day": "Specific day",
+          "time": "Time"
+        },
+        "data_description": {
+          "month_day": "Only for \"Specific day\". If the month is shorter, the last day is used."
+        }
+      },
+      "trigger_once": {
+        "title": "Trigger: one-time",
+        "data": {
+          "at": "Date and time"
+        }
+      },
+      "trigger_interval": {
+        "title": "Trigger: interval",
+        "data": {
+          "minutes": "Every … minutes"
+        },
+        "data_description": {
+          "minutes": "Counted from the start of the task planner (Home Assistant start or reload)."
+        }
+      },
+      "trigger_state": {
+        "title": "Trigger: entity",
+        "data": {
+          "entity_id": "Entity",
+          "to_state": "Target state",
+          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+        },
+        "data_description": {
+          "to_state": "State text, e.g. on, home, open. Empty = any state change."
+        }
+      },
+      "trigger_threshold": {
+        "title": "Trigger: threshold",
+        "data": {
+          "entity_id": "Sensor",
+          "above": "Above",
+          "below": "Below",
+          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+        },
+        "data_description": {
+          "above": "Fires when the value rises above this value.",
+          "below": "Fires when the value falls below this value. Both set = range."
+        }
       }
     },
     "error": {
@@ -568,7 +719,12 @@
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
-      "no_update_selected": "Select at least one update."
+      "no_update_selected": "Select at least one update.",
+      "no_actions": "Define at least one action.",
+      "invalid_datetime": "Invalid date.",
+      "in_past": "The time is in the past.",
+      "for_needs_state": "A minimum duration needs a target state.",
+      "no_threshold": "Set at least \"Above\" or \"Below\"."
     }
   },
   "selector": {
@@ -577,9 +733,10 @@
         "mailbox": "Mailbox notification",
         "door_guard": "Door guard",
         "doorbell": "Doorbell",
-        "pool_pump": "Pool pump",
+        "pool_pump": "Pool control",
         "knx_sonos": "KNX/Sonos-Connector",
-        "updater": "Updater"
+        "updater": "Home Assistant Updater",
+        "task_planner": "Task planner"
       }
     },
     "block_action": {
@@ -675,6 +832,23 @@
         "notify": "Only notify",
         "install": "Install automatically"
       }
+    },
+    "trigger_type": {
+      "options": {
+        "weekly": "Weekday and time",
+        "monthly": "Month (first, last or specific day)",
+        "once": "One-time date and time",
+        "interval": "Interval",
+        "state": "Entity state",
+        "threshold": "Sensor threshold"
+      }
+    },
+    "month_mode": {
+      "options": {
+        "first": "First day of the month",
+        "last": "Last day of the month",
+        "day": "Specific day"
+      }
     }
   },
   "entity": {
@@ -719,6 +893,12 @@
       },
       "updates_available": {
         "name": "Available updates"
+      },
+      "task_last_run": {
+        "name": "Last task run"
+      },
+      "task_next_run": {
+        "name": "Next task run"
       }
     },
     "button": {
@@ -750,6 +930,9 @@
       },
       "updater_active": {
         "name": "Updater active"
+      },
+      "task_planner_active": {
+        "name": "Task planner active"
       }
     }
   },

@@ -14,6 +14,7 @@ from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
+from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
 TO_REDACT: set[str] = set()
@@ -96,5 +97,12 @@ async def async_get_config_entry_diagnostics(
             "pending": controller.pending,
             "next_run": controller.next_run.isoformat() if controller.next_run else None,
             "available": controller.available_updates(),
+        }
+    if isinstance(controller, TaskPlannerController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "running": controller.running,
+            "last_run": controller.last_run,
+            "next_run": controller.next_run.isoformat() if controller.next_run else None,
         }
     return result

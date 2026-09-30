@@ -111,7 +111,7 @@
         "description": "Setzt auf der KNX-Integration von Home Assistant auf. Pro Lautsprecher ein Eintrag; Befehle und Rückmeldungen folgen danach unter Konfigurieren."
       },
       "updater": {
-        "title": "Updater",
+        "title": "Home Assistant Updater",
         "data": {
           "name": "Name",
           "timeout_minutes": "Zeitlimit pro Update (Minuten)",
@@ -127,6 +127,22 @@
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         },
         "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege."
+      },
+      "task_planner": {
+        "title": "Aufgabenplaner",
+        "data": {
+          "name": "Name",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+        },
+        "data_description": {
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        },
+        "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege."
       }
     },
     "error": {
@@ -144,7 +160,12 @@
       "invalid_address": "Ungültige Gruppenadresse.",
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
-      "no_update_selected": "Mindestens ein Update muss gewählt sein."
+      "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+      "no_actions": "Mindestens eine Aktion muss definiert sein.",
+      "invalid_datetime": "Ungültiges Datum.",
+      "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+      "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein."
     },
     "abort": {
       "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
@@ -347,8 +368,8 @@
         }
       },
       "pool_menu": {
-        "title": "Poolpumpe",
-        "description": "Pumpe, Zeitfenster und Trockenlauf-Erkennung der Poolpumpe.",
+        "title": "Poolsteuerung",
+        "description": "Pumpe, Zeitfenster und Trockenlauf-Erkennung der Poolsteuerung.",
         "menu_options": {
           "pool_general": "Pumpe ändern",
           "add_window": "Zeitfenster hinzufügen",
@@ -498,7 +519,7 @@
         }
       },
       "upd_menu": {
-        "title": "Updater",
+        "title": "Home Assistant Updater",
         "description": "Zeitpläne und Einstellungen des Updaters.",
         "menu_options": {
           "upd_general": "Einstellungen",
@@ -551,6 +572,136 @@
           "targets": "Ein oder mehrere Update-Entitäten, z. B. Home Assistant Core, Add-ons oder ESPHome-Geräte. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
           "backup": "Nur bei Updates, die eine Sicherung unterstützen."
         }
+      },
+      "tp_menu": {
+        "title": "Aufgabenplaner",
+        "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
+        "menu_options": {
+          "tp_general": "Einstellungen",
+          "add_task": "Aufgabe hinzufügen",
+          "edit_task": "Aufgabe bearbeiten",
+          "delete_task": "Aufgabe löschen",
+          "done": "Fertig"
+        }
+      },
+      "tp_general": {
+        "title": "Einstellungen",
+        "data": {
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+        },
+        "data_description": {
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        }
+      },
+      "edit_task": {
+        "title": "Aufgabe bearbeiten",
+        "data": {
+          "task": "Aufgabe"
+        }
+      },
+      "delete_task": {
+        "title": "Aufgabe löschen",
+        "data": {
+          "task": "Aufgabe"
+        }
+      },
+      "task_edit": {
+        "title": "Aufgabe",
+        "description": "Die Aktionen werden ausgeführt, sobald einer der Auslöser (nächster Schritt) eintritt. Meldungen gehen an die in den Einstellungen gewählten Wege.",
+        "data": {
+          "name": "Name",
+          "enabled": "Aufgabe aktiv",
+          "actions": "Aktionen",
+          "notify_start": "Benachrichtigen beim Start",
+          "notify_success": "Benachrichtigen bei Erfolg",
+          "notify_error": "Benachrichtigen bei Fehler"
+        },
+        "data_description": {
+          "actions": "Beliebige Home-Assistant-Aktionen, z. B. Dienstaufrufe, Verzögerungen, Bedingungen oder eine Benachrichtigung. In den Aktionen stehen die Variablen trigger und task zur Verfügung."
+        }
+      },
+      "task_triggers": {
+        "title": "Auslöser",
+        "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
+        "menu_options": {
+          "add_trigger": "Auslöser hinzufügen",
+          "delete_trigger": "Auslöser entfernen",
+          "task_save": "Aufgabe speichern"
+        }
+      },
+      "add_trigger": {
+        "title": "Auslöser hinzufügen",
+        "data": {
+          "type": "Art des Auslösers"
+        }
+      },
+      "delete_trigger": {
+        "title": "Auslöser entfernen",
+        "data": {
+          "trigger": "Auslöser"
+        }
+      },
+      "trigger_weekly": {
+        "title": "Auslöser: Wochentag und Uhrzeit",
+        "data": {
+          "time": "Uhrzeit",
+          "weekdays": "Wochentage"
+        }
+      },
+      "trigger_monthly": {
+        "title": "Auslöser: Monat",
+        "data": {
+          "month_mode": "Tag im Monat",
+          "month_day": "Bestimmter Tag",
+          "time": "Uhrzeit"
+        },
+        "data_description": {
+          "month_day": "Nur bei „Bestimmter Tag“. Hat der Monat weniger Tage, gilt der letzte Tag."
+        }
+      },
+      "trigger_once": {
+        "title": "Auslöser: einmaliger Zeitpunkt",
+        "data": {
+          "at": "Datum und Uhrzeit"
+        }
+      },
+      "trigger_interval": {
+        "title": "Auslöser: Intervall",
+        "data": {
+          "minutes": "Alle … Minuten"
+        },
+        "data_description": {
+          "minutes": "Gezählt ab dem Start des Aufgabenplaners (Home-Assistant-Start oder Neuladen)."
+        }
+      },
+      "trigger_state": {
+        "title": "Auslöser: Entität",
+        "data": {
+          "entity_id": "Entität",
+          "to_state": "Zielzustand",
+          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+        },
+        "data_description": {
+          "to_state": "Zustandstext, z. B. on, home, open. Leer = jede Zustandsänderung."
+        }
+      },
+      "trigger_threshold": {
+        "title": "Auslöser: Grenzwert",
+        "data": {
+          "entity_id": "Sensor",
+          "above": "Über",
+          "below": "Unter",
+          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+        },
+        "data_description": {
+          "above": "Löst aus, wenn der Wert über diesen Wert steigt.",
+          "below": "Löst aus, wenn der Wert unter diesen Wert fällt. Beide Werte gesetzt = Bereich."
+        }
       }
     },
     "error": {
@@ -568,7 +719,12 @@
       "invalid_address": "Ungültige Gruppenadresse.",
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
-      "no_update_selected": "Mindestens ein Update muss gewählt sein."
+      "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+      "no_actions": "Mindestens eine Aktion muss definiert sein.",
+      "invalid_datetime": "Ungültiges Datum.",
+      "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+      "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein."
     }
   },
   "selector": {
@@ -577,9 +733,10 @@
         "mailbox": "Benachrichtigung Briefkasten",
         "door_guard": "Türwächter",
         "doorbell": "Türklingel",
-        "pool_pump": "Poolpumpe",
+        "pool_pump": "Poolsteuerung",
         "knx_sonos": "KNX/Sonos-Connector",
-        "updater": "Updater"
+        "updater": "Home Assistant Updater",
+        "task_planner": "Aufgabenplaner"
       }
     },
     "block_action": {
@@ -675,6 +832,23 @@
         "notify": "Nur benachrichtigen",
         "install": "Automatisch installieren"
       }
+    },
+    "trigger_type": {
+      "options": {
+        "weekly": "Wochentag und Uhrzeit",
+        "monthly": "Monat (erster, letzter oder bestimmter Tag)",
+        "once": "Einmaliger Zeitpunkt",
+        "interval": "Intervall",
+        "state": "Zustand einer Entität",
+        "threshold": "Grenzwert eines Sensors"
+      }
+    },
+    "month_mode": {
+      "options": {
+        "first": "Erster Tag des Monats",
+        "last": "Letzter Tag des Monats",
+        "day": "Bestimmter Tag"
+      }
     }
   },
   "entity": {
@@ -719,6 +893,12 @@
       },
       "updates_available": {
         "name": "Verfügbare Updates"
+      },
+      "task_last_run": {
+        "name": "Letzte Aufgabe"
+      },
+      "task_next_run": {
+        "name": "Nächste Aufgabe"
       }
     },
     "button": {
@@ -750,6 +930,9 @@
       },
       "updater_active": {
         "name": "Updater aktiv"
+      },
+      "task_planner_active": {
+        "name": "Aufgabenplaner aktiv"
       }
     }
   },

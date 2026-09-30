@@ -15,6 +15,7 @@ from .doorbell import DoorbellController
 from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
+from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
 
@@ -30,6 +31,8 @@ async def async_setup_entry(
         async_add_entities([KnxActiveSwitch(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterActiveSwitch(controller)])
+    elif isinstance(controller, TaskPlannerController):
+        async_add_entities([TaskPlannerActiveSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -124,6 +127,25 @@ class UpdaterActiveSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "updater_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class TaskPlannerActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Auslöser lösen Aufgaben aus; off = Aufgabenplaner pausiert."""
+
+    _attr_icon = "mdi:clipboard-clock-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "task_planner_active")
 
     @property
     def is_on(self) -> bool:

@@ -22,6 +22,7 @@ from .doorbell import DoorbellController
 from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
+from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
 
@@ -46,6 +47,10 @@ async def async_setup_entry(
                 UpdaterNextRunSensor(controller),
                 UpdatesAvailableSensor(controller),
             ]
+        )
+    elif isinstance(controller, TaskPlannerController):
+        async_add_entities(
+            [TaskLastRunSensor(controller), TaskNextRunSensor(controller)]
         )
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
@@ -198,3 +203,39 @@ class UpdatesAvailableSensor(FunctionEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"updates": self._controller.available_updates()}
+
+
+class TaskLastRunSensor(FunctionEntity, SensorEntity):
+    """Zeitpunkt der zuletzt ausgeführten Aufgabe, mit Ergebnis als Attribute."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clipboard-check-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "task_last_run")
+
+    @property
+    def native_value(self) -> datetime | None:
+        last = self._controller.last_run
+        return dt_util.parse_datetime(last["time"]) if last else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self._controller.last_run or {}
+        attrs = {k: last.get(k) for k in ("task", "trigger", "status", "error")}
+        attrs["running"] = self._controller.running
+        return attrs
+
+
+class TaskNextRunSensor(FunctionEntity, SensorEntity):
+    """Nächster Zeitpunkt einer zeitgesteuerten Aufgabe."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "task_next_run")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.next_run
