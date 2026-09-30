@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import sectioned
+from .helpers import is_menu, menu_options, sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PUMP = "switch.pool_pump"
@@ -365,9 +365,9 @@ async def test_options_windows_add_edit_delete(hass):
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     assert result["step_id"] == "pool_menu"
-    assert result["menu_options"] == ["pool_general", "add_window", "dry_run", "done"]
+    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "done"]
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_window"})
     bad = await flow.async_configure(
         result["flow_id"], {"start": "08:00:00", "end": "08:00:00", "days": ["mon"]}
     )
@@ -379,12 +379,12 @@ async def test_options_windows_add_edit_delete(hass):
     result = await flow.async_configure(
         none["flow_id"], {"start": "08:00:00", "end": "10:00:00", "days": ["mon"]}
     )
-    assert result["type"] is FlowResultType.MENU
-    assert "edit_window" in result["menu_options"]
+    assert is_menu(result)
+    assert "edit_window" in menu_options(result)
     (window,) = entry.options["windows"]
     assert window["start"] == "08:00:00" and window["days"] == ["mon"]
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_window"})
+    result = await flow.async_configure(result["flow_id"], {"action": "edit_window"})
     result = await flow.async_configure(result["flow_id"], {"window": window["id"]})
     result = await flow.async_configure(
         result["flow_id"], {"start": "07:00:00", "end": "09:00:00", "days": ["mon", "tue"]}
@@ -392,10 +392,10 @@ async def test_options_windows_add_edit_delete(hass):
     (edited,) = entry.options["windows"]
     assert edited["id"] == window["id"] and edited["start"] == "07:00:00"
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_window"})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_window"})
     result = await flow.async_configure(result["flow_id"], {"window": window["id"]})
     assert entry.options["windows"] == []
-    done = await flow.async_configure(result["flow_id"], {"next_step_id": "done"})
+    done = await flow.async_configure(result["flow_id"], {"action": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
@@ -414,7 +414,7 @@ async def test_options_max_windows(hass):
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_window"})
     result = await flow.async_configure(
         result["flow_id"], {"start": "10:00:00", "end": "11:00:00", "days": ["tue"]}
     )
@@ -422,14 +422,12 @@ async def test_options_max_windows(hass):
 
 
 async def test_options_dry_run_set_validate_and_clear(hass):
-    from homeassistant.data_entry_flow import FlowResultType
-
     entry = await _setup(hass, [])
     flow = hass.config_entries.options
 
     async def open_dry():
         r = await flow.async_init(entry.entry_id)
-        return await flow.async_configure(r["flow_id"], {"next_step_id": "dry_run"})
+        return await flow.async_configure(r["flow_id"], {"action": "dry_run"})
 
     base = {"dry_duration": 5, "dry_auto_off": True, "mobile_enabled": False,
             "tts_enabled": False, "persistent_enabled": True}
@@ -449,7 +447,7 @@ async def test_options_dry_run_set_validate_and_clear(hass):
         no_target["flow_id"],
         sectioned({**base, "power_entity": "sensor.p", "dry_min_power": 75, "dry_max_power": 100}),
     )
-    assert ok["type"] is FlowResultType.MENU
+    assert is_menu(ok)
     assert entry.options["power_entity"] == "sensor.p"
     assert entry.options["dry_auto_off"] is True
     assert entry.options["pump_entity"] == PUMP  # bleibt erhalten
@@ -460,7 +458,7 @@ async def test_options_dry_run_set_validate_and_clear(hass):
     cleared = await flow.async_configure(
         r["flow_id"], sectioned({**base, "dry_min_power": 75, "dry_max_power": 100})
     )
-    assert cleared["type"] is FlowResultType.MENU
+    assert is_menu(cleared)
     assert entry.options["power_entity"] is None
     await hass.async_block_till_done()
     assert hass.states.get("button.pool_acknowledge_dry_run") is None

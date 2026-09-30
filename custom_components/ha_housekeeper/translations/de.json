@@ -269,12 +269,8 @@
       "menu": {
         "title": "Türwächter",
         "description": "Einstellungen und Regeln des Türwächters.",
-        "menu_options": {
-          "general": "Einstellungen",
-          "add_rule": "Regel hinzufügen",
-          "edit_rule": "Regel bearbeiten",
-          "delete_rule": "Regel löschen",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "general": {
@@ -368,12 +364,8 @@
       "bell_menu": {
         "title": "Türklingel",
         "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
-        "menu_options": {
-          "bell_general": "Einstellungen",
-          "add_profile": "Profil hinzufügen",
-          "edit_profile": "Profil bearbeiten",
-          "delete_profile": "Profil löschen",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "bell_general": {
@@ -452,13 +444,8 @@
       "pool_menu": {
         "title": "Poolsteuerung",
         "description": "Pumpe, Zeitfenster und Trockenlauf-Erkennung der Poolsteuerung.",
-        "menu_options": {
-          "pool_general": "Pumpe ändern",
-          "add_window": "Zeitfenster hinzufügen",
-          "edit_window": "Zeitfenster bearbeiten",
-          "delete_window": "Zeitfenster löschen",
-          "dry_run": "Trockenlauferkennung",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "pool_general": {
@@ -527,15 +514,8 @@
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
         "description": "Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) des Lautsprechers.",
-        "menu_options": {
-          "knx_general": "Einstellungen",
-          "add_command": "Befehl hinzufügen",
-          "edit_command": "Befehl bearbeiten",
-          "delete_command": "Befehl löschen",
-          "add_status": "Rückmeldung hinzufügen",
-          "edit_status": "Rückmeldung bearbeiten",
-          "delete_status": "Rückmeldung löschen",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "knx_general": {
@@ -617,12 +597,8 @@
       "upd_menu": {
         "title": "Home Assistant Updater",
         "description": "Zeitpläne und Einstellungen des Updaters.",
-        "menu_options": {
-          "upd_general": "Einstellungen",
-          "add_schedule": "Zeitplan hinzufügen",
-          "edit_schedule": "Zeitplan bearbeiten",
-          "delete_schedule": "Zeitplan löschen",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "upd_general": {
@@ -688,12 +664,8 @@
       "tp_menu": {
         "title": "Aufgabenplaner",
         "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
-        "menu_options": {
-          "tp_general": "Einstellungen",
-          "add_task": "Aufgabe hinzufügen",
-          "edit_task": "Aufgabe bearbeiten",
-          "delete_task": "Aufgabe löschen",
-          "done": "Fertig"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "tp_general": {
@@ -746,10 +718,8 @@
       "task_triggers": {
         "title": "Auslöser",
         "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
-        "menu_options": {
-          "add_trigger": "Auslöser hinzufügen",
-          "delete_trigger": "Auslöser entfernen",
-          "task_save": "Aufgabe speichern"
+        "data": {
+          "action": "Was möchtest du tun?"
         }
       },
       "add_trigger": {
@@ -976,6 +946,42 @@
         "first": "Erster Tag des Monats",
         "last": "Letzter Tag des Monats",
         "day": "Bestimmter Tag"
+      }
+    },
+    "menu_action": {
+      "options": {
+        "general": "Einstellungen",
+        "add_rule": "Regel hinzufügen",
+        "edit_rule": "Regel bearbeiten",
+        "delete_rule": "Regel löschen",
+        "done": "Speichern & schließen",
+        "bell_general": "Einstellungen",
+        "add_profile": "Profil hinzufügen",
+        "edit_profile": "Profil bearbeiten",
+        "delete_profile": "Profil löschen",
+        "pool_general": "Pumpe ändern",
+        "add_window": "Zeitfenster hinzufügen",
+        "edit_window": "Zeitfenster bearbeiten",
+        "delete_window": "Zeitfenster löschen",
+        "dry_run": "Trockenlauferkennung",
+        "knx_general": "Einstellungen",
+        "add_command": "Befehl hinzufügen",
+        "edit_command": "Befehl bearbeiten",
+        "delete_command": "Befehl löschen",
+        "add_status": "Rückmeldung hinzufügen",
+        "edit_status": "Rückmeldung bearbeiten",
+        "delete_status": "Rückmeldung löschen",
+        "upd_general": "Einstellungen",
+        "add_schedule": "Zeitplan hinzufügen",
+        "edit_schedule": "Zeitplan bearbeiten",
+        "delete_schedule": "Zeitplan löschen",
+        "tp_general": "Einstellungen",
+        "add_task": "Aufgabe hinzufügen",
+        "edit_task": "Aufgabe bearbeiten",
+        "delete_task": "Aufgabe löschen",
+        "add_trigger": "Auslöser hinzufügen",
+        "delete_trigger": "Auslöser entfernen",
+        "task_save": "Aufgabe speichern"
       }
     }
   },

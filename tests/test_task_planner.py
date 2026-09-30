@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import sectioned
+from .helpers import is_menu, menu_options, sectioned
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.task_planner import (
     month_day_matches,
@@ -296,10 +296,10 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
     entry, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    assert result["type"] is FlowResultType.MENU and result["step_id"] == "tp_menu"
-    assert "edit_task" not in result["menu_options"]
+    assert is_menu(result) and result["step_id"] == "tp_menu"
+    assert "edit_task" not in menu_options(result)
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_task"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_task"})
     assert result["step_id"] == "task_edit"
     bad = await flow.async_configure(
         result["flow_id"],
@@ -313,10 +313,10 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
          "notify_start": False, "notify_success": True, "notify_error": True},
     )
     assert result["step_id"] == "task_triggers"
-    assert "delete_trigger" not in result["menu_options"]
+    assert "delete_trigger" not in menu_options(result)
 
     # Wochentag
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "weekly"})
     assert result["step_id"] == "trigger_weekly"
     bad = await flow.async_configure(result["flow_id"], {"time": "07:00:00", "weekdays": []})
@@ -327,13 +327,13 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
     assert "mon, thu at 07:00" in result["description_placeholders"]["triggers"]
 
     # Monat
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "monthly"})
     result = await flow.async_configure(
         result["flow_id"], {"month_mode": "last", "month_day": 1, "time": "18:00:00"}
     )
     # Zustand: Mindestdauer ohne Zielzustand
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "state"})
     bad = await flow.async_configure(result["flow_id"], {"entity_id": DOOR, "for_minutes": 5})
     assert bad["errors"] == {"base": "for_needs_state"}
@@ -341,7 +341,7 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
         result["flow_id"], {"entity_id": DOOR, "to_state": "on", "for_minutes": 5}
     )
     # Grenzwert
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "threshold"})
     bad = await flow.async_configure(result["flow_id"], {"entity_id": SENSOR, "for_minutes": 0})
     assert bad["errors"] == {"base": "no_threshold"}
@@ -353,21 +353,21 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
         result["flow_id"], {"entity_id": SENSOR, "above": 30, "for_minutes": 0}
     )
     # einmalig + Intervall
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "once"})
     bad = await flow.async_configure(result["flow_id"], {"at": "2020-01-01 10:00:00"})
     assert bad["errors"] == {"base": "in_past"}
     future = (dt_util.now() + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
     result = await flow.async_configure(result["flow_id"], {"at": future})
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "add_trigger"})
     result = await flow.async_configure(result["flow_id"], {"type": "interval"})
     result = await flow.async_configure(result["flow_id"], {"minutes": 90})
 
     # Einen Auslöser wieder entfernen (den Intervall-Auslöser)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_trigger"})
     result = await flow.async_configure(result["flow_id"], {"trigger": "5"})
     assert result["step_id"] == "task_triggers"
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "task_save"})
+    result = await flow.async_configure(result["flow_id"], {"action": "task_save"})
     assert result["step_id"] == "tp_menu"
 
     tasks = entry.options["tasks"]
@@ -380,7 +380,7 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
 
     # Bearbeiten: Name ändern, Auslöser bleiben erhalten
     task_id = tasks[0]["id"]
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_task"})
+    result = await flow.async_configure(result["flow_id"], {"action": "edit_task"})
     result = await flow.async_configure(result["flow_id"], {"task": task_id})
     assert result["step_id"] == "task_edit"
     result = await flow.async_configure(
@@ -388,14 +388,14 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
         {"name": "Müll raus", "enabled": True, "actions": [{"action": "test.run"}],
          "notify_start": False, "notify_success": False, "notify_error": True},
     )
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "task_save"})
+    result = await flow.async_configure(result["flow_id"], {"action": "task_save"})
     tasks = entry.options["tasks"]
     assert len(tasks) == 1 and tasks[0]["name"] == "Müll raus" and tasks[0]["id"] == task_id
     assert len(tasks[0]["triggers"]) == 5
 
     # Löschen
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_task"})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_task"})
     result = await flow.async_configure(result["flow_id"], {"task": task_id})
     assert entry.options["tasks"] == []
-    done = await flow.async_configure(result["flow_id"], {"next_step_id": "done"})
+    done = await flow.async_configure(result["flow_id"], {"action": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY

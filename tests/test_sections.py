@@ -2,7 +2,6 @@
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
@@ -11,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.ha_housekeeper.config_flow import _mobile_selector
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import sectioned
+from .helpers import is_menu, sectioned
 
 NOTIFY_FIELDS = {"mobile_enabled", "mobile_targets", "tts_enabled", "tts_entity",
                  "tts_player", "persistent_enabled"}
@@ -70,7 +69,7 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
         await hass.async_block_till_done()
         flow = hass.config_entries.options
         result = await flow.async_init(entry.entry_id)
-        result = await flow.async_configure(result["flow_id"], {"next_step_id": menu_item})
+        result = await flow.async_configure(result["flow_id"], {"action": menu_item})
         assert result["step_id"] == step
         schema = result["data_schema"].schema
         assert [str(k) for k in schema] == ["general", "notifications"]
@@ -88,7 +87,7 @@ async def test_door_options_save_flat(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "general"})
+    result = await flow.async_configure(result["flow_id"], {"action": "general"})
     flat = {"lock": "lock.tuer", "block_action": "notify", "retry_minutes": 10,
             "open_alert_minutes": 15, "open_alert_repeat_minutes": 10, "verify_seconds": 30,
             "manual_override": "ignore", "manual_pause_minutes": 60, "mobile_enabled": False,
@@ -97,7 +96,7 @@ async def test_door_options_save_flat(hass: HomeAssistant) -> None:
     assert bad["errors"] == {"base": "alert_needs_contact"}
     flat["contact"] = "binary_sensor.tuer"
     ok = await flow.async_configure(bad["flow_id"], sectioned(flat))
-    assert ok["type"] is FlowResultType.MENU
+    assert is_menu(ok)
     assert entry.options["open_alert_minutes"] == 15
     assert entry.options["contact"] == "binary_sensor.tuer"
     assert "general" not in entry.options and "notifications" not in entry.options
@@ -134,7 +133,7 @@ async def test_planner_options_only_notifications_section(hass: HomeAssistant) -
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "tp_general"})
+    result = await flow.async_configure(result["flow_id"], {"action": "tp_general"})
     assert [str(k) for k in result["data_schema"].schema] == ["notifications"]
     bad = await flow.async_configure(
         result["flow_id"],
@@ -145,5 +144,5 @@ async def test_planner_options_only_notifications_section(hass: HomeAssistant) -
         bad["flow_id"],
         {"notifications": {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": False}},
     )
-    assert ok["type"] is FlowResultType.MENU
+    assert is_menu(ok)
     assert entry.options["persistent_enabled"] is False

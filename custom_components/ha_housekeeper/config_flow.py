@@ -896,6 +896,31 @@ class HousekeeperOptionsFlow(OptionsFlow):
     def _rules(self) -> list[dict[str, Any]]:
         return list(self._current.get(CONF_RULES) or [])
 
+    async def _menu(
+        self,
+        step_id: str,
+        options: list[str],
+        user_input: dict[str, Any] | None,
+        placeholders: dict[str, str] | None = None,
+    ) -> ConfigFlowResult:
+        """Menü als Formular: Auswahlliste mit „Weiter“ unten rechts statt Menüpunkten.
+
+        Die gewählte Aktion ist der Name eines Schritts (`async_step_<aktion>`).
+        """
+        if user_input is not None and user_input.get("action") in options:
+            return await getattr(self, f"async_step_{user_input['action']}")()
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(
+                {
+                    vol.Required("action"): _select(
+                        options, "menu_action", mode=selector.SelectSelectorMode.LIST
+                    )
+                }
+            ),
+            description_placeholders=placeholders,
+        )
+
     def _save(self, options: dict[str, Any]) -> None:
         self.hass.config_entries.async_update_entry(
             self.config_entry, options={**self.config_entry.options, **options}
@@ -947,7 +972,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._rules():
             options += ["edit_rule", "delete_rule"]
         options.append("done")
-        return self.async_show_menu(step_id="menu", menu_options=options)
+        return await self._menu("menu", options, user_input)
 
     async def async_step_done(
         self, user_input: dict[str, Any] | None = None
@@ -1154,7 +1179,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._profiles():
             options += ["edit_profile", "delete_profile"]
         options.append("done")
-        return self.async_show_menu(step_id="bell_menu", menu_options=options)
+        return await self._menu("bell_menu", options, user_input)
 
     async def async_step_bell_general(
         self, user_input: dict[str, Any] | None = None
@@ -1344,7 +1369,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._windows():
             options += ["edit_window", "delete_window"]
         options += ["dry_run", "done"]
-        return self.async_show_menu(step_id="pool_menu", menu_options=options)
+        return await self._menu("pool_menu", options, user_input)
 
     async def async_step_pool_general(
         self, user_input: dict[str, Any] | None = None
@@ -1502,7 +1527,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._status_list():
             options += ["edit_status", "delete_status"]
         options.append("done")
-        return self.async_show_menu(step_id="knx_menu", menu_options=options)
+        return await self._menu("knx_menu", options, user_input)
 
     async def async_step_knx_general(
         self, user_input: dict[str, Any] | None = None
@@ -1744,7 +1769,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._schedules():
             options += ["edit_schedule", "delete_schedule"]
         options.append("done")
-        return self.async_show_menu(step_id="upd_menu", menu_options=options)
+        return await self._menu("upd_menu", options, user_input)
 
     async def async_step_upd_general(
         self, user_input: dict[str, Any] | None = None
@@ -1896,7 +1921,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         if self._tasks():
             options += ["edit_task", "delete_task"]
         options.append("done")
-        return self.async_show_menu(step_id="tp_menu", menu_options=options)
+        return await self._menu("tp_menu", options, user_input)
 
     async def async_step_tp_general(
         self, user_input: dict[str, Any] | None = None
@@ -2008,10 +2033,11 @@ class HousekeeperOptionsFlow(OptionsFlow):
             options.append("delete_trigger")
         options.append("task_save")
         listing = "\n".join(f"• {trigger_summary(self.hass, t)}" for t in triggers)
-        return self.async_show_menu(
-            step_id="task_triggers",
-            menu_options=options,
-            description_placeholders={
+        return await self._menu(
+            "task_triggers",
+            options,
+            user_input,
+            {
                 "task": str(self._draft.get(TASK_NAME, "")),
                 "triggers": listing or "–",
             },

@@ -19,6 +19,15 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 
+## Bedienung der Einstellungen
+
+Bei Funktionen mit Listen (Türwächter, Türklingel, Poolsteuerung, KNX/Sonos-Connector,
+Home Assistant Updater, Aufgabenplaner) öffnet *Konfigurieren* eine Auswahlliste „Was
+möchtest du tun?“ (Einstellungen, hinzufügen, bearbeiten, löschen …). Mit **Weiter** unten
+rechts geht es in den gewählten Dialog und danach zurück zur Liste. **Speichern & schließen**
+beendet den Dialog. Änderungen werden sofort gespeichert, das Schließen mit X verliert also
+nichts.
+
 ## Installation
 
 **HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
