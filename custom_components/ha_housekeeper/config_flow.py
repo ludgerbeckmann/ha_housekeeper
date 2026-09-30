@@ -149,6 +149,7 @@ from .const import (
     U_ID,
     U_MODE,
     U_NAME,
+    U_COMPONENTS,
     U_TARGETS,
     U_TIME,
     U_WEEKDAYS,
@@ -195,6 +196,7 @@ from .const import (
     TRIG_WEEKLY,
     TRIGGER_TYPES,
 )
+from .const import COMPONENTS
 from .knx_codec import is_valid_ga
 from .knx_sonos import command_summary, status_summary
 from .task_planner import task_summary, trigger_summary
@@ -1820,7 +1822,7 @@ class HousekeeperOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
         d = self._draft
         if user_input is not None:
-            if not user_input.get(U_TARGETS):
+            if not (user_input.get(U_TARGETS) or user_input.get(U_COMPONENTS)):
                 errors["base"] = "no_update_selected"
             elif not user_input.get(U_WEEKDAYS):
                 errors["base"] = "no_weekday"
@@ -1831,7 +1833,8 @@ class HousekeeperOptionsFlow(OptionsFlow):
                     U_TIME: user_input[U_TIME],
                     U_WEEKDAYS: user_input[U_WEEKDAYS],
                     U_MODE: user_input[U_MODE],
-                    U_TARGETS: user_input[U_TARGETS],
+                    U_COMPONENTS: user_input.get(U_COMPONENTS) or [],
+                    U_TARGETS: user_input.get(U_TARGETS) or [],
                     U_BACKUP: user_input[U_BACKUP],
                 }
                 schedules = self._schedules()
@@ -1861,7 +1864,15 @@ class HousekeeperOptionsFlow(OptionsFlow):
                     vol.Required(U_MODE, default=d.get(U_MODE, UPDATE_MODE_NOTIFY)): _select(
                         UPDATE_MODES, "update_mode", mode=selector.SelectSelectorMode.LIST
                     ),
-                    vol.Required(
+                    vol.Optional(
+                        U_COMPONENTS, default=d.get(U_COMPONENTS, [])
+                    ): _select(
+                        COMPONENTS,
+                        "update_component",
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    ),
+                    vol.Optional(
                         U_TARGETS, description=_suggest(U_TARGETS, d)
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="update", multiple=True)

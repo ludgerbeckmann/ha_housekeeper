@@ -337,11 +337,21 @@ Zeitplan hat:
 
 - Name, **Uhrzeit** und **Wochentage**
 - **Aktion**: *Nur benachrichtigen* (Standard) oder *Automatisch installieren*
-- die **Updates**: eine oder mehrere `update`-Entitäten (jeder Zeitplan hat seine eigene Auswahl)
+- die **Komponenten**, die aktualisiert werden sollen (Mehrfachauswahl):
+  *Home Assistant Core*, *Supervisor*, *Betriebssystem (OS)*, *Add-ons* (inklusive
+  ESPHome), *ESPHome-Geräte (Firmware)* sowie *Integrationen und Sonstiges* (z. B. HACS).
+  Die Komponenten werden **bei jedem Lauf neu ermittelt**, ein später installiertes Add-on
+  ist also automatisch dabei. Deaktivierte Entitäten zählen nicht.
+- optional zusätzlich **einzelne Updates**: eine oder mehrere `update`-Entitäten.
+  Verwendet wird die Vereinigung aus Komponenten und einzelnen Updates; mindestens eines
+  von beiden muss gewählt sein. Jeder Zeitplan hat seine eigene Auswahl.
 - **Sicherung vor dem Installieren** (Standard: aus; nur bei Updates, die das unterstützen)
 
 Zur eingestellten Zeit werden nur Updates berücksichtigt, die gerade bereitstehen
-(ein bewusst übersprungenes Update bleibt übersprungen).
+(ein bewusst übersprungenes Update bleibt übersprungen). Zugeordnet wird über die
+Plattform der Entität: Core, Supervisor und OS über ihre Standard-Entity-IDs, Add-ons über
+`hassio`, ESPHome-Geräte über `esphome`, alles andere zählt zu *Integrationen und
+Sonstiges*. Bestehende Zeitpläne mit einzelnen Updates laufen unverändert weiter.
 
 ### Ablauf beim Installieren
 

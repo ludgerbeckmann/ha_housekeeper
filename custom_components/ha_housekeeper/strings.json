@@ -669,17 +669,19 @@
       },
       "schedule_edit": {
         "title": "Schedule",
-        "description": "At the set time on the selected weekdays the selected updates are reported or installed if an update is available.",
+        "description": "At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
         "data": {
           "name": "Name",
           "time": "Time",
           "weekdays": "Weekdays",
           "mode": "Action",
-          "targets": "Updates",
+          "components": "Components",
+          "targets": "Individual updates",
           "backup": "Create a backup before installing"
         },
         "data_description": {
-          "targets": "One or more update entities, e.g. Home Assistant Core, add-ons or ESPHome devices. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
+          "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
+          "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
           "backup": "Only for updates that support a backup."
         }
       },
@@ -941,6 +943,16 @@
         "artist": "Artist (text)",
         "album": "Album (text)",
         "source": "Source/favorite (text)"
+      }
+    },
+    "update_component": {
+      "options": {
+        "core": "Home Assistant Core",
+        "supervisor": "Supervisor",
+        "os": "Operating system (OS)",
+        "addons": "Add-ons (incl. ESPHome)",
+        "esphome": "ESPHome devices (firmware)",
+        "other": "Integrations and other (e.g. HACS)"
       }
     },
     "update_mode": {

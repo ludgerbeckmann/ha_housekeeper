@@ -669,17 +669,19 @@
       },
       "schedule_edit": {
         "title": "Zeitplan",
-        "description": "Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
+        "description": "Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
         "data": {
           "name": "Name",
           "time": "Uhrzeit",
           "weekdays": "Wochentage",
           "mode": "Aktion",
-          "targets": "Updates",
+          "components": "Komponenten",
+          "targets": "Einzelne Updates",
           "backup": "Vor dem Installieren Sicherung anlegen"
         },
         "data_description": {
-          "targets": "Ein oder mehrere Update-Entitäten, z. B. Home Assistant Core, Add-ons oder ESPHome-Geräte. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
+          "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
+          "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
           "backup": "Nur bei Updates, die eine Sicherung unterstützen."
         }
       },
@@ -941,6 +943,16 @@
         "artist": "Interpret (Text)",
         "album": "Album (Text)",
         "source": "Quelle/Favorit (Text)"
+      }
+    },
+    "update_component": {
+      "options": {
+        "core": "Home Assistant Core",
+        "supervisor": "Supervisor",
+        "os": "Betriebssystem (OS)",
+        "addons": "Add-ons (inkl. ESPHome)",
+        "esphome": "ESPHome-Geräte (Firmware)",
+        "other": "Integrationen und Sonstiges (z. B. HACS)"
       }
     },
     "update_mode": {

@@ -270,6 +270,16 @@ U_WEEKDAYS = "weekdays"
 U_MODE = "mode"
 U_TARGETS = "targets"
 U_BACKUP = "backup"
+U_COMPONENTS = "components"
+
+# Komponenten, die ein Zeitplan als Ganzes auswählen kann
+COMP_CORE = "core"
+COMP_SUPERVISOR = "supervisor"
+COMP_OS = "os"
+COMP_ADDONS = "addons"
+COMP_ESPHOME = "esphome"
+COMP_OTHER = "other"
+COMPONENTS = [COMP_CORE, COMP_SUPERVISOR, COMP_OS, COMP_ADDONS, COMP_ESPHOME, COMP_OTHER]
 
 UPDATE_MODE_NOTIFY = "notify"
 UPDATE_MODE_INSTALL = "install"
