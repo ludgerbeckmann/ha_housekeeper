@@ -30,6 +30,7 @@ from .const import (
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
     CONF_PERSISTENT_ENABLED,
+    CONF_REPEAT_MESSAGE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
     CONF_TTS_ENABLED,
@@ -45,6 +46,7 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_OPEN_ALERT_MINUTES,
     DEFAULT_OPEN_ALERT_REPEAT,
+    DEFAULT_REPEAT_MESSAGE,
     DEFAULT_RETRY_MINUTES,
     DEFAULT_VERIFY_SECONDS,
     DOMAIN,
@@ -199,6 +201,10 @@ def _mailbox_schema(
         {
             vol.Required(
                 CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_MESSAGE)
+            ): str,
+            vol.Required(
+                CONF_REPEAT_MESSAGE,
+                default=defaults.get(CONF_REPEAT_MESSAGE, DEFAULT_REPEAT_MESSAGE),
             ): str,
             vol.Required(
                 CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_DEBOUNCE)

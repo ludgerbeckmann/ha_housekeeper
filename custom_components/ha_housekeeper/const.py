@@ -29,11 +29,13 @@ CONF_TTS_ENTITY = "tts_entity"
 CONF_TTS_PLAYER = "tts_player"
 CONF_PERSISTENT_ENABLED = "persistent_enabled"
 CONF_MESSAGE = "message"
+CONF_REPEAT_MESSAGE = "repeat_message"
 CONF_DEBOUNCE = "debounce_seconds"
 CONF_AUTO_RESET_HOURS = "auto_reset_hours"
 
 DEFAULT_NAME = "Briefkasten"
 DEFAULT_MESSAGE = "Es ist Post im Briefkasten."
+DEFAULT_REPEAT_MESSAGE = "Der Briefkasten wurde erneut benutzt. Wurde er schon geleert?"
 DEFAULT_TITLE = "Briefkasten"
 DEFAULT_DEBOUNCE = 60
 DEFAULT_AUTO_RESET_HOURS = 0

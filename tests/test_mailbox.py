@@ -7,7 +7,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from custom_components.ha_housekeeper.const import DOMAIN
+from custom_components.ha_housekeeper.const import DEFAULT_REPEAT_MESSAGE, DOMAIN
 
 SENSOR = "binary_sensor.briefkasten_vibration"
 DATA = {
@@ -70,11 +70,15 @@ async def test_trigger_notify_and_reset(hass: HomeAssistant) -> None:
     actions = notify[0].data["data"]["actions"]
     assert actions[0]["title"] == "Briefkasten geleert"
 
-    # Zweite Vibration: keine erneute Meldung
+    # Zweite Vibration: erneuter Hinweis mit Möglichkeit zu bestätigen
     hass.states.async_set(SENSOR, "off")
     hass.states.async_set(SENSOR, "on")
     await hass.async_block_till_done()
-    assert len(notify) == 1
+    assert len(notify) == 2 and len(persist) == 2
+    assert notify[1].data["message"] == DEFAULT_REPEAT_MESSAGE
+    assert notify[1].data["data"]["tag"] == notify[0].data["data"]["tag"]
+    assert notify[1].data["data"]["actions"] == actions
+    assert hass.states.get("binary_sensor.briefkasten_mail_present").state == "on"
 
     # iOS-Aktion "Briefkasten geleert"
     hass.bus.async_fire("mobile_app_notification_action", {"action": actions[0]["action"]})
@@ -101,3 +105,20 @@ async def test_action_disabled(hass: HomeAssistant) -> None:
     hass.states.async_set(SENSOR, "on")
     await hass.async_block_till_done()
     assert "actions" not in notify[0].data["data"]
+
+
+async def test_repeat_message_custom_and_debounce(hass: HomeAssistant) -> None:
+    notify = async_mock_service(hass, "notify", "mobile_app_iphone")
+    await _setup(hass, repeat_message="Nochmal!", debounce_seconds=60, persistent_enabled=False)
+    hass.states.async_set(SENSOR, "on")
+    await hass.async_block_till_done()
+    hass.states.async_set(SENSOR, "off")
+    hass.states.async_set(SENSOR, "on")       # innerhalb der Sperrzeit
+    await hass.async_block_till_done()
+    assert len(notify) == 1
+    ctrl = hass.data[DOMAIN][next(iter(hass.data[DOMAIN]))]
+    ctrl._last_trigger -= 120                 # Sperrzeit abgelaufen
+    hass.states.async_set(SENSOR, "off")
+    hass.states.async_set(SENSOR, "on")
+    await hass.async_block_till_done()
+    assert [n.data["message"] for n in notify] == ["Post!", "Nochmal!"]

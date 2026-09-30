@@ -15,6 +15,7 @@
           "vibration_sensor": "Vibration sensor",
           "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
           "message": "Message text",
+          "repeat_message": "Text on repeated trigger",
           "debounce_seconds": "Debounce time",
           "auto_reset_hours": "Reset automatically after (0 = off)",
           "mobile_enabled": "Enable app push",
@@ -27,6 +28,7 @@
         "data_description": {
           "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
           "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+          "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
           "debounce_seconds": "Further vibrations within this time are ignored.",
           "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
         }
@@ -78,6 +80,7 @@
           "vibration_sensor": "Vibration sensor",
           "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
           "message": "Message text",
+          "repeat_message": "Text on repeated trigger",
           "debounce_seconds": "Debounce time",
           "auto_reset_hours": "Reset automatically after (0 = off)",
           "mobile_enabled": "Enable app push",
@@ -90,6 +93,7 @@
         "data_description": {
           "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
           "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+          "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
           "debounce_seconds": "Further vibrations within this time are ignored.",
           "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
         }
