@@ -8,23 +8,30 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import EVENT_STATE_CHANGED, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
-    async_track_state_change_event,
     async_track_time_change,
 )
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    COMP_ADDONS,
+    COMP_CORE,
+    COMP_ESPHOME,
+    COMP_OS,
+    COMP_OTHER,
+    COMP_SUPERVISOR,
     CONF_SCHEDULES,
     CONF_TIMEOUT_MINUTES,
     DEFAULT_TIMEOUT_MINUTES,
     DOMAIN,
     U_BACKUP,
+    U_COMPONENTS,
     U_ID,
     U_MODE,
     U_NAME,
@@ -100,6 +107,47 @@ def _log_task_result(task: asyncio.Future) -> None:
         _LOGGER.warning("Weiterlaufende Installation fehlgeschlagen: %s", err)
 
 
+def component_of(hass: HomeAssistant, entity_id: str) -> str:
+    """Komponente einer `update`-Entität: Core, Supervisor, OS, Add-ons, ESPHome oder Sonstiges."""
+    if entity_id == CORE_ID:
+        return COMP_CORE
+    if entity_id == SUPERVISOR_ID:
+        return COMP_SUPERVISOR
+    if entity_id == OS_ID:
+        return COMP_OS
+    entry = er.async_get(hass).async_get(entity_id)
+    platform = entry.platform if entry else None
+    if platform == "hassio":
+        return COMP_ADDONS
+    if platform == "esphome":
+        return COMP_ESPHOME
+    return COMP_OTHER
+
+
+def resolve_targets(hass: HomeAssistant, schedule: dict[str, Any]) -> list[str]:
+    """Ziele eines Zeitplans: gewählte Einzel-Entitäten plus alle Entitäten der gewählten Komponenten.
+
+    Die Komponenten werden bei jedem Aufruf neu aufgelöst, ein später installiertes Add-on
+    ist also automatisch dabei. Deaktivierte Entitäten zählen nicht.
+    """
+    targets: dict[str, None] = dict.fromkeys(schedule.get(U_TARGETS) or [])
+    if components := set(schedule.get(U_COMPONENTS) or []):
+        registry = er.async_get(hass)
+        for entity_id in sorted(hass.states.async_entity_ids("update")):
+            entry = registry.async_get(entity_id)
+            if entry is not None and entry.disabled:
+                continue
+            if component_of(hass, entity_id) in components:
+                targets.setdefault(entity_id, None)
+    return list(targets)
+
+
+@callback
+def _is_update_event(event_data: Any) -> bool:
+    """Filter: nur Zustandsänderungen von `update`-Entitäten."""
+    return str(event_data.get("entity_id", "")).startswith("update.")
+
+
 def order_targets(entity_ids: list[str]) -> list[str]:
     """Reihenfolge wie gewählt; Supervisor, Core und OS (in dieser Reihenfolge) zuletzt."""
     normal = [e for e in entity_ids if e not in CRITICAL_ORDER]
@@ -127,6 +175,15 @@ def next_run(schedules: list[dict[str, Any]], now: datetime) -> datetime | None:
     return best
 
 
+COMPONENT_ORDER = (COMP_CORE, COMP_SUPERVISOR, COMP_OS, COMP_ADDONS, COMP_ESPHOME, COMP_OTHER)
+_COMPONENT_NAMES = {
+    "de": {COMP_CORE: "Core", COMP_SUPERVISOR: "Supervisor", COMP_OS: "OS",
+           COMP_ADDONS: "Add-ons", COMP_ESPHOME: "ESPHome-Geräte", COMP_OTHER: "Sonstiges"},
+    "en": {COMP_CORE: "Core", COMP_SUPERVISOR: "Supervisor", COMP_OS: "OS",
+           COMP_ADDONS: "Add-ons", COMP_ESPHOME: "ESPHome devices", COMP_OTHER: "Other"},
+}
+
+
 def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
     """Kurzbeschreibung eines Zeitplans für Listen im Options-Flow."""
     german = (hass.config.language or "").startswith("de")
@@ -139,9 +196,13 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
     else:
         mode_text = "install" if mode == UPDATE_MODE_INSTALL else "notify"
         unit = "updates"
+    names = _COMPONENT_NAMES["de" if german else "en"]
+    parts = [names[c] for c in COMPONENT_ORDER if c in (schedule.get(U_COMPONENTS) or [])]
+    if explicit := len(schedule.get(U_TARGETS) or []):
+        parts.append(f"{explicit} {unit}")
     return (
         f"{schedule.get(U_NAME)}: {str(schedule.get(U_TIME, ''))[:5]}{day_text}, "
-        f"{len(schedule.get(U_TARGETS) or [])} {unit}, {mode_text}"
+        f"{', '.join(parts)}, {mode_text}"
     )
 
 
@@ -188,7 +249,7 @@ class UpdaterController:
     def _target_ids(self) -> list[str]:
         seen: dict[str, None] = {}
         for schedule in self.schedules:
-            for entity_id in schedule.get(U_TARGETS) or []:
+            for entity_id in resolve_targets(self.hass, schedule):
                 seen.setdefault(entity_id, None)
         return list(seen)
 
@@ -251,10 +312,13 @@ class UpdaterController:
                     self.hass, _trigger, hour=at.hour, minute=at.minute, second=at.second
                 )
             )
-        if targets := self._target_ids():
-            self._unsubs.append(
-                async_track_state_change_event(self.hass, targets, self._on_target_change)
+        self._unsubs.append(
+            self.hass.bus.async_listen(
+                EVENT_STATE_CHANGED,
+                self._on_target_change,
+                event_filter=_is_update_event,
             )
+        )
         if self.pending:
             self._schedule_finalize(FINALIZE_DELAY, 0)
 
@@ -307,7 +371,7 @@ class UpdaterController:
     async def _async_run(self, schedule: dict[str, Any], force_notify: bool) -> None:
         text = self._text()
         candidates: list[str] = []
-        for entity_id in schedule.get(U_TARGETS) or []:
+        for entity_id in resolve_targets(self.hass, schedule):
             state = self.hass.states.get(entity_id)
             if state is not None and state.state == STATE_ON:
                 candidates.append(entity_id)

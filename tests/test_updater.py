@@ -394,3 +394,98 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert entry.options["schedules"] == []
     done = await flow.async_configure(result["flow_id"], {"next_step_id": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
+
+
+# --- Komponenten ------------------------------------------------------------------------------
+
+
+def register(hass, platform, name, disabled=False):
+    from homeassistant.helpers import entity_registry as er
+
+    entry = er.async_get(hass).async_get_or_create(
+        "update", platform, name, suggested_object_id=name,
+        disabled_by=er.RegistryEntryDisabler.USER if disabled else None)
+    return entry.entity_id
+
+
+def components_schedule(components, targets=(), **kw):
+    return {**schedule(targets=targets, **kw), "components": list(components)}
+
+
+async def test_resolve_targets_by_component(hass: HomeAssistant) -> None:
+    addon = register(hass, "hassio", "addon_mosquitto")
+    device = register(hass, "esphome", "kitchen_firmware")
+    card = register(hass, "hacs", "some_card")
+    off = register(hass, "esphome", "disabled_firmware", disabled=True)
+    for entity in (CORE, SUPERVISOR, OS, addon, device, card, off):
+        put(hass, entity)
+    resolve = lambda comps, targets=(): upd.resolve_targets(  # noqa: E731
+        hass, components_schedule(comps, targets))
+    assert resolve(["core"]) == [CORE]
+    assert sorted(resolve(["supervisor", "os"])) == sorted([SUPERVISOR, OS])
+    assert resolve(["addons"]) == [addon]
+    assert resolve(["esphome"]) == [device]        # deaktivierte Entität zählt nicht
+    assert resolve(["other"]) == [card]
+    assert resolve([]) == []
+    # Vereinigung mit Einzel-Entitäten, ohne Doppelte
+    assert resolve(["addons"], [device, addon]) == [device, addon]
+    assert upd.component_of(hass, "update.unbekannt") == "other"
+
+
+async def test_install_only_selected_components(hass: HomeAssistant) -> None:
+    addon = register(hass, "hassio", "addon_mosquitto")
+    device = register(hass, "esphome", "kitchen_firmware")
+    for entity in (CORE, addon, device):
+        put(hass, entity)
+    inst = Installer(hass)
+    _, ctrl, push = await _setup(hass, [components_schedule(["addons", "esphome"])])
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert sorted(c["entity_id"] for c in inst.calls) == sorted([addon, device])
+    assert CORE not in [c["entity_id"] for c in inst.calls]
+    assert ctrl.last_run["installed"] == 2
+
+
+async def test_components_are_resolved_at_run_time(hass: HomeAssistant) -> None:
+    inst = Installer(hass)
+    _, ctrl, _ = await _setup(hass, [components_schedule(["addons"])])
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert inst.calls == []
+    later = register(hass, "hassio", "addon_neu")          # erst nach dem Start vorhanden
+    put(hass, later)
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert [c["entity_id"] for c in inst.calls] == [later]
+
+
+async def test_available_updates_counts_components(hass: HomeAssistant) -> None:
+    addon = register(hass, "hassio", "addon_mosquitto")
+    put(hass, addon)
+    put(hass, CORE)
+    _, ctrl, _ = await _setup(hass, [components_schedule(["addons"])])
+    assert ctrl.available_updates() == ["addon_mosquitto"]
+    assert hass.states.get("sensor.updater_available_updates").state == "1"
+
+
+async def test_schedule_summary_with_components(hass: HomeAssistant) -> None:
+    hass.config.language = "en"
+    text = upd.schedule_summary(hass, components_schedule(["os", "core", "addons"], [ADDON], mode="notify"))
+    assert text == "Plan s1: 03:00, Core, OS, Add-ons, 1 updates, notify"
+    hass.config.language = "de"
+    assert "Core, OS, Add-ons" in upd.schedule_summary(hass, components_schedule(["os", "core", "addons"]))
+    # alte Zeitpläne ohne Komponenten unverändert
+    hass.config.language = "en"
+    assert upd.schedule_summary(hass, schedule()) == "Plan s1: 03:00, 1 updates, install"
+
+
+async def test_options_flow_components_only(hass: HomeAssistant) -> None:
+    entry, _, _ = await _setup(hass, [])
+    flow = hass.config_entries.options
+    result = await flow.async_init(entry.entry_id)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
+    form = {"name": "Nachts", "time": "03:00:00", "weekdays": ["sun"], "mode": "install",
+            "backup": False}
+    bad = await flow.async_configure(result["flow_id"], form)
+    assert bad["errors"] == {"base": "no_update_selected"}
+    ok = await flow.async_configure(bad["flow_id"], {**form, "components": ["addons", "esphome"]})
+    assert ok["type"] is FlowResultType.MENU
+    (created,) = entry.options["schedules"]
+    assert created["components"] == ["addons", "esphome"] and created["targets"] == []

@@ -75,7 +75,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   und wird bei Zeitüberschreitung nie abgebrochen. Vor Core/OS wird `pending` im `Store`
   gesichert; `_async_finalize_pending` meldet nach dem Neustart das Ergebnis (wartet bis
   zu 10 Minuten auf die Entität). `backup` wird nur gesetzt, wenn die Entität
-  `UpdateEntityFeature.BACKUP` (8) unterstützt.
+  `UpdateEntityFeature.BACKUP` (8) unterstützt. Ein Zeitplan wählt **Komponenten**
+  (`U_COMPONENTS`: core, supervisor, os, addons, esphome, other) und/oder einzelne
+  Entitäten (`U_TARGETS`); `resolve_targets()` bildet die Vereinigung bei **jedem Lauf**
+  neu (Zuordnung über die Plattform in der Entity-Registry: `hassio` = Add-ons, `esphome`
+  = Geräte, sonst „other“; Core/Supervisor/OS über ihre Entity-IDs; deaktivierte
+  Entitäten zählen nicht). Der Listener hört auf alle `update.*`-Zustandsänderungen.
 - Formular-Abschnitte (`section` aus `homeassistant.data_entry_flow`, standardmäßig
   `collapsed: False`): Die Grunddialoge von Briefkasten, Türwächter, Türklingel,
   Home Assistant Updater, Aufgabenplaner und der Trockenlauf-Dialog der Poolsteuerung haben die
