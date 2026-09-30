@@ -1,0 +1,94 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add function",
+        "description": "Which function do you want to set up?",
+        "data": {
+          "function_type": "Function"
+        }
+      },
+      "mailbox": {
+        "title": "Mailbox notification",
+        "data": {
+          "name": "Name",
+          "vibration_sensor": "Vibration sensor",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant",
+          "message": "Message text",
+          "debounce_seconds": "Debounce time",
+          "auto_reset_hours": "Reset automatically after (0 = off)"
+        },
+        "data_description": {
+          "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+          "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+          "debounce_seconds": "Further vibrations within this time are ignored."
+        }
+      }
+    },
+    "error": {
+      "no_method": "At least one notification method with a target must be enabled.",
+      "tts_incomplete": "Voice announcement needs a TTS service and a speaker."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mailbox notification",
+        "data": {
+          "vibration_sensor": "Vibration sensor",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+          "tts_enabled": "Enable voice announcement",
+          "tts_entity": "TTS service",
+          "tts_player": "Speaker (media_player)",
+          "persistent_enabled": "Persistent notification in Home Assistant",
+          "message": "Message text",
+          "debounce_seconds": "Debounce time",
+          "auto_reset_hours": "Reset automatically after (0 = off)"
+        },
+        "data_description": {
+          "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+          "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+          "debounce_seconds": "Further vibrations within this time are ignored."
+        }
+      }
+    },
+    "error": {
+      "no_method": "At least one notification method with a target must be enabled.",
+      "tts_incomplete": "Voice announcement needs a TTS service and a speaker."
+    }
+  },
+  "selector": {
+    "function_type": {
+      "options": {
+        "mailbox": "Mailbox notification"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "has_mail": {
+        "name": "Mail present"
+      }
+    },
+    "sensor": {
+      "last_delivery": {
+        "name": "Last delivery"
+      }
+    },
+    "button": {
+      "emptied": {
+        "name": "Mailbox emptied"
+      }
+    }
+  }
+}
