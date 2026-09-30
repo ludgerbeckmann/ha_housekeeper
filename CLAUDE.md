@@ -3,7 +3,7 @@
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
-`door_guard` („Türwächter“).
+`door_guard` („Türwächter“) und `doorbell` („Türklingel“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -36,6 +36,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   sofort über `async_update_entry` (Eintrag lädt bei jeder Speicherung neu).
   Manuelle Bedienung = Schlosswechsel außerhalb des `OWN_ACTION_WINDOW`
   nach einem eigenen Befehl.
+- Türklingel-Profile liegen als Liste in `options["profiles"]` (Schlüssel `P_*`
+  in `const.py`). `in_window()`/`assign_players()` in `doorbell.py` sind reine
+  Funktionen (Fenster über Mitternacht gehören zum Starttag, ein Player wird
+  nur vom ersten passenden Profil bedient). Push über `Notifier`, Audio über
+  `async_safe_call`. Löschzeitpunkt (`clear_at`) wird im `Store` gehalten.
+- Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.
 - iOS/Android-Aktion „Briefkasten geleert“: `data.actions` in der

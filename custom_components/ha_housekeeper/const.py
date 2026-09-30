@@ -12,10 +12,12 @@ CONF_FUNCTION_TYPE = "function_type"
 # ergänzen, Config-Flow-Schritt "async_step_<typ>" anlegen.
 FUNCTION_MAILBOX = "mailbox"
 FUNCTION_DOOR_GUARD = "door_guard"
+FUNCTION_DOORBELL = "doorbell"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
+    FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -101,6 +103,37 @@ OPTIONAL_KEYS = [
     CONF_TTS_PLAYER,
     CONF_CONTACT,
 ]
+
+# --- Türklingel ---
+CONF_TRIGGER_ENTITY = "trigger_entity"
+CONF_CLEAR_HOURS = "clear_after_hours"
+CONF_PROFILES = "profiles"
+
+DEFAULT_RING_MESSAGE = "Es hat geklingelt."
+DEFAULT_RING_DEBOUNCE = 10
+DEFAULT_CLEAR_HOURS = 1
+
+# Zeitfenster-Profil: Schlüssel und Werte
+P_ID = "id"
+P_NAME = "name"
+P_FROM = "from"
+P_TO = "to"
+P_WEEKDAYS = "weekdays"
+P_PLAYERS = "players"
+P_MODE = "mode"
+P_TTS_ENTITY = "tts_entity"
+P_TEXT = "text"
+P_MEDIA = "media"
+P_VOLUME = "volume"
+
+MODE_TTS = "tts"
+MODE_RINGTONE = "ringtone"
+
+# Pro Modus gültige Profil-Schlüssel (zusätzlich zu den Basisfeldern und P_VOLUME)
+MODE_KEYS: dict[str, list[str]] = {
+    MODE_TTS: [P_TTS_ENTITY, P_TEXT],
+    MODE_RINGTONE: [P_MEDIA],
+}
 
 
 def signal_update(entry_id: str) -> str:

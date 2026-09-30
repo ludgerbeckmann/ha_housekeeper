@@ -61,6 +61,24 @@
           "manual_pause_minutes": "Only applies to \"Pause automation\".",
           "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
         }
+      },
+      "doorbell": {
+        "title": "Doorbell",
+        "data": {
+          "name": "Name",
+          "trigger_entity": "Trigger (sensor or event)",
+          "debounce_seconds": "Lockout time",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "message": "Push text",
+          "clear_after_hours": "Clear push after X hours (0 = never)"
+        },
+        "data_description": {
+          "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+          "debounce_seconds": "Further rings within this time are ignored.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+          "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+        }
       }
     },
     "error": {
@@ -69,7 +87,9 @@
       "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
       "no_contact": "This trigger needs a door contact in the settings.",
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
-      "no_weekday": "Select at least one weekday."
+      "no_weekday": "Select at least one weekday.",
+      "no_targets": "Select at least one target for app push.",
+      "no_players": "Select at least one media player."
     }
   },
   "options": {
@@ -182,6 +202,76 @@
         "data_description": {
           "delay_seconds": "How long the door has to stay closed."
         }
+      },
+      "bell_menu": {
+        "title": "Doorbell",
+        "description": "Settings and time window profiles of the doorbell.",
+        "menu_options": {
+          "bell_general": "Settings",
+          "add_profile": "Add profile",
+          "edit_profile": "Edit profile",
+          "delete_profile": "Delete profile",
+          "done": "Done"
+        }
+      },
+      "bell_general": {
+        "title": "Settings",
+        "data": {
+          "trigger_entity": "Trigger (sensor or event)",
+          "debounce_seconds": "Lockout time",
+          "mobile_enabled": "Enable app push",
+          "mobile_targets": "Push targets (notify services)",
+          "message": "Push text",
+          "clear_after_hours": "Clear push after X hours (0 = never)"
+        },
+        "data_description": {
+          "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+          "debounce_seconds": "Further rings within this time are ignored.",
+          "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+          "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
+        }
+      },
+      "edit_profile": {
+        "title": "Edit profile",
+        "data": {
+          "profile": "Profile"
+        }
+      },
+      "delete_profile": {
+        "title": "Delete profile",
+        "data": {
+          "profile": "Profile"
+        }
+      },
+      "profile_basic": {
+        "title": "Time window profile",
+        "data": {
+          "name": "Name",
+          "from": "From",
+          "to": "To",
+          "weekdays": "Weekdays",
+          "players": "Media Player",
+          "mode": "Output"
+        },
+        "data_description": {
+          "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on.",
+          "players": "Each player is used only once per ring, by the first matching profile."
+        }
+      },
+      "profile_tts": {
+        "title": "Announcement",
+        "data": {
+          "tts_entity": "TTS service",
+          "text": "Text",
+          "volume": "Volume (0 = unchanged)"
+        }
+      },
+      "profile_ringtone": {
+        "title": "Ringtone",
+        "data": {
+          "media": "Ringtone",
+          "volume": "Volume (0 = unchanged)"
+        }
       }
     },
     "error": {
@@ -190,14 +280,17 @@
       "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
       "no_contact": "This trigger needs a door contact in the settings.",
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
-      "no_weekday": "Select at least one weekday."
+      "no_weekday": "Select at least one weekday.",
+      "no_targets": "Select at least one target for app push.",
+      "no_players": "Select at least one media player."
     }
   },
   "selector": {
     "function_type": {
       "options": {
         "mailbox": "Mailbox notification",
-        "door_guard": "Door guard"
+        "door_guard": "Door guard",
+        "doorbell": "Doorbell"
       }
     },
     "block_action": {
@@ -235,6 +328,12 @@
         "sat": "Saturday",
         "sun": "Sunday"
       }
+    },
+    "profile_mode": {
+      "options": {
+        "tts": "Announcement (TTS)",
+        "ringtone": "Ringtone"
+      }
     }
   },
   "entity": {
@@ -252,16 +351,25 @@
       },
       "last_action": {
         "name": "Last action"
+      },
+      "last_ring": {
+        "name": "Last ring"
       }
     },
     "button": {
       "emptied": {
         "name": "Mailbox emptied"
+      },
+      "test_ring": {
+        "name": "Test ring"
       }
     },
     "switch": {
       "automation": {
         "name": "Automation"
+      },
+      "active": {
+        "name": "Doorbell active"
       }
     }
   }

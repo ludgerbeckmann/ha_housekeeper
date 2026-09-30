@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .door_guard import DoorGuardController
+from .doorbell import DoorbellController
 from .entity import FunctionEntity
 
 
@@ -22,6 +23,8 @@ async def async_setup_entry(
     controller = hass.data[DOMAIN][entry.entry_id]
     if isinstance(controller, DoorGuardController):
         async_add_entities([DoorLastActionSensor(controller)])
+    elif isinstance(controller, DoorbellController):
+        async_add_entities([DoorbellLastRingSensor(controller)])
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
 
@@ -54,3 +57,15 @@ class DoorLastActionSensor(FunctionEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         last = self._controller.last_action or {}
         return {k: last.get(k) for k in ("action", "reason", "result")}
+
+
+class DoorbellLastRingSensor(FunctionEntity, SensorEntity):
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:bell-ring"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "last_ring")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.last_ring
