@@ -1,0 +1,94 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Funktion hinzufügen",
+        "description": "Welche Funktion soll eingerichtet werden?",
+        "data": {
+          "function_type": "Funktion"
+        }
+      },
+      "mailbox": {
+        "title": "Benachrichtigung Briefkasten",
+        "data": {
+          "name": "Name",
+          "vibration_sensor": "Vibrationssensor",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant",
+          "message": "Nachrichtentext",
+          "debounce_seconds": "Entprellzeit",
+          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+        },
+        "data_description": {
+          "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+          "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+        }
+      }
+    },
+    "error": {
+      "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Benachrichtigung Briefkasten",
+        "data": {
+          "vibration_sensor": "Vibrationssensor",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+          "tts_enabled": "Sprachausgabe aktivieren",
+          "tts_entity": "TTS-Dienst",
+          "tts_player": "Lautsprecher (media_player)",
+          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant",
+          "message": "Nachrichtentext",
+          "debounce_seconds": "Entprellzeit",
+          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+        },
+        "data_description": {
+          "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+          "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+        }
+      }
+    },
+    "error": {
+      "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt."
+    }
+  },
+  "selector": {
+    "function_type": {
+      "options": {
+        "mailbox": "Benachrichtigung Briefkasten"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "has_mail": {
+        "name": "Post vorhanden"
+      }
+    },
+    "sensor": {
+      "last_delivery": {
+        "name": "Letzter Posteinwurf"
+      }
+    },
+    "button": {
+      "emptied": {
+        "name": "Briefkasten geleert"
+      }
+    }
+  }
+}
