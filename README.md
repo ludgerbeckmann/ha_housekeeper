@@ -13,6 +13,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | --- | --- |
 | Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
 | Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
+| Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 
 ## Installation
 
@@ -107,6 +108,44 @@ je nach Systemsprache.
 - `sensor` **Letzte Aktion** (Zeitstempel; Attribute `action`, `reason`, `result`)
 
 Der Zustand (Automatik an/aus, Pause, letzte Aktion) bleibt über Neustarts erhalten.
+
+## Türklingel
+
+Pro Klingel ein Eintrag. Als **Auslöser** dient ein `binary_sensor` (löst beim
+Wechsel auf `on` aus) oder eine `event`-Entität (löst bei jedem Ereignis aus).
+Eine **Sperrzeit** (Standard 10 s) ignoriert weiteres Klingeln.
+
+### Audio: Zeitfenster-Profile
+
+Unter *Konfigurieren* legst du beliebig viele **Profile** an (Menü: Einstellungen,
+Profil hinzufügen/bearbeiten/löschen). Ein Profil besteht aus:
+
+- Name, **Von/Bis** und Wochentagen. Liegt *Bis* vor *Von*, gilt das Fenster
+  über Mitternacht (z. B. 22:00 bis 06:00) und gehört zum Wochentag, an dem es
+  beginnt. *Von = Bis* bedeutet ganztägig.
+- einem oder mehreren **Media Playern**
+- der Ausgabe: entweder **Ansage (TTS)** mit TTS-Dienst und eigenem Text, oder
+  **Klingelton** aus der Medienbibliothek
+- optional einer Lautstärke (0 = unverändert)
+
+Beim Klingeln werden alle Profile ausgeführt, deren Zeitfenster gerade passt.
+Die Player werden gleichzeitig bedient; ein Player, der in mehreren passenden
+Profilen steht, wird nur einmal bedient, und zwar vom ersten. Liegt kein Profil
+im Zeitfenster, bleibt es stumm (der Push geht trotzdem raus).
+
+### Push
+
+Ein oder mehrere Ziele (`notify.mobile_app_*`), Push-Text und **„Push nach X
+Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über
+denselben Tag, ein erneutes Klingeln ersetzt die Meldung und startet die
+Löschfrist neu. Push ist unabhängig von den Audio-Zeitfenstern.
+
+### Entitäten
+
+- `switch` **Klingel aktiv** (aus = komplett stumm, Audio und Push)
+- `sensor` **Letztes Klingeln** (Zeitstempel)
+- `button` **Test-Klingeln** (spielt aus, was jetzt im Zeitfenster passt, und
+  sendet den Push; umgeht Schalter und Sperrzeit)
 
 ## Entwicklung
 

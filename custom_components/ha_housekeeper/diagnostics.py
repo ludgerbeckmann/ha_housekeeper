@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .door_guard import DoorGuardController
+from .doorbell import DoorbellController
 from .mailbox import MailboxController
 
 TO_REDACT: set[str] = set()
@@ -45,5 +46,12 @@ async def async_get_config_entry_diagnostics(
             "last_action": controller.last_action,
             "lock_state": lock.state if lock else None,
             "contact_state": contact_state.state if contact_state else None,
+        }
+    if isinstance(controller, DoorbellController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "last_ring": controller.last_ring.isoformat()
+            if controller.last_ring
+            else None,
         }
     return result

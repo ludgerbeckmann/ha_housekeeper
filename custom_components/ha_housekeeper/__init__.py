@@ -11,10 +11,12 @@ from .const import (
     CONF_FUNCTION_TYPE,
     DOMAIN,
     FUNCTION_DOOR_GUARD,
+    FUNCTION_DOORBELL,
     FUNCTION_MAILBOX,
     FUNCTION_PLATFORMS,
 )
 from .door_guard import DoorGuardController
+from .doorbell import DoorbellController
 from .mailbox import MailboxController
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -23,6 +25,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 CONTROLLERS = {
     FUNCTION_MAILBOX: MailboxController,
     FUNCTION_DOOR_GUARD: DoorGuardController,
+    FUNCTION_DOORBELL: DoorbellController,
 }
 
 

@@ -61,6 +61,24 @@
           "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         }
+      },
+      "doorbell": {
+        "title": "Türklingel",
+        "data": {
+          "name": "Name",
+          "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+          "debounce_seconds": "Sperrzeit",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "message": "Push-Text",
+          "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+        },
+        "data_description": {
+          "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+          "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+          "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+        }
       }
     },
     "error": {
@@ -69,7 +87,9 @@
       "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
       "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
-      "no_weekday": "Mindestens ein Wochentag muss gewählt sein."
+      "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+      "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+      "no_players": "Mindestens ein Media Player muss gewählt sein."
     }
   },
   "options": {
@@ -182,6 +202,76 @@
         "data_description": {
           "delay_seconds": "Zeit, die die Tür geschlossen sein muss."
         }
+      },
+      "bell_menu": {
+        "title": "Türklingel",
+        "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
+        "menu_options": {
+          "bell_general": "Einstellungen",
+          "add_profile": "Profil hinzufügen",
+          "edit_profile": "Profil bearbeiten",
+          "delete_profile": "Profil löschen",
+          "done": "Fertig"
+        }
+      },
+      "bell_general": {
+        "title": "Einstellungen",
+        "data": {
+          "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+          "debounce_seconds": "Sperrzeit",
+          "mobile_enabled": "App-Push aktivieren",
+          "mobile_targets": "Push-Ziele (notify-Dienste)",
+          "message": "Push-Text",
+          "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+        },
+        "data_description": {
+          "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+          "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
+          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+          "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
+        }
+      },
+      "edit_profile": {
+        "title": "Profil bearbeiten",
+        "data": {
+          "profile": "Profil"
+        }
+      },
+      "delete_profile": {
+        "title": "Profil löschen",
+        "data": {
+          "profile": "Profil"
+        }
+      },
+      "profile_basic": {
+        "title": "Zeitfenster-Profil",
+        "data": {
+          "name": "Name",
+          "from": "Von",
+          "to": "Bis",
+          "weekdays": "Wochentage",
+          "players": "Media Player",
+          "mode": "Ausgabe"
+        },
+        "data_description": {
+          "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt.",
+          "players": "Jeder Player wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil."
+        }
+      },
+      "profile_tts": {
+        "title": "Ansage",
+        "data": {
+          "tts_entity": "TTS-Dienst",
+          "text": "Text",
+          "volume": "Lautstärke (0 = unverändert)"
+        }
+      },
+      "profile_ringtone": {
+        "title": "Klingelton",
+        "data": {
+          "media": "Klingelton",
+          "volume": "Lautstärke (0 = unverändert)"
+        }
       }
     },
     "error": {
@@ -190,14 +280,17 @@
       "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
       "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
-      "no_weekday": "Mindestens ein Wochentag muss gewählt sein."
+      "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+      "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+      "no_players": "Mindestens ein Media Player muss gewählt sein."
     }
   },
   "selector": {
     "function_type": {
       "options": {
         "mailbox": "Benachrichtigung Briefkasten",
-        "door_guard": "Türwächter"
+        "door_guard": "Türwächter",
+        "doorbell": "Türklingel"
       }
     },
     "block_action": {
@@ -235,6 +328,12 @@
         "sat": "Samstag",
         "sun": "Sonntag"
       }
+    },
+    "profile_mode": {
+      "options": {
+        "tts": "Ansage (TTS)",
+        "ringtone": "Klingelton"
+      }
     }
   },
   "entity": {
@@ -252,16 +351,25 @@
       },
       "last_action": {
         "name": "Letzte Aktion"
+      },
+      "last_ring": {
+        "name": "Letztes Klingeln"
       }
     },
     "button": {
       "emptied": {
         "name": "Briefkasten geleert"
+      },
+      "test_ring": {
+        "name": "Test-Klingeln"
       }
     },
     "switch": {
       "automation": {
         "name": "Automatik"
+      },
+      "active": {
+        "name": "Klingel aktiv"
       }
     }
   }

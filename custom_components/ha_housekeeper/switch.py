@@ -1,4 +1,4 @@
-"""Schalter: Automatik des Türwächters."""
+"""Schalter: Automatik des Türwächters, Klingel aktiv."""
 
 from __future__ import annotations
 
@@ -11,13 +11,18 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
+from .doorbell import DoorbellController
 from .entity import FunctionEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([DoorAutomationSwitch(hass.data[DOMAIN][entry.entry_id])])
+    controller = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(controller, DoorbellController):
+        async_add_entities([DoorbellActiveSwitch(controller)])
+    else:
+        async_add_entities([DoorAutomationSwitch(controller)])
 
 
 class DoorAutomationSwitch(FunctionEntity, SwitchEntity):
@@ -38,6 +43,25 @@ class DoorAutomationSwitch(FunctionEntity, SwitchEntity):
         if until and until > dt_util.utcnow():
             return {"paused_until": until.isoformat()}
         return {"paused_until": None}
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class DoorbellActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Klingel meldet (Audio und Push); off = komplett stumm."""
+
+    _attr_icon = "mdi:bell"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._controller.async_set_enabled(True)

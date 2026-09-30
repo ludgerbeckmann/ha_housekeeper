@@ -21,6 +21,16 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_safe_call(
+    hass: HomeAssistant, domain: str, service: str, data: dict[str, Any]
+) -> None:
+    """Dienst aufrufen; ein Fehler darf andere Kanäle nicht stoppen."""
+    try:
+        await hass.services.async_call(domain, service, data, blocking=True)
+    except Exception:  # noqa: BLE001
+        _LOGGER.exception("Aufruf von %s.%s fehlgeschlagen", domain, service)
+
+
 def entry_opt(entry: ConfigEntry) -> Callable[..., Any]:
     """Wert lesen: Optionen haben Vorrang vor den Daten der Ersteinrichtung.
 
@@ -54,10 +64,7 @@ class Notifier:
         return f"{self._tag_base}_{kind}" if kind else self._tag_base
 
     async def _call(self, domain: str, service: str, data: dict) -> None:
-        try:
-            await self._hass.services.async_call(domain, service, data, blocking=True)
-        except Exception:  # noqa: BLE001 - ein Kanal darf die anderen nicht stoppen
-            _LOGGER.exception("Aufruf von %s.%s fehlgeschlagen", domain, service)
+        await async_safe_call(self._hass, domain, service, data)
 
     def _targets(self) -> list[str]:
         if not self._opt(CONF_MOBILE_ENABLED, False):
