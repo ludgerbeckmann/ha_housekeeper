@@ -15,6 +15,7 @@
           "vibration_sensor": "Vibrationssensor",
           "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
           "message": "Nachrichtentext",
+          "repeat_message": "Text bei erneutem Auslösen",
           "debounce_seconds": "Entprellzeit",
           "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
           "mobile_enabled": "App-Push aktivieren",
@@ -27,6 +28,7 @@
         "data_description": {
           "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
           "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+          "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
           "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         }
@@ -78,6 +80,7 @@
           "vibration_sensor": "Vibrationssensor",
           "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
           "message": "Nachrichtentext",
+          "repeat_message": "Text bei erneutem Auslösen",
           "debounce_seconds": "Entprellzeit",
           "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
           "mobile_enabled": "App-Push aktivieren",
@@ -90,6 +93,7 @@
         "data_description": {
           "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
           "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+          "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
           "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         }

@@ -22,11 +22,13 @@ from .const import (
     CONF_DEBOUNCE,
     CONF_MESSAGE,
     CONF_MOBILE_ACTION,
+    CONF_REPEAT_MESSAGE,
     CONF_VIBRATION_SENSOR,
     DEFAULT_AUTO_RESET_HOURS,
     DEFAULT_DEBOUNCE,
     DEFAULT_MESSAGE,
     DEFAULT_MOBILE_ACTION,
+    DEFAULT_REPEAT_MESSAGE,
     DEFAULT_TITLE,
     DOMAIN,
     MOBILE_ACTION_EVENT,
@@ -156,13 +158,12 @@ class MailboxController:
         if self._last_trigger is not None and now - self._last_trigger < debounce:
             return
         self._last_trigger = now
-        if self.has_mail:
-            return
+        repeat = self.has_mail
         self.has_mail = True
         self.last_delivery = dt_util.utcnow()
         self._schedule_auto_reset()
         await self._async_save()
-        await self._async_notify()
+        await self._async_notify(repeat=repeat)
 
     @callback
     def _on_mobile_action(self, event: Event) -> None:
@@ -171,13 +172,16 @@ class MailboxController:
 
     # --- Benachrichtigung ------------------------------------------------
 
-    async def _async_notify(self) -> None:
+    async def _async_notify(self, repeat: bool = False) -> None:
+        """Meldung senden; bei erneutem Auslösen mit eigenem Text (gleicher Tag)."""
         actions = None
         if self._opt(CONF_MOBILE_ACTION, DEFAULT_MOBILE_ACTION):
             actions = [{"action": self.action_id, "title": ACTION_TITLE}]
-        await self._notifier.async_send(
-            self._opt(CONF_MESSAGE) or DEFAULT_MESSAGE, actions=actions
-        )
+        if repeat:
+            message = self._opt(CONF_REPEAT_MESSAGE) or DEFAULT_REPEAT_MESSAGE
+        else:
+            message = self._opt(CONF_MESSAGE) or DEFAULT_MESSAGE
+        await self._notifier.async_send(message, actions=actions)
 
     async def _async_clear_notifications(self) -> None:
         await self._notifier.async_clear()

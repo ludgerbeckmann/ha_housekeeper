@@ -29,8 +29,10 @@ und den Funktionstyp wählen.
 
 Bei einer Vibration (Sensor wechselt auf `on`) gilt der Briefkasten als
 gefüllt. Es wird benachrichtigt, danach bleibt der Zustand „Post vorhanden“,
-bis er zurückgesetzt wird. Solange Post vorhanden ist, gibt es keine erneute
-Meldung.
+bis er zurückgesetzt wird. Löst der Sensor erneut aus, obwohl noch Post
+vorhanden ist, gibt es einen erneuten Hinweis (eigener Text, gleiche Meldung
+wird ersetzt) mit der Möglichkeit, den Briefkasten als geleert zu bestätigen.
+„Letzter Posteinwurf“ wird dabei aktualisiert.
 
 ### Einstellungen
 
@@ -41,7 +43,7 @@ Meldung.
   Briefkasten zurücksetzt und die Meldung wieder entfernt.
 - **Sprachausgabe**: TTS-Dienst + Lautsprecher (`media_player`)
 - **Persistente Benachrichtigung** in Home Assistant
-- **Nachrichtentext**, **Entprellzeit** (Standard 60 s; weitere Vibrationen
+- **Nachrichtentext** und **Text bei erneutem Auslösen**, **Entprellzeit** (Standard 60 s; weitere Vibrationen
   in dieser Zeit werden ignoriert), **Auto-Reset** nach X Stunden (0 = aus)
 
 Alle Einstellungen lassen sich später über *Konfigurieren* ändern.
