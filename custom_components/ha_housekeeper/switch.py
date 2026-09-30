@@ -1,4 +1,4 @@
-"""Schalter: Automatik des Türwächters, Klingel aktiv, Zeitplan der Poolpumpe."""
+"""Schalter der Funktionen (Türwächter, Türklingel, Poolpumpe, KNX/Sonos)."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
+from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 
 
@@ -24,6 +25,8 @@ async def async_setup_entry(
         async_add_entities([DoorbellActiveSwitch(controller)])
     elif isinstance(controller, PoolPumpController):
         async_add_entities([ScheduleEnabledSwitch(controller)])
+    elif isinstance(controller, KnxSonosController):
+        async_add_entities([KnxActiveSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -80,6 +83,25 @@ class ScheduleEnabledSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "schedule_enabled")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class KnxActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Befehle und Rückmeldungen sind aktiv; off = Connector pausiert."""
+
+    _attr_icon = "mdi:connection"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "connector_active")
 
     @property
     def is_on(self) -> bool:
