@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
+from homeassistant.util import slugify
 
 from .const import (
     BLOCK_NOTIFY,
@@ -76,9 +77,24 @@ from .const import (
 from .door_guard import rule_summary
 
 
-def _mobile_services(hass: HomeAssistant) -> list[str]:
-    services = hass.services.async_services_for_domain("notify")
-    return sorted(s for s in services if s.startswith("mobile_app_"))
+def _mobile_services(hass: HomeAssistant) -> list[selector.SelectOptionDict]:
+    """Push-Dienste der Companion-App, beschriftet mit dem Gerätenamen."""
+    device_names = {
+        f"mobile_app_{slugify(entry.data['device_name'])}": entry.data["device_name"]
+        for entry in hass.config_entries.async_entries("mobile_app")
+        if entry.data.get("device_name")
+    }
+    options = [
+        selector.SelectOptionDict(
+            value=service,
+            label=f"{device_names[service]} ({service})"
+            if service in device_names
+            else service,
+        )
+        for service in hass.services.async_services_for_domain("notify")
+        if service.startswith("mobile_app_")
+    ]
+    return sorted(options, key=lambda option: option["label"].lower())
 
 
 def _suggest(key: str, defaults: dict[str, Any]) -> dict[str, Any]:

@@ -122,3 +122,41 @@ async def test_repeat_message_custom_and_debounce(hass: HomeAssistant) -> None:
     hass.states.async_set(SENSOR, "on")
     await hass.async_block_till_done()
     assert [n.data["message"] for n in notify] == ["Post!", "Nochmal!"]
+
+
+async def test_push_targets_show_device_names(hass: HomeAssistant) -> None:
+    from custom_components.ha_housekeeper.config_flow import _mobile_services
+
+    MockConfigEntry(
+        domain="mobile_app", data={"device_name": "iPhone Ludger", "webhook_id": "a"}
+    ).add_to_hass(hass)
+    MockConfigEntry(
+        domain="mobile_app", data={"device_name": "iPad von Britta", "webhook_id": "b"}
+    ).add_to_hass(hass)
+    for service in ("mobile_app_iphone_ludger", "mobile_app_ipad_von_britta", "mobile_app_ohne_geraet", "andere"):
+        async_mock_service(hass, "notify", service)
+
+    options = _mobile_services(hass)
+    assert [(o["value"], o["label"]) for o in options] == [
+        ("mobile_app_ipad_von_britta", "iPad von Britta (mobile_app_ipad_von_britta)"),
+        ("mobile_app_iphone_ludger", "iPhone Ludger (mobile_app_iphone_ludger)"),
+        ("mobile_app_ohne_geraet", "mobile_app_ohne_geraet"),
+    ]
+
+
+async def test_push_targets_in_flow_schema(hass: HomeAssistant) -> None:
+    MockConfigEntry(
+        domain="mobile_app", data={"device_name": "iPhone Ludger", "webhook_id": "a"}
+    ).add_to_hass(hass)
+    async_mock_service(hass, "notify", "mobile_app_iphone_ludger")
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"function_type": "mailbox"}
+    )
+    assert result["step_id"] == "mailbox"
+    ok = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**{k: v for k, v in DATA.items() if k != "function_type"},
+         "mobile_targets": ["mobile_app_iphone_ludger"]},
+    )
+    assert ok["data"]["mobile_targets"] == ["mobile_app_iphone_ludger"]
