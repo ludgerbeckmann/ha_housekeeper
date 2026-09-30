@@ -10,27 +10,41 @@
       },
       "mailbox": {
         "title": "Benachrichtigung Briefkasten",
-        "data": {
-          "name": "Name",
-          "vibration_sensor": "Vibrationssensor",
-          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
-          "message": "Nachrichtentext",
-          "repeat_message": "Text bei erneutem Auslösen",
-          "debounce_seconds": "Entprellzeit",
-          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-          "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
-          "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
-          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+            "data": {
+              "name": "Name",
+              "vibration_sensor": "Vibrationssensor",
+              "debounce_seconds": "Entprellzeit",
+              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+            },
+            "data_description": {
+              "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit über Post im Briefkasten informiert wird.",
+            "data": {
+              "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+              "message": "Nachrichtentext",
+              "repeat_message": "Text bei erneutem Auslösen",
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+              "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "door_guard": {
@@ -141,26 +155,40 @@
     "step": {
       "mailbox": {
         "title": "Benachrichtigung Briefkasten",
-        "data": {
-          "vibration_sensor": "Vibrationssensor",
-          "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
-          "message": "Nachrichtentext",
-          "repeat_message": "Text bei erneutem Auslösen",
-          "debounce_seconds": "Entprellzeit",
-          "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
-          "mobile_enabled": "App-Push aktivieren",
-          "mobile_targets": "Push-Ziele (notify-Dienste)",
-          "tts_enabled": "Sprachausgabe aktivieren",
-          "tts_entity": "TTS-Dienst",
-          "tts_player": "Lautsprecher (media_player)",
-          "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-        },
-        "data_description": {
-          "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-          "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
-          "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
-          "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-          "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+            "data": {
+              "vibration_sensor": "Vibrationssensor",
+              "debounce_seconds": "Entprellzeit",
+              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+            },
+            "data_description": {
+              "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit über Post im Briefkasten informiert wird.",
+            "data": {
+              "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+              "message": "Nachrichtentext",
+              "repeat_message": "Text bei erneutem Auslösen",
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+              "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "menu": {

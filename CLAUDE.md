@@ -76,6 +76,14 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   gesichert; `_async_finalize_pending` meldet nach dem Neustart das Ergebnis (wartet bis
   zu 10 Minuten auf die Entität). `backup` wird nur gesetzt, wenn die Entität
   `UpdateEntityFeature.BACKUP` (8) unterstützt.
+- Formular-Abschnitte (`section` aus `homeassistant.data_entry_flow`, standardmäßig
+  `collapsed: False`): Der Briefkasten-Dialog hat die Abschnitte `general` und
+  `notifications`. Das Formular liefert **verschachtelte** Daten, gespeichert wird aber
+  flach (`_flatten_sections()` in `config_flow.py`), damit bestehende Einträge und die
+  Controller unverändert bleiben. Übersetzungen stehen je Abschnitt unter
+  `...step.<schritt>.sections.<abschnitt>` (`name`, `description`, `data`,
+  `data_description`); das Top-Level-`data` entfällt dann. In Tests die Eingaben
+  verschachtelt übergeben.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.

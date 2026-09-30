@@ -25,6 +25,18 @@ DATA = {
 }
 
 
+GENERAL_KEYS = ("name", "vibration_sensor", "debounce_seconds", "auto_reset_hours")
+
+
+def _sections(flat: dict) -> dict:
+    """Flache Einstellungen in die zwei Formularabschnitte verteilen."""
+    flat = {k: v for k, v in flat.items() if k != "function_type"}
+    return {
+        "general": {k: v for k, v in flat.items() if k in GENERAL_KEYS},
+        "notifications": {k: v for k, v in flat.items() if k not in GENERAL_KEYS},
+    }
+
+
 async def _setup(hass: HomeAssistant, **over):
     entry = MockConfigEntry(domain=DOMAIN, title="Briefkasten", data={**DATA, **over})
     entry.add_to_hass(hass)
@@ -45,15 +57,58 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     assert result["step_id"] == "mailbox"
     bad = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {**{k: v for k, v in DATA.items() if k != "function_type"},
-         "mobile_enabled": False, "persistent_enabled": False},
+        _sections({**DATA, "mobile_enabled": False, "persistent_enabled": False}),
     )
     assert bad["errors"] == {"base": "no_method"}
     ok = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {k: v for k, v in DATA.items() if k != "function_type"}
+        result["flow_id"], _sections(DATA)
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "mailbox"
+    # gespeichert wird flach, unabhängig von den Abschnitten des Formulars
+    assert ok["data"]["vibration_sensor"] == SENSOR and ok["data"]["message"] == "Post!"
+    assert "general" not in ok["data"] and "notifications" not in ok["data"]
+
+
+async def test_form_has_two_expanded_sections(hass: HomeAssistant) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"function_type": "mailbox"}
+    )
+    schema = result["data_schema"].schema
+    assert [str(key) for key in schema] == ["general", "notifications"]
+    for sect in schema.values():
+        assert sect.options["collapsed"] is False
+    fields = {str(k) for k in schema[next(k for k in schema if str(k) == "general")].schema.schema}
+    assert fields == {"name", "vibration_sensor", "debounce_seconds", "auto_reset_hours"}
+    notify = {str(k) for k in schema[next(k for k in schema if str(k) == "notifications")].schema.schema}
+    assert {"mobile_enabled", "mobile_targets", "mobile_action", "tts_enabled", "tts_entity",
+            "tts_player", "persistent_enabled", "message", "repeat_message"} == notify
+
+
+async def test_options_flow_sections_and_clearing(hass: HomeAssistant) -> None:
+    entry = await _setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "mailbox"
+    assert {str(k) for k in result["data_schema"].schema} == {"general", "notifications"}
+    general = {str(k) for k in next(
+        v for k, v in result["data_schema"].schema.items() if str(k) == "general").schema.schema}
+    assert "name" not in general                     # Name nur beim Hinzufügen
+    flat = {k: v for k, v in DATA.items() if k not in ("name", "mobile_targets")}
+    flat.update(mobile_enabled=False, persistent_enabled=True, debounce_seconds=45)
+    done = await hass.config_entries.options.async_configure(result["flow_id"], _sections(flat))
+    assert done["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["debounce_seconds"] == 45
+    assert entry.options["mobile_targets"] is None    # geleertes Feld überdeckt die Daten
+
+
+async def test_options_flow_sections_validation(hass: HomeAssistant) -> None:
+    entry = await _setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    flat = {k: v for k, v in DATA.items() if k != "name"}
+    flat.update(mobile_enabled=False, persistent_enabled=False)
+    bad = await hass.config_entries.options.async_configure(result["flow_id"], _sections(flat))
+    assert bad["errors"] == {"base": "no_method"}
 
 
 async def test_trigger_notify_and_reset(hass: HomeAssistant) -> None:
@@ -156,7 +211,6 @@ async def test_push_targets_in_flow_schema(hass: HomeAssistant) -> None:
     assert result["step_id"] == "mailbox"
     ok = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {**{k: v for k, v in DATA.items() if k != "function_type"},
-         "mobile_targets": ["mobile_app_iphone_ludger"]},
+        _sections({**DATA, "mobile_targets": ["mobile_app_iphone_ludger"]}),
     )
     assert ok["data"]["mobile_targets"] == ["mobile_app_iphone_ludger"]
