@@ -87,6 +87,14 @@
           "name": "Name",
           "pump_entity": "Pumpe (Schalter)"
         }
+      },
+      "knx_sonos": {
+        "title": "KNX/Sonos-Connector",
+        "data": {
+          "name": "Name",
+          "player": "Sonos-Lautsprecher"
+        },
+        "description": "Setzt auf der KNX-Integration von Home Assistant auf. Pro Lautsprecher ein Eintrag; Befehle und Rückmeldungen folgen danach unter Konfigurieren."
       }
     },
     "error": {
@@ -100,10 +108,14 @@
       "no_players": "Mindestens ein Media Player muss gewählt sein.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
-      "min_ge_max": "Die untere Grenze muss unter der oberen liegen."
+      "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+      "invalid_address": "Ungültige Gruppenadresse.",
+      "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+      "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001)."
     },
     "abort": {
-      "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet."
+      "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+      "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
     }
   },
   "options": {
@@ -347,6 +359,96 @@
           "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
           "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
         }
+      },
+      "knx_menu": {
+        "title": "KNX/Sonos-Connector",
+        "description": "Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) des Lautsprechers.",
+        "menu_options": {
+          "knx_general": "Einstellungen",
+          "add_command": "Befehl hinzufügen",
+          "edit_command": "Befehl bearbeiten",
+          "delete_command": "Befehl löschen",
+          "add_status": "Rückmeldung hinzufügen",
+          "edit_status": "Rückmeldung bearbeiten",
+          "delete_status": "Rückmeldung löschen",
+          "done": "Fertig"
+        }
+      },
+      "knx_general": {
+        "title": "Einstellungen",
+        "data": {
+          "player": "Sonos-Lautsprecher",
+          "max_volume": "Maximale Lautstärke",
+          "volume_step": "Schrittweite Lauter/Leiser",
+          "stop_instead_of_pause": "Bei Pause stoppen statt pausieren (z. B. für Radiostreams)"
+        },
+        "data_description": {
+          "max_volume": "Begrenzt jede per KNX gesetzte Lautstärke nach oben.",
+          "volume_step": "Gilt für Lauter, Leiser und relatives Dimmen."
+        }
+      },
+      "edit_command": {
+        "title": "Befehl bearbeiten",
+        "data": {
+          "item": "Eintrag"
+        }
+      },
+      "delete_command": {
+        "title": "Befehl löschen",
+        "data": {
+          "item": "Eintrag"
+        }
+      },
+      "edit_status": {
+        "title": "Rückmeldung bearbeiten",
+        "data": {
+          "item": "Eintrag"
+        }
+      },
+      "delete_status": {
+        "title": "Rückmeldung löschen",
+        "data": {
+          "item": "Eintrag"
+        }
+      },
+      "command_basic": {
+        "title": "Befehl (KNX an Sonos)",
+        "description": "Wird ausgeführt, wenn ein Schreibtelegramm auf der Gruppenadresse eintrifft.",
+        "data": {
+          "name": "Name",
+          "address": "Gruppenadresse (z. B. 1/2/3)",
+          "dpt": "Datentyp",
+          "action": "Aktion"
+        },
+        "data_description": {
+          "dpt": "Relatives Dimmen (3.007) gehört zur Aktion „Lautstärke dimmen“, „Stumm (Wert)“ braucht Schalten (1.001)."
+        }
+      },
+      "command_params": {
+        "title": "Angaben zum Befehl",
+        "data": {
+          "when": "Auslösen bei",
+          "scene": "Szenennummer (1–64)",
+          "volume": "Lautstärke",
+          "favorite": "Sonos-Favorit"
+        },
+        "data_description": {
+          "favorite": "Titel des Favoriten, wie er in der Sonos-App steht."
+        }
+      },
+      "status_edit": {
+        "title": "Rückmeldung (Sonos an KNX)",
+        "description": "Der Wert wird bei jeder Änderung gesendet; Leseanfragen auf der Adresse werden beantwortet.",
+        "data": {
+          "name": "Name",
+          "source": "Quelle",
+          "address": "Gruppenadresse (z. B. 1/2/3)",
+          "idle_text": "Text, wenn nichts wiedergegeben wird"
+        },
+        "data_description": {
+          "source": "Wiedergabe, Pause und Stumm werden als 1 Bit (1.001), die Lautstärke als Prozent (5.001) und Titel, Interpret, Album und Quelle als Text (16.001, 14 Zeichen) gesendet.",
+          "idle_text": "Nur für Textquellen."
+        }
       }
     },
     "error": {
@@ -360,7 +462,10 @@
       "no_players": "Mindestens ein Media Player muss gewählt sein.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
-      "min_ge_max": "Die untere Grenze muss unter der oberen liegen."
+      "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+      "invalid_address": "Ungültige Gruppenadresse.",
+      "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+      "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001)."
     }
   },
   "selector": {
@@ -369,7 +474,8 @@
         "mailbox": "Benachrichtigung Briefkasten",
         "door_guard": "Türwächter",
         "doorbell": "Türklingel",
-        "pool_pump": "Poolpumpe"
+        "pool_pump": "Poolpumpe",
+        "knx_sonos": "KNX/Sonos-Connector"
       }
     },
     "block_action": {
@@ -413,6 +519,52 @@
         "tts": "Ansage (TTS)",
         "ringtone": "Klingelton"
       }
+    },
+    "knx_dpt": {
+      "options": {
+        "switch": "Schalten, 1 Bit (1.001)",
+        "percent": "Prozent, 1 Byte (5.001)",
+        "scene": "Szene (17.001)",
+        "dimming": "Relatives Dimmen (3.007)"
+      }
+    },
+    "knx_when": {
+      "options": {
+        "on": "Wert 1 (ein)",
+        "off": "Wert 0 (aus)",
+        "any": "Jeden Wert"
+      }
+    },
+    "knx_action": {
+      "options": {
+        "play": "Wiedergabe",
+        "pause": "Pause",
+        "play_pause": "Wiedergabe/Pause umschalten",
+        "stop": "Stopp",
+        "next": "Nächster Titel",
+        "previous": "Vorheriger Titel",
+        "volume_set": "Lautstärke setzen",
+        "volume_up": "Lauter",
+        "volume_down": "Leiser",
+        "volume_dim": "Lautstärke dimmen",
+        "mute": "Stumm",
+        "unmute": "Stumm aus",
+        "mute_toggle": "Stumm umschalten",
+        "mute_set": "Stumm (Wert)",
+        "favorite": "Sonos-Favorit abspielen"
+      }
+    },
+    "knx_source": {
+      "options": {
+        "playing": "Wiedergabe (1 Bit)",
+        "paused": "Pause (1 Bit)",
+        "volume": "Lautstärke (Prozent)",
+        "muted": "Stumm (1 Bit)",
+        "title": "Titel (Text)",
+        "artist": "Interpret (Text)",
+        "album": "Album (Text)",
+        "source": "Quelle/Favorit (Text)"
+      }
     }
   },
   "entity": {
@@ -445,6 +597,9 @@
       },
       "runtime_today": {
         "name": "Laufzeit heute"
+      },
+      "last_command": {
+        "name": "Letzter Befehl"
       }
     },
     "button": {
@@ -467,6 +622,9 @@
       },
       "schedule_enabled": {
         "name": "Zeitplan aktiv"
+      },
+      "connector_active": {
+        "name": "Connector aktiv"
       }
     }
   },

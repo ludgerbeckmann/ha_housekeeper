@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
+from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 
@@ -74,5 +75,16 @@ async def async_get_config_entry_diagnostics(
                 "schedule_paused": controller.dry_run_paused_schedule,
                 "power": controller.current_power(),
             },
+        }
+    if isinstance(controller, KnxSonosController):
+        player = hass.states.get(controller.player)
+        result["state"] = {
+            "enabled": controller.enabled,
+            "knx_available": controller._knx_available,  # noqa: SLF001
+            "last_command": controller.last_command,
+            "player_state": player.state if player else None,
+            "registered_addresses": sorted(
+                {*controller._commands_by_ga, *controller._status_by_ga}  # noqa: SLF001
+            ),
         }
     return result

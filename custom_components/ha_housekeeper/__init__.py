@@ -20,6 +20,7 @@ from .const import (
     DOMAIN,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
     FUNCTION_POOL,
     FUNCTION_PLATFORMS,
@@ -27,6 +28,7 @@ from .const import (
 )
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
+from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 
@@ -38,6 +40,7 @@ CONTROLLERS = {
     FUNCTION_DOOR_GUARD: DoorGuardController,
     FUNCTION_DOORBELL: DoorbellController,
     FUNCTION_POOL: PoolPumpController,
+    FUNCTION_KNX_SONOS: KnxSonosController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(

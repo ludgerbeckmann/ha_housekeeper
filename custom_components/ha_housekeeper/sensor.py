@@ -1,4 +1,4 @@
-"""Sensoren der Funktionen (Briefkasten, Türwächter, Türklingel, Poolpumpe)."""
+"""Sensoren der Funktionen (Briefkasten, Türwächter, Türklingel, Poolpumpe, KNX/Sonos)."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
+from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 
 
@@ -35,6 +36,8 @@ async def async_setup_entry(
         async_add_entities(
             [PoolNextStartSensor(controller), PoolRuntimeTodaySensor(controller)]
         )
+    elif isinstance(controller, KnxSonosController):
+        async_add_entities([KnxLastCommandSensor(controller)])
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
 
@@ -109,3 +112,23 @@ class PoolRuntimeTodaySensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> float:
         return self._controller.runtime_today_minutes()
+
+
+class KnxLastCommandSensor(FunctionEntity, SensorEntity):
+    """Zeitpunkt des letzten ausgeführten KNX-Befehls."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:knx"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "last_command")
+
+    @property
+    def native_value(self) -> datetime | None:
+        last = self._controller.last_command
+        return dt_util.parse_datetime(last["time"]) if last else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self._controller.last_command or {}
+        return {k: last.get(k) for k in ("name", "address", "action", "value")}

@@ -14,11 +14,13 @@ FUNCTION_MAILBOX = "mailbox"
 FUNCTION_DOOR_GUARD = "door_guard"
 FUNCTION_DOORBELL = "doorbell"
 FUNCTION_POOL = "pool_pump"
+FUNCTION_KNX_SONOS = "knx_sonos"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
+    FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
     FUNCTION_POOL: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
@@ -158,6 +160,98 @@ MAX_WINDOWS = 8
 SERVICE_RUN_PUMP = "run_pump"
 ATTR_DURATION = "duration"
 ATTR_ENTRY_ID = "entry_id"
+
+# --- KNX/Sonos-Connector ---
+CONF_PLAYER = "player"
+CONF_MAX_VOLUME = "max_volume"
+CONF_VOLUME_STEP = "volume_step"
+CONF_STOP_INSTEAD = "stop_instead_of_pause"
+CONF_COMMANDS = "commands"
+CONF_STATUS = "status"
+
+DEFAULT_MAX_VOLUME = 100
+DEFAULT_VOLUME_STEP = 5
+
+# Befehl (KNX -> Sonos) und Rückmeldung (Sonos -> KNX): Schlüssel
+K_ID = "id"
+K_NAME = "name"
+K_ADDRESS = "address"
+K_DPT = "dpt"
+K_ACTION = "action"
+K_WHEN = "when"
+K_SCENE = "scene"
+K_VOLUME = "volume"
+K_FAVORITE = "favorite"
+K_SOURCE = "source"
+K_IDLE_TEXT = "idle_text"
+
+# Datentypen der Befehle
+DPT_SWITCH = "switch"  # 1.001
+DPT_PERCENT = "percent"  # 5.001
+DPT_SCENE = "scene"  # 17.001
+DPT_DIMMING = "dimming"  # 3.007
+DPTS = [DPT_SWITCH, DPT_PERCENT, DPT_SCENE, DPT_DIMMING]
+
+# Bedingung bei Schalten (1 Bit)
+WHEN_ON = "on"
+WHEN_OFF = "off"
+WHEN_ANY = "any"
+WHENS = [WHEN_ON, WHEN_OFF, WHEN_ANY]
+
+# Aktionen der Befehle
+ACT_PLAY = "play"
+ACT_PAUSE = "pause"
+ACT_PLAY_PAUSE = "play_pause"
+ACT_STOP = "stop"
+ACT_NEXT = "next"
+ACT_PREVIOUS = "previous"
+ACT_VOLUME_SET = "volume_set"
+ACT_VOLUME_UP = "volume_up"
+ACT_VOLUME_DOWN = "volume_down"
+ACT_VOLUME_DIM = "volume_dim"
+ACT_MUTE = "mute"
+ACT_UNMUTE = "unmute"
+ACT_MUTE_TOGGLE = "mute_toggle"
+ACT_MUTE_SET = "mute_set"
+ACT_FAVORITE = "favorite"
+ACTIONS = [
+    ACT_PLAY,
+    ACT_PAUSE,
+    ACT_PLAY_PAUSE,
+    ACT_STOP,
+    ACT_NEXT,
+    ACT_PREVIOUS,
+    ACT_VOLUME_SET,
+    ACT_VOLUME_UP,
+    ACT_VOLUME_DOWN,
+    ACT_VOLUME_DIM,
+    ACT_MUTE,
+    ACT_UNMUTE,
+    ACT_MUTE_TOGGLE,
+    ACT_MUTE_SET,
+    ACT_FAVORITE,
+]
+
+# Quellen der Rückmeldungen
+SRC_PLAYING = "playing"
+SRC_PAUSED = "paused"
+SRC_VOLUME = "volume"
+SRC_MUTED = "muted"
+SRC_TITLE = "title"
+SRC_ARTIST = "artist"
+SRC_ALBUM = "album"
+SRC_SOURCE = "source"
+STATUS_SOURCES = [
+    SRC_PLAYING,
+    SRC_PAUSED,
+    SRC_VOLUME,
+    SRC_MUTED,
+    SRC_TITLE,
+    SRC_ARTIST,
+    SRC_ALBUM,
+    SRC_SOURCE,
+]
+TEXT_SOURCES = [SRC_TITLE, SRC_ARTIST, SRC_ALBUM, SRC_SOURCE]
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [

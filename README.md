@@ -15,6 +15,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 | Poolpumpe | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
+| KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
 
 ## Installation
 
@@ -231,6 +232,76 @@ Die Einträge der alten Integration werden nicht automatisch übernommen. Lege
 die Poolpumpe hier neu an (Pumpe, Zeitfenster, Trockenlauf-Einstellungen), passe
 Automationen und Dashboards an die neuen Entity-IDs und die Aktion
 `ha_housekeeper.run_pump` an und entferne danach die alte Integration.
+
+## KNX/Sonos-Connector
+
+Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
+Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
+(Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
+eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
+sonst bricht das Hinzufügen ab. Pro Lautsprecher ein Eintrag.
+
+### Einstellungen
+
+Unter *Konfigurieren → Einstellungen*: Sonos-Lautsprecher, **Maximale Lautstärke**
+(begrenzt jede per KNX gesetzte Lautstärke), **Schrittweite** für Lauter/Leiser und
+Dimmen sowie die Option **Bei Pause stoppen statt pausieren** (z. B. für
+Radiostreams, die sich nicht pausieren lassen).
+
+### Befehle (KNX → Sonos)
+
+Ein Befehl besteht aus Name, **Gruppenadresse** (3-Ebenen, 2-Ebenen oder frei),
+**Datentyp** und **Aktion**. Es zählen nur eingehende **Schreibtelegramme**.
+
+| Datentyp | Bedingung |
+|---|---|
+| Schalten, 1 Bit (1.001) | auslösen bei Wert 1, Wert 0 oder jedem Wert |
+| Prozent, 1 Byte (5.001) | immer |
+| Szene (17.001) | bei der gewählten Szenennummer (1–64) |
+| Relatives Dimmen (3.007) | bei jedem Schritt außer Stopp |
+
+Aktionen: Wiedergabe, Pause, Wiedergabe/Pause umschalten, Stopp, nächster/vorheriger
+Titel, **Lautstärke setzen** (aus dem Prozentwert oder fest), **Lauter**, **Leiser**,
+**Lautstärke dimmen** (Richtung aus dem Dimm-Telegramm, nur mit 3.007), Stumm, Stumm
+aus, Stumm umschalten, **Stumm (Wert)** (1 = stumm, 0 = aus, nur mit 1.001) und
+**Sonos-Favorit abspielen** (Auswahl aus den Favoriten des Lautsprechers; gespeichert
+wird der Titel, bei einem umbenannten Favoriten muss der Befehl angepasst werden).
+
+### Rückmeldungen (Sonos → KNX)
+
+Eine Rückmeldung hat Name, **Quelle** und Gruppenadresse. Der Wert wird bei jeder
+Änderung gesendet, und **Leseanfragen** (GroupValueRead) auf der Adresse werden mit
+dem aktuellen Wert beantwortet.
+
+| Quelle | Datentyp |
+|---|---|
+| Wiedergabe, Pause, Stumm | 1 Bit (1.001) |
+| Lautstärke | Prozent (5.001) |
+| Titel, Interpret, Album, Quelle/Favorit | Text (16.001, auf 14 Zeichen gekürzt) |
+
+Bei Textquellen wird der **Text, wenn nichts wiedergegeben wird** (Standard leer)
+gesendet, solange der Lautsprecher nicht spielt.
+
+### Entitäten
+
+- `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
+  Einschalten werden die Rückmeldungen neu gesendet)
+- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name, Adresse, Aktion, Wert)
+
+### Hinweise
+
+- **Eigene Telegramme** (`direction: Outgoing`) werden nie ausgewertet, damit sich die
+  Rückmeldungen nicht selbst auslösen. Verwende für Befehl und Rückmeldung trotzdem
+  getrennte Gruppenadressen, wie in ETS üblich.
+- Die Anmeldung der Adressen bei der KNX-Integration gilt nur zur Laufzeit. Sie wird
+  beim Start, nach `event_knx_reloaded` und alle 5 Minuten wiederholt (idempotent),
+  damit ein Neuladen der KNX-Integration die Funktion nicht stilllegt. Nach einem
+  Neuladen über die Oberfläche kann es bis zu 5 Minuten dauern, bis Befehle wieder
+  ankommen.
+- Relatives Dimmen löst pro Telegramm **einen Schritt** aus (kein weiches Hoch- oder
+  Runterfahren über eine Zeit). Anregungen stammen u. a. aus dem Blueprint
+  [KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935),
+  ohne dessen Music-Assistant-, Squeezebox- und Denon-Erweiterungen.
 
 ## Entwicklung
 
