@@ -4,12 +4,11 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PUMP = "switch.pool_pump"
@@ -18,14 +17,14 @@ ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 async def _setup(hass, windows, pump_state=STATE_OFF):
     hass.states.async_set(PUMP, pump_state)
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN,
         title="Pool",
         data={"function_type": "pool_pump", "pump_entity": PUMP},
         options={"pump_entity": PUMP, "windows": windows},
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -144,8 +143,8 @@ async def test_enabled_state_survives_restart(hass: HomeAssistant, freezer):
     await hass.services.async_call(
         "switch", "turn_off", {"entity_id": "switch.pool_schedule_active"}, blocking=True
     )
-    assert await hass.config_entries.async_unload(entry.entry_id)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_unload(entry.hub_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     assert hass.states.get("switch.pool_schedule_active").state == STATE_OFF
 
@@ -159,7 +158,7 @@ async def test_dry_run_alarm_uses_shared_notification(hass: HomeAssistant, freez
     push = async_mock_service(hass, "notify", "mobile_app_phone")
     hass.states.async_set(PUMP, STATE_ON)
     hass.states.async_set(POWER, "90", {"unit_of_measurement": "W"})
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN,
         title="Pool",
         data={"function_type": "pool_pump", "pump_entity": PUMP},
@@ -171,7 +170,7 @@ async def test_dry_run_alarm_uses_shared_notification(hass: HomeAssistant, freez
         },
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     await _tick(hass, freezer, 5)
     assert _dry_state(hass) == STATE_ON
@@ -197,7 +196,7 @@ async def test_run_pump_unknown_entry_rejected(hass: HomeAssistant):
 
 async def test_unload(hass: HomeAssistant):
     entry = await _setup(hass, [])
-    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert await hass.config_entries.async_unload(entry.hub_id)
     assert entry.state is ConfigEntryState.NOT_LOADED
 
 
@@ -207,7 +206,7 @@ POWER = "sensor.pump_power"
 async def _setup_dry(hass, auto_off=False, pump_state=STATE_ON, power="90", windows=None):
     hass.states.async_set(PUMP, pump_state)
     hass.states.async_set(POWER, power, {"unit_of_measurement": "W"})
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN,
         title="Pool",
         data={"function_type": "pool_pump", "pump_entity": PUMP},
@@ -222,7 +221,7 @@ async def _setup_dry(hass, auto_off=False, pump_state=STATE_ON, power="90", wind
         },
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -312,8 +311,7 @@ async def test_auto_off_pauses_schedule_until_acknowledged(hass: HomeAssistant, 
 async def test_dry_run_entities_removed_when_not_configured(hass: HomeAssistant):
     entry = await _setup_dry(hass)
     assert hass.states.get("button.pool_acknowledge_dry_run") is not None
-    hass.config_entries.async_update_entry(
-        entry, options={"pump_entity": PUMP, "windows": [], "power_entity": None}
+    update_entry(hass, entry, {"pump_entity": PUMP, "windows": [], "power_entity": None}
     )
     await hass.async_block_till_done()
     assert hass.states.get("button.pool_acknowledge_dry_run") is None
@@ -340,28 +338,49 @@ async def test_user_flow_and_duplicate(hass):
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "pool_pump"}
     )
-    assert result["step_id"] == "pool_pump"
+    assert result["step_id"] == "new_pool_pump"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Garten", "pump_entity": "switch.pump"}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {"function_type": "pool_pump", "pump_entity": "switch.pump"}
+    assert result["title"] == "Pool control"                      # Hub heißt wie die Funktion (Sprache von HA)
+    assert result["data"] == {"function_type": "pool_pump", "hub": True}
+    (first,) = result["subentries"]
+    assert first["title"] == "Garten" and first["data"]["pump_entity"] == "switch.pump"
     await hass.async_block_till_done()
+    (hub,) = hass.config_entries.async_entries(DOMAIN)
+    assert next(iter(hub.subentries.values())).title == "Garten"
 
+    # zweiter Hub desselben Typs: nicht möglich, weitere Pools kommen als Untereintrag
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "pool_pump"}
     )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "Zweiter", "pump_entity": "switch.pump"}
-    )
-    assert result["type"] is FlowResultType.ABORT
+    assert result["type"] is FlowResultType.ABORT and result["reason"] == "already_configured"
+
+    # weiterer Pool als Untereintrag; dieselbe Pumpe wird abgelehnt
+    sub = await hass.config_entries.subentries.async_init(
+        (hub.entry_id, "pool_pump"), context={"source": "user"})
+    assert sub["step_id"] == "new_pool_pump"
+    sub = await hass.config_entries.subentries.async_configure(
+        sub["flow_id"], {"name": "Zweiter", "pump_entity": "switch.pump"})
+    assert sub["type"] is FlowResultType.ABORT and sub["reason"] == "pump_configured"
+    hass.states.async_set("switch.pump2", "off")
+    sub = await hass.config_entries.subentries.async_init(
+        (hub.entry_id, "pool_pump"), context={"source": "user"})
+    sub = await hass.config_entries.subentries.async_configure(
+        sub["flow_id"], {"name": "Zweiter", "pump_entity": "switch.pump2"})
+    assert sub["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert sorted(s.title for s in hub.subentries.values()) == ["Garten", "Zweiter"]
+    assert hass.states.get("switch.garten_schedule_active") is not None
+    assert hass.states.get("switch.zweiter_schedule_active") is not None
 
 
 async def test_options_windows_add_edit_delete(hass):
     entry = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert result["step_id"] == "pool_menu"
     assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater"]
 
@@ -397,9 +416,7 @@ async def test_options_windows_add_edit_delete(hass):
 
 async def test_options_max_windows(hass):
     entry = await _setup(hass, [])
-    hass.config_entries.async_update_entry(
-        entry,
-        options={
+    update_entry(hass, entry, {
             **entry.options,
             "windows": [
                 {"id": str(i), "start": "08:00:00", "end": "09:00:00", "days": ["mon"]}
@@ -408,8 +425,8 @@ async def test_options_max_windows(hass):
         },
     )
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
     result = await flow.async_configure(
         result["flow_id"], {"start": "10:00:00", "end": "11:00:00", "days": ["tue"]}
@@ -419,10 +436,10 @@ async def test_options_max_windows(hass):
 
 async def test_options_dry_run_set_validate_and_clear(hass):
     entry = await _setup(hass, [])
-    flow = hass.config_entries.options
+    flow = hass.config_entries.subentries
 
     async def open_dry():
-        r = await flow.async_init(entry.entry_id)
+        r = await reconfigure(hass, entry)
         return await flow.async_configure(r["flow_id"], {"next_step_id": "dry_run"})
 
     base = {"dry_duration": 5, "dry_auto_off": True, "mobile_enabled": False,
@@ -472,11 +489,11 @@ async def _setup_heater(hass, temp="20", heater_state=STATE_OFF, **over):
     options = {"pump_entity": PUMP, "windows": [], "heater_entity": HEATER,
                "temperature_entity": TEMP, "heater_on_above": 28, "heater_off_below": 26, **over}
     hass.states.async_set(PUMP, STATE_OFF)
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Pool",
         data={"function_type": "pool_pump", "pump_entity": PUMP}, options=options)
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -561,10 +578,10 @@ async def test_heater_entities_only_when_configured(hass: HomeAssistant):
 
 async def test_options_heater_set_validate_and_clear(hass: HomeAssistant):
     entry = await _setup(hass, [])
-    flow = hass.config_entries.options
+    flow = hass.config_entries.subentries
 
     async def start():
-        r = await flow.async_init(entry.entry_id)
+        r = await reconfigure(hass, entry)
         return await flow.async_configure(r["flow_id"], {"next_step_id": "heater"})
 
     result = await start()

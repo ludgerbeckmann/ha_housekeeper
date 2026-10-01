@@ -5,11 +5,10 @@ from pathlib import Path
 
 import pytest
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, menu_options
+from .helpers import is_menu, menu_options, make_entry, reconfigure
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "ha_housekeeper"
 
@@ -30,12 +29,12 @@ ENTRIES = {
 
 
 async def _open(hass: HomeAssistant, data: dict):
-    entry = MockConfigEntry(domain=DOMAIN, title=data["name"], data=data)
+    entry = make_entry(domain=DOMAIN, title=data["name"], data=data)
     entry.add_to_hass(hass)
     hass.states.async_set("switch.p", "off")
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    return entry, await hass.config_entries.options.async_init(entry.entry_id)
+    return entry, await reconfigure(hass, entry)
 
 
 @pytest.mark.parametrize("function", list(ENTRIES))
@@ -51,7 +50,7 @@ async def test_menu_is_native_without_done_entry(hass: HomeAssistant, function) 
 
 async def test_menu_selection_dispatches(hass: HomeAssistant) -> None:
     entry, result = await _open(hass, ENTRIES["updater"])
-    flow = hass.config_entries.options
+    flow = hass.config_entries.subentries
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     assert result["step_id"] == "schedule_edit" and not is_menu(result)
     # ungültige Auswahl wird abgelehnt
@@ -65,8 +64,13 @@ async def test_menu_selection_dispatches(hass: HomeAssistant) -> None:
 def test_translations_cover_all_menu_options() -> None:
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         data = json.loads((COMPONENT / name).read_text(encoding="utf-8"))
-        steps = data["options"]["step"]
+        assert "options" not in data, name                  # Einstellungen sind Untereintrags-Flows
         assert "menu_action" not in data.get("selector", {}), name
+        steps = {
+            step_id: step
+            for sub in data["config_subentries"].values()
+            for step_id, step in sub["step"].items()
+        }
         menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
         assert set(menus) == {"menu", "bell_menu", "pool_menu", "knx_menu", "upd_menu", "tp_menu",
                               "task_triggers", "alarm_menu", "mailbox_menu"}, name

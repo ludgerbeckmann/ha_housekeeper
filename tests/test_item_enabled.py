@@ -4,14 +4,14 @@ from datetime import datetime
 
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import assign_players, profile_summary
 from custom_components.ha_housekeeper.door_guard import rule_summary
 
-from .helpers import is_menu
+from .helpers import is_menu, make_entry, reconfigure, update_entry
 
 ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -48,7 +48,7 @@ async def test_disabled_schedule_summary_and_effects(hass: HomeAssistant) -> Non
     hass.states.async_set("update.b", "on", {"installed_version": "1", "latest_version": "2", "title": "B"})
     push = async_mock_service(hass, "notify", "mobile_app_phone")
     persist = async_mock_service(hass, "persistent_notification", "create")
-    entry = MockConfigEntry(domain=DOMAIN, title="Updater", data={
+    entry = make_entry(domain=DOMAIN, title="Updater", data={
         "function_type": "updater", "name": "Updater", "timeout_minutes": 30,
         "schedules": [
             schedule("on", targets=("update.a",), mobile_enabled=True, mobile_targets=["mobile_app_phone"],
@@ -57,7 +57,7 @@ async def test_disabled_schedule_summary_and_effects(hass: HomeAssistant) -> Non
                      tts_enabled=False, persistent_enabled=True),
         ]})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     ctrl = hass.data[DOMAIN][entry.entry_id]
     assert [s["id"] for s in ctrl.schedules] == ["on"] and len(ctrl.all_schedules) == 2
@@ -103,14 +103,14 @@ async def test_door_guard_disabled_rule_is_ignored(hass: HomeAssistant) -> None:
         {"id": "r2", "action": "unlock", "trigger": "state", "entity_id": "person.britta",
          "to_state": "home", "for_minutes": 0},
     ]
-    entry = MockConfigEntry(domain=DOMAIN, title="Door", data={
+    entry = make_entry(domain=DOMAIN, title="Door", data={
         "function_type": "door_guard", "name": "Door", "lock": "lock.front_door",
         "contact": "binary_sensor.contact", "block_action": "notify", "retry_minutes": 10,
         "open_alert_minutes": 0, "open_alert_repeat_minutes": 0, "verify_seconds": 0,
         "manual_override": "ignore", "manual_pause_minutes": 60, "mobile_enabled": False,
         "tts_enabled": False, "persistent_enabled": True, "rules": rules})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     hass.states.async_set("person.ludger", "home")                    # ausgeschaltete Regel
     await hass.async_block_till_done()
@@ -127,14 +127,14 @@ async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
     assert rule_summary(hass, {**rule, "enabled": False}) == "Lock: 22:00 (off)"
 
     hass.states.async_set("lock.front_door", "locked")
-    entry = MockConfigEntry(domain=DOMAIN, title="Door", data={
+    entry = make_entry(domain=DOMAIN, title="Door", data={
         "function_type": "door_guard", "name": "Door", "lock": "lock.front_door", "rules": [],
         "persistent_enabled": True})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
     assert "enabled" in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(
@@ -153,15 +153,15 @@ async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
 
 async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None:
     hass.states.async_set("binary_sensor.bell", "off")
-    entry = MockConfigEntry(domain=DOMAIN, title="Klingel", data={
+    entry = make_entry(domain=DOMAIN, title="Klingel", data={
         "function_type": "doorbell", "name": "Klingel", "trigger_entity": "binary_sensor.bell",
         "debounce_seconds": 0, "mobile_enabled": False, "message": "x", "clear_after_hours": 0,
         "profiles": []})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
     sections = result["data_schema"].schema
     timing = next(v for k, v in sections.items() if str(k) == "timing")
@@ -189,7 +189,7 @@ async def test_knx_disabled_profile_is_inert(hass: HomeAssistant) -> None:
     async_mock_service(hass, "knx", "event_register")
     for player in ("media_player.a", "media_player.b"):
         hass.states.async_set(player, "paused", {"volume_level": 0.3})
-    entry = MockConfigEntry(domain=DOMAIN, title="Sonos", data={
+    entry = make_entry(domain=DOMAIN, title="Sonos", data={
         "function_type": "knx_sonos",
         "speakers": [speaker("a", "media_player.a"), speaker("b", "media_player.b", enabled=False)],
         "commands": [
@@ -197,7 +197,7 @@ async def test_knx_disabled_profile_is_inert(hass: HomeAssistant) -> None:
             {"id": "2", "name": "B", "address": "2/0/1", "dpt": "switch", "action": "play", "profile": "b"}],
         "status": [{"id": "s", "name": "S", "source": "volume", "address": "5/0/1", "profile": "b"}]})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     ctrl = hass.data[DOMAIN][entry.entry_id]
     assert ctrl.players == ["media_player.a"]
@@ -208,7 +208,7 @@ async def test_knx_disabled_profile_is_inert(hass: HomeAssistant) -> None:
     assert [c.data["entity_id"] for c in play] == ["media_player.a"]         # nur das aktive Profil
     assert send == []                                                        # Rückmeldung des ausgeschalteten Profils ruht
     # Wieder einschalten (Neuladen mit geänderten Optionen)
-    hass.config_entries.async_update_entry(entry, options={
+    update_entry(hass, entry, {
         "speakers": [speaker("a", "media_player.a"), speaker("b", "media_player.b")]})
     await hass.async_block_till_done()
     assert hass.data[DOMAIN][entry.entry_id].players == ["media_player.a", "media_player.b"]
@@ -219,14 +219,14 @@ async def test_knx_speaker_flow_stores_enabled_and_marks_picker(hass: HomeAssist
     hass.config.language = "en"
     async_mock_service(hass, "knx", "event_register")
     hass.states.async_set("media_player.a", "paused", {})
-    entry = MockConfigEntry(domain=DOMAIN, title="Sonos", data={
+    entry = make_entry(domain=DOMAIN, title="Sonos", data={
         "function_type": "knx_sonos", "player": "media_player.a", "max_volume": 100,
         "volume_step": 5, "stop_instead_of_pause": False, "commands": [], "status": []})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
     result = await flow.async_configure(result["flow_id"], {"item": "default"})
     assert "enabled" in {str(k) for k in result["data_schema"].schema}
@@ -250,9 +250,9 @@ MAILBOX = {"function_type": "mailbox", "name": "Briefkasten", "vibration_sensor"
 
 async def _mailbox(hass):
     hass.states.async_set("binary_sensor.v", "off")
-    entry = MockConfigEntry(domain=DOMAIN, title="Briefkasten", data=MAILBOX)
+    entry = make_entry(domain=DOMAIN, title="Briefkasten", data=MAILBOX)
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -267,7 +267,7 @@ async def test_mailbox_switch_pauses_notification(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert persist == [] and hass.states.get("binary_sensor.briefkasten_mail_present").state == "off"
     # Pause bleibt nach dem Neuladen erhalten
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    assert await hass.config_entries.async_reload(entry.hub_id)
     assert hass.states.get(switch).state == "off"
     await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
     hass.states.async_set("binary_sensor.v", "off")

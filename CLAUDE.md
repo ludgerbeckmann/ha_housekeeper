@@ -2,8 +2,9 @@
 
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Home Assistant Hausmeister“; die Domain und der Repo-Name bleiben `ha_housekeeper`, sonst gehen bestehende
-Einträge verloren): mehrere Funktionen, jede als eigener Config-Entry mit
-`function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
+Einträge verloren): mehrere Funktionen, jede als **Hub** (ein Config-Entry je Funktionstyp, `data` =
+`function_type` + `hub: True`, Titel = Funktionsname), die Instanzen sind **Untereinträge** (Config-Subentries,
+Typ = `function_type`, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
 portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) und `alarm_clock` („Wecker“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
@@ -21,19 +22,32 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Architektur
 
+- **Hub und Untereinträge:** `async_setup_entry` (`__init__.py`) richtet für **jeden Untereintrag** einen
+  Controller ein (`hass.data[DOMAIN][<subentry_id>]`, flach) und leitet die Plattformen des Typs weiter. Controller,
+  `Store`, Entitäten und Reparaturhinweise arbeiten mit `SubentryEntry` (`subentry.py`), einem Adapter, der einen
+  Untereintrag wie einen Config-Entry aussehen lässt (`entry_id` = Untereintrags-ID, `title`, `data` = Daten des
+  Untereintrags, `options` = `{}`; `hub_entry_id`). Plattformen: `async_setup_entry` ruft je Controller
+  `_add_entities(...)` mit `config_subentry_id=` auf (eigenes Gerät je Instanz). Änderungen an einem Untereintrag
+  laden den **Hub** neu (`_async_reload`, verschoben, solange **irgendein** Controller des Hubs `busy` ist; das
+  Flag `reload_requested` steht dann an allen Controllern). Ältere Einträge (ohne `hub`-Marker) laden nicht, es
+  gibt den Reparaturhinweis `legacy_entry`. `unload` stoppt alle Controller mit `entry.hub_entry_id`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
-  `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`/`done`) und
+  `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
   `updater.py`, `planner.py`, `alarm.py`) mit Formularen, Prüfungen und einer Options-Klasse
-  (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py` enthält nur den
-  `HousekeeperConfigFlow` (Funktionstyp wählen, Eintrag anlegen) und den
-  `HousekeeperOptionsFlow`, der alle Options-Klassen zusammensetzt. Neue Funktion = neues Modul in
-  `flows/` plus Eintrag in `config_flow.py`.
+  (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `NewInstanceSteps` (Anlege-Formulare
+  `async_step_new_<typ>`), `HousekeeperConfigFlow` (Funktionstyp wählen → Hub mit **erstem Untereintrag** anlegen;
+  je Typ nur ein Hub, `unique_id` `hub:<typ>`) und `HousekeeperSubentryFlow` (Schritt `user` = Instanz hinzufügen,
+  `reconfigure` = das Menü des Typs, `_MENU_STEPS`); er setzt alle Options-Klassen zusammen, `_current`/`_save`
+  lesen und schreiben die Daten des Untereintrags (`async_update_subentry`). Pumpen dürfen nur einmal vorkommen
+  (`unique_id` des Untereintrags). Neue Funktion = neues Modul in `flows/` plus Einträge in `config_flow.py`.
+  Übersetzungen der Einstellungsschritte stehen je Typ unter `config_subentries.<typ>` (`step`, `error`, `abort`,
+  `initiate_flow.user`, `entry_type`), die Anlege-Schritte des Hubs unter `config.step.new_<typ>`.
 
 - `const.py`: `FUNCTION_PLATFORMS` ist die Registry Funktionstyp → Plattformen.
   **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Config-Flow-Schritt
   `async_step_<typ>`, Controller-Klasse, Plattformdateien, Übersetzungen
-  (`selector.function_type.options.<typ>`), Setup/Unload in `__init__.py`.
+  (`selector.function_type.options.<typ>`, `config_subentries.<typ>`, `FUNCTION_TITLES`), Controller-Registry in `__init__.py`.
 - `mailbox.py` / `door_guard.py`: je ein Controller pro Funktion (Logik, Zustand
   in `Store`). Registry Typ → Controller in `__init__.py` (`CONTROLLERS`).
   Entitäten (`binary_sensor.py`, `sensor.py`, `button.py`, `switch.py`, Basis
@@ -55,9 +69,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `clear_after_hours`); ein Profil braucht Ton oder Push. Der Push steht **nur im Profil**, nicht
   im Eintrag: `assign_push()` liefert alle passenden Profile gleichberechtigt, jedes Ziel nur einmal
   (erstes Profil); je Profil ein eigener `Notifier` (`_notifier_for(targets)`). Löschzeitpunkte stehen
-  je Profil im `Store` (`clears`, älteres `clear_at` = Schlüssel `*`). `__init__._migrate_doorbell_push`
-  übernimmt den Push älterer Einträge einmalig als ganztägiges Profil „Benachrichtigung“ ohne Ton und
-  setzt die Eintragswerte auf `None`. Der Profil-Dialog ist **ein** Formular mit den Abschnitten
+  je Profil im `Store` (`clears`, älteres `clear_at` = Schlüssel `*`). Der Profil-Dialog ist **ein** Formular mit den Abschnitten
   `timing`, `sound`, `notifications` (`profile_basic`). Audio über `async_safe_call`.
 - `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und
   `pool_dry_run.py` sind reine Logik ohne HA-Imports und unverändert aus dem
@@ -193,9 +205,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Dialoge (`flows/`) arbeiten dagegen mit **allen** Elementen. Beim Briefkasten gibt es den
   Schalter `mailbox_active` (im `Store`, aus = Vibrationen werden ignoriert).
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
-- Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
-  den Eintrag neu, **aber nicht mitten in einem Lauf**: `__init__._async_reload` merkt das
-  Neuladen vor (`reload_requested`), wenn der Controller `busy` ist; das Mixin `ReloadWhenIdle`
+- Einstellungen stehen in den Daten des Untereintrags (`SubentryEntry.options` ist leer, ein auf `None` gesetzter
+  Wert gilt als geleert); Änderungen laden den Hub neu, **aber nicht mitten in einem Lauf**: `__init__._async_reload` merkt das
+  Neuladen vor (`reload_requested`), wenn ein Controller des Hubs `busy` ist; das Mixin `ReloadWhenIdle`
   (`reload.py`) führt es in `async_idle()` aus, sobald etwas endet. `busy` gilt für Wecker
   (klingelnd/schlummernd), Updater (Lauf oder offener `pending`-Bericht), Aufgabenplaner
   (laufende Aufgabe) und Poolsteuerung (manueller Lauf). Ein neuer Controller mit Zuständen,

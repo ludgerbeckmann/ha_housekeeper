@@ -6,12 +6,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.task_planner import (
     month_day_matches,
@@ -42,7 +41,7 @@ def _task(triggers, actions=None, **over):
 async def _setup(hass: HomeAssistant, tasks, **over):
     await hass.config.async_set_time_zone("Europe/Berlin")
     hass.config.language = "en"
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN,
         title="Planer",
         data={
@@ -55,7 +54,7 @@ async def _setup(hass: HomeAssistant, tasks, **over):
         },
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, hass.data[DOMAIN][entry.entry_id]
 
@@ -238,7 +237,7 @@ async def test_switch_pauses_and_button_runs(hass: HomeAssistant) -> None:
     assert len(calls) == 1
     assert ctrl.last_run["trigger"] == "manual"
     # Pause bleibt nach dem Neuladen erhalten
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    assert await hass.config_entries.async_reload(entry.hub_id)
     assert hass.states.get("switch.planer_task_planner_active").state == "off"
 
 
@@ -252,7 +251,7 @@ async def test_disabled_task_and_removed_button(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert not calls
     assert hass.states.get("button.planer_test") is not None
-    hass.config_entries.async_update_entry(entry, options={"tasks": []})
+    update_entry(hass, entry, {"tasks": []})
     await hass.async_block_till_done()
     assert hass.states.get("button.planer_test") is None
 
@@ -278,7 +277,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "task_planner"}
     )
-    assert result["step_id"] == "task_planner"
+    assert result["step_id"] == "new_task_planner"
     bad = await hass.config_entries.flow.async_configure(
         result["flow_id"], sectioned({"name": "Planer", "mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False})
     )
@@ -288,14 +287,14 @@ async def test_config_flow(hass: HomeAssistant) -> None:
         sectioned({"name": "Planer", "mobile_enabled": False, "tts_enabled": False, "persistent_enabled": True}),
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "task_planner" and ok["data"]["tasks"] == []
+    assert ok["data"]["function_type"] == "task_planner" and ok["subentries"][0]["data"]["tasks"] == []
 
 
 async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
     hass.config.language = "en"
     entry, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert is_menu(result) and result["step_id"] == "tp_menu"
     assert "edit_task" not in menu_options(result)
 

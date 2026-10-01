@@ -1,0 +1,67 @@
+"""Untereinträge: Adapter für die Controller und Hilfen für den Hub.
+
+Ein **Hub** (Config-Entry) gehört zu genau einem Funktionstyp (z. B. „Türklingel“). Jede Instanz
+(eine Klingel, ein Pool, ein Wecker-Eintrag …) ist ein **Untereintrag** mit eigenem Gerät. Die
+Controller, die Entitäten, der Store und die Reparaturhinweise arbeiten weiter mit einem
+„Eintrag“ (`entry_id`, `title`, `data`, `options`): Dafür gibt es `SubentryEntry`, der einen
+Untereintrag wie einen Config-Entry aussehen lässt. Seine `entry_id` ist die ID des Untereintrags.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState, ConfigSubentry
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+
+from .const import CONF_FUNCTION_TYPE, DOMAIN
+
+
+class SubentryEntry:
+    """Schmale Sicht auf einen Untereintrag mit der Schnittstelle eines Config-Entries."""
+
+    domain = DOMAIN
+
+    def __init__(self, hub: ConfigEntry, subentry: ConfigSubentry) -> None:
+        self.hub = hub
+        self._subentry = subentry
+
+    @property
+    def entry_id(self) -> str:
+        return self._subentry.subentry_id
+
+    @property
+    def hub_entry_id(self) -> str:
+        return self.hub.entry_id
+
+    @property
+    def title(self) -> str:
+        return self._subentry.title
+
+    @property
+    def data(self) -> dict[str, Any]:
+        return {CONF_FUNCTION_TYPE: self._subentry.subentry_type, **self._subentry.data}
+
+    @property
+    def options(self) -> dict[str, Any]:
+        """Es gibt keine getrennten Optionen: alles steht in den Daten des Untereintrags."""
+        return {}
+
+    @property
+    def state(self) -> ConfigEntryState:
+        return self.hub.state
+
+    def async_on_unload(self, func: Callable[[], Any]) -> CALLBACK_TYPE:
+        return self.hub.async_on_unload(func)
+
+
+def hub_controllers(hass: HomeAssistant, hub: ConfigEntry) -> list[Any]:
+    """Controller aller Untereinträge eines Hubs (soweit eingerichtet)."""
+    controllers = hass.data.get(DOMAIN, {})
+    return [controllers[sid] for sid in hub.subentries if sid in controllers]
+
+
+def any_busy(hass: HomeAssistant, hub: ConfigEntry) -> bool:
+    """Hat ein Controller des Hubs gerade etwas Laufendes, das ein Neuladen nicht überstünde?"""
+    return any(getattr(c, "busy", False) for c in hub_controllers(hass, hub))

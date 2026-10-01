@@ -17,6 +17,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
+from .helpers import make_entry
 from custom_components.ha_housekeeper import issues
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -27,13 +28,13 @@ MAILBOX = {"function_type": "mailbox", "name": "Briefkasten", "vibration_sensor"
 
 
 def entry_of(data, title="Test", options=None):
-    return MockConfigEntry(domain=DOMAIN, title=title, data=data, options=options or {})
+    return make_entry(domain=DOMAIN, title=title, data=data, options=options or {})
 
 
 async def setup(hass: HomeAssistant, data, title="Test", options=None):
     entry = entry_of(data, title, options)
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -47,7 +48,7 @@ def open_issues(hass: HomeAssistant) -> dict[str, ir.IssueEntry]:
 
 def test_collect_references_per_function() -> None:
     def refs(data):
-        return issues.collect_references(entry_of(data))
+        return issues.collect_references(entry_of(data).sub)
 
     assert refs({**MAILBOX, "sensitivity_entity": "number.s", "tts_entity": "tts.home",
                  "tts_player": "media_player.k", "mobile_targets": ["dev1", "dev2"]}) == (
@@ -74,7 +75,7 @@ def test_collect_references_per_function() -> None:
                  "workday_sensors": ["binary_sensor.w"]})[0] == ["media_player.a", "binary_sensor.w"]
     # Optionen haben Vorrang; ein leeres Feld (None) überdeckt den Wert aus den Daten
     entry = entry_of({**MAILBOX, "sensitivity_entity": "number.s"}, options={"sensitivity_entity": None})
-    assert "number.s" not in issues.collect_references(entry)[0]
+    assert "number.s" not in issues.collect_references(entry.sub)[0]
 
 
 # --- Hinweise anlegen und wieder entfernen -----------------------------------------------------------
@@ -83,7 +84,7 @@ def test_collect_references_per_function() -> None:
 async def test_missing_entity_creates_issue_and_resolves(hass: HomeAssistant) -> None:
     hass.config.language = "en"
     entry = await setup(hass, MAILBOX, title="Briefkasten")
-    assert await issues.async_check_entry(hass, entry) != []
+    assert await issues.async_check_entry(hass, entry.sub) != []
     (issue,) = open_issues(hass).values()
     assert issue.translation_key == "entity_missing" and issue.is_fixable is False
     assert issue.severity is ir.IssueSeverity.WARNING
@@ -91,7 +92,7 @@ async def test_missing_entity_creates_issue_and_resolves(hass: HomeAssistant) ->
         "entry": "Briefkasten", "function": "Mailbox notification", "entity": "binary_sensor.v"}
     # Entität erscheint: der Hinweis verschwindet von selbst
     hass.states.async_set("binary_sensor.v", "off")
-    assert await issues.async_check_entry(hass, entry) == []
+    assert await issues.async_check_entry(hass, entry.sub) == []
     assert open_issues(hass) == {}
 
 
@@ -102,7 +103,7 @@ async def test_unavailable_and_disabled_are_not_missing(hass: HomeAssistant) -> 
     registry.async_get_or_create(
         "number", "test", "s1", suggested_object_id="disabled",
         disabled_by=er.RegistryEntryDisabler.USER)
-    assert await issues.async_check_entry(hass, entry) == []
+    assert await issues.async_check_entry(hass, entry.sub) == []
     assert open_issues(hass) == {}
 
 
@@ -111,11 +112,11 @@ async def test_each_missing_reference_has_its_own_issue(hass: HomeAssistant) -> 
     entry = await setup(hass, {
         "function_type": "pool_pump", "pump_entity": "switch.p", "power_entity": "sensor.w"})
     hass.states.async_set("switch.p", "off")
-    assert len(await issues.async_check_entry(hass, entry)) == 1               # nur sensor.w fehlt
+    assert len(await issues.async_check_entry(hass, entry.sub)) == 1               # nur sensor.w fehlt
     hass.states.async_remove("switch.p")
-    assert len(await issues.async_check_entry(hass, entry)) == 2
+    assert len(await issues.async_check_entry(hass, entry.sub)) == 2
     hass.states.async_set("switch.p", "off")
-    assert len(await issues.async_check_entry(hass, entry)) == 1
+    assert len(await issues.async_check_entry(hass, entry.sub)) == 1
     assert [v.translation_placeholders["entity"] for v in open_issues(hass).values()] == ["sensor.w"]
 
 
@@ -133,7 +134,7 @@ async def test_device_issue_for_deleted_companion_device(hass: HomeAssistant, fr
         config_entry_id=app.entry_id, identifiers={("mobile_app", "a")}, name="iPhone Ludger")
     hass.states.async_set("binary_sensor.v", "off")
     entry = await setup(hass, {**MAILBOX, "mobile_enabled": True, "mobile_targets": [device.id]})
-    assert await issues.async_check_entry(hass, entry) == []
+    assert await issues.async_check_entry(hass, entry.sub) == []
     dr.async_get(hass).async_remove_device(device.id)
     await _wait_for_event_check(hass, freezer)                               # Registry-Ereignis löst die Prüfung aus
     (issue,) = open_issues(hass).values()
@@ -143,9 +144,9 @@ async def test_device_issue_for_deleted_companion_device(hass: HomeAssistant, fr
 async def test_legacy_service_name_missing_and_present(hass: HomeAssistant) -> None:
     hass.states.async_set("binary_sensor.v", "off")
     entry = await setup(hass, {**MAILBOX, "mobile_enabled": True, "mobile_targets": ["mobile_app_altes"]})
-    assert len(await issues.async_check_entry(hass, entry)) == 1
+    assert len(await issues.async_check_entry(hass, entry.sub)) == 1
     async_mock_service(hass, "notify", "mobile_app_altes")
-    assert await issues.async_check_entry(hass, entry) == []
+    assert await issues.async_check_entry(hass, entry.sub) == []
 
 
 # --- Auslöser der Prüfung ---------------------------------------------------------------------------------
@@ -187,13 +188,13 @@ async def test_first_check_after_grace_period_and_hourly(hass: HomeAssistant, fr
 
 async def test_issues_removed_with_the_entry(hass: HomeAssistant) -> None:
     entry = await setup(hass, MAILBOX)
-    await issues.async_check_entry(hass, entry)
+    await issues.async_check_entry(hass, entry.sub)
     assert len(open_issues(hass)) == 1
-    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.config_entries.async_unload(entry.hub_id)
     await hass.async_block_till_done()
     assert len(open_issues(hass)) == 1                                       # Entladen (Neuladen) behält den Hinweis
-    assert await issues.async_check_entry(hass, entry) == []                 # entladener Eintrag wird nicht geprüft
-    await hass.config_entries.async_remove(entry.entry_id)
+    assert await issues.async_check_entry(hass, entry.sub) == []                 # entladener Eintrag wird nicht geprüft
+    await hass.config_entries.async_remove(entry.hub_id)
     await hass.async_block_till_done()
     assert open_issues(hass) == {}
 
@@ -201,11 +202,11 @@ async def test_issues_removed_with_the_entry(hass: HomeAssistant) -> None:
 async def test_issues_only_belong_to_their_entry(hass: HomeAssistant) -> None:
     first = await setup(hass, MAILBOX, title="Eins")
     second = await setup(hass, {**MAILBOX, "vibration_sensor": "binary_sensor.w"}, title="Zwei")
-    await issues.async_check_entry(hass, first)
-    await issues.async_check_entry(hass, second)
+    await issues.async_check_entry(hass, first.sub)
+    await issues.async_check_entry(hass, second.sub)
     assert len(open_issues(hass)) == 2
     hass.states.async_set("binary_sensor.v", "off")
-    await issues.async_check_entry(hass, first)
+    await issues.async_check_entry(hass, first.sub)
     assert [v.translation_placeholders["entry"] for v in open_issues(hass).values()] == ["Zwei"]
 
 

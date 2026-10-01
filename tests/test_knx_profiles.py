@@ -1,7 +1,7 @@
 """KNX/Sonos-Connector: mehrere Lautsprecher über Profile."""
 
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.knx_sonos import (
@@ -10,7 +10,7 @@ from custom_components.ha_housekeeper.knx_sonos import (
     speaker_profiles,
 )
 
-from .helpers import is_menu, menu_options
+from .helpers import is_menu, menu_options, make_entry, reconfigure
 
 LIVING = "media_player.living_room"
 KITCHEN = "media_player.kitchen"
@@ -47,9 +47,9 @@ async def _setup(hass: HomeAssistant, **over):
                                               "source_list": ["Radio", "Jazz"]})
     hass.states.async_set(KITCHEN, "playing", {"volume_level": 0.6, "is_volume_muted": True,
                                                 "source_list": ["Podcast"], "media_title": "Song"})
-    entry = MockConfigEntry(domain=DOMAIN, title="Sonos", data={**DATA, **over})
+    entry = make_entry(domain=DOMAIN, title="Sonos", data={**DATA, **over})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, mocks
 
@@ -201,8 +201,8 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     hass.config.language = "en"
     entry, _ = await _setup(hass, player=LIVING, max_volume=100, volume_step=5,
                             stop_instead_of_pause=False)
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert menu_options(result)[:3] == ["add_speaker", "edit_speaker", "add_command"]   # nur ein Profil
 
     # Befehl bei nur einem Profil: kein Profilfeld, aber dem Profil zugeordnet
@@ -260,7 +260,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     assert blocked["errors"] == {"base": "profile_in_use"}                # die Rückmeldung nutzt es noch
 
     # Rückmeldung entfernen, dann lässt sich das Profil „Küche“ löschen
-    result = await flow.async_init(entry.entry_id)
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_status"})
     result = await flow.async_configure(result["flow_id"], {"item": entry.options["status"][0]["id"]})
     assert entry.options["status"] == []

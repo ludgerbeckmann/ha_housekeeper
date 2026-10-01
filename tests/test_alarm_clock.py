@@ -6,7 +6,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
@@ -14,7 +13,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.ha_housekeeper import alarm_clock as ac
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, menu_options, sectioned
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry
 
 PLAYER = "media_player.bedroom"
 MEDIA = {"media_content_id": "media-source://media_source/local/wecker.mp3",
@@ -47,14 +46,14 @@ async def _setup(hass, alarms, freezer=None, now="2026-01-05 06:59:58+01:00", **
         freezer.move_to(now)
     hass.states.async_set(PLAYER, "idle", {"volume_level": 0.5})
     env = Env(hass)
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Wecker",
         data={"function_type": "alarm_clock", "name": "Wecker", "mobile_enabled": True,
               "mobile_targets": ["mobile_app_phone"], "critical": True, "message": "Wecker",
               "alarms": alarms, **over},
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, hass.data[DOMAIN][entry.entry_id], env
 
@@ -207,7 +206,7 @@ async def test_switch_off_pauses_and_stops_ringing(hass: HomeAssistant, freezer)
     assert not ctrl.active and env.volume[-1].data["volume_level"] == 0.5
     assert hass.states.get("sensor.wecker_next_alarm").state == "unknown"
     # Pause bleibt nach dem Neuladen erhalten
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    assert await hass.config_entries.async_reload(entry.hub_id)
     assert hass.states.get("switch.wecker_alarm_clock_active").state == "off"
 
 
@@ -228,11 +227,11 @@ async def test_volume_restored_after_restart_while_ringing(hass: HomeAssistant, 
     store = {"enabled": True, "last_ring": None, "last_alarm": "Aufstehen", "restore": {PLAYER: 0.5}}
     assert ctrl._restore == {PLAYER: 0.5}                                          # noqa: SLF001
     # Neustart simulieren: Zustand mit offener Wiederherstellung
-    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.config_entries.async_unload(entry.hub_id)
     env.volume.clear()
     from homeassistant.helpers.storage import Store
     await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}").async_save(store)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     assert env.volume and env.volume[0].data == {"entity_id": PLAYER, "volume_level": 0.5}
     assert hass.data[DOMAIN][entry.entry_id]._restore == {}                        # noqa: SLF001
@@ -253,7 +252,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "alarm_clock"})
-    assert result["step_id"] == "alarm_clock"
+    assert result["step_id"] == "new_alarm_clock"
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]
     base = {"name": "Wecker", "mobile_enabled": True, "critical": True, "message": "Wecker"}
@@ -262,15 +261,15 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     ok = await hass.config_entries.flow.async_configure(
         result["flow_id"], sectioned({**base, "mobile_targets": ["mobile_app_phone"]}))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "alarm_clock" and ok["data"]["alarms"] == []
-    assert ok["data"]["critical"] is True
+    assert ok["data"]["function_type"] == "alarm_clock" and ok["subentries"][0]["data"]["alarms"] == []
+    assert ok["subentries"][0]["data"]["critical"] is True
 
 
 async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
     hass.config.language = "en"
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert is_menu(result) and "edit_alarm" not in menu_options(result)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     assert result["step_id"] == "alarm_edit"
@@ -301,8 +300,8 @@ async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
 
 async def test_options_general_has_sensors_and_notifications(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "alarm_general"})
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]
@@ -428,7 +427,7 @@ async def test_skip_survives_reload_and_unavailable_sensor_rings(hass: HomeAssis
         hass, [alarm(only_if_on=[WORKDAY])], freezer, workday_sensors=[WORKDAY])
     await _advance(hass, freezer, seconds=3)
     assert ctrl.last_skipped is not None
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    assert await hass.config_entries.async_reload(entry.hub_id)
     assert hass.data[DOMAIN][entry.entry_id].last_skipped["alarm"] == "Aufstehen"
     # Sensor nicht verfügbar: der Wecker klingelt (nächster Tag)
     hass.states.async_set(WORKDAY, "unavailable")
@@ -440,15 +439,14 @@ async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> Non
     hass.states.async_set(WORKDAY, "on", {"friendly_name": "Werktag"})
     hass.states.async_set(HOLIDAY, "off", {"friendly_name": "Feiertag"})
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     assert "only_if_on" not in {str(k) for k in result["data_schema"].schema}   # keine globalen Sensoren
 
-    hass.config_entries.async_update_entry(
-        entry, options={**entry.options, "workday_sensors": [WORKDAY, HOLIDAY]})
+    update_entry(hass, entry, {**entry.options, "workday_sensors": [WORKDAY, HOLIDAY]})
     await hass.async_block_till_done()
-    result = await flow.async_init(entry.entry_id)
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     schema = result["data_schema"].schema
     assert {"only_if_on", "skip_if_on"} <= {str(k) for k in schema}
@@ -474,8 +472,8 @@ async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> Non
 
 async def test_conditions_kept_when_global_sensors_removed(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [alarm(only_if_on=[WORKDAY])])        # ohne globale Sensoren
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_alarm"})
     result = await flow.async_configure(result["flow_id"], {"alarm": "a1"})
     form = {"name": "Aufstehen", "enabled": True, "time": "07:00:00", "weekdays": ["mon"],

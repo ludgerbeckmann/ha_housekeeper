@@ -53,6 +53,7 @@ from .const import (
     FUNCTION_MAILBOX,
     FUNCTION_POOL,
     FUNCTION_TASK_PLANNER,
+    FUNCTION_TITLES,
     FUNCTION_UPDATER,
 )
 from .notify import entry_opt
@@ -64,18 +65,6 @@ DEVICE_MISSING = "device_missing"
 EVENT_DELAY_SECONDS = 10    # nach Registry-Ereignissen kurz warten und zusammenfassen
 GRACE_SECONDS = 300          # nach dem Start Zeit lassen, bis alle Integrationen geladen sind
 CHECK_INTERVAL = timedelta(hours=1)
-
-FUNCTION_NAMES = {
-    FUNCTION_MAILBOX: ("Benachrichtigung Briefkasten", "Mailbox notification"),
-    FUNCTION_DOOR_GUARD: ("Türwächter", "Door guard"),
-    FUNCTION_DOORBELL: ("Türklingel", "Doorbell"),
-    FUNCTION_POOL: ("Poolsteuerung", "Pool control"),
-    FUNCTION_KNX_SONOS: ("KNX/Sonos-Connector", "KNX/Sonos connector"),
-    FUNCTION_UPDATER: ("Home Assistant Updater", "Home Assistant Updater"),
-    FUNCTION_TASK_PLANNER: ("Aufgabenplaner", "Task planner"),
-    FUNCTION_ALARM: ("Wecker", "Alarm clock"),
-}
-
 
 def _listed(items: Any, *keys: str) -> list[str]:
     """Werte aus verschachtelten Listen einsammeln (`items` = Liste von Dicts)."""
@@ -153,7 +142,7 @@ def _issue_id(entry: ConfigEntry, kind: str, reference: str) -> str:
 
 
 def _function_name(hass: HomeAssistant, entry: ConfigEntry) -> str:
-    german, english = FUNCTION_NAMES.get(entry.data.get(CONF_FUNCTION_TYPE), ("", ""))
+    german, english = FUNCTION_TITLES.get(entry.data.get(CONF_FUNCTION_TYPE), ("", ""))
     return (german if (hass.config.language or "").startswith("de") else english) or entry.title
 
 
@@ -192,9 +181,8 @@ async def async_check_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[str
     return list(wanted)
 
 
-def async_remove_entry_issues(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Alle Hinweise eines gelöschten Eintrags entfernen."""
-    prefix = f"{entry.entry_id}_"
+def async_remove_issues_with_prefix(hass: HomeAssistant, prefix: str) -> None:
+    """Alle Hinweise entfernen, deren ID mit `prefix` beginnt (ein Untereintrag)."""
     for domain, issue_id in list(ir.async_get(hass).issues):
         if domain == DOMAIN and issue_id.startswith(prefix):
             ir.async_delete_issue(hass, DOMAIN, issue_id)
@@ -214,12 +202,18 @@ def _device_event_filter(data: Any) -> bool:
 
 
 @callback
-def async_setup_checks(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Prüfungen einrichten: nach dem Start, stündlich und bei Entfernen/Umbenennen."""
+def async_setup_checks(hass: HomeAssistant, hub: ConfigEntry, entries: list[Any]) -> None:
+    """Prüfungen einrichten: nach dem Start, stündlich und bei Entfernen/Umbenennen.
+
+    `entries` sind die Untereinträge des Hubs (als `SubentryEntry`). Hinweise gelöschter
+    Untereinträge werden dabei entfernt.
+    """
+    _remove_orphans(hass)
 
     @callback
     def _run(*_args: Any) -> None:
-        hass.async_create_task(async_check_entry(hass, entry))
+        for entry in entries:
+            hass.async_create_task(async_check_entry(hass, entry))
 
     pending: list[CALLBACK_TYPE] = []
 
@@ -235,14 +229,14 @@ def async_setup_checks(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _cancel_pending()
         pending.append(async_call_later(hass, EVENT_DELAY_SECONDS, _run))
 
-    entry.async_on_unload(_cancel_pending)
-    entry.async_on_unload(async_track_time_interval(hass, _run, CHECK_INTERVAL))
-    entry.async_on_unload(
+    hub.async_on_unload(_cancel_pending)
+    hub.async_on_unload(async_track_time_interval(hass, _run, CHECK_INTERVAL))
+    hub.async_on_unload(
         hass.bus.async_listen(
             er.EVENT_ENTITY_REGISTRY_UPDATED, _run_soon, event_filter=_entity_event_filter
         )
     )
-    entry.async_on_unload(
+    hub.async_on_unload(
         hass.bus.async_listen(
             dr.EVENT_DEVICE_REGISTRY_UPDATED, _run_soon, event_filter=_device_event_filter
         )
@@ -251,6 +245,18 @@ def async_setup_checks(hass: HomeAssistant, entry: ConfigEntry) -> None:
     @callback
     def _first_check(_hass: HomeAssistant) -> None:
         # nach dem Start eine Schonfrist, bis alle Integrationen ihre Entitäten geladen haben
-        entry.async_on_unload(async_call_later(hass, GRACE_SECONDS, _run))
+        hub.async_on_unload(async_call_later(hass, GRACE_SECONDS, _run))
 
     async_at_started(hass, _first_check)
+
+
+def _remove_orphans(hass: HomeAssistant) -> None:
+    """Hinweise entfernen, deren Untereintrag (oder Hub) nicht mehr existiert."""
+    valid = {
+        sid for hub in hass.config_entries.async_entries(DOMAIN) for sid in hub.subentries
+    } | {hub.entry_id for hub in hass.config_entries.async_entries(DOMAIN)}
+    for domain, issue_id in list(ir.async_get(hass).issues):
+        if domain != DOMAIN or issue_id.startswith("legacy_"):
+            continue
+        if not any(issue_id.startswith(f"{sid}_") for sid in valid):
+            ir.async_delete_issue(hass, DOMAIN, issue_id)

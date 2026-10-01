@@ -2,11 +2,10 @@
 
 import pytest
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, sectioned
+from .helpers import is_menu, sectioned, make_entry, reconfigure
 
 NOTIFY_FIELDS = {"mobile_enabled", "mobile_targets", "tts_enabled", "tts_entity",
                  "tts_player", "persistent_enabled"}
@@ -40,7 +39,7 @@ async def test_config_forms_have_sections(hass: HomeAssistant, function, general
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": function}
     )
-    assert result["step_id"] == function
+    assert result["step_id"] == f"new_{function}"
     _assert_sections(result["data_schema"].schema, general, notifications)
 
 
@@ -65,12 +64,12 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
          "dry_run", "dry_run"),
     ]
     for data, menu_item, step in cases:
-        entry = MockConfigEntry(domain=DOMAIN, title=data["name"], data=data)
+        entry = make_entry(domain=DOMAIN, title=data["name"], data=data)
         entry.add_to_hass(hass)
-        assert await hass.config_entries.async_setup(entry.entry_id)
+        assert await hass.config_entries.async_setup(entry.hub_id)
         await hass.async_block_till_done()
-        flow = hass.config_entries.options
-        result = await flow.async_init(entry.entry_id)
+        flow = hass.config_entries.subentries
+        result = await reconfigure(hass, entry)
         result = await flow.async_configure(result["flow_id"], {"next_step_id": menu_item})
         assert result["step_id"] == step
         schema = result["data_schema"].schema
@@ -81,16 +80,16 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
 
 
 async def test_door_options_save_flat(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Tür",
         data={"function_type": "door_guard", "name": "Tür", "lock": "lock.tuer", "rules": [],
               "persistent_enabled": True},
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "general"})
     flat = {"lock": "lock.tuer", "block_action": "notify", "retry_minutes": 10,
             "open_alert_minutes": 15, "open_alert_repeat_minutes": 10, "verify_seconds": 30,
@@ -107,16 +106,16 @@ async def test_door_options_save_flat(hass: HomeAssistant) -> None:
 
 
 async def test_planner_options_only_notifications_section(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Planer",
         data={"function_type": "task_planner", "name": "Planer", "tasks": [],
               "mobile_enabled": False, "persistent_enabled": True},
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "tp_general"})
     assert [str(k) for k in result["data_schema"].schema] == ["notifications"]
     bad = await flow.async_configure(

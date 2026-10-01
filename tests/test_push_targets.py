@@ -4,6 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
+from .helpers import make_entry, reconfigure
 from custom_components.ha_housekeeper.flows.common import _mobile_selector, _mobile_suggest
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.notify import (
@@ -87,7 +88,7 @@ async def test_notifier_sends_once_per_device_and_keeps_actions(hass: HomeAssist
 async def test_form_prefills_legacy_targets_as_devices(hass: HomeAssistant) -> None:
     ludger = add_device(hass, "iPhone Ludger")
     hass.states.async_set("binary_sensor.briefkasten_vibration", "off")
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Briefkasten",
         data={"function_type": "mailbox", "name": "Briefkasten",
               "vibration_sensor": "binary_sensor.briefkasten_vibration", "mobile_enabled": True,
@@ -95,10 +96,10 @@ async def test_form_prefills_legacy_targets_as_devices(hass: HomeAssistant) -> N
               "message": "Post!", "debounce_seconds": 0, "auto_reset_hours": 0})
     entry.add_to_hass(hass)
     async_mock_service(hass, "notify", "mobile_app_iphone_ludger")
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    result = await hass.config_entries.options.async_configure(
+    result = await reconfigure(hass, entry)
+    result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {"next_step_id": "mailbox"})
     notifications = next(v for k, v in result["data_schema"].schema.items() if str(k) == "notifications")
     key = next(k for k in notifications.schema.schema if str(k) == "mobile_targets")

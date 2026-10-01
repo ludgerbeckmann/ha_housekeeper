@@ -6,13 +6,15 @@ import logging
 
 from homeassistant.core import callback
 
+from .subentry import any_busy, hub_controllers
+
 _LOGGER = logging.getLogger(__name__)
 
 
 class ReloadWhenIdle:
     """Mixin für Controller mit Zuständen, die ein Neuladen nicht überstehen.
 
-    Das Speichern der Einstellungen lädt den Eintrag neu (`_async_reload` in `__init__.py`).
+    Das Speichern der Einstellungen lädt den Hub neu (`_async_reload` in `__init__.py`).
     Ist der Controller `busy` (z. B. ein klingelnder Wecker, ein laufender Update-Lauf), wird
     das Neuladen vorgemerkt und erst ausgeführt, wenn er wieder ruhig ist; mehrere Änderungen
     ergeben so nur ein Neuladen. Der Controller ruft dafür `async_idle()` auf, sobald etwas
@@ -28,12 +30,15 @@ class ReloadWhenIdle:
 
     @callback
     def async_idle(self) -> None:
-        """Vorgemerktes Neuladen ausführen, sobald der Controller nicht mehr beschäftigt ist."""
+        """Vorgemerktes Neuladen des Hubs ausführen, sobald kein Controller mehr beschäftigt ist."""
         if not self.reload_requested or self.busy:
             return
-        self.reload_requested = False
-        hass, entry_id = self.hass, self.entry.entry_id  # type: ignore[attr-defined]
-        if hass.config_entries.async_get_entry(entry_id) is None:
+        hass = self.hass  # type: ignore[attr-defined]
+        entry = self.entry  # type: ignore[attr-defined]
+        hub = hass.config_entries.async_get_entry(entry.hub_entry_id)
+        if hub is None or any_busy(hass, hub):
             return
-        _LOGGER.debug("%s: vorgemerktes Neuladen wird ausgeführt", self.entry.title)  # type: ignore[attr-defined]
-        hass.async_create_task(hass.config_entries.async_reload(entry_id))
+        for controller in hub_controllers(hass, hub):
+            controller.reload_requested = False
+        _LOGGER.debug("%s: vorgemerktes Neuladen wird ausgeführt", hub.title)
+        hass.async_create_task(hass.config_entries.async_reload(hub.entry_id))

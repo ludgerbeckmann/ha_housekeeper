@@ -8,12 +8,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options
+from .helpers import is_menu, menu_options, make_entry, reconfigure
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -65,10 +64,10 @@ class Installer:
 
 async def _setup(hass, schedules, **over):
     push = async_mock_service(hass, "notify", "mobile_app_phone")
-    entry = MockConfigEntry(domain=DOMAIN, title="Updater",
+    entry = make_entry(domain=DOMAIN, title="Updater",
                             data={**BASE, "schedules": schedules, **over})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, hass.data[DOMAIN][entry.entry_id], push
 
@@ -247,14 +246,14 @@ def _pending(status_to="2.0"):
 async def _setup_with_pending(hass, hass_storage, installed, monkeypatch):
     monkeypatch.setattr(upd, "FINALIZE_DELAY", 0.01)
     put(hass, CORE, installed=installed, latest="2.0", state="off")
-    entry = MockConfigEntry(domain=DOMAIN, title="Updater",
+    entry = make_entry(domain=DOMAIN, title="Updater",
                             data={**BASE, "schedules": [schedule(targets=[CORE])]})
     entry.add_to_hass(hass)
     hass_storage[f"{DOMAIN}.{entry.entry_id}"] = {
         "version": 1, "minor_version": 1, "key": f"{DOMAIN}.{entry.entry_id}",
         "data": {"enabled": True, "last_run": None, "pending": _pending()}}
     push = async_mock_service(hass, "notify", "mobile_app_phone")
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=5))
     await hass.async_block_till_done()
@@ -337,13 +336,13 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "updater"})
-    assert result["step_id"] == "updater"
+    assert result["step_id"] == "new_updater"
     assert {str(k) for k in result["data_schema"].schema} == {"name", "timeout_minutes"}
     ok = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Updater", "timeout_minutes": 30})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "updater" and ok["data"]["schedules"] == []
-    assert "mobile_enabled" not in ok["data"]               # Benachrichtigung je Zeitplan
+    assert ok["data"]["function_type"] == "updater" and ok["subentries"][0]["data"]["schedules"] == []
+    assert "mobile_enabled" not in ok["subentries"][0]["data"]               # Benachrichtigung je Zeitplan
 
 
 def sched_form(timing=None, actions=None, notifications=None):
@@ -358,8 +357,8 @@ def sched_form(timing=None, actions=None, notifications=None):
 
 async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert result["step_id"] == "upd_menu" and "edit_schedule" not in menu_options(result)
 
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
@@ -492,8 +491,8 @@ async def test_schedule_summary_with_components(hass: HomeAssistant) -> None:
 
 async def test_options_flow_components_only(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     bad = await flow.async_configure(
         result["flow_id"], sched_form(timing={"name": "Nachts"}, actions={"targets": []}))
@@ -544,13 +543,13 @@ async def test_old_schedule_falls_back_to_entry_settings(hass: HomeAssistant) ->
 async def test_general_settings_keep_entry_fallback(hass: HomeAssistant) -> None:
     put(hass, ADDON)
     entry, ctrl, push = await _setup(hass, [schedule(mode="notify")])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
     await flow.async_configure(result["flow_id"], {"timeout_minutes": 15})
     await hass.async_block_till_done()
     ctrl = hass.data[DOMAIN][entry.entry_id]
-    assert entry.options["timeout_minutes"] == 15 and "mobile_targets" not in entry.options
+    assert entry.options["timeout_minutes"] == 15
     await ctrl.async_run_schedule(ctrl.schedules[0])
     assert len(push) == 1                                            # Rückfall bleibt erhalten
 
@@ -710,8 +709,8 @@ async def test_disabled_available_schedule_does_not_run(hass: HomeAssistant) -> 
 
 async def test_options_flow_available_trigger(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     bad = await flow.async_configure(result["flow_id"], sched_form(
         timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00"}))
