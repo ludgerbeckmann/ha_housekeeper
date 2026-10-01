@@ -35,7 +35,7 @@
               "message": "Message text",
               "repeat_message": "Text on repeated trigger",
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
@@ -44,7 +44,7 @@
             "data_description": {
               "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
               "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -80,14 +80,14 @@
             "description": "How and with what the door guard reports.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -113,7 +113,7 @@
             "description": "Push message to the devices and when it is cleared again.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "message": "Push text",
               "clear_after_hours": "Clear push after X hours (0 = never)"
             },
@@ -167,14 +167,14 @@
             "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -199,12 +199,12 @@
             "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "critical": "Send as critical notification",
               "message": "Message text"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
               "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
               "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
             }
@@ -270,7 +270,7 @@
               "message": "Message text",
               "repeat_message": "Text on repeated trigger",
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
@@ -279,7 +279,7 @@
             "data_description": {
               "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
               "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -321,14 +321,14 @@
             "description": "How and with what the door guard reports.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -406,7 +406,7 @@
             "description": "Push message to the devices and when it is cleared again.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "message": "Push text",
               "clear_after_hours": "Clear push after X hours (0 = never)"
             },
@@ -517,14 +517,14 @@
             "description": "How and with what a dry run is reported.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -689,14 +689,14 @@
             "description": "How and with what this schedule reports.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -716,14 +716,14 @@
             "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "tts_enabled": "Enable voice announcement",
               "tts_entity": "TTS service",
               "tts_player": "Speaker (media_player)",
               "persistent_enabled": "Persistent notification in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
         }
@@ -856,12 +856,12 @@
             "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
             "data": {
               "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
+              "mobile_targets": "Push targets (companion app devices)",
               "critical": "Send as critical notification",
               "message": "Message text"
             },
             "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
               "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
               "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
             }

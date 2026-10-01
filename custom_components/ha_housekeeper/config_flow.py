@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
-from homeassistant.util import dt as dt_util, slugify
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ACTIONS,
@@ -226,54 +226,27 @@ from .alarm_clock import alarm_summary
 from .knx_codec import is_valid_ga
 from .knx_sonos import command_summary, profile_for, speaker_profiles, status_summary
 from .task_planner import task_summary, trigger_summary
+from .notify import targets_for_form
 from .updater import NOTIFY_KEYS, has_own_notify, schedule_summary
 from .pool_schedule import describe_window, parse_time, parse_windows
 
 
-def _mobile_services(hass: HomeAssistant) -> list[selector.SelectOptionDict]:
-    """Push-Dienste der Companion-App, beschriftet mit dem Gerätenamen."""
-    device_names = {
-        f"mobile_app_{slugify(entry.data['device_name'])}": entry.data["device_name"]
-        for entry in hass.config_entries.async_entries("mobile_app")
-        if entry.data.get("device_name")
-    }
-    options = [
-        selector.SelectOptionDict(
-            value=service,
-            label=f"{device_names[service]} ({service})"
-            if service in device_names
-            else service,
-        )
-        for service in hass.services.async_services_for_domain("notify")
-        if service.startswith("mobile_app_")
-    ]
-    return sorted(options, key=lambda option: option["label"].lower())
+def _mobile_selector() -> selector.DeviceSelector:
+    """Mehrfachauswahl der Companion-App-Geräte (native Geräteauswahl mit Name und Bereich).
 
-
-def _mobile_selector(
-    hass: HomeAssistant, current: list[str] | None = None
-) -> selector.SelectSelector:
-    """Mehrfachauswahl der Push-Dienste.
-
-    Mit freier Eingabe (`custom_value`) zeigt die Oberfläche nur die Werte statt der
-    Beschriftungen. Deshalb gibt es sie nur, wenn keine Dienste gefunden wurden;
-    bereits gespeicherte Ziele bleiben auch dann auswählbar.
+    Gespeichert werden Geräte der Geräteverwaltung; beim Senden wird daraus der Push-Dienst
+    `notify.mobile_app_<gerät>` (nur darüber gehen Aktionen und kritische Meldungen).
     """
-    options = _mobile_services(hass)
-    known = {option["value"] for option in options}
-    for target in current or []:
-        target = str(target).removeprefix("notify.")
-        if target not in known:
-            options.append(selector.SelectOptionDict(value=target, label=target))
-            known.add(target)
-    return selector.SelectSelector(
-        selector.SelectSelectorConfig(
-            options=options,
-            multiple=True,
-            custom_value=not options,
-            mode=selector.SelectSelectorMode.DROPDOWN,
-        )
+    return selector.DeviceSelector(
+        selector.DeviceSelectorConfig(integration="mobile_app", multiple=True)
     )
+
+
+def _mobile_suggest(hass: HomeAssistant, defaults: dict[str, Any]) -> dict[str, Any]:
+    """Vorbelegung der Push-Ziele; ältere Dienstnamen werden den Geräten zugeordnet."""
+    if CONF_MOBILE_TARGETS not in defaults:
+        return {}
+    return {"suggested_value": targets_for_form(hass, defaults[CONF_MOBILE_TARGETS])}
 
 
 def _sections_schema(
@@ -329,8 +302,8 @@ def _notify_fields(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
         ): bool,
         vol.Optional(
-            CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
-        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
+            CONF_MOBILE_TARGETS, description=_mobile_suggest(hass, defaults)
+        ): _mobile_selector(),
     }
     if with_action:
         fields[
@@ -537,8 +510,8 @@ def _bell_schema(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
         ): bool,
         vol.Optional(
-            CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
-        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
+            CONF_MOBILE_TARGETS, description=_mobile_suggest(hass, defaults)
+        ): _mobile_selector(),
         vol.Required(
             CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_RING_MESSAGE)
         ): str,
@@ -729,8 +702,8 @@ def _alarm_settings_schema(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
         ): bool,
         vol.Optional(
-            CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
-        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
+            CONF_MOBILE_TARGETS, description=_mobile_suggest(hass, defaults)
+        ): _mobile_selector(),
         vol.Required(
             CONF_CRITICAL, default=defaults.get(CONF_CRITICAL, True)
         ): bool,

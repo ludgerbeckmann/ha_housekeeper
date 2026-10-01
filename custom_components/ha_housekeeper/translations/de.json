@@ -35,7 +35,7 @@
               "message": "Nachrichtentext",
               "repeat_message": "Text bei erneutem Auslösen",
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
@@ -44,7 +44,7 @@
             "data_description": {
               "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
               "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -80,14 +80,14 @@
             "description": "Wie und womit der Türwächter meldet.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -113,12 +113,12 @@
             "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "message": "Push-Text",
               "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
               "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
             }
           }
@@ -167,14 +167,14 @@
             "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -199,12 +199,12 @@
             "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "critical": "Als kritische Meldung senden",
               "message": "Nachrichtentext"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
               "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
               "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
             }
@@ -270,7 +270,7 @@
               "message": "Nachrichtentext",
               "repeat_message": "Text bei erneutem Auslösen",
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
@@ -279,7 +279,7 @@
             "data_description": {
               "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
               "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -321,14 +321,14 @@
             "description": "Wie und womit der Türwächter meldet.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -406,12 +406,12 @@
             "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "message": "Push-Text",
               "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
               "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
             }
           }
@@ -517,14 +517,14 @@
             "description": "Wie und womit bei Trockenlauf gemeldet wird.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -689,14 +689,14 @@
             "description": "Wie und womit dieser Zeitplan meldet.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -716,14 +716,14 @@
             "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "tts_enabled": "Sprachausgabe aktivieren",
               "tts_entity": "TTS-Dienst",
               "tts_player": "Lautsprecher (media_player)",
               "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
         }
@@ -856,12 +856,12 @@
             "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
             "data": {
               "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
               "critical": "Als kritische Meldung senden",
               "message": "Nachrichtentext"
             },
             "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
               "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
               "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
             }

@@ -69,9 +69,9 @@ Der Dialog ist in zwei ausgeklappte Abschnitte gegliedert.
 
 **Benachrichtigungen**
 
-- **App-Push**: ein oder mehrere `notify.mobile_app_*`-Dienste; die Auswahl
-  zeigt zusätzlich den Gerätenamen der Companion-App (z. B. „iPhone Ludger
-  (mobile_app_iphone_ludger)“). Optional mit
+- **App-Push**: ein oder mehrere **Companion-App-Geräte** (die native Geräteauswahl von
+  Home Assistant mit Name und Bereich). Intern wird daraus der Dienst
+  `notify.mobile_app_<gerät>`. Optional mit
   der **Aktion „Briefkasten geleert“** direkt in der Meldung (iOS und
   Android): Tippen/Halten auf die Meldung zeigt den Knopf, der den
   Briefkasten zurücksetzt und die Meldung wieder entfernt.
@@ -83,8 +83,12 @@ Alle Einstellungen lassen sich später über *Konfigurieren* ändern.
 
 Die Grunddialoge der anderen Funktionen (Türwächter, Türklingel, Home Assistant Updater,
 Aufgabenplaner und die Trockenlauf-Erkennung der Poolsteuerung) haben dieselbe Gliederung
-in **Allgemein** und **Benachrichtigungen**. Die Auswahl der Push-Ziele zeigt überall den
-Gerätenamen; eine freie Eingabe gibt es nur, wenn keine `mobile_app_*`-Dienste gefunden werden.
+in **Allgemein** und **Benachrichtigungen**. Die Push-Ziele wählst du überall über die native
+Geräteauswahl der **Companion-App-Geräte**; gesendet wird über deren Dienst
+`notify.mobile_app_…`, nur darüber funktionieren die Aktionen (Briefkasten geleert, Stoppen,
+Schlummern) und kritische Meldungen. Notify-Entitäten (`notify.send_message`) unterstützen das
+nicht. Bereits gespeicherte Ziele (frühere Dienstnamen) laufen unverändert weiter und werden
+im Dialog dem passenden Gerät zugeordnet.
 
 ### Entitäten
 
@@ -170,7 +174,7 @@ im Zeitfenster, bleibt es stumm (der Push geht trotzdem raus).
 
 ### Push
 
-Ein oder mehrere Ziele (`notify.mobile_app_*`), Push-Text und **„Push nach X
+Ein oder mehrere Companion-App-Geräte, Push-Text und **„Push nach X
 Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über
 denselben Tag, ein erneutes Klingeln ersetzt die Meldung und startet die
 Löschfrist neu. Push ist unabhängig von den Audio-Zeitfenstern.
