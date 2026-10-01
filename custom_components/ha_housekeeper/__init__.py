@@ -1,4 +1,4 @@
-"""Housekeeper - Integration für verschiedene Smart-Home-Anwendungsfälle."""
+"""Hausmeister - Integration für verschiedene Smart-Home-Anwendungsfälle."""
 
 from __future__ import annotations
 
