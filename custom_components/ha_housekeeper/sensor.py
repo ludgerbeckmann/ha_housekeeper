@@ -279,4 +279,7 @@ class AlarmLastSensor(FunctionEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"alarm": self._controller.last_alarm}
+        return {
+            "alarm": self._controller.last_alarm,
+            "skipped": self._controller.last_skipped,
+        }

@@ -202,6 +202,8 @@ from .const import COMPONENTS
 from .const import CONF_SPEAKERS, K_PROFILE
 from .const import (
     A_AUTO_STOP,
+    A_NOT_IF_ON,
+    A_ONLY_IF_ON,
     A_ENABLED,
     A_ID,
     A_MEDIA,
@@ -213,6 +215,7 @@ from .const import (
     A_WEEKDAYS,
     CONF_ALARMS,
     CONF_CRITICAL,
+    CONF_WORKDAY_SENSORS,
     DEFAULT_ALARM_AUTO_STOP,
     DEFAULT_ALARM_MESSAGE,
     DEFAULT_ALARM_SNOOZE,
@@ -710,10 +713,17 @@ def _validate_planner(user_input: dict[str, Any]) -> dict[str, str]:
 def _alarm_settings_schema(
     hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
 ) -> vol.Schema:
-    """Eintrag: Name (nur beim Anlegen) und die Push-Meldung (kritisch, mit Aktionen)."""
+    """Eintrag: Name (nur beim Anlegen), Werktagssensoren und die Push-Meldung."""
     general: dict[Any, Any] = {}
     if with_name:
         general[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Wecker"))] = str
+    general[
+        vol.Optional(
+            CONF_WORKDAY_SENSORS, description=_suggest(CONF_WORKDAY_SENSORS, defaults)
+        )
+    ] = selector.EntitySelector(
+        selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+    )
     notifications: dict[Any, Any] = {
         vol.Required(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
@@ -2620,6 +2630,13 @@ class HousekeeperOptionsFlow(OptionsFlow):
                             A_VOLUME, A_SNOOZE, A_AUTO_STOP,
                         )
                     },
+                    # ohne globale Sensoren bleibt die Auswahl unverändert
+                    **{
+                        k: (user_input.get(k) or [])
+                        if self._current.get(CONF_WORKDAY_SENSORS)
+                        else list(d.get(k) or [])
+                        for k in (A_ONLY_IF_ON, A_NOT_IF_ON)
+                    },
                 }
                 alarms = self._alarms()
                 if self._edit_id:
@@ -2663,7 +2680,38 @@ class HousekeeperOptionsFlow(OptionsFlow):
                     vol.Required(
                         A_AUTO_STOP, default=d.get(A_AUTO_STOP, DEFAULT_ALARM_AUTO_STOP)
                     ): _number(0, 720, "min"),
+                    **self._condition_fields(d),
                 }
             ),
             errors=errors,
         )
+
+    def _condition_fields(self, d: dict[str, Any]) -> dict[Any, Any]:
+        """Werktags-/Feiertagsbedingungen: Auswahl aus den globalen Sensoren (nur wenn vorhanden)."""
+        sensors = list(self._current.get(CONF_WORKDAY_SENSORS) or [])
+        if not sensors:
+            return {}
+        options = [
+            selector.SelectOptionDict(
+                value=entity_id,
+                label=(
+                    str(state.attributes.get("friendly_name") or entity_id)
+                    if (state := self.hass.states.get(entity_id))
+                    else entity_id
+                ),
+            )
+            for entity_id in sensors
+        ]
+        field = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=options, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN
+            )
+        )
+        return {
+            vol.Optional(
+                A_ONLY_IF_ON, default=[s for s in d.get(A_ONLY_IF_ON) or [] if s in sensors]
+            ): field,
+            vol.Optional(
+                A_NOT_IF_ON, default=[s for s in d.get(A_NOT_IF_ON) or [] if s in sensors]
+            ): field,
+        }
