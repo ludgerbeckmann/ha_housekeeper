@@ -71,8 +71,10 @@ def test_collect_references_per_function() -> None:
         ["update.a", "update.b"], ["devX"])
     assert refs({"function_type": "task_planner", "tasks": [
         {"triggers": [{"type": "state", "entity_id": "sensor.t"}, {"type": "weekly"}]}]})[0] == ["sensor.t"]
-    assert refs({"function_type": "alarm_clock", "alarms": [{"players": ["media_player.a"]}],
-                 "workday_sensors": ["binary_sensor.w"]})[0] == ["media_player.a", "binary_sensor.w"]
+    assert refs({"function_type": "alarm_clock", "alarms": [
+        {"players": ["media_player.a"], "only_if_on": ["binary_sensor.w"],
+         "skip_if_on": ["binary_sensor.h"]}]})[0] == [
+        "media_player.a", "binary_sensor.w", "binary_sensor.h"]
     # Optionen haben Vorrang; ein leeres Feld (None) überdeckt den Wert aus den Daten
     entry = entry_of({**MAILBOX, "sensitivity_entity": "number.s"}, options={"sensitivity_entity": None})
     assert "number.s" not in issues.collect_references(entry.sub)[0]

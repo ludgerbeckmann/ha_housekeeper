@@ -570,8 +570,7 @@ Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen).
 - die **Lautstärke** in Prozent (Standard 30)
 - die **Schlummerzeit** (Standard 9 Minuten)
 - **Automatisch stoppen nach** X Minuten (Standard 30, 0 = nie), jeweils pro Klingeln
-- optional **Werktags-/Feiertagsbedingungen** (nur, wenn in den Einstellungen Sensoren hinterlegt
-  sind, siehe unten)
+- optional **Werktags-/Feiertagsbedingungen** mit Binärsensoren (siehe unten)
 
 ### Ablauf
 
@@ -588,26 +587,22 @@ Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen).
 
 ### Werktags- und Feiertagssensoren
 
-In den Einstellungen (*Konfigurieren → Einstellungen*, Abschnitt *Allgemein*) hinterlegst du
-einen oder mehrere **Binärsensoren**, z. B. den Sensor der Werktags-Integration von Home
-Assistant. Bei jedem Wecker kannst du dann aus diesen Sensoren zwei optionale Bedingungen wählen:
+Zur Zeitplanung jedes Weckers (im Wecker-Dialog direkt bei Uhrzeit und Wochentagen) gehören zwei
+optionale Bedingungen mit beliebigen **Binärsensoren**, z. B. dem Sensor der Werktags-Integration
+von Home Assistant:
 
 - **Nur klingeln, wenn an:** mindestens **einer** der gewählten Sensoren muss an sein (ODER),
-  z. B. Werktagssensor.
+  z. B. ein Werktagssensor.
 - **Nicht klingeln, wenn an:** sobald **einer** der gewählten Sensoren an ist (ODER), klingelt der
-  Wecker nicht, z. B. Feiertagssensor.
-
-Mit **Sensorwerte umkehren** (Einstellungen, Abschnitt *Allgemein*, Standard aus) gilt bei allen
-Sensoren *aus* als *an* und umgekehrt, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet.
-Ein nicht verfügbarer oder unbekannter Sensor bleibt dabei unverändert.
+  Wecker nicht, z. B. ein Feiertagssensor oder ein Sensor „arbeitsfrei“.
 
 Beide Felder sind UND-verknüpft und gelten zusätzlich zu den Wochentagen. Die Bedingungen
 werden **zur Weckzeit** geprüft. Ein **nicht verfügbarer oder unbekannter** Sensor zählt bei
-„Nur klingeln, wenn an“ als erfüllt, der Wecker klingelt dann eher einmal zu viel als gar nicht.
-Ein übersprungener Wecker steht mit Grund und Sensoren im Attribut `skipped` des Sensors
-**Letzter Wecker**. Sensoren, die aus den Einstellungen entfernt wurden, werden bei den Weckern
-ignoriert. Der Sensor **Nächster Wecker** kennt die Bedingungen nicht (er kann künftige
-Werktage nicht vorhersagen) und zeigt den nächsten Termin nach Wochentag und Uhrzeit.
+„Nur klingeln, wenn an“ als erfüllt und blockiert bei „Nicht klingeln, wenn an“ nie; der Wecker
+klingelt dann eher einmal zu viel als gar nicht. Ein übersprungener Wecker steht mit Grund und
+Sensoren im Attribut `skipped` des Sensors **Letzter Wecker**. Der Sensor **Nächster Wecker** kennt
+die Bedingungen nicht (er kann künftige Werktage nicht vorhersagen) und zeigt den nächsten Termin
+nach Wochentag und Uhrzeit.
 
 ### Kritische Meldung
 

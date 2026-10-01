@@ -178,15 +178,9 @@
         "sections": {
           "general": {
             "name": "General",
-            "description": "Name of the entry and workday/holiday sensors for the alarms.",
+            "description": "Name of the instance.",
             "data": {
-              "name": "Name",
-              "workday_sensors": "Workday/holiday sensors",
-              "workday_invert": "Invert sensor values"
-            },
-            "data_description": {
-              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
-              "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
+              "name": "Name"
             }
           },
           "notifications": {
@@ -1643,15 +1637,9 @@
           "sections": {
             "general": {
               "name": "General",
-              "description": "Name of the entry and workday/holiday sensors for the alarms.",
+              "description": "Name of the instance.",
               "data": {
-                "name": "Name",
-                "workday_sensors": "Workday/holiday sensors",
-                "workday_invert": "Invert sensor values"
-              },
-              "data_description": {
-                "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
-                "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
+                "name": "Name"
               }
             },
             "notifications": {
@@ -1684,18 +1672,6 @@
         "alarm_general": {
           "title": "Settings",
           "sections": {
-            "general": {
-              "name": "General",
-              "description": "Name of the entry and workday/holiday sensors for the alarms.",
-              "data": {
-                "workday_sensors": "Workday/holiday sensors",
-                "workday_invert": "Invert sensor values"
-              },
-              "data_description": {
-                "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
-                "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
-              }
-            },
             "notifications": {
               "name": "Notifications",
               "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
@@ -1743,8 +1719,8 @@
           },
           "data_description": {
             "media": "File or stream from the Home Assistant media browser.",
-            "only_if_on": "Only if at least one of the selected sensors is on (OR), e.g. workday sensor. An unavailable sensor counts as met. The selection only appears if sensors are set in the settings.",
-            "skip_if_on": "Not as soon as one of the selected sensors is on (OR), e.g. holiday sensor.",
+            "only_if_on": "Only ring if at least one of the selected binary sensors is on (OR), e.g. a workday sensor. An unavailable sensor counts as met.",
+            "skip_if_on": "Do not ring as soon as one of the selected binary sensors is on (OR), e.g. a holiday sensor or a “day off” sensor. An unavailable sensor never blocks it.",
             "snooze_minutes": "The alarm rings again after this time.",
             "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
           }
