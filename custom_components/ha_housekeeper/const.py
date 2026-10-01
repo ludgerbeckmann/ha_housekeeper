@@ -20,7 +20,12 @@ FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
-    FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
+    FUNCTION_MAILBOX: [
+        Platform.BINARY_SENSOR,
+        Platform.SENSOR,
+        Platform.BUTTON,
+        Platform.SWITCH,
+    ],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
@@ -102,6 +107,7 @@ R_FOR_MINUTES = "for_minutes"
 R_TIME = "time"
 R_WEEKDAYS = "weekdays"
 R_DELAY = "delay_seconds"
+R_ENABLED = "enabled"
 
 RULE_LOCK = "lock"
 RULE_UNLOCK = "unlock"
@@ -140,6 +146,7 @@ P_TTS_ENTITY = "tts_entity"
 P_TEXT = "text"
 P_MEDIA = "media"
 P_VOLUME = "volume"
+P_ENABLED = "enabled"
 
 MODE_TTS = "tts"
 MODE_RINGTONE = "ringtone"
@@ -201,6 +208,7 @@ K_FAVORITE = "favorite"
 K_SOURCE = "source"
 K_IDLE_TEXT = "idle_text"
 K_PROFILE = "profile"
+S_ENABLED = "enabled"  # Lautsprecher-Profil aktiv
 
 # Datentypen der Befehle
 DPT_SWITCH = "switch"  # 1.001
@@ -284,6 +292,7 @@ U_MODE = "mode"
 U_TARGETS = "targets"
 U_BACKUP = "backup"
 U_COMPONENTS = "components"
+U_ENABLED = "enabled"
 
 # Komponenten, die ein Zeitplan als Ganzes auswählen kann
 COMP_CORE = "core"

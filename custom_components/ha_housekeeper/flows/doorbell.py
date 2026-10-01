@@ -26,6 +26,7 @@ from ..const import (
     MODE_KEYS,
     MODE_RINGTONE,
     MODE_TTS,
+    P_ENABLED,
     P_FROM,
     P_ID,
     P_MEDIA,
@@ -204,6 +205,7 @@ class DoorbellOptions:
             data_schema=vol.Schema(
                 {
                     vol.Required(P_NAME, description=_suggest(P_NAME, d)): str,
+                    vol.Required(P_ENABLED, default=d.get(P_ENABLED, True)): bool,
                     vol.Required(
                         P_FROM, default=d.get(P_FROM, "07:00:00")
                     ): selector.TimeSelector(),
@@ -278,7 +280,7 @@ class DoorbellOptions:
             P_ID: self._edit_id or uuid.uuid4().hex[:8],
             **{
                 k: self._draft[k]
-                for k in (P_NAME, P_FROM, P_TO, P_WEEKDAYS, P_PLAYERS, P_MODE, P_VOLUME)
+                for k in (P_NAME, P_ENABLED, P_FROM, P_TO, P_WEEKDAYS, P_PLAYERS, P_MODE, P_VOLUME)
                 if k in self._draft
             },
             **{k: self._draft[k] for k in MODE_KEYS[mode] if k in self._draft},

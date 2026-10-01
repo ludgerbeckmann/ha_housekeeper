@@ -15,6 +15,7 @@ from .const import DOMAIN
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
+from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
@@ -36,6 +37,8 @@ async def async_setup_entry(
         async_add_entities([AlarmClockActiveSwitch(controller)])
     elif isinstance(controller, TaskPlannerController):
         async_add_entities([TaskPlannerActiveSwitch(controller)])
+    elif isinstance(controller, MailboxController):
+        async_add_entities([MailboxActiveSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -168,6 +171,25 @@ class AlarmClockActiveSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "alarm_clock_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class MailboxActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Vibrationen lösen Benachrichtigungen aus; off = Benachrichtigung pausiert."""
+
+    _attr_icon = "mdi:mailbox-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "mailbox_active")
 
     @property
     def is_on(self) -> bool:

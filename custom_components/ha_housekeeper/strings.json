@@ -349,7 +349,8 @@
         "title": "Rule",
         "data": {
           "action": "Action",
-          "trigger": "Trigger"
+          "trigger": "Trigger",
+          "enabled": "Enabled"
         }
       },
       "rule_state": {
@@ -433,6 +434,7 @@
         "title": "Time window profile",
         "data": {
           "name": "Name",
+          "enabled": "Enabled",
           "from": "From",
           "to": "To",
           "weekdays": "Weekdays",
@@ -541,6 +543,7 @@
         "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
         "data": {
           "name": "Name",
+          "enabled": "Enabled",
           "player": "Sonos speaker",
           "max_volume": "Maximum volume",
           "volume_step": "Volume step size",
@@ -665,6 +668,7 @@
             "description": "When the schedule runs.",
             "data": {
               "name": "Name",
+              "enabled": "Enabled",
               "time": "Time",
               "weekdays": "Weekdays"
             }
@@ -1218,6 +1222,9 @@
       },
       "alarm_clock_active": {
         "name": "Alarm clock active"
+      },
+      "mailbox_active": {
+        "name": "Mailbox notification active"
       }
     }
   },

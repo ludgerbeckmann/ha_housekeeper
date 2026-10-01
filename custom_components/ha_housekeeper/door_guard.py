@@ -39,6 +39,7 @@ from .const import (
     DOMAIN,
     MANUAL_PAUSE,
     R_ACTION,
+    R_ENABLED,
     R_DELAY,
     R_ENTITY,
     R_FOR_MINUTES,
@@ -78,6 +79,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         RULE_LOCK: "Abschließen",
         RULE_UNLOCK: "Aufschließen",
         "for": "für",
+        "off": "aus",
         "min": "min",
         "door_closed": "Tür geschlossen seit",
     },
@@ -93,6 +95,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         RULE_LOCK: "Lock",
         RULE_UNLOCK: "Unlock",
         "for": "for",
+        "off": "off",
         "min": "min",
         "door_closed": "Door closed for",
     },
@@ -123,7 +126,8 @@ def rule_summary(hass: HomeAssistant, rule: dict[str, Any]) -> str:
             text += " (" + ", ".join(days) + ")"
     else:
         text = f"{lang['door_closed']} {int(rule.get(R_DELAY) or 0)} s"
-    return f"{head}: {text}"
+    off = "" if rule.get(R_ENABLED, True) else f" ({lang['off']})"
+    return f"{head}: {text}{off}"
 
 
 class DoorGuardController:
@@ -160,7 +164,8 @@ class DoorGuardController:
         return self.entry.title
 
     def _rules(self) -> list[dict[str, Any]]:
-        return list(self._opt(CONF_RULES, []) or [])
+        """Aktive Regeln (ausgeschaltete werden ignoriert)."""
+        return [r for r in self._opt(CONF_RULES, []) or [] if r.get(R_ENABLED, True)]
 
     def _contact_state(self) -> str | None:
         contact = self._opt(CONF_CONTACT)
