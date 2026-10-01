@@ -366,7 +366,8 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["timing", "actions", "notifications"]
     assert all(v.options["collapsed"] is False for v in schema.values())
-    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {"name", "enabled", "time", "weekdays"}
+    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {
+        "name", "enabled", "trigger", "time", "weekdays", "window_start", "window_end"}
 
     bad = await flow.async_configure(result["flow_id"], sched_form(actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}
@@ -599,3 +600,132 @@ async def test_report_after_restart_uses_the_schedules_channels(hass: HomeAssist
                                         "title": "core", "supported_features": 0})
     await ctrl._async_finalize_pending(0)                                # noqa: SLF001
     assert push == [] and len(persist) == 1 and "core" in persist[0].data["message"]
+
+
+# --- Auslöser „sobald verfügbar“ ---------------------------------------------------------------
+
+
+def avail(i="a1", targets=(ADDON,), mode="notify", **kw):
+    return {"id": i, "name": f"Plan {i}", "trigger": "on_available", "mode": mode,
+            "targets": list(targets), "backup": False, **kw}
+
+
+def test_pure_helpers_for_availability():
+    new = type("S", (), {})
+    def st(state, latest="2.0"):
+        o = new(); o.state = state; o.attributes = {"latest_version": latest}; return o
+    assert upd.became_available(None, st("on"))
+    assert upd.became_available(st("off"), st("on"))
+    assert upd.became_available(st("on", "2.0"), st("on", "2.1"))
+    assert not upd.became_available(st("on"), st("on"))
+    assert not upd.became_available(st("on"), st("off"))
+    assert not upd.became_available(st("on"), None)
+
+    def at(h, m=0):
+        return datetime(2024, 1, 3, h, m, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+    day = {"window_start": "08:00:00", "window_end": "20:00:00"}
+    night = {"window_start": "22:00:00", "window_end": "06:00:00"}
+    assert upd.in_run_window({}, at(12))
+    assert upd.in_run_window(day, at(8)) and not upd.in_run_window(day, at(20))
+    assert upd.in_run_window(night, at(23)) and upd.in_run_window(night, at(5))
+    assert not upd.in_run_window(night, at(12))
+    assert upd.next_run([avail()], at(12)) is None
+    assert "when available" in upd.schedule_summary(
+        type("H", (), {"config": type("C", (), {"language": "en"})()})(), avail(**night))
+
+
+async def _fire(hass, seconds):
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=seconds))
+    await hass.async_block_till_done()
+
+
+async def test_runs_when_update_becomes_available(hass: HomeAssistant, freezer) -> None:
+    put(hass, ADDON, state="off", installed="2.0")
+    put(hass, DEVICE, state="off", installed="2.0")
+    inst = Installer(hass)
+    _, ctrl, push = await _setup(hass, [avail(mode="install")])
+    put(hass, DEVICE)                       # nicht Ziel -> nichts
+    await _fire(hass, 120)
+    assert inst.calls == []
+    put(hass, ADDON)
+    put(hass, ADDON, latest="2.1")          # zweite Meldung innerhalb der Bündelung = ein Lauf
+    await hass.async_block_till_done()
+    assert inst.calls == []                 # erst nach der Bündelung
+    await _fire(hass, 120)
+    assert [c["entity_id"] for c in inst.calls] == [ADDON]
+
+
+async def test_available_trigger_ignores_existing_updates_at_start(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    inst = Installer(hass)
+    await _setup(hass, [avail(mode="install")])
+    await _fire(hass, 300)
+    assert inst.calls == []
+
+
+async def test_available_respects_window_and_catches_up(hass: HomeAssistant, freezer) -> None:
+    freezer.move_to(dt_util.now().replace(hour=12, minute=0, second=0, microsecond=0))
+    put(hass, ADDON, state="off", installed="2.0")
+    inst = Installer(hass)
+    window = {"window_start": "22:00:00", "window_end": "23:00:00"}
+    await _setup(hass, [avail(mode="install", **window)])
+    put(hass, ADDON)
+    await _fire(hass, 120)
+    assert inst.calls == []                 # außerhalb des Fensters
+    freezer.move_to(dt_util.now().replace(hour=22, minute=0, second=0, microsecond=0))
+    await _fire(hass, 0)
+    assert [c["entity_id"] for c in inst.calls] == [ADDON]
+
+
+async def _fire_nowait(hass, seconds):
+    """Zeit vorstellen, ohne auf laufende (blockierte) Tasks zu warten."""
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=seconds))
+    for _ in range(10):
+        await asyncio.sleep(0)
+
+
+async def test_available_during_run_is_queued(hass: HomeAssistant) -> None:
+    put(hass, ADDON, state="off", installed="2.0")
+    put(hass, DEVICE, state="off", installed="2.0")
+    gate = asyncio.Event()
+    inst = Installer(hass, delay=gate)
+    _, ctrl, _ = await _setup(hass, [avail(targets=[ADDON, DEVICE], mode="install")])
+    put(hass, ADDON)
+    await _fire_nowait(hass, 120)
+    assert ctrl.running
+    put(hass, DEVICE)
+    await _fire_nowait(hass, 240)
+    assert ctrl._queued == {"a1"}
+    gate.set()
+    await hass.async_block_till_done()
+    assert [c["entity_id"] for c in inst.calls] == [ADDON, DEVICE]
+
+
+async def test_disabled_available_schedule_does_not_run(hass: HomeAssistant) -> None:
+    put(hass, ADDON, state="off", installed="2.0")
+    inst = Installer(hass)
+    await _setup(hass, [avail(mode="install", enabled=False)])
+    put(hass, ADDON)
+    await _fire(hass, 120)
+    assert inst.calls == []
+
+
+async def test_options_flow_available_trigger(hass: HomeAssistant) -> None:
+    entry, _, _ = await _setup(hass, [])
+    flow = hass.config_entries.options
+    result = await flow.async_init(entry.entry_id)
+    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
+    bad = await flow.async_configure(result["flow_id"], sched_form(
+        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00"}))
+    assert bad["errors"] == {"base": "invalid_window"}
+    same = await flow.async_configure(bad["flow_id"], sched_form(
+        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00",
+                "window_end": "22:00:00"}))
+    assert same["errors"] == {"base": "invalid_window"}
+    ok = await flow.async_configure(same["flow_id"], sched_form(
+        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00",
+                "window_end": "05:00:00"}))
+    assert is_menu(ok)
+    (created,) = entry.options["schedules"]
+    assert created["trigger"] == "on_available" and created["weekdays"] == []
+    assert created["window_start"] == "22:00:00" and created["window_end"] == "05:00:00"

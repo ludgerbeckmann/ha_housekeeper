@@ -1,4 +1,4 @@
-# Hausmeister für Home Assistant
+# Home Assistant Hausmeister
 
 [![Validate](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml/badge.svg)](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
@@ -16,7 +16,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 | Poolsteuerung | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
 | KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
-| Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
+| Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit oder sobald ein Update verfügbar wird |
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 
@@ -48,12 +48,12 @@ KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus.
 ## Installation
 
 **HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
-Kategorie *Integration* → „Hausmeister“ installieren → Home Assistant neu starten.
+Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Home Assistant neu starten.
 
 **Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
 kopieren und neu starten.
 
-Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hausmeister*
+Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*
 und den Funktionstyp wählen.
 
 ## Benachrichtigung Briefkasten
@@ -388,7 +388,16 @@ Dialog hat drei ausgeklappte Abschnitte. Ein Zeitplan hat:
 
 **Zeitpunkt**
 
-- Name, **Uhrzeit** und **Wochentage**
+- Name, **Auslöser** und – je nach Auslöser – die Zeitangaben:
+  - *Zu einer Uhrzeit* (Standard): **Uhrzeit** und **Wochentage**
+  - *Sobald ein Update verfügbar wird*: Der Zeitplan läuft etwa eine Minute nach einer neuen
+    Update-Meldung eines seiner Ziele (mehrere gleichzeitige Meldungen ergeben einen Lauf);
+    Uhrzeit und Wochentage entfallen. Welche Updates ihn auslösen, bestimmen die gewählten
+    **Komponenten** und **einzelnen Updates** – für unterschiedliches Verhalten je Komponente
+    legst du einfach mehrere Zeitpläne an (z. B. Add-ons sofort, Core nur sonntags nachts).
+    Optional ein **Zeitfenster** (von/bis, auch über Mitternacht): Außerhalb wartet der Zeitplan
+    und holt zu Beginn des Fensters nach. Beim Start oder Neuladen werden bereits vorhandene
+    Updates nicht ausgelöst („Jetzt prüfen“ meldet sie).
 
 **Aktionen**
 

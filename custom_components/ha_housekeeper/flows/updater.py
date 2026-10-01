@@ -27,7 +27,12 @@ from ..const import (
     U_NAME,
     U_TARGETS,
     U_TIME,
+    U_TRIGGER,
     U_WEEKDAYS,
+    U_WINDOW_END,
+    U_WINDOW_START,
+    TRIGGER_TIME,
+    TRIGGERS,
     UPDATE_MODE_NOTIFY,
     UPDATE_MODES,
     WEEKDAYS,
@@ -160,18 +165,26 @@ class UpdaterOptions:
             errors = _validate_notify(flat, require_method=True)
             if flat.get(CONF_MOBILE_ENABLED) and not flat.get(CONF_MOBILE_TARGETS):
                 errors["base"] = "no_targets"
+            trigger = flat.get(U_TRIGGER, TRIGGER_TIME)
             if not errors:
                 if not (flat.get(U_TARGETS) or flat.get(U_COMPONENTS)):
                     errors["base"] = "no_update_selected"
-                elif not flat.get(U_WEEKDAYS):
+                elif trigger == TRIGGER_TIME and not flat.get(U_WEEKDAYS):
                     errors["base"] = "no_weekday"
+                elif bool(flat.get(U_WINDOW_START)) != bool(flat.get(U_WINDOW_END)) or (
+                    flat.get(U_WINDOW_START) and flat.get(U_WINDOW_START) == flat.get(U_WINDOW_END)
+                ):
+                    errors["base"] = "invalid_window"
             if not errors:
                 schedule = {
                     U_ID: self._edit_id or uuid.uuid4().hex[:8],
                     U_NAME: flat[U_NAME],
                     U_ENABLED: flat.get(U_ENABLED, True),
-                    U_TIME: flat[U_TIME],
-                    U_WEEKDAYS: flat[U_WEEKDAYS],
+                    U_TRIGGER: trigger,
+                    U_TIME: flat.get(U_TIME) or "03:00:00",
+                    U_WEEKDAYS: flat.get(U_WEEKDAYS) or [],
+                    U_WINDOW_START: flat.get(U_WINDOW_START) or None,
+                    U_WINDOW_END: flat.get(U_WINDOW_END) or None,
                     U_MODE: flat[U_MODE],
                     U_COMPONENTS: flat.get(U_COMPONENTS) or [],
                     U_TARGETS: flat.get(U_TARGETS) or [],
@@ -191,15 +204,24 @@ class UpdaterOptions:
         timing: dict[Any, Any] = {
             vol.Required(U_NAME, description=_suggest(U_NAME, d)): str,
             vol.Required(U_ENABLED, default=d.get(U_ENABLED, True)): bool,
+            vol.Required(U_TRIGGER, default=d.get(U_TRIGGER, TRIGGER_TIME)): _select(
+                TRIGGERS, "update_trigger", mode=selector.SelectSelectorMode.LIST
+            ),
             vol.Required(
-                U_TIME, default=d.get(U_TIME, "03:00:00")
+                U_TIME, default=d.get(U_TIME) or "03:00:00"
             ): selector.TimeSelector(),
-            vol.Required(U_WEEKDAYS, default=d.get(U_WEEKDAYS, ["sun"])): _select(
+            vol.Optional(U_WEEKDAYS, default=d.get(U_WEEKDAYS) or ["sun"]): _select(
                 WEEKDAYS,
                 "weekday",
                 multiple=True,
                 mode=selector.SelectSelectorMode.LIST,
             ),
+            vol.Optional(
+                U_WINDOW_START, description=_suggest(U_WINDOW_START, d) if d.get(U_WINDOW_START) else {}
+            ): selector.TimeSelector(),
+            vol.Optional(
+                U_WINDOW_END, description=_suggest(U_WINDOW_END, d) if d.get(U_WINDOW_END) else {}
+            ): selector.TimeSelector(),
         }
         actions: dict[Any, Any] = {
             vol.Required(U_MODE, default=d.get(U_MODE, UPDATE_MODE_NOTIFY)): _select(

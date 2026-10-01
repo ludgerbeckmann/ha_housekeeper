@@ -44,7 +44,11 @@ from .const import (
     U_NAME,
     U_TARGETS,
     U_TIME,
+    U_TRIGGER,
     U_WEEKDAYS,
+    U_WINDOW_END,
+    U_WINDOW_START,
+    TRIGGER_AVAILABLE,
     UPDATE_MODE_INSTALL,
     WEEKDAYS,
     signal_update,
@@ -71,6 +75,7 @@ POLL_SECONDS = 2.0        # Abfrage, ob eine Version übernommen wurde
 SETTLE_SECONDS = 120.0    # so lange auf die neue Version warten
 FINALIZE_DELAY = 60       # Sekunden nach dem Start bis zur Nachmeldung
 FINALIZE_ATTEMPTS = 10
+AVAILABLE_DELAY = 60      # Sekunden Bündelung nach einer neuen Update-Meldung
 
 ST_INSTALLED = "installed"
 ST_FAILED = "failed"
@@ -209,6 +214,32 @@ def _is_update_event(event_data: Any) -> bool:
     return str(event_data.get("entity_id", "")).startswith("update.")
 
 
+def is_on_available(schedule: dict[str, Any]) -> bool:
+    """Zeitplan, der bei Verfügbarkeit eines Updates auslöst (statt zu einer Uhrzeit)."""
+    return schedule.get(U_TRIGGER) == TRIGGER_AVAILABLE
+
+
+def in_run_window(schedule: dict[str, Any], now: datetime) -> bool:
+    """Liegt `now` im Zeitfenster des Zeitplans? Ohne Fenster immer, über Mitternacht möglich."""
+    start = dt_util.parse_time(str(schedule.get(U_WINDOW_START) or ""))
+    end = dt_util.parse_time(str(schedule.get(U_WINDOW_END) or ""))
+    if start is None or end is None or start == end:
+        return True
+    current = now.time().replace(microsecond=0)
+    if start < end:
+        return start <= current < end
+    return current >= start or current < end
+
+
+def became_available(old_state: Any, new_state: Any) -> bool:
+    """Neues Update erkannt: Wechsel auf „on“ oder neue Version bei bereits offenem Update."""
+    if new_state is None or new_state.state != STATE_ON:
+        return False
+    if old_state is None or old_state.state != STATE_ON:
+        return True
+    return old_state.attributes.get("latest_version") != new_state.attributes.get("latest_version")
+
+
 def order_targets(entity_ids: list[str]) -> list[str]:
     """Reihenfolge wie gewählt; Supervisor, Core und OS (in dieser Reihenfolge) zuletzt."""
     normal = [e for e in entity_ids if e not in CRITICAL_ORDER]
@@ -220,7 +251,7 @@ def next_run(schedules: list[dict[str, Any]], now: datetime) -> datetime | None:
     """Nächster Startzeitpunkt aller Zeitpläne nach `now` (lokale Zeit)."""
     best: datetime | None = None
     for schedule in schedules:
-        if not schedule.get(U_ENABLED, True):
+        if not schedule.get(U_ENABLED, True) or is_on_available(schedule):
             continue
         at = dt_util.parse_time(str(schedule.get(U_TIME, "")))
         if at is None:
@@ -264,10 +295,15 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
     if explicit := len(schedule.get(U_TARGETS) or []):
         parts.append(f"{explicit} {unit}")
     off = "" if schedule.get(U_ENABLED, True) else (", aus" if german else ", off")
-    return (
-        f"{schedule.get(U_NAME)}: {str(schedule.get(U_TIME, ''))[:5]}{day_text}, "
-        f"{', '.join(parts)}, {mode_text}{off}"
-    )
+    if is_on_available(schedule):
+        when = "bei Verfügbarkeit" if german else "when available"
+        start = str(schedule.get(U_WINDOW_START) or "")[:5]
+        end = str(schedule.get(U_WINDOW_END) or "")[:5]
+        if start and end:
+            when += f" {start}–{end}"
+    else:
+        when = f"{str(schedule.get(U_TIME, ''))[:5]}{day_text}"
+    return f"{schedule.get(U_NAME)}: {when}, {', '.join(parts)}, {mode_text}{off}"
 
 
 class UpdaterController(ReloadWhenIdle):
@@ -286,6 +322,8 @@ class UpdaterController(ReloadWhenIdle):
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._unsubs: list[CALLBACK_TYPE] = []
         self._finalize_unsub: CALLBACK_TYPE | None = None
+        self._avail_timers: dict[str, CALLBACK_TYPE] = {}
+        self._queued: set[str] = set()
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -390,6 +428,9 @@ class UpdaterController(ReloadWhenIdle):
         self.pending = stored.get("pending")
 
         for schedule in self.schedules:
+            if is_on_available(schedule):
+                self._track_window_start(schedule)
+                continue
             at = dt_util.parse_time(str(schedule.get(U_TIME, "")))
             if at is None:
                 _LOGGER.warning("Zeitplan %s: ungültige Uhrzeit", schedule.get(U_NAME))
@@ -421,6 +462,9 @@ class UpdaterController(ReloadWhenIdle):
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        for unsub in self._avail_timers.values():
+            unsub()
+        self._avail_timers.clear()
         if self._finalize_unsub:
             self._finalize_unsub()
             self._finalize_unsub = None
@@ -435,6 +479,56 @@ class UpdaterController(ReloadWhenIdle):
     @callback
     def _on_target_change(self, event: Event) -> None:
         self._notify()
+        entity_id = event.data.get("entity_id", "")
+        if not became_available(event.data.get("old_state"), event.data.get("new_state")):
+            return
+        for schedule in self.schedules:
+            if is_on_available(schedule) and entity_id in resolve_targets(self.hass, schedule):
+                self._request_available_run(schedule)
+
+    @callback
+    def _request_available_run(self, schedule: dict[str, Any]) -> None:
+        """Lauf nach kurzer Bündelung anfordern; mehrere Meldungen ergeben einen Lauf."""
+        schedule_id = str(schedule.get(U_ID))
+        if schedule_id in self._avail_timers:
+            return
+
+        @callback
+        def _fire(_now: datetime) -> None:
+            self._avail_timers.pop(schedule_id, None)
+            self._start_available_run(schedule)
+
+        self._avail_timers[schedule_id] = async_call_later(self.hass, AVAILABLE_DELAY, _fire)
+
+    @callback
+    def _start_available_run(self, schedule: dict[str, Any]) -> None:
+        """Lauf starten, falls erlaubt: außerhalb des Fensters wartet er auf dessen Beginn."""
+        if not self.enabled or not in_run_window(schedule, dt_util.now()):
+            return
+        if self._running:
+            self._queued.add(str(schedule.get(U_ID)))
+            return
+        self.hass.async_create_task(self.async_run_schedule(schedule))
+
+    def _track_window_start(self, schedule: dict[str, Any]) -> None:
+        """Zu Beginn des Zeitfensters nachholen, was außerhalb aufgelaufen ist."""
+        start = dt_util.parse_time(str(schedule.get(U_WINDOW_START) or ""))
+        if start is None or dt_util.parse_time(str(schedule.get(U_WINDOW_END) or "")) is None:
+            return
+
+        @callback
+        def _window_opened(_now: datetime) -> None:
+            if any(
+                (state := self.hass.states.get(e)) and state.state == STATE_ON
+                for e in resolve_targets(self.hass, schedule)
+            ):
+                self._start_available_run(schedule)
+
+        self._unsubs.append(
+            async_track_time_change(
+                self.hass, _window_opened, hour=start.hour, minute=start.minute, second=start.second
+            )
+        )
 
     # --- Ausführung ------------------------------------------------------------
 
@@ -462,6 +556,10 @@ class UpdaterController(ReloadWhenIdle):
         finally:
             self._running = False
             self._notify()
+            queued, self._queued = self._queued, set()
+            for schedule in self.schedules:
+                if str(schedule.get(U_ID)) in queued:
+                    self._start_available_run(schedule)
             self.async_idle()
 
     async def _async_run(self, schedule: dict[str, Any], force_notify: bool) -> None:

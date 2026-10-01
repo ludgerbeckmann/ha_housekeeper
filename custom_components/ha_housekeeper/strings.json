@@ -230,6 +230,7 @@
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
       "no_update_selected": "Select at least one update.",
+      "invalid_window": "The window needs a start and an end, and they must differ.",
       "no_actions": "Define at least one action.",
       "invalid_datetime": "Invalid date.",
       "in_past": "The time is in the past.",
@@ -670,7 +671,17 @@
               "name": "Name",
               "enabled": "Enabled",
               "time": "Time",
-              "weekdays": "Weekdays"
+              "weekdays": "Weekdays",
+              "trigger": "Trigger",
+              "window_start": "Window from",
+              "window_end": "Window until"
+            },
+            "data_description": {
+              "trigger": "“At a set time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update is reported for one of the selected targets; time and weekdays are then ignored.",
+              "time": "Only for “At a set time”.",
+              "weekdays": "Only for “At a set time”.",
+              "window_start": "Only for “As soon as an update becomes available”, optional. Outside the window the run waits and is made up when it opens (also across midnight). Both fields empty = any time.",
+              "window_end": "End of the window (see “Window from”)."
             }
           },
           "actions": {
@@ -934,6 +945,7 @@
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
       "no_update_selected": "Select at least one update.",
+      "invalid_window": "The window needs a start and an end, and they must differ.",
       "no_actions": "Define at least one action.",
       "invalid_datetime": "Invalid date.",
       "in_past": "The time is in the past.",
@@ -1051,6 +1063,12 @@
         "addons": "Add-ons (incl. ESPHome)",
         "esphome": "ESPHome devices (firmware)",
         "other": "Integrations and other (e.g. HACS)"
+      }
+    },
+    "update_trigger": {
+      "options": {
+        "time": "At a set time",
+        "on_available": "As soon as an update becomes available"
       }
     },
     "update_mode": {

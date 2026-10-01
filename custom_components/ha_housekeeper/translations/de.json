@@ -230,6 +230,7 @@
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
       "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+      "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
       "no_actions": "Mindestens eine Aktion muss definiert sein.",
       "invalid_datetime": "Ungültiges Datum.",
       "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
@@ -670,7 +671,17 @@
               "name": "Name",
               "enabled": "Aktiv",
               "time": "Uhrzeit",
-              "weekdays": "Wochentage"
+              "weekdays": "Wochentage",
+              "trigger": "Auslöser",
+              "window_start": "Zeitfenster ab",
+              "window_end": "Zeitfenster bis"
+            },
+            "data_description": {
+              "trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung eines der gewählten Ziele; Uhrzeit und Wochentage werden dann ignoriert.",
+              "time": "Nur bei „Zu einer Uhrzeit“.",
+              "weekdays": "Nur bei „Zu einer Uhrzeit“.",
+              "window_start": "Nur bei „Sobald ein Update verfügbar wird“, optional. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt (auch über Mitternacht). Beide Felder leer = jederzeit.",
+              "window_end": "Ende des Zeitfensters (siehe „Zeitfenster ab“)."
             }
           },
           "actions": {
@@ -934,6 +945,7 @@
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
       "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+      "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
       "no_actions": "Mindestens eine Aktion muss definiert sein.",
       "invalid_datetime": "Ungültiges Datum.",
       "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
@@ -1051,6 +1063,12 @@
         "addons": "Add-ons (inkl. ESPHome)",
         "esphome": "ESPHome-Geräte (Firmware)",
         "other": "Integrationen und Sonstiges (z. B. HACS)"
+      }
+    },
+    "update_trigger": {
+      "options": {
+        "time": "Zu einer Uhrzeit",
+        "on_available": "Sobald ein Update verfügbar wird"
       }
     },
     "update_mode": {

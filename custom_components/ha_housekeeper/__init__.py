@@ -1,4 +1,4 @@
-"""Hausmeister - Integration für verschiedene Smart-Home-Anwendungsfälle."""
+"""Home Assistant Hausmeister - Integration für verschiedene Smart-Home-Anwendungsfälle."""
 
 from __future__ import annotations
 

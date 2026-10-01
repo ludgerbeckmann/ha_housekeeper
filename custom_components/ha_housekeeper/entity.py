@@ -25,7 +25,7 @@ class FunctionEntity(Entity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
-            manufacturer="Hausmeister",
+            manufacturer="Home Assistant Hausmeister",
             model=controller.model,
         )
 
