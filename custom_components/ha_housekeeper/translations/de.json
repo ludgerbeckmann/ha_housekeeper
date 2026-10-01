@@ -349,7 +349,8 @@
         "title": "Regel",
         "data": {
           "action": "Aktion",
-          "trigger": "Auslöser"
+          "trigger": "Auslöser",
+          "enabled": "Aktiv"
         }
       },
       "rule_state": {
@@ -433,6 +434,7 @@
         "title": "Zeitfenster-Profil",
         "data": {
           "name": "Name",
+          "enabled": "Aktiv",
           "from": "Von",
           "to": "Bis",
           "weekdays": "Wochentage",
@@ -541,6 +543,7 @@
         "description": "Ein Profil verbindet einen Sonos-Lautsprecher mit seinen Einstellungen. Befehle und Rückmeldungen gehören je zu einem Profil und haben eigene Gruppenadressen.",
         "data": {
           "name": "Name",
+          "enabled": "Aktiv",
           "player": "Sonos-Lautsprecher",
           "max_volume": "Maximale Lautstärke",
           "volume_step": "Schrittweite Lauter/Leiser",
@@ -665,6 +668,7 @@
             "description": "Wann der Zeitplan läuft.",
             "data": {
               "name": "Name",
+              "enabled": "Aktiv",
               "time": "Uhrzeit",
               "weekdays": "Wochentage"
             }
@@ -1218,6 +1222,9 @@
       },
       "alarm_clock_active": {
         "name": "Wecker aktiv"
+      },
+      "mailbox_active": {
+        "name": "Briefkasten-Benachrichtigung aktiv"
       }
     }
   },
@@ -1235,6 +1242,16 @@
           "description": "Optional. Ohne Angabe sind alle Poolpumpen betroffen."
         }
       }
+    }
+  },
+  "issues": {
+    "entity_missing": {
+      "title": "Entität fehlt: {entity}",
+      "description": "Die Funktion „{entry}“ ({function}) verwendet die Entität {entity}, die es nicht mehr gibt (gelöscht oder umbenannt). Wähle in den Einstellungen der Funktion eine vorhandene Entität oder stelle die Entität wieder her. Der Hinweis verschwindet von selbst, sobald sie wieder existiert oder nicht mehr verwendet wird."
+    },
+    "device_missing": {
+      "title": "Push-Ziel fehlt: {entity}",
+      "description": "Die Funktion „{entry}“ ({function}) sendet Push-Meldungen an ein Gerät ({entity}), das es nicht mehr gibt (z. B. die Companion-App wurde entfernt). Wähle in den Einstellungen ein vorhandenes Gerät. Der Hinweis verschwindet von selbst, sobald das Ziel wieder stimmt."
     }
   }
 }

@@ -569,6 +569,15 @@ beiden Aktionen).
   letzten Wecker außerdem `skipped` mit dem zuletzt übersprungenen Wecker)
 - `button` **Wecker stoppen** und **Schlummern**
 
+## Reparaturhinweise
+
+Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Companion-App-Geräte noch existieren. Fehlt eine, erscheint unter **Einstellungen → System → Reparaturen** ein Hinweis (je fehlender Referenz einer, mit Name des Eintrags und der Entität).
+
+- Geprüft werden Sensoren, Schlösser, Player, Schalter, Updates, Sprachausgabe und Push-Geräte aller Funktionen.
+- Zeitpunkt: 5 Minuten nach dem Start, danach stündlich sowie kurz nach dem Löschen oder Umbenennen einer Entität bzw. dem Entfernen eines Geräts.
+- Nicht verfügbare oder deaktivierte Entitäten gelten als vorhanden.
+- Die Hinweise sind nicht automatisch behebbar; sie verschwinden von selbst, sobald die Referenz wieder stimmt (Einstellungen angepasst) oder der Eintrag gelöscht wird.
+
 ## Entwicklung
 
 Tests: `pip install pytest-homeassistant-custom-component && pytest`

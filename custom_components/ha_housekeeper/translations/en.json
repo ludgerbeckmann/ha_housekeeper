@@ -349,7 +349,8 @@
         "title": "Rule",
         "data": {
           "action": "Action",
-          "trigger": "Trigger"
+          "trigger": "Trigger",
+          "enabled": "Enabled"
         }
       },
       "rule_state": {
@@ -433,6 +434,7 @@
         "title": "Time window profile",
         "data": {
           "name": "Name",
+          "enabled": "Enabled",
           "from": "From",
           "to": "To",
           "weekdays": "Weekdays",
@@ -541,6 +543,7 @@
         "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
         "data": {
           "name": "Name",
+          "enabled": "Enabled",
           "player": "Sonos speaker",
           "max_volume": "Maximum volume",
           "volume_step": "Volume step size",
@@ -665,6 +668,7 @@
             "description": "When the schedule runs.",
             "data": {
               "name": "Name",
+              "enabled": "Enabled",
               "time": "Time",
               "weekdays": "Weekdays"
             }
@@ -1218,6 +1222,9 @@
       },
       "alarm_clock_active": {
         "name": "Alarm clock active"
+      },
+      "mailbox_active": {
+        "name": "Mailbox notification active"
       }
     }
   },
@@ -1235,6 +1242,16 @@
           "description": "Optional. Without it, all pool pumps are affected."
         }
       }
+    }
+  },
+  "issues": {
+    "entity_missing": {
+      "title": "Entity missing: {entity}",
+      "description": "The function \"{entry}\" ({function}) uses the entity {entity}, which no longer exists (deleted or renamed). Select an existing entity in the settings of the function or restore the entity. This notice disappears by itself as soon as it exists again or is no longer used."
+    },
+    "device_missing": {
+      "title": "Push target missing: {entity}",
+      "description": "The function \"{entry}\" ({function}) sends push notifications to a device ({entity}) that no longer exists (e.g. the companion app was removed). Select an existing device in the settings. This notice disappears by itself as soon as the target is valid again."
     }
   }
 }

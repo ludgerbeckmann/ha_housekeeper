@@ -31,6 +31,7 @@ from .const import (
     SERVICE_RUN_PUMP,
 )
 from .alarm_clock import AlarmClockController
+from .issues import async_remove_entry_issues, async_setup_checks
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
@@ -101,6 +102,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry, FUNCTION_PLATFORMS[function_type]
     )
     entry.async_on_unload(entry.add_update_listener(_async_reload))
+    async_setup_checks(hass, entry)
     return True
 
 
@@ -133,5 +135,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Gespeicherten Zustand beim Löschen entfernen."""
+    """Gespeicherten Zustand und Reparaturhinweise beim Löschen entfernen."""
+    async_remove_entry_issues(hass, entry)
     await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}").async_remove()
