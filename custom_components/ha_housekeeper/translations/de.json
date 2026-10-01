@@ -174,10 +174,12 @@
             "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
             "data": {
               "name": "Name",
-              "workday_sensors": "Werktags-/Feiertagssensoren"
+              "workday_sensors": "Werktags-/Feiertagssensoren",
+              "workday_invert": "Sensorwerte umkehren"
             },
             "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
             }
           },
           "notifications": {
@@ -209,6 +211,8 @@
       "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
       "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
       "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+      "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+      "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
@@ -458,7 +462,7 @@
       },
       "pool_menu": {
         "title": "Poolsteuerung",
-        "description": "Pumpe, Zeitfenster und Trockenlauf-Erkennung der Poolsteuerung.",
+        "description": "Pumpe, Zeitfenster, Trockenlauf-Erkennung und Heizung der Poolsteuerung.",
         "data": {
           "action": "Was möchtest du tun?"
         }
@@ -524,6 +528,20 @@
               "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
             }
           }
+        }
+      },
+      "heater": {
+        "title": "Poolheizung",
+        "description": "Schaltet die Heizung nach der Temperatur: ab der Einschaltschwelle (oder darüber) ein, bei der Ausschaltschwelle (oder darunter) aus; dazwischen bleibt sie unverändert. Ohne Heizung ist die Funktion aus. Die Pumpe wird dabei nicht berücksichtigt.",
+        "data": {
+          "heater_entity": "Heizung (Schalter)",
+          "temperature_entity": "Temperatursensor",
+          "heater_on_above": "Einschalten ab (°C)",
+          "heater_off_below": "Ausschalten bei (°C)"
+        },
+        "data_description": {
+          "heater_entity": "Leer lassen, um die Heizung nicht zu steuern.",
+          "heater_off_below": "Muss unter der Einschaltschwelle liegen (Hysterese)."
         }
       },
       "knx_menu": {
@@ -854,10 +872,12 @@
             "name": "Allgemein",
             "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
             "data": {
-              "workday_sensors": "Werktags-/Feiertagssensoren"
+              "workday_sensors": "Werktags-/Feiertagssensoren",
+              "workday_invert": "Sensorwerte umkehren"
             },
             "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
             }
           },
           "notifications": {
@@ -932,6 +952,8 @@
       "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
       "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
       "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+      "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+      "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
@@ -1106,6 +1128,7 @@
         "edit_window": "Zeitfenster bearbeiten",
         "delete_window": "Zeitfenster löschen",
         "dry_run": "Trockenlauferkennung",
+        "heater": "Poolheizung",
         "add_speaker": "Lautsprecher-Profil hinzufügen",
         "edit_speaker": "Lautsprecher-Profil bearbeiten",
         "delete_speaker": "Lautsprecher-Profil löschen",
@@ -1140,6 +1163,9 @@
       },
       "open_too_long": {
         "name": "Tür zu lange offen"
+      },
+      "heater_should_run": {
+        "name": "Heizung soll laufen"
       },
       "pump_should_run": {
         "name": "Pumpe soll laufen"
@@ -1221,6 +1247,9 @@
       },
       "active": {
         "name": "Klingel aktiv"
+      },
+      "heater_auto": {
+        "name": "Heizung automatisch"
       },
       "schedule_enabled": {
         "name": "Zeitplan aktiv"

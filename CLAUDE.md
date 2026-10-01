@@ -72,6 +72,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   geladen. Optionale Entitäten (Trockenlauf) werden per `remove_unconfigured()`
   aus der Registry entfernt, wenn kein Leistungssensor gesetzt ist; ein
   geleerter Sensor steht als `None` in den Optionen.
+  **Poolheizung** (`heater_entity`, `temperature_entity`, `heater_on_above`, `heater_off_below`, Menü
+  `heater`): ab/über der Einschaltschwelle an, bei/unter der Ausschaltschwelle aus, dazwischen
+  Hysterese; wie die Pumpe nur beim Wechsel des Soll-Zustands (`_heater_desired`), nicht erreichbare
+  Heizung in `_heater_pending`, ungültige Temperatur = nichts tun; unabhängig von Pumpe/Zeitplan.
+  `heater_auto` (Store, Schalter `heater_auto`) ist die Automatik; beim Einschalten wird neu bewertet.
+  Der Heizungsdialog darf nur die Heizungsfelder leeren (nicht `_with_cleared`, das würde Trockenlauf-
+  und Push-Felder löschen). Entitäten `heater_auto`/`heater_should_run` per `remove_unconfigured()`.
 - `knx_sonos.py` / `knx_codec.py`: Der Connector nutzt die **offizielle KNX-Integration**
   (kein eigener Bus): Eingang über das Ereignis `knx_event` (nur `direction: Incoming`,
   `GroupValueWrite`; die Rohdaten aus `data` werden in `knx_codec.py` selbst dekodiert:

@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 from .alarm_clock import AlarmClockController
 from .const import DOMAIN
 from .doorbell import DoorbellController
-from .entity import FunctionEntity
+from .entity import FunctionEntity, remove_unconfigured
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
@@ -28,7 +28,12 @@ async def async_setup_entry(
     if isinstance(controller, DoorbellController):
         async_add_entities([DoorbellActiveSwitch(controller)])
     elif isinstance(controller, PoolPumpController):
-        async_add_entities([ScheduleEnabledSwitch(controller)])
+        entities: list[FunctionEntity] = [ScheduleEnabledSwitch(controller)]
+        if controller.heater_configured:
+            entities.append(HeaterAutoSwitch(controller))
+        else:
+            remove_unconfigured(hass, "switch", controller, "heater_auto")
+        async_add_entities(entities)
     elif isinstance(controller, KnxSonosController):
         async_add_entities([KnxActiveSwitch(controller)])
     elif isinstance(controller, UpdaterController):
@@ -105,6 +110,25 @@ class ScheduleEnabledSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_enabled(False)
+
+
+class HeaterAutoSwitch(FunctionEntity, SwitchEntity):
+    """on = die Heizung wird nach den Temperaturschwellen automatisch geschaltet."""
+
+    _attr_icon = "mdi:radiator"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "heater_auto")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.heater_auto
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_heater_auto(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_heater_auto(False)
 
 
 class KnxActiveSwitch(FunctionEntity, SwitchEntity):

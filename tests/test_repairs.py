@@ -60,6 +60,8 @@ def test_collect_references_per_function() -> None:
         "binary_sensor.b", "media_player.a", "tts.x"]
     assert refs({"function_type": "pool_pump", "pump_entity": "switch.p", "power_entity": "sensor.w"})[0] == [
         "switch.p", "sensor.w"]
+    assert refs({"function_type": "pool_pump", "pump_entity": "switch.p", "heater_entity": "switch.h",
+                 "temperature_entity": "sensor.t"})[0] == ["switch.p", "switch.h", "sensor.t"]
     assert refs({"function_type": "knx_sonos", "player": "media_player.l"})[0] == ["media_player.l"]
     assert refs({"function_type": "knx_sonos", "speakers": [
         {"player": "media_player.a"}, {"player": "media_player.b"}]})[0] == ["media_player.a", "media_player.b"]
