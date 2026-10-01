@@ -89,7 +89,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Entitäten (`U_TARGETS`); `resolve_targets()` bildet die Vereinigung bei **jedem Lauf**
   neu (Zuordnung über die Plattform in der Entity-Registry: `hassio` = Add-ons, `esphome`
   = Geräte, sonst „other“; Core/Supervisor/OS über ihre Entity-IDs; deaktivierte
-  Entitäten zählen nicht). Der Listener hört auf alle `update.*`-Zustandsänderungen.
+  Entitäten zählen nicht). Der Listener hört auf alle `update.*`-Zustandsänderungen. Die **Benachrichtigung ist je
+  Zeitplan** (die sechs Schlüssel aus `NOTIFY_KEYS` stehen flach im Zeitplan, Formular mit den
+  Abschnitten `timing`, `actions`, `notifications`); `_notifier_for(schedule)` nimmt nur die
+  Werte des Zeitplans, ältere Zeitpläne ohne `mobile_enabled` nutzen die des Eintrags als
+  Rückfall (deshalb darf `upd_general` kein `_with_cleared` nutzen), „Jetzt prüfen“ die
+  Vereinigung (`union_notify()`), der Neustartbericht den Zeitplan aus `pending["schedule_id"]`.
+  Der Eintrag selbst hat nur Name und `timeout_minutes`.
 - Formular-Abschnitte (`section` aus `homeassistant.data_entry_flow`, standardmäßig
   `collapsed: False`): Die Grunddialoge von Briefkasten, Türwächter, Türklingel,
   Home Assistant Updater, Aufgabenplaner und der Trockenlauf-Dialog der Poolsteuerung haben die

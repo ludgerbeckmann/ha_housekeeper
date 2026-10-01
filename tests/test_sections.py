@@ -39,7 +39,6 @@ def _assert_sections(schema, general: set[str], notifications: set[str]) -> None
         ("doorbell",
          {"name", "trigger_entity", "debounce_seconds"},
          {"mobile_enabled", "mobile_targets", "message", "clear_after_hours"}),
-        ("updater", {"name", "timeout_minutes"}, NOTIFY_FIELDS),
         ("task_planner", {"name"}, NOTIFY_FIELDS),
     ],
 )

@@ -20,6 +20,12 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_MOBILE_ENABLED,
+    CONF_MOBILE_TARGETS,
+    CONF_PERSISTENT_ENABLED,
+    CONF_TTS_ENABLED,
+    CONF_TTS_ENTITY,
+    CONF_TTS_PLAYER,
     COMP_ADDONS,
     COMP_CORE,
     COMP_ESPHOME,
@@ -105,6 +111,59 @@ def _log_task_result(task: asyncio.Future) -> None:
     """Ergebnis einer nach Zeitüberschreitung weiterlaufenden Installation protokollieren."""
     if not task.cancelled() and (err := task.exception()) is not None:
         _LOGGER.warning("Weiterlaufende Installation fehlgeschlagen: %s", err)
+
+
+# Benachrichtigungseinstellungen eines Zeitplans (gleiche Schlüssel wie früher im Eintrag)
+NOTIFY_KEYS = (
+    CONF_MOBILE_ENABLED,
+    CONF_MOBILE_TARGETS,
+    CONF_TTS_ENABLED,
+    CONF_TTS_ENTITY,
+    CONF_TTS_PLAYER,
+    CONF_PERSISTENT_ENABLED,
+)
+
+
+def has_own_notify(schedule: dict[str, Any]) -> bool:
+    """Hat der Zeitplan eigene Benachrichtigungseinstellungen (sonst gelten die des Eintrags)?"""
+    return CONF_MOBILE_ENABLED in schedule
+
+
+def union_notify(
+    schedules: list[dict[str, Any]], entry_opt_fn: Any
+) -> dict[str, Any]:
+    """Benachrichtigungswege aller Zeitpläne vereinigt (für „Jetzt prüfen“).
+
+    Alle Push-Ziele, Sprachausgabe vom ersten Zeitplan, der sie nutzt, persistente Meldung,
+    wenn mindestens ein Zeitplan sie nutzt. Zeitpläne ohne eigene Einstellungen tragen
+    die des Eintrags bei.
+    """
+    targets: dict[str, None] = {}
+    tts: dict[str, Any] = {}
+    persistent = False
+    for schedule in schedules:
+        get = (
+            (lambda key, default=None, s=schedule: s.get(key, default))
+            if has_own_notify(schedule)
+            else entry_opt_fn
+        )
+        if get(CONF_MOBILE_ENABLED, False):
+            targets.update(dict.fromkeys(get(CONF_MOBILE_TARGETS, []) or []))
+        if not tts and get(CONF_TTS_ENABLED, False) and get(CONF_TTS_ENTITY) and get(CONF_TTS_PLAYER):
+            tts = {
+                CONF_TTS_ENABLED: True,
+                CONF_TTS_ENTITY: get(CONF_TTS_ENTITY),
+                CONF_TTS_PLAYER: get(CONF_TTS_PLAYER),
+            }
+        persistent = persistent or bool(get(CONF_PERSISTENT_ENABLED, False))
+    return {
+        CONF_MOBILE_ENABLED: bool(targets),
+        CONF_MOBILE_TARGETS: list(targets),
+        CONF_TTS_ENABLED: bool(tts),
+        CONF_TTS_ENTITY: tts.get(CONF_TTS_ENTITY),
+        CONF_TTS_PLAYER: tts.get(CONF_TTS_PLAYER),
+        CONF_PERSISTENT_ENABLED: persistent,
+    }
 
 
 def component_of(hass: HomeAssistant, entity_id: str) -> str:
@@ -220,13 +279,34 @@ class UpdaterController:
         self._running = False
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
-        self._notifier = Notifier(
-            hass, self._get, f"{DOMAIN}_{entry.entry_id}", lambda: entry.title
-        )
         self._unsubs: list[CALLBACK_TYPE] = []
         self._finalize_unsub: CALLBACK_TYPE | None = None
 
     # --- Hilfen ------------------------------------------------------------
+
+    def _notifier_for(self, schedule: dict[str, Any] | None) -> Notifier:
+        """Benachrichtigung eines Zeitplans.
+
+        Ein Zeitplan mit eigenen Einstellungen nutzt nur diese; älteren Zeitplänen ohne
+        eigene Einstellungen dienen die des Eintrags als Rückfall. „Jetzt prüfen“ (ohne
+        Zeitplan) nutzt die Vereinigung aller Wege.
+        """
+        if schedule is None or schedule.get(U_ID) == "check":
+            union = union_notify(self.schedules, self._get)
+            opt = lambda key, default=None: union.get(key, default)  # noqa: E731
+        elif has_own_notify(schedule):
+            opt = lambda key, default=None: (  # noqa: E731
+                default if schedule.get(key) is None else schedule[key]
+            )
+        else:
+            opt = self._get
+        return Notifier(self.hass, opt, f"{DOMAIN}_{self.entry.entry_id}", lambda: self.entry.title)
+
+    def _schedule_by_id(self, schedule_id: str | None, name: str | None) -> dict[str, Any] | None:
+        for schedule in self.schedules:
+            if schedule_id is not None and schedule.get(U_ID) == schedule_id:
+                return schedule
+        return next((s for s in self.schedules if name and s.get(U_NAME) == name), None)
 
     def _opt(self, key: str, default: Any = None) -> Any:
         return self._get(key, default)
@@ -370,6 +450,7 @@ class UpdaterController:
 
     async def _async_run(self, schedule: dict[str, Any], force_notify: bool) -> None:
         text = self._text()
+        notifier = self._notifier_for(schedule)
         candidates: list[str] = []
         for entity_id in resolve_targets(self.hass, schedule):
             state = self.hass.states.get(entity_id)
@@ -389,7 +470,7 @@ class UpdaterController:
         if not candidates:
             record["summary"] = text["none"]
             if force_notify:
-                await self._notifier.async_send(text["none"], kind="run")
+                await notifier.async_send(text["none"], kind="run")
             self.last_run = record
             await self._async_save()
             return
@@ -398,19 +479,19 @@ class UpdaterController:
         if mode != UPDATE_MODE_INSTALL:
             message = f"{text['available']}:\n" + "\n".join(lines)
             record["summary"] = message
-            await self._notifier.async_send(message, kind="run")
+            await notifier.async_send(message, kind="run")
             self.last_run = record
             await self._async_save()
             return
 
-        await self._notifier.async_send(
+        await notifier.async_send(
             f"{text['start'].format(name=schedule.get(U_NAME))}:\n" + "\n".join(lines),
             kind="run",
         )
         results = await self._async_install_all(
             schedule, order_targets(candidates), []
         )
-        await self._async_finish(record, schedule.get(U_NAME), results)
+        await self._async_finish(record, schedule.get(U_NAME), results, notifier)
 
     def _line(self, entity_id: str) -> str:
         state = self.hass.states.get(entity_id)
@@ -461,6 +542,7 @@ class UpdaterController:
             # Start das Ergebnis gemeldet werden kann.
             self.pending = {
                 "schedule": schedule.get(U_NAME),
+                "schedule_id": schedule.get(U_ID),
                 "results": list(results),
                 "current": base,
                 "deferred": [e for e in ordered if e in RESTARTING and e != entity_id],
@@ -534,7 +616,11 @@ class UpdaterController:
         return f"⏭ {result['name']} ({text[status]})"
 
     async def _async_finish(
-        self, record: dict[str, Any], name: str | None, results: list[dict[str, Any]]
+        self,
+        record: dict[str, Any],
+        name: str | None,
+        results: list[dict[str, Any]],
+        notifier: Notifier,
     ) -> None:
         text = self._text()
         record["installed"] = sum(r["status"] == ST_INSTALLED for r in results)
@@ -546,7 +632,7 @@ class UpdaterController:
         record["summary"] = message
         self.last_run = record
         await self._async_save()
-        await self._notifier.async_send(message, kind="run")
+        await notifier.async_send(message, kind="run")
 
     # --- Nachmeldung nach einem Neustart --------------------------------------
 
@@ -600,4 +686,7 @@ class UpdaterController:
             "summary": "",
         }
         self.pending = None
-        await self._async_finish(record, pending.get("schedule"), results)
+        notifier = self._notifier_for(
+            self._schedule_by_id(pending.get("schedule_id"), pending.get("schedule"))
+        )
+        await self._async_finish(record, pending.get("schedule"), results, notifier)

@@ -356,16 +356,20 @@ Betriebssystem, Add-ons wie ESPHome, außerdem die Firmware-Entitäten der
 ESPHome-Geräte). Die Update-Entitäten der ESPHome-Geräte sind in Home Assistant
 standardmäßig **deaktiviert** und müssen aktiviert sein.
 
-Ein Eintrag enthält **mehrere Zeitpläne**; Benachrichtigungen gehen an die im Eintrag
-gewählten Wege (App-Push, Sprachausgabe, persistente Meldung) und das Zeitlimit pro
-Update ist dort einstellbar.
+Ein Eintrag enthält **mehrere Zeitpläne**. Im Eintrag selbst (*Einstellungen*) steht nur das
+**Zeitlimit pro Update**; die **Benachrichtigung stellst du je Zeitplan ein**.
 
 ### Zeitpläne
 
-Unter *Konfigurieren* pflegst du die Zeitpläne (hinzufügen, bearbeiten, löschen). Ein
-Zeitplan hat:
+Unter *Konfigurieren* pflegst du die Zeitpläne (hinzufügen, bearbeiten, löschen). Der
+Dialog hat drei ausgeklappte Abschnitte. Ein Zeitplan hat:
+
+**Zeitpunkt**
 
 - Name, **Uhrzeit** und **Wochentage**
+
+**Aktionen**
+
 - **Aktion**: *Nur benachrichtigen* (Standard) oder *Automatisch installieren*
 - die **Komponenten**, die aktualisiert werden sollen (Mehrfachauswahl):
   *Home Assistant Core*, *Supervisor*, *Betriebssystem (OS)*, *Add-ons* (inklusive
@@ -376,6 +380,18 @@ Zeitplan hat:
   Verwendet wird die Vereinigung aus Komponenten und einzelnen Updates; mindestens eines
   von beiden muss gewählt sein. Jeder Zeitplan hat seine eigene Auswahl.
 - **Sicherung vor dem Installieren** (Standard: aus; nur bei Updates, die das unterstützen)
+
+**Benachrichtigungen**
+
+- **App-Push** (ein oder mehrere Ziele), **Sprachausgabe** (TTS-Dienst und Lautsprecher),
+  **persistente Meldung**; mindestens ein Weg muss gewählt sein. Neue Zeitpläne sind mit den
+  bisherigen Einstellungen des Eintrags vorbelegt (sonst: nur persistente Meldung).
+- Zeitpläne aus älteren Versionen haben noch keine eigenen Einstellungen und nutzen weiter
+  die des Eintrags, bis du sie einmal bearbeitest und speicherst.
+- Der Bericht nach einem Neustart (Core/OS-Update) geht über die Wege des Zeitplans, der den
+  Lauf gestartet hat. Der Button **Jetzt prüfen** meldet über die **Vereinigung aller
+  Zeitpläne** (alle Push-Ziele, Sprachausgabe vom ersten Zeitplan, der sie nutzt, persistente
+  Meldung, wenn ein Zeitplan sie nutzt).
 
 Zur eingestellten Zeit werden nur Updates berücksichtigt, die gerade bereitstehen
 (ein bewusst übersprungenes Update bleibt übersprungen). Zugeordnet wird über die
