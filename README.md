@@ -268,10 +268,27 @@ wieder einschaltest.
 Schritt *Trockenlauferkennung*. Beim Quittieren werden die Meldungen wieder
 entfernt.
 
+### Poolheizung
+
+Optional lässt sich eine **Heizung** (Schalter) nach der Temperatur steuern (Menü *Poolheizung*):
+
+- **Heizung (Schalter)** und **Temperatursensor** (`sensor` oder `input_number`)
+- **Einschalten ab** (°C): Erreicht oder überschreitet die Temperatur diese Schwelle, wird die
+  Heizung eingeschaltet.
+- **Ausschalten bei** (°C): Erreicht oder unterschreitet sie diese Schwelle, wird die Heizung
+  ausgeschaltet. Sie muss **unter** der Einschaltschwelle liegen; dazwischen bleibt die Heizung,
+  wie sie ist (Hysterese gegen ständiges Schalten).
+
+Geschaltet wird nur beim **Wechsel** des Soll-Zustands; ein manueller Eingriff bleibt bis zum
+nächsten Überschreiten einer Schwelle bestehen. Ist die Heizung nicht erreichbar, wird es nachgeholt;
+bei ungültiger Temperatur (nicht verfügbar, keine Zahl) geschieht nichts. Die Heizung ist
+unabhängig von Pumpe und Zeitplan. Wird das Feld Heizung geleert, ist die Funktion aus.
+
 ### Entitäten
 
 | Entität | Beschreibung |
 |---|---|
+| `switch` **Heizung automatisch**, `binary_sensor` **Heizung soll laufen** | nur mit Heizung; die Automatik lässt sich ein-/ausschalten (aus = die Heizung wird nie geschaltet), der Sensor zeigt den Soll-Zustand samt Temperatur und Schwellen |
 | `switch` **Zeitplan aktiv** | Automatik an/aus, bleibt nach einem Neustart erhalten. Beim Ausschalten wird die Pumpe nicht angefasst. |
 | `binary_sensor` **Pumpe soll laufen** | `on`, solange die Pumpe laut Zeitplan (oder manuellem Lauf) laufen soll |
 | `sensor` **Nächster Start** | Zeitstempel des nächsten Fensterbeginns |

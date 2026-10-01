@@ -365,7 +365,7 @@ async def test_options_windows_add_edit_delete(hass):
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     assert result["step_id"] == "pool_menu"
-    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "done"]
+    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater", "done"]
 
     result = await flow.async_configure(result["flow_id"], {"action": "add_window"})
     bad = await flow.async_configure(
@@ -462,3 +462,135 @@ async def test_options_dry_run_set_validate_and_clear(hass):
     assert entry.options["power_entity"] is None
     await hass.async_block_till_done()
     assert hass.states.get("button.pool_acknowledge_dry_run") is None
+
+
+# --- Poolheizung -----------------------------------------------------------------------------------
+
+HEATER = "switch.pool_heater"
+TEMP = "sensor.pool_temperature"
+
+
+async def _setup_heater(hass, temp="20", heater_state=STATE_OFF, **over):
+    hass.states.async_set(HEATER, heater_state)
+    hass.states.async_set(TEMP, temp)
+    options = {"pump_entity": PUMP, "windows": [], "heater_entity": HEATER,
+               "temperature_entity": TEMP, "heater_on_above": 28, "heater_off_below": 26, **over}
+    hass.states.async_set(PUMP, STATE_OFF)
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="Pool",
+        data={"function_type": "pool_pump", "pump_entity": PUMP}, options=options)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
+
+
+async def test_heater_switches_on_above_and_off_below(hass: HomeAssistant):
+    on, off = _calls(hass)
+    await _setup_heater(hass, temp="20")
+    assert not on and not off or all(c.data["entity_id"] != HEATER for c in on)
+    on.clear(); off.clear()
+    hass.states.async_set(TEMP, "27")             # zwischen den Schwellen: nichts
+    await hass.async_block_till_done()
+    assert not on and not off
+    hass.states.async_set(TEMP, "28")             # ab der Einschaltschwelle
+    await hass.async_block_till_done()
+    assert [c.data["entity_id"] for c in on] == [HEATER]
+    hass.states.async_set(HEATER, STATE_ON)
+    hass.states.async_set(TEMP, "26.5")           # Hysterese: bleibt an
+    await hass.async_block_till_done()
+    assert not off
+    hass.states.async_set(TEMP, "26")             # bei der Ausschaltschwelle
+    await hass.async_block_till_done()
+    assert [c.data["entity_id"] for c in off] == [HEATER]
+    sensor = hass.states.get("binary_sensor.pool_heater_should_run")
+    assert sensor.state == STATE_OFF and sensor.attributes["temperatur"] == 26.0
+
+
+async def test_heater_switches_only_on_change(hass: HomeAssistant):
+    on, off = _calls(hass)
+    await _setup_heater(hass, temp="30")
+    assert [c.data["entity_id"] for c in on] == [HEATER]
+    hass.states.async_set(HEATER, STATE_ON)
+    on.clear()
+    hass.states.async_set(TEMP, "31")
+    hass.states.async_set(TEMP, "32")
+    await hass.async_block_till_done()
+    assert not on
+    hass.states.async_set(HEATER, STATE_OFF)      # manuell ausgeschaltet: bleibt aus
+    await hass.async_block_till_done()
+    assert not on
+
+
+async def test_heater_ignores_invalid_temperature(hass: HomeAssistant):
+    on, off = _calls(hass)
+    await _setup_heater(hass, temp=STATE_UNAVAILABLE)
+    hass.states.async_set(TEMP, "unknown")
+    hass.states.async_set(TEMP, "abc")
+    await hass.async_block_till_done()
+    assert not on and not off
+
+
+async def test_heater_unreachable_is_retried(hass: HomeAssistant):
+    on, off = _calls(hass)
+    await _setup_heater(hass, temp="30", heater_state=STATE_UNAVAILABLE)
+    assert not on
+    hass.states.async_set(HEATER, STATE_OFF)      # wieder erreichbar
+    await hass.async_block_till_done()
+    assert [c.data["entity_id"] for c in on] == [HEATER]
+
+
+async def test_heater_auto_switch_stops_and_reevaluates(hass: HomeAssistant):
+    on, off = _calls(hass)
+    await _setup_heater(hass, temp="30")
+    on.clear()
+    await hass.services.async_call(
+        "switch", "turn_off", {"entity_id": "switch.pool_heater_automatic"}, blocking=True)
+    hass.states.async_set(TEMP, "20")
+    await hass.async_block_till_done()
+    assert not off                                # Automatik aus: nie geschaltet
+    assert hass.states.get("binary_sensor.pool_heater_should_run").state == STATE_OFF
+    hass.states.async_set(TEMP, "31")
+    await hass.services.async_call(
+        "switch", "turn_on", {"entity_id": "switch.pool_heater_automatic"}, blocking=True)
+    await hass.async_block_till_done()
+    assert [c.data["entity_id"] for c in on] == [HEATER]
+
+
+async def test_heater_entities_only_when_configured(hass: HomeAssistant):
+    await _setup(hass, [])
+    assert hass.states.get("switch.pool_heater_automatic") is None
+    assert hass.states.get("binary_sensor.pool_heater_should_run") is None
+
+
+async def test_options_heater_set_validate_and_clear(hass: HomeAssistant):
+    entry = await _setup(hass, [])
+    flow = hass.config_entries.options
+
+    async def start():
+        r = await flow.async_init(entry.entry_id)
+        return await flow.async_configure(r["flow_id"], {"action": "heater"})
+
+    result = await start()
+    assert result["step_id"] == "heater"
+    bad = await flow.async_configure(result["flow_id"], {
+        "heater_entity": HEATER, "heater_on_above": 28, "heater_off_below": 26})
+    assert bad["errors"] == {"base": "no_temperature"}
+    bad = await flow.async_configure(bad["flow_id"], {
+        "heater_entity": HEATER, "temperature_entity": TEMP,
+        "heater_on_above": 26, "heater_off_below": 26})
+    assert bad["errors"] == {"base": "off_ge_on"}
+    ok = await flow.async_configure(bad["flow_id"], {
+        "heater_entity": HEATER, "temperature_entity": TEMP,
+        "heater_on_above": 29, "heater_off_below": 27})
+    assert is_menu(ok)
+    assert entry.options["heater_entity"] == HEATER and entry.options["heater_on_above"] == 29
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.pool_heater_automatic") is not None
+
+    result = await start()                        # Heizung entfernen
+    ok = await flow.async_configure(result["flow_id"], {
+        "heater_on_above": 29, "heater_off_below": 27})
+    assert is_menu(ok) and entry.options["heater_entity"] is None
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.pool_heater_automatic") is None

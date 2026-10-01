@@ -16,14 +16,20 @@ from ..const import (
     CONF_DRY_DURATION,
     CONF_DRY_MAX_POWER,
     CONF_DRY_MIN_POWER,
+    CONF_HEATER_ENTITY,
+    CONF_HEATER_OFF_BELOW,
+    CONF_HEATER_ON_ABOVE,
     CONF_MOBILE_ENABLED,
     CONF_MOBILE_TARGETS,
     CONF_POWER_ENTITY,
     CONF_PUMP_ENTITY,
+    CONF_TEMP_ENTITY,
     CONF_WINDOWS,
     DEFAULT_DRY_DURATION,
     DEFAULT_DRY_MAX_POWER,
     DEFAULT_DRY_MIN_POWER,
+    DEFAULT_HEATER_OFF_BELOW,
+    DEFAULT_HEATER_ON_ABOVE,
     MAX_WINDOWS,
     W_DAYS,
     W_END,
@@ -90,6 +96,39 @@ def _validate_dry_run(user_input: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+def _heater_schema(defaults: dict[str, Any]) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(
+                CONF_HEATER_ENTITY, description=_suggest(CONF_HEATER_ENTITY, defaults)
+            ): _PUMP_SELECTOR,
+            vol.Optional(
+                CONF_TEMP_ENTITY, description=_suggest(CONF_TEMP_ENTITY, defaults)
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["sensor", "input_number"])
+            ),
+            vol.Required(
+                CONF_HEATER_ON_ABOVE,
+                default=defaults.get(CONF_HEATER_ON_ABOVE, DEFAULT_HEATER_ON_ABOVE),
+            ): _number(-50, 150, "°C", 0.5),
+            vol.Required(
+                CONF_HEATER_OFF_BELOW,
+                default=defaults.get(CONF_HEATER_OFF_BELOW, DEFAULT_HEATER_OFF_BELOW),
+            ): _number(-50, 150, "°C", 0.5),
+        }
+    )
+
+
+def _validate_heater(user_input: dict[str, Any]) -> dict[str, str]:
+    if not user_input.get(CONF_HEATER_ENTITY):
+        return {}
+    if not user_input.get(CONF_TEMP_ENTITY):
+        return {"base": "no_temperature"}
+    if float(user_input[CONF_HEATER_OFF_BELOW]) >= float(user_input[CONF_HEATER_ON_ABOVE]):
+        return {"base": "off_ge_on"}
+    return {}
+
+
 class PoolOptions:
     """Options-Flow-Schritte: Poolsteuerung."""
 
@@ -102,7 +141,7 @@ class PoolOptions:
         options = ["pool_general", "add_window"]
         if self._windows():
             options += ["edit_window", "delete_window"]
-        options += ["dry_run", "done"]
+        options += ["dry_run", "heater", "done"]
         return await self._menu("pool_menu", options, user_input)
 
     async def async_step_pool_general(
@@ -223,6 +262,22 @@ class PoolOptions:
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_heater(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults = self._current
+        if user_input is not None:
+            errors = _validate_heater(user_input)
+            if not errors:
+                # nur die Heizungsfelder leeren (nicht Trockenlauf-/Benachrichtigungsfelder)
+                self._save({CONF_HEATER_ENTITY: None, CONF_TEMP_ENTITY: None, **user_input})
+                return await self.async_step_pool_menu()
+            defaults = user_input
+        return self.async_show_form(
+            step_id="heater", data_schema=_heater_schema(defaults), errors=errors
         )
 
     async def async_step_dry_run(

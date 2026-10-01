@@ -31,6 +31,10 @@ async def async_setup_entry(
             entities.append(DryRunSensor(controller))
         else:
             remove_unconfigured(hass, "binary_sensor", controller, "dry_run_detected")
+        if controller.heater_configured:
+            entities.append(HeaterShouldRunSensor(controller))
+        else:
+            remove_unconfigured(hass, "binary_sensor", controller, "heater_should_run")
         async_add_entities(entities)
     else:
         async_add_entities([MailboxHasMailSensor(controller)])
@@ -92,6 +96,32 @@ class PumpShouldRunSensor(FunctionEntity, BinarySensorEntity):
             if ctrl.manual_active
             else None,
             "pumpe": ctrl.pump_entity,
+        }
+
+
+class HeaterShouldRunSensor(FunctionEntity, BinarySensorEntity):
+    """on = die Heizung soll laut Temperaturschwellen laufen."""
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "heater_should_run")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.heater_should_run
+
+    @property
+    def icon(self) -> str:
+        return "mdi:radiator" if self.is_on else "mdi:radiator-off"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        ctrl = self._controller
+        return {
+            "automatik_aktiv": ctrl.heater_auto,
+            "temperatur": ctrl.current_temperature(),
+            "einschalten_ab": ctrl.heater_on_above,
+            "ausschalten_bei": ctrl.heater_off_below,
+            "heizung": ctrl.heater_entity,
         }
 
 

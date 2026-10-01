@@ -32,12 +32,18 @@ from .const import (
     CONF_DRY_DURATION,
     CONF_DRY_MAX_POWER,
     CONF_DRY_MIN_POWER,
+    CONF_HEATER_ENTITY,
+    CONF_HEATER_OFF_BELOW,
+    CONF_HEATER_ON_ABOVE,
     CONF_POWER_ENTITY,
     CONF_PUMP_ENTITY,
+    CONF_TEMP_ENTITY,
     CONF_WINDOWS,
     DEFAULT_DRY_DURATION,
     DEFAULT_DRY_MAX_POWER,
     DEFAULT_DRY_MIN_POWER,
+    DEFAULT_HEATER_OFF_BELOW,
+    DEFAULT_HEATER_ON_ABOVE,
     DOMAIN,
     signal_update,
 )
@@ -78,6 +84,15 @@ class PoolPumpController(ReloadWhenIdle):
         self.dry_run_since: datetime | None = None
         self._paused_by_dry_run = False
 
+        # Poolheizung: Schalter plus Temperatursensor mit zwei Schwellen (Hysterese)
+        self.heater_entity: str | None = self._get(CONF_HEATER_ENTITY) or None
+        self.temp_entity: str | None = self._get(CONF_TEMP_ENTITY) or None
+        self.heater_on_above = float(self._get(CONF_HEATER_ON_ABOVE, DEFAULT_HEATER_ON_ABOVE))
+        self.heater_off_below = float(self._get(CONF_HEATER_OFF_BELOW, DEFAULT_HEATER_OFF_BELOW))
+        self.heater_auto = True
+        self._heater_desired: bool | None = None
+        self._heater_pending: bool | None = None
+
         self._last_desired: bool | None = None
         self._pending: bool | None = None
         self._manual_on = False
@@ -99,6 +114,7 @@ class PoolPumpController(ReloadWhenIdle):
         stored = await self._store.async_load() or {}
         now = dt_util.now()
         self.enabled = bool(stored.get("enabled", True))
+        self.heater_auto = bool(stored.get("heater_auto", True))
         if stored.get("date") == now.date().isoformat():
             self._runtime_seconds = float(stored.get("seconds", 0))
         state = self.hass.states.get(self.pump_entity)
@@ -115,6 +131,17 @@ class PoolPumpController(ReloadWhenIdle):
             self._unsubs.append(
                 async_track_state_change_event(
                     self.hass, [self.power_entity], self._power_changed
+                )
+            )
+        if self.heater_configured:
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, [self.temp_entity], self._heater_input_changed
+                )
+            )
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, [self.heater_entity], self._heater_input_changed
                 )
             )
         await self._async_evaluate(now)
@@ -186,6 +213,85 @@ class PoolPumpController(ReloadWhenIdle):
             self.hass, self._manual_expired, self.manual_until
         )
         await self._async_evaluate(now)
+
+    # ------------------------------------------------------------------ Poolheizung
+
+    @property
+    def heater_configured(self) -> bool:
+        return self.heater_entity is not None and self.temp_entity is not None
+
+    @property
+    def heater_should_run(self) -> bool:
+        """Soll die Heizung laut Temperaturschwellen gerade laufen?"""
+        return self.heater_auto and self._heater_desired is True
+
+    def current_temperature(self) -> float | None:
+        state = self.hass.states.get(self.temp_entity) if self.temp_entity else None
+        if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+        try:
+            return float(state.state)
+        except ValueError:
+            return None
+
+    async def async_set_heater_auto(self, enabled: bool) -> None:
+        """Heizungsautomatik ein- oder ausschalten (aus = die Heizung wird nie geschaltet)."""
+        self.heater_auto = enabled
+        self._heater_desired = None  # beim Einschalten neu bewerten
+        self._heater_pending = None
+        await self._async_save()
+        await self._async_evaluate_heater()
+        self._notify()
+
+    async def _async_evaluate_heater(self) -> None:
+        """Soll-Zustand der Heizung bestimmen; geschaltet wird nur beim Wechsel.
+
+        Ab der Einschaltschwelle (oder darüber) ein, bei der Ausschaltschwelle (oder darunter)
+        aus; dazwischen bleibt der Zustand, wie er ist. Ohne gültige Temperatur geschieht nichts,
+        eine nicht erreichbare Heizung bleibt vorgemerkt.
+        """
+        if not self.heater_configured or not self.heater_auto:
+            return
+        temperature = self.current_temperature()
+        desired: bool | None = None
+        if temperature is not None:
+            if temperature >= self.heater_on_above:
+                desired = True
+            elif temperature <= self.heater_off_below:
+                desired = False
+        if desired is not None and desired != self._heater_desired:
+            self._heater_desired = desired
+            self._heater_pending = desired
+        if self._heater_pending is not None:
+            await self._async_apply_heater(self._heater_pending)
+
+    async def _async_apply_heater(self, desired: bool) -> None:
+        state = self.hass.states.get(self.heater_entity)
+        if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            _LOGGER.debug("Heizung %s nicht verfügbar, versuche es erneut", self.heater_entity)
+            return
+        if state.state == (STATE_ON if desired else STATE_OFF):
+            self._heater_pending = None
+            return
+        try:
+            await self.hass.services.async_call(
+                "homeassistant",
+                "turn_on" if desired else "turn_off",
+                {ATTR_ENTITY_ID: self.heater_entity},
+                blocking=True,
+            )
+        except Exception:  # noqa: BLE001 - beim nächsten Durchlauf erneut versuchen
+            _LOGGER.exception("Schalten der Heizung %s fehlgeschlagen", self.heater_entity)
+            return
+        self._heater_pending = None
+
+    @callback
+    def _heater_input_changed(self, event: Event) -> None:
+        self.hass.async_create_task(self._async_heater_and_notify())
+
+    async def _async_heater_and_notify(self) -> None:
+        await self._async_evaluate_heater()
+        self._notify()
 
     # ------------------------------------------------------------------ Trockenlauf
 
@@ -317,6 +423,7 @@ class PoolPumpController(ReloadWhenIdle):
             "date": self._runtime_date.isoformat(),
             "seconds": seconds,
             "enabled": self.enabled,
+            "heater_auto": self.heater_auto,
         }
 
     async def _async_evaluate(self, now: datetime) -> None:
@@ -353,6 +460,7 @@ class PoolPumpController(ReloadWhenIdle):
         if self._pending is not None:
             await self._async_apply(self._pending)
 
+        await self._async_evaluate_heater()
         self._notify()
 
     async def _async_apply(self, desired: bool) -> None:

@@ -211,6 +211,8 @@
       "no_output": "The profile needs at least one media player or app push.",
       "no_tts": "Announcement needs a TTS service and a text.",
       "no_ringtone": "Select an audio file for the ringtone.",
+      "no_temperature": "Select a temperature sensor for the heater.",
+      "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
@@ -460,7 +462,7 @@
       },
       "pool_menu": {
         "title": "Pool control",
-        "description": "Pump, time windows and dry-run detection of the pool control.",
+        "description": "Pump, time windows, dry-run detection and heater of the pool control.",
         "data": {
           "action": "What would you like to do?"
         }
@@ -526,6 +528,20 @@
               "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
             }
           }
+        }
+      },
+      "heater": {
+        "title": "Pool heater",
+        "description": "Switches the heater by temperature: on at the switch-on threshold (or above), off at the switch-off threshold (or below); in between it stays as it is. Without a heater the function is off. The pump is not taken into account.",
+        "data": {
+          "heater_entity": "Heater (switch)",
+          "temperature_entity": "Temperature sensor",
+          "heater_on_above": "Switch on at or above (°C)",
+          "heater_off_below": "Switch off at or below (°C)"
+        },
+        "data_description": {
+          "heater_entity": "Leave empty to not control a heater.",
+          "heater_off_below": "Must be below the switch-on threshold (hysteresis)."
         }
       },
       "knx_menu": {
@@ -936,6 +952,8 @@
       "no_output": "The profile needs at least one media player or app push.",
       "no_tts": "Announcement needs a TTS service and a text.",
       "no_ringtone": "Select an audio file for the ringtone.",
+      "no_temperature": "Select a temperature sensor for the heater.",
+      "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
@@ -1110,6 +1128,7 @@
         "edit_window": "Edit time window",
         "delete_window": "Delete time window",
         "dry_run": "Dry-run detection",
+        "heater": "Pool heater",
         "add_speaker": "Add speaker profile",
         "edit_speaker": "Edit speaker profile",
         "delete_speaker": "Delete speaker profile",
@@ -1144,6 +1163,9 @@
       },
       "open_too_long": {
         "name": "Door open too long"
+      },
+      "heater_should_run": {
+        "name": "Heater should run"
       },
       "pump_should_run": {
         "name": "Pump should run"
@@ -1225,6 +1247,9 @@
       },
       "active": {
         "name": "Doorbell active"
+      },
+      "heater_auto": {
+        "name": "Heater automatic"
       },
       "schedule_enabled": {
         "name": "Schedule active"

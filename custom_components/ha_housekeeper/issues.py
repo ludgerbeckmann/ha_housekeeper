@@ -31,11 +31,13 @@ from .const import (
     CONF_MOBILE_TARGETS,
     CONF_PLAYER,
     CONF_POWER_ENTITY,
+    CONF_HEATER_ENTITY,
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
     CONF_RULES,
     CONF_SCHEDULES,
     CONF_SENSITIVITY_ENTITY,
+    CONF_TEMP_ENTITY,
     CONF_SPEAKERS,
     CONF_TASKS,
     CONF_TRIGGER_ENTITY,
@@ -103,7 +105,10 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         profiles = opt(CONF_PROFILES, [])
         entities += _listed(profiles, "players", "tts_entity")
     elif function == FUNCTION_POOL:
-        entities += [opt(CONF_PUMP_ENTITY), opt(CONF_POWER_ENTITY)]
+        entities += [
+            opt(CONF_PUMP_ENTITY), opt(CONF_POWER_ENTITY),
+            opt(CONF_HEATER_ENTITY), opt(CONF_TEMP_ENTITY),
+        ]
     elif function == FUNCTION_KNX_SONOS:
         speakers = opt(CONF_SPEAKERS, [])
         entities += _listed(speakers, CONF_PLAYER) if speakers else [opt(CONF_PLAYER)]
