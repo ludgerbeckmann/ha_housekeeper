@@ -18,6 +18,7 @@ from .const import (
     ATTR_ENTRY_ID,
     CONF_FUNCTION_TYPE,
     DOMAIN,
+    FUNCTION_ALARM,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_KNX_SONOS,
@@ -28,6 +29,7 @@ from .const import (
     FUNCTION_PLATFORMS,
     SERVICE_RUN_PUMP,
 )
+from .alarm_clock import AlarmClockController
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
@@ -47,6 +49,7 @@ CONTROLLERS = {
     FUNCTION_KNX_SONOS: KnxSonosController,
     FUNCTION_UPDATER: UpdaterController,
     FUNCTION_TASK_PLANNER: TaskPlannerController,
+    FUNCTION_ALARM: AlarmClockController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(

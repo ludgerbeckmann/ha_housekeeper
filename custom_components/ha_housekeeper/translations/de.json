@@ -197,6 +197,34 @@
             }
           }
         }
+      },
+      "alarm_clock": {
+        "title": "Wecker",
+        "description": "Ein Eintrag enthält mehrere Wecker; diese werden danach unter Konfigurieren angelegt. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
+        "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Name des Eintrags.",
+            "data": {
+              "name": "Name"
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "critical": "Als kritische Meldung senden",
+              "message": "Nachrichtentext"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
+              "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
+            }
+          }
+        }
       }
     },
     "error": {
@@ -219,7 +247,8 @@
       "invalid_datetime": "Ungültiges Datum.",
       "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
       "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
-      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein."
+      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+      "no_media": "Wähle eine Audiodatei."
     },
     "abort": {
       "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
@@ -790,6 +819,65 @@
           "above": "Löst aus, wenn der Wert über diesen Wert steigt.",
           "below": "Löst aus, wenn der Wert unter diesen Wert fällt. Beide Werte gesetzt = Bereich."
         }
+      },
+      "alarm_menu": {
+        "title": "Wecker",
+        "description": "Wecker und Einstellungen.",
+        "data": {
+          "action": "Was möchtest du tun?"
+        }
+      },
+      "alarm_general": {
+        "title": "Einstellungen",
+        "sections": {
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "critical": "Als kritische Meldung senden",
+              "message": "Nachrichtentext"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich.",
+              "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
+              "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
+            }
+          }
+        }
+      },
+      "edit_alarm": {
+        "title": "Wecker bearbeiten",
+        "data": {
+          "alarm": "Wecker"
+        }
+      },
+      "delete_alarm": {
+        "title": "Wecker löschen",
+        "data": {
+          "alarm": "Wecker"
+        }
+      },
+      "alarm_edit": {
+        "title": "Wecker",
+        "description": "Zur Weckzeit wird die Lautstärke gesetzt und die Audiodatei abgespielt. Beim Stoppen oder Schlummern wird die ursprüngliche Lautstärke wiederhergestellt.",
+        "data": {
+          "name": "Name",
+          "enabled": "Wecker aktiv",
+          "time": "Uhrzeit",
+          "weekdays": "Wochentage",
+          "players": "Media Player",
+          "media": "Audiodatei",
+          "volume": "Lautstärke",
+          "snooze_minutes": "Schlummerzeit",
+          "auto_stop_minutes": "Automatisch stoppen nach (0 = nie)"
+        },
+        "data_description": {
+          "media": "Datei oder Stream aus der Medienauswahl von Home Assistant.",
+          "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
+          "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
+        }
       }
     },
     "error": {
@@ -812,7 +900,8 @@
       "invalid_datetime": "Ungültiges Datum.",
       "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
       "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
-      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein."
+      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+      "no_media": "Wähle eine Audiodatei."
     }
   },
   "selector": {
@@ -824,7 +913,8 @@
         "pool_pump": "Poolsteuerung",
         "knx_sonos": "KNX/Sonos-Connector",
         "updater": "Home Assistant Updater",
-        "task_planner": "Aufgabenplaner"
+        "task_planner": "Aufgabenplaner",
+        "alarm_clock": "Wecker"
       }
     },
     "block_action": {
@@ -981,7 +1071,11 @@
         "delete_task": "Aufgabe löschen",
         "add_trigger": "Auslöser hinzufügen",
         "delete_trigger": "Auslöser entfernen",
-        "task_save": "Aufgabe speichern"
+        "task_save": "Aufgabe speichern",
+        "alarm_general": "Einstellungen",
+        "add_alarm": "Wecker hinzufügen",
+        "edit_alarm": "Wecker bearbeiten",
+        "delete_alarm": "Wecker löschen"
       }
     }
   },
@@ -998,6 +1092,9 @@
       },
       "dry_run_detected": {
         "name": "Trockenlauf erkannt"
+      },
+      "alarm_ringing": {
+        "name": "Wecker klingelt"
       }
     },
     "sensor": {
@@ -1033,6 +1130,12 @@
       },
       "task_next_run": {
         "name": "Nächste Aufgabe"
+      },
+      "alarm_next": {
+        "name": "Nächster Wecker"
+      },
+      "alarm_last": {
+        "name": "Letzter Wecker"
       }
     },
     "button": {
@@ -1047,6 +1150,12 @@
       },
       "updater_check_now": {
         "name": "Jetzt prüfen"
+      },
+      "alarm_stop": {
+        "name": "Wecker stoppen"
+      },
+      "alarm_snooze": {
+        "name": "Schlummern"
       }
     },
     "switch": {
@@ -1067,6 +1176,9 @@
       },
       "task_planner_active": {
         "name": "Aufgabenplaner aktiv"
+      },
+      "alarm_clock_active": {
+        "name": "Wecker aktiv"
       }
     }
   },

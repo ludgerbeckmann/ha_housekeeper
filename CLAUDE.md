@@ -4,7 +4,7 @@ Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) und `task_planner` („Aufgabenplaner“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) und `alarm_clock` („Wecker“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -103,6 +103,17 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   statt der Beschriftungen („Gerätename (Dienst)“). Deshalb gibt es freie Eingabe nur, wenn
   keine `mobile_app_*`-Dienste gefunden werden; bereits gespeicherte Ziele bleiben als
   Option erhalten.
+- `alarm_clock.py`: Wecker in `options["alarms"]` (Schlüssel `A_*`), Push-Einstellungen im
+  Eintrag (`mobile_*`, `critical`, `message`). Beim Wecken werden die **ursprünglichen
+  Lautstärken** der Player gemerkt (`_restore`, auch im `Store`), Lautstärke gesetzt,
+  `play_media`; bei **jedem** Ende des Tons (Stoppen, Schlummern, Auto-Stopp, Pause) wird
+  `media_stop` aufgerufen und die Lautstärke zurückgesetzt; nach einem Neustart mitten im
+  Wecken geschieht das in `async_start`. Schlummern = Ton stoppen und neu starten (nicht
+  pausieren), Phase `snoozed` mit Timer. Die Push-Meldung hat die Aktionen `HOUSEKEEPER_ALARM_
+  STOP_/SNOOZE_<entry_id>` (Event `mobile_app_notification_action`) und `critical_data()`
+  (iOS `push.interruption-level: critical`, Android `channel: alarm_stream`); der
+  `Notifier` nimmt dafür `extra`. Der Controller hat wie die Poolsteuerung ein
+  `async def async_stop`.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.

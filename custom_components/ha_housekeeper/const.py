@@ -17,6 +17,7 @@ FUNCTION_POOL = "pool_pump"
 FUNCTION_KNX_SONOS = "knx_sonos"
 FUNCTION_UPDATER = "updater"
 FUNCTION_TASK_PLANNER = "task_planner"
+FUNCTION_ALARM = "alarm_clock"
 
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON],
@@ -25,6 +26,12 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
     FUNCTION_UPDATER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_TASK_PLANNER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
+    FUNCTION_ALARM: [
+        Platform.BINARY_SENSOR,
+        Platform.SENSOR,
+        Platform.SWITCH,
+        Platform.BUTTON,
+    ],
     FUNCTION_POOL: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
@@ -331,6 +338,30 @@ MONTH_FIRST = "first"
 MONTH_LAST = "last"
 MONTH_DAY = "day"
 MONTH_MODES = [MONTH_FIRST, MONTH_LAST, MONTH_DAY]
+
+# --- Wecker ---
+CONF_ALARMS = "alarms"
+CONF_CRITICAL = "critical"
+
+DEFAULT_ALARM_MESSAGE = "Wecker"
+DEFAULT_ALARM_VOLUME = 30
+DEFAULT_ALARM_SNOOZE = 9
+DEFAULT_ALARM_AUTO_STOP = 30
+
+ALARM_ACTION_STOP_PREFIX = "HOUSEKEEPER_ALARM_STOP_"
+ALARM_ACTION_SNOOZE_PREFIX = "HOUSEKEEPER_ALARM_SNOOZE_"
+
+# Wecker: Schlüssel
+A_ID = "id"
+A_NAME = "name"
+A_ENABLED = "enabled"
+A_TIME = "time"
+A_WEEKDAYS = "weekdays"
+A_PLAYERS = "players"
+A_MEDIA = "media"
+A_VOLUME = "volume"
+A_SNOOZE = "snooze_minutes"
+A_AUTO_STOP = "auto_stop_minutes"
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [

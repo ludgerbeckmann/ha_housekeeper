@@ -197,6 +197,34 @@
             }
           }
         }
+      },
+      "alarm_clock": {
+        "title": "Alarm clock",
+        "description": "One entry holds several alarms; they are added afterwards under Configure. The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
+        "sections": {
+          "general": {
+            "name": "General",
+            "description": "Name of the entry.",
+            "data": {
+              "name": "Name"
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "critical": "Send as critical notification",
+              "message": "Message text"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
+              "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
+            }
+          }
+        }
       }
     },
     "error": {
@@ -219,7 +247,8 @@
       "invalid_datetime": "Invalid date.",
       "in_past": "The time is in the past.",
       "for_needs_state": "A minimum duration needs a target state.",
-      "no_threshold": "Set at least \"Above\" or \"Below\"."
+      "no_threshold": "Set at least \"Above\" or \"Below\".",
+      "no_media": "Select an audio file."
     },
     "abort": {
       "already_configured": "This pump is already configured for another pool.",
@@ -790,6 +819,65 @@
           "above": "Fires when the value rises above this value.",
           "below": "Fires when the value falls below this value. Both set = range."
         }
+      },
+      "alarm_menu": {
+        "title": "Alarm clock",
+        "description": "Alarms and settings.",
+        "data": {
+          "action": "What would you like to do?"
+        }
+      },
+      "alarm_general": {
+        "title": "Settings",
+        "sections": {
+          "notifications": {
+            "name": "Notifications",
+            "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "critical": "Send as critical notification",
+              "message": "Message text"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
+              "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
+              "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
+            }
+          }
+        }
+      },
+      "edit_alarm": {
+        "title": "Edit alarm",
+        "data": {
+          "alarm": "Alarm"
+        }
+      },
+      "delete_alarm": {
+        "title": "Delete alarm",
+        "data": {
+          "alarm": "Alarm"
+        }
+      },
+      "alarm_edit": {
+        "title": "Alarm",
+        "description": "At the alarm time the volume is set and the audio file is played. On stop or snooze the original volume is restored.",
+        "data": {
+          "name": "Name",
+          "enabled": "Alarm enabled",
+          "time": "Time",
+          "weekdays": "Weekdays",
+          "players": "Media players",
+          "media": "Audio file",
+          "volume": "Volume",
+          "snooze_minutes": "Snooze time",
+          "auto_stop_minutes": "Stop automatically after (0 = never)"
+        },
+        "data_description": {
+          "media": "File or stream from the Home Assistant media browser.",
+          "snooze_minutes": "The alarm rings again after this time.",
+          "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
+        }
       }
     },
     "error": {
@@ -812,7 +900,8 @@
       "invalid_datetime": "Invalid date.",
       "in_past": "The time is in the past.",
       "for_needs_state": "A minimum duration needs a target state.",
-      "no_threshold": "Set at least \"Above\" or \"Below\"."
+      "no_threshold": "Set at least \"Above\" or \"Below\".",
+      "no_media": "Select an audio file."
     }
   },
   "selector": {
@@ -824,7 +913,8 @@
         "pool_pump": "Pool control",
         "knx_sonos": "KNX/Sonos-Connector",
         "updater": "Home Assistant Updater",
-        "task_planner": "Task planner"
+        "task_planner": "Task planner",
+        "alarm_clock": "Alarm clock"
       }
     },
     "block_action": {
@@ -981,7 +1071,11 @@
         "delete_task": "Delete task",
         "add_trigger": "Add trigger",
         "delete_trigger": "Remove trigger",
-        "task_save": "Save task"
+        "task_save": "Save task",
+        "alarm_general": "Settings",
+        "add_alarm": "Add alarm",
+        "edit_alarm": "Edit alarm",
+        "delete_alarm": "Delete alarm"
       }
     }
   },
@@ -998,6 +1092,9 @@
       },
       "dry_run_detected": {
         "name": "Dry run detected"
+      },
+      "alarm_ringing": {
+        "name": "Alarm ringing"
       }
     },
     "sensor": {
@@ -1033,6 +1130,12 @@
       },
       "task_next_run": {
         "name": "Next task run"
+      },
+      "alarm_next": {
+        "name": "Next alarm"
+      },
+      "alarm_last": {
+        "name": "Last alarm"
       }
     },
     "button": {
@@ -1047,6 +1150,12 @@
       },
       "updater_check_now": {
         "name": "Check now"
+      },
+      "alarm_stop": {
+        "name": "Stop alarm"
+      },
+      "alarm_snooze": {
+        "name": "Snooze alarm"
       }
     },
     "switch": {
@@ -1067,6 +1176,9 @@
       },
       "task_planner_active": {
         "name": "Task planner active"
+      },
+      "alarm_clock_active": {
+        "name": "Alarm clock active"
       }
     }
   },

@@ -18,6 +18,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 | KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
 | Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit |
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
+| Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 
 ## Bedienung der Einstellungen
 
@@ -449,6 +450,55 @@ zum Ändern entfernst du einen Auslöser und legst ihn neu an.
 - `button` je Aufgabe (Name der Aufgabe): führt sie sofort aus, auch bei Pause
 - `sensor` **Letzte Aufgabe** (Zeitstempel; Attribute: Aufgabe, Auslöser, Ergebnis, Fehler)
 - `sensor` **Nächste Aufgabe** (nächster Zeitpunkt aller zeitgesteuerten Aufgaben)
+
+## Wecker
+
+Spielt zur Weckzeit eine **Audiodatei** auf einem oder mehreren **Media Playern** ab und
+sendet eine **kritische Push-Meldung** mit den Aktionen **Stoppen** und **Schlummern**. Ein
+Eintrag enthält **mehrere Wecker**; die Push-Ziele gelten für den ganzen Eintrag.
+
+### Wecker
+
+Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen). Ein Wecker hat:
+
+- **Name**, Schalter *Wecker aktiv*, **Uhrzeit** und **Wochentage**
+- einen oder mehrere **Media Player**
+- die **Audiodatei** aus der Medienauswahl von Home Assistant (lokale Medien, Medienbrowser, Streams)
+- die **Lautstärke** in Prozent (Standard 30)
+- die **Schlummerzeit** (Standard 9 Minuten)
+- **Automatisch stoppen nach** X Minuten (Standard 30, 0 = nie), jeweils pro Klingeln
+
+### Ablauf
+
+1. Zur Weckzeit wird die **ursprüngliche Lautstärke** jedes Players gemerkt, die
+   eingestellte Lautstärke gesetzt und die Datei abgespielt.
+2. Die Push-Meldung kommt gleichzeitig. **Stoppen** beendet die Wiedergabe und entfernt die
+   Meldung. **Schlummern** stoppt den Ton und startet ihn nach der Schlummerzeit erneut
+   (mit neuer Meldung); das geht beliebig oft.
+3. Bei jedem Ende des Tons (Stoppen, Schlummern, automatisches Stoppen, Wecker
+   ausschalten) wird die **ursprüngliche Lautstärke** der Player **wiederhergestellt**. Das
+   passiert auch nach einem Neustart von Home Assistant mitten im Wecken. Meldet ein Player
+   keine Lautstärke, wird sie nicht zurückgesetzt.
+4. Löst ein Wecker aus, während ein anderer klingelt, wird der laufende beendet.
+
+### Kritische Meldung
+
+Standardmäßig wird die Push-Meldung als **kritische Meldung** gesendet:
+
+- **iOS:** `interruption-level: critical` mit kritischem Ton, durchbricht „Nicht stören“ und
+  die Stummschaltung.
+- **Android:** Alarm-Kanal (`alarm_stream`) mit hoher Priorität.
+
+In der Companion-App müssen **kritische Hinweise erlaubt** sein. Die Option *Als kritische
+Meldung senden* lässt sich in den Einstellungen abschalten (dann normale Meldung mit den
+beiden Aktionen).
+
+### Entitäten
+
+- `switch` **Wecker aktiv** (aus = alle Wecker pausiert; ein klingelnder Wecker wird gestoppt)
+- `binary_sensor` **Wecker klingelt** (beim Schlummern aus, Attribute `snoozed`, `snooze_until`)
+- `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`)
+- `button` **Wecker stoppen** und **Schlummern**
 
 ## Entwicklung
 
