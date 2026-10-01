@@ -41,6 +41,7 @@ from .const import (
     WEEKDAYS,
     signal_update,
 )
+from .reload import ReloadWhenIdle
 from .notify import Notifier, async_safe_call, entry_opt
 
 _LOGGER = logging.getLogger(__name__)
@@ -156,7 +157,7 @@ def critical_data() -> dict[str, Any]:
     }
 
 
-class AlarmClockController:
+class AlarmClockController(ReloadWhenIdle):
     """Löst die Wecker aus und bedient Stopp und Schlummern."""
 
     model = "Wecker"
@@ -186,6 +187,11 @@ class AlarmClockController:
     @property
     def alarms(self) -> list[dict[str, Any]]:
         return list(self._get(CONF_ALARMS, []) or [])
+
+    @property
+    def busy(self) -> bool:
+        """Klingelnd oder schlummernd: ein Neuladen würde den Wecker abbrechen."""
+        return self.active
 
     @property
     def ringing(self) -> bool:
@@ -419,6 +425,7 @@ class AlarmClockController:
         self.current = None
         await self._notifier.async_clear()
         await self._async_save()
+        self.async_idle()
 
     async def async_snooze(self) -> None:
         """Schlummern: Ton aus und Lautstärke zurück, nach der Schlummerzeit erneut wecken."""

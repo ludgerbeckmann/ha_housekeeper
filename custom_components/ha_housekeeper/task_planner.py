@@ -59,6 +59,7 @@ from .const import (
     signal_update,
 )
 from .notify import Notifier, entry_opt
+from .reload import ReloadWhenIdle
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -283,7 +284,7 @@ def next_run(
 # --- Controller -------------------------------------------------------------------
 
 
-class TaskPlannerController:
+class TaskPlannerController(ReloadWhenIdle):
     """Überwacht die Auslöser der Aufgaben und führt deren Aktionen aus."""
 
     model = "Task planner"
@@ -311,6 +312,11 @@ class TaskPlannerController:
 
     @property
     def running(self) -> bool:
+        return bool(self._running)
+
+    @property
+    def busy(self) -> bool:
+        """Eine Aufgabe läuft: ein Neuladen würde sie samt Bericht abbrechen."""
         return bool(self._running)
 
     @property
@@ -521,3 +527,4 @@ class TaskPlannerController:
         finally:
             self._running.discard(task_id)
             self._notify()
+            self.async_idle()
