@@ -1,4 +1,4 @@
-# Housekeeper für Home Assistant
+# Hausmeister für Home Assistant
 
 [![Validate](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml/badge.svg)](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
@@ -32,12 +32,12 @@ nichts.
 ## Installation
 
 **HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
-Kategorie *Integration* → „Housekeeper“ installieren → Home Assistant neu starten.
+Kategorie *Integration* → „Hausmeister“ installieren → Home Assistant neu starten.
 
 **Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
 kopieren und neu starten.
 
-Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Housekeeper*
+Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hausmeister*
 und den Funktionstyp wählen.
 
 ## Benachrichtigung Briefkasten
