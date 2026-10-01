@@ -16,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .alarm_clock import AlarmClockController
 from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
@@ -48,6 +49,8 @@ async def async_setup_entry(
                 UpdatesAvailableSensor(controller),
             ]
         )
+    elif isinstance(controller, AlarmClockController):
+        async_add_entities([AlarmNextSensor(controller), AlarmLastSensor(controller)])
     elif isinstance(controller, TaskPlannerController):
         async_add_entities(
             [TaskLastRunSensor(controller), TaskNextRunSensor(controller)]
@@ -239,3 +242,41 @@ class TaskNextRunSensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self._controller.next_run
+
+
+class AlarmNextSensor(FunctionEntity, SensorEntity):
+    """Nächster Weckzeitpunkt aller aktiven Wecker."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:alarm"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_next")
+
+    @property
+    def native_value(self) -> datetime | None:
+        nxt = self._controller.next_alarm
+        return nxt[0] if nxt else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        nxt = self._controller.next_alarm
+        return {"alarm": nxt[1].get("name") if nxt else None}
+
+
+class AlarmLastSensor(FunctionEntity, SensorEntity):
+    """Zeitpunkt des zuletzt ausgelösten Weckers."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:alarm-check"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_last")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.last_ring
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"alarm": self._controller.last_alarm}

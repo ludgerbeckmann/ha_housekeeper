@@ -9,6 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.helpers import entity_registry as er
 
+from .alarm_clock import AlarmClockController
 from .const import DOMAIN, TASK_ID, TASK_NAME
 from .doorbell import DoorbellController
 from .entity import FunctionEntity, remove_unconfigured
@@ -25,6 +26,8 @@ async def async_setup_entry(
         async_add_entities([DoorbellTestButton(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterCheckNowButton(controller)])
+    elif isinstance(controller, AlarmClockController):
+        async_add_entities([AlarmStopButton(controller), AlarmSnoozeButton(controller)])
     elif isinstance(controller, TaskPlannerController):
         tasks = controller.tasks
         prefix = f"{entry.entry_id}_task_"
@@ -104,3 +107,27 @@ class TaskRunButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_run_task_id(self._task_id)
+
+
+class AlarmStopButton(FunctionEntity, ButtonEntity):
+    """Stoppt den klingelnden oder schlummernden Wecker."""
+
+    _attr_icon = "mdi:alarm-off"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_stop")
+
+    async def async_press(self) -> None:
+        await self._controller.async_stop_alarm()
+
+
+class AlarmSnoozeButton(FunctionEntity, ButtonEntity):
+    """Schlummert den klingelnden Wecker."""
+
+    _attr_icon = "mdi:alarm-snooze"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_snooze")
+
+    async def async_press(self) -> None:
+        await self._controller.async_snooze()

@@ -23,6 +23,8 @@ ENTRIES = {
                   "commands": [], "status": []},
     "updater": {"function_type": "updater", "name": "Updater", "schedules": [],
                 "persistent_enabled": True},
+    "alarm_clock": {"function_type": "alarm_clock", "name": "Wecker", "alarms": [],
+                    "mobile_enabled": False},
     "task_planner": {"function_type": "task_planner", "name": "Planer", "tasks": [],
                      "persistent_enabled": True},
 }
@@ -68,7 +70,7 @@ def test_translations_cover_all_menu_options() -> None:
         steps = data["options"]["step"]
         assert not any("menu_options" in step for step in steps.values()), name
         for step_id in ("menu", "bell_menu", "pool_menu", "knx_menu", "upd_menu", "tp_menu",
-                        "task_triggers"):
+                        "task_triggers", "alarm_menu"):
             assert list(steps[step_id]["data"]) == ["action"], (name, step_id)
         assert labels["done"] in ("Save & close", "Speichern & schließen")
         # jeder Eintrag, den ein Menü anbieten kann, hat eine Beschriftung
@@ -76,5 +78,6 @@ def test_translations_cover_all_menu_options() -> None:
         for option in ("general", "add_rule", "edit_rule", "delete_rule", "bell_general", "add_profile",
                        "pool_general", "add_window", "dry_run", "knx_general", "add_command",
                        "add_status", "upd_general", "add_schedule", "tp_general", "add_task",
-                       "add_trigger", "delete_trigger", "task_save", "done"):
+                       "add_trigger", "delete_trigger", "task_save", "alarm_general", "add_alarm",
+                       "edit_alarm", "delete_alarm", "done"):
             assert option in labels and f'"{option}"' in source, (name, option)

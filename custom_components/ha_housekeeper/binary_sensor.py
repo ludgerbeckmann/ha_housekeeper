@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .alarm_clock import AlarmClockController
 from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .entity import FunctionEntity, remove_unconfigured
@@ -22,6 +23,8 @@ async def async_setup_entry(
     controller = hass.data[DOMAIN][entry.entry_id]
     if isinstance(controller, DoorGuardController):
         async_add_entities([DoorOpenTooLongSensor(controller)])
+    elif isinstance(controller, AlarmClockController):
+        async_add_entities([AlarmRingingSensor(controller)])
     elif isinstance(controller, PoolPumpController):
         entities: list[FunctionEntity] = [PumpShouldRunSensor(controller)]
         if controller.dry_run_configured:
@@ -118,4 +121,26 @@ class DryRunSensor(FunctionEntity, BinarySensorEntity):
             "zeitplan_pausiert": ctrl.dry_run_paused_schedule,
             "automatisch_ausschalten": ctrl.dry_auto_off,
             "leistungssensor": ctrl.power_entity,
+        }
+
+
+class AlarmRingingSensor(FunctionEntity, BinarySensorEntity):
+    """on = ein Wecker klingelt gerade (beim Schlummern off, Attribut snooze_until)."""
+
+    _attr_icon = "mdi:alarm-light"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_ringing")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.ringing
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        ctrl = self._controller
+        return {
+            "alarm": (ctrl.current or {}).get("name"),
+            "snoozed": ctrl.phase == "snoozed",
+            "snooze_until": ctrl.snooze_until.isoformat() if ctrl.snooze_until else None,
         }

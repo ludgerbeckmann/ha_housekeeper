@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .alarm_clock import AlarmClockController
 from .const import DOMAIN
 from .doorbell import DoorbellController
 from .entity import FunctionEntity
@@ -31,6 +32,8 @@ async def async_setup_entry(
         async_add_entities([KnxActiveSwitch(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterActiveSwitch(controller)])
+    elif isinstance(controller, AlarmClockController):
+        async_add_entities([AlarmClockActiveSwitch(controller)])
     elif isinstance(controller, TaskPlannerController):
         async_add_entities([TaskPlannerActiveSwitch(controller)])
     else:
@@ -146,6 +149,25 @@ class TaskPlannerActiveSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "task_planner_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class AlarmClockActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Wecker laufen; off = alle Wecker pausiert (ein laufender Alarm wird gestoppt)."""
+
+    _attr_icon = "mdi:alarm"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "alarm_clock_active")
 
     @property
     def is_on(self) -> bool:

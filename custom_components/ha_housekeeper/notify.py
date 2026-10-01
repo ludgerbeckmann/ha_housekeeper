@@ -79,12 +79,15 @@ class Notifier:
         *,
         kind: str = "",
         actions: list[dict[str, str]] | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
         title = self._title()
 
         data: dict[str, Any] = {"tag": self.tag(kind)}
         if actions:
             data["actions"] = actions
+        if extra:
+            data.update(extra)
         for target in self._targets():
             await self._call(
                 "notify", target, {"title": title, "message": message, "data": data}

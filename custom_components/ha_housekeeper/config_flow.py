@@ -197,6 +197,26 @@ from .const import (
     TRIGGER_TYPES,
 )
 from .const import COMPONENTS
+from .const import (
+    A_AUTO_STOP,
+    A_ENABLED,
+    A_ID,
+    A_MEDIA,
+    A_NAME,
+    A_PLAYERS,
+    A_SNOOZE,
+    A_TIME,
+    A_VOLUME,
+    A_WEEKDAYS,
+    CONF_ALARMS,
+    CONF_CRITICAL,
+    DEFAULT_ALARM_AUTO_STOP,
+    DEFAULT_ALARM_MESSAGE,
+    DEFAULT_ALARM_SNOOZE,
+    DEFAULT_ALARM_VOLUME,
+    FUNCTION_ALARM,
+)
+from .alarm_clock import alarm_summary
 from .knx_codec import is_valid_ga
 from .knx_sonos import command_summary, status_summary
 from .task_planner import task_summary, trigger_summary
@@ -676,6 +696,39 @@ def _validate_planner(user_input: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+# --- Wecker -----------------------------------------------------------------------
+
+
+def _alarm_settings_schema(
+    hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
+) -> vol.Schema:
+    """Eintrag: Name (nur beim Anlegen) und die Push-Meldung (kritisch, mit Aktionen)."""
+    general: dict[Any, Any] = {}
+    if with_name:
+        general[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Wecker"))] = str
+    notifications: dict[Any, Any] = {
+        vol.Required(
+            CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
+        ): bool,
+        vol.Optional(
+            CONF_MOBILE_TARGETS, description=_suggest(CONF_MOBILE_TARGETS, defaults)
+        ): _mobile_selector(hass, defaults.get(CONF_MOBILE_TARGETS)),
+        vol.Required(
+            CONF_CRITICAL, default=defaults.get(CONF_CRITICAL, True)
+        ): bool,
+        vol.Required(
+            CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_ALARM_MESSAGE)
+        ): str,
+    }
+    return _sections_schema(general, notifications)
+
+
+def _validate_alarm_settings(user_input: dict[str, Any]) -> dict[str, str]:
+    if user_input.get(CONF_MOBILE_ENABLED) and not user_input.get(CONF_MOBILE_TARGETS):
+        return {"base": "no_targets"}
+    return {}
+
+
 # --- Config-Flow ---------------------------------------------------------------
 
 
@@ -849,6 +902,30 @@ class HousekeeperConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_alarm_clock(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            user_input = _flatten_sections(user_input)
+            errors = _validate_alarm_settings(user_input)
+            if not errors:
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME],
+                    data={
+                        CONF_FUNCTION_TYPE: FUNCTION_ALARM,
+                        CONF_ALARMS: [],
+                        **user_input,
+                    },
+                )
+            defaults = user_input
+        return self.async_show_form(
+            step_id="alarm_clock",
+            data_schema=_alarm_settings_schema(self.hass, defaults, with_name=True),
+            errors=errors,
+        )
+
     async def async_step_task_planner(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -942,6 +1019,8 @@ class HousekeeperOptionsFlow(OptionsFlow):
             return await self.async_step_upd_menu()
         if function_type == FUNCTION_TASK_PLANNER:
             return await self.async_step_tp_menu()
+        if function_type == FUNCTION_ALARM:
+            return await self.async_step_alarm_menu()
         return await self.async_step_mailbox()
 
     # Briefkasten
@@ -2240,4 +2319,156 @@ class HousekeeperOptionsFlow(OptionsFlow):
             },
             user_input,
             validate,
+        )
+
+
+    # Wecker: Menü und Wecker
+
+    def _alarms(self) -> list[dict[str, Any]]:
+        return list(self._current.get(CONF_ALARMS) or [])
+
+    async def async_step_alarm_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        options = ["alarm_general", "add_alarm"]
+        if self._alarms():
+            options += ["edit_alarm", "delete_alarm"]
+        options.append("done")
+        return await self._menu("alarm_menu", options, user_input)
+
+    async def async_step_alarm_general(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults = self._current
+        if user_input is not None:
+            user_input = _flatten_sections(user_input)
+            errors = _validate_alarm_settings(user_input)
+            if not errors:
+                self._save(_with_cleared(user_input))
+                return await self.async_step_alarm_menu()
+            defaults = user_input
+        return self.async_show_form(
+            step_id="alarm_general",
+            data_schema=_alarm_settings_schema(self.hass, defaults, with_name=False),
+            errors=errors,
+        )
+
+    def _alarm_picker_schema(self) -> vol.Schema:
+        return vol.Schema(
+            {
+                vol.Required("alarm"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(
+                                value=a[A_ID], label=alarm_summary(self.hass, a)
+                            )
+                            for a in self._alarms()
+                        ],
+                        mode=selector.SelectSelectorMode.LIST,
+                    )
+                )
+            }
+        )
+
+    async def async_step_add_alarm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        self._edit_id = None
+        self._draft = {}
+        return await self.async_step_alarm_edit()
+
+    async def async_step_edit_alarm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            alarm = next(a for a in self._alarms() if a[A_ID] == user_input["alarm"])
+            self._edit_id = alarm[A_ID]
+            self._draft = dict(alarm)
+            return await self.async_step_alarm_edit()
+        return self.async_show_form(
+            step_id="edit_alarm", data_schema=self._alarm_picker_schema()
+        )
+
+    async def async_step_delete_alarm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._save(
+                {CONF_ALARMS: [a for a in self._alarms() if a[A_ID] != user_input["alarm"]]}
+            )
+            return await self.async_step_alarm_menu()
+        return self.async_show_form(
+            step_id="delete_alarm", data_schema=self._alarm_picker_schema()
+        )
+
+    async def async_step_alarm_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        d = self._draft
+        if user_input is not None:
+            media = user_input.get(A_MEDIA) or {}
+            if not user_input.get(A_PLAYERS):
+                errors["base"] = "no_players"
+            elif not media.get("media_content_id"):
+                errors["base"] = "no_media"
+            elif not user_input.get(A_WEEKDAYS):
+                errors["base"] = "no_weekday"
+            else:
+                alarm = {
+                    A_ID: self._edit_id or uuid.uuid4().hex[:8],
+                    **{
+                        k: user_input[k]
+                        for k in (
+                            A_NAME, A_ENABLED, A_TIME, A_WEEKDAYS, A_PLAYERS, A_MEDIA,
+                            A_VOLUME, A_SNOOZE, A_AUTO_STOP,
+                        )
+                    },
+                }
+                alarms = self._alarms()
+                if self._edit_id:
+                    alarms = [alarm if a[A_ID] == self._edit_id else a for a in alarms]
+                else:
+                    alarms.append(alarm)
+                self._save({CONF_ALARMS: alarms})
+                return await self.async_step_alarm_menu()
+            d = user_input
+        return self.async_show_form(
+            step_id="alarm_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(A_NAME, description=_suggest(A_NAME, d)): str,
+                    vol.Required(A_ENABLED, default=d.get(A_ENABLED, True)): bool,
+                    vol.Required(
+                        A_TIME, default=d.get(A_TIME, "07:00:00")
+                    ): selector.TimeSelector(),
+                    vol.Required(A_WEEKDAYS, default=d.get(A_WEEKDAYS, list(WEEKDAYS))): _select(
+                        WEEKDAYS,
+                        "weekday",
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    ),
+                    vol.Required(
+                        A_PLAYERS, description=_suggest(A_PLAYERS, d)
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="media_player", multiple=True)
+                    ),
+                    vol.Required(
+                        A_MEDIA, description=_suggest(A_MEDIA, d)
+                    ): selector.MediaSelector(
+                        selector.MediaSelectorConfig(accept=["audio/*"])
+                    ),
+                    vol.Required(
+                        A_VOLUME, default=d.get(A_VOLUME, DEFAULT_ALARM_VOLUME)
+                    ): _number(0, 100, "%"),
+                    vol.Required(
+                        A_SNOOZE, default=d.get(A_SNOOZE, DEFAULT_ALARM_SNOOZE)
+                    ): _number(1, 120, "min"),
+                    vol.Required(
+                        A_AUTO_STOP, default=d.get(A_AUTO_STOP, DEFAULT_ALARM_AUTO_STOP)
+                    ): _number(0, 720, "min"),
+                }
+            ),
+            errors=errors,
         )

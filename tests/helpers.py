@@ -11,6 +11,7 @@ NOTIFY_KEYS = (
     "message",
     "repeat_message",
     "clear_after_hours",
+    "critical",
 )
 
 

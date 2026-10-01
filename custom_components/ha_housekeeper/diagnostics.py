@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .door_guard import DoorGuardController
+from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
@@ -104,5 +105,14 @@ async def async_get_config_entry_diagnostics(
             "running": controller.running,
             "last_run": controller.last_run,
             "next_run": controller.next_run.isoformat() if controller.next_run else None,
+        }
+    if isinstance(controller, AlarmClockController):
+        nxt = controller.next_alarm
+        result["state"] = {
+            "enabled": controller.enabled,
+            "phase": controller.phase,
+            "snooze_until": controller.snooze_until.isoformat() if controller.snooze_until else None,
+            "last_alarm": controller.last_alarm,
+            "next_alarm": nxt[0].isoformat() if nxt else None,
         }
     return result
