@@ -54,6 +54,8 @@ CONF_MESSAGE = "message"
 CONF_REPEAT_MESSAGE = "repeat_message"
 CONF_DEBOUNCE = "debounce_seconds"
 CONF_AUTO_RESET_HOURS = "auto_reset_hours"
+CONF_SENSITIVITY_ENTITY = "sensitivity_entity"
+CONF_SENSITIVITY_VALUE = "sensitivity_value"
 
 DEFAULT_NAME = "Briefkasten"
 DEFAULT_MESSAGE = "Es ist Post im Briefkasten."
@@ -370,6 +372,8 @@ OPTIONAL_KEYS = [
     CONF_TTS_PLAYER,
     CONF_CONTACT,
     CONF_POWER_ENTITY,
+    CONF_SENSITIVITY_ENTITY,
+    CONF_SENSITIVITY_VALUE,
 ]
 
 

@@ -18,11 +18,13 @@
               "name": "Name",
               "vibration_sensor": "Vibrationssensor",
               "debounce_seconds": "Entprellzeit",
-              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+              "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
             },
             "data_description": {
               "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+              "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
             }
           },
           "notifications": {
@@ -266,11 +268,13 @@
             "data": {
               "vibration_sensor": "Vibrationssensor",
               "debounce_seconds": "Entprellzeit",
-              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+              "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
             },
             "data_description": {
               "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert."
+              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+              "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
             }
           },
           "notifications": {
@@ -878,6 +882,13 @@
           "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
           "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
         }
+      },
+      "mailbox_sensitivity": {
+        "title": "Empfindlichkeit",
+        "description": "Wert für {entity}. Er wird nicht automatisch gesendet: Wecke den Sensor am Gerät auf und drücke dann den Button „Empfindlichkeit senden“.",
+        "data": {
+          "sensitivity_value": "Empfindlichkeit"
+        }
       }
     },
     "error": {
@@ -1156,6 +1167,9 @@
       },
       "alarm_snooze": {
         "name": "Schlummern"
+      },
+      "send_sensitivity": {
+        "name": "Empfindlichkeit senden"
       }
     },
     "switch": {
