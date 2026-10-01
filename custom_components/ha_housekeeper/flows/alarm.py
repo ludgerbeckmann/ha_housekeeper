@@ -27,8 +27,6 @@ from ..const import (
     A_WEEKDAYS,
     CONF_ALARMS,
     CONF_CRITICAL,
-    CONF_WORKDAY_INVERT,
-    CONF_WORKDAY_SENSORS,
     DEFAULT_ALARM_AUTO_STOP,
     DEFAULT_ALARM_MESSAGE,
     DEFAULT_ALARM_SNOOZE,
@@ -58,20 +56,10 @@ from .common import (
 def _alarm_settings_schema(
     hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
 ) -> vol.Schema:
-    """Eintrag: Name (nur beim Anlegen), Werktagssensoren und die Push-Meldung."""
+    """Eintrag: Name (nur beim Anlegen) und die Push-Meldung."""
     general: dict[Any, Any] = {}
     if with_name:
         general[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_ALARM)))] = str
-    general[
-        vol.Optional(
-            CONF_WORKDAY_SENSORS, description=_suggest(CONF_WORKDAY_SENSORS, defaults)
-        )
-    ] = selector.EntitySelector(
-        selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
-    )
-    general[
-        vol.Required(CONF_WORKDAY_INVERT, default=defaults.get(CONF_WORKDAY_INVERT, False))
-    ] = bool
     notifications: dict[Any, Any] = {
         vol.Required(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
@@ -198,13 +186,7 @@ class AlarmOptions:
                             A_VOLUME, A_SNOOZE, A_AUTO_STOP,
                         )
                     },
-                    # ohne globale Sensoren bleibt die Auswahl unverändert
-                    **{
-                        k: (user_input.get(k) or [])
-                        if self._current.get(CONF_WORKDAY_SENSORS)
-                        else list(d.get(k) or [])
-                        for k in (A_ONLY_IF_ON, A_NOT_IF_ON)
-                    },
+                    **{k: user_input.get(k) or [] for k in (A_ONLY_IF_ON, A_NOT_IF_ON)},
                 }
                 alarms = self._alarms()
                 if self._edit_id:
@@ -229,6 +211,7 @@ class AlarmOptions:
                         multiple=True,
                         mode=selector.SelectSelectorMode.LIST,
                     ),
+                    **self._condition_fields(d),
                     vol.Required(
                         A_PLAYERS, description=_suggest(A_PLAYERS, d)
                     ): selector.EntitySelector(
@@ -248,38 +231,17 @@ class AlarmOptions:
                     vol.Required(
                         A_AUTO_STOP, default=d.get(A_AUTO_STOP, DEFAULT_ALARM_AUTO_STOP)
                     ): _number(0, 720, "min"),
-                    **self._condition_fields(d),
                 }
             ),
             errors=errors,
         )
 
     def _condition_fields(self, d: dict[str, Any]) -> dict[Any, Any]:
-        """Werktags-/Feiertagsbedingungen: Auswahl aus den globalen Sensoren (nur wenn vorhanden)."""
-        sensors = list(self._current.get(CONF_WORKDAY_SENSORS) or [])
-        if not sensors:
-            return {}
-        options = [
-            selector.SelectOptionDict(
-                value=entity_id,
-                label=(
-                    str(state.attributes.get("friendly_name") or entity_id)
-                    if (state := self.hass.states.get(entity_id))
-                    else entity_id
-                ),
-            )
-            for entity_id in sensors
-        ]
-        field = selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=options, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN
-            )
+        """Werktags-/Feiertagsbedingungen (Binärsensoren), gehören zur Zeitplanung des Weckers."""
+        field = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
         )
         return {
-            vol.Optional(
-                A_ONLY_IF_ON, default=[s for s in d.get(A_ONLY_IF_ON) or [] if s in sensors]
-            ): field,
-            vol.Optional(
-                A_NOT_IF_ON, default=[s for s in d.get(A_NOT_IF_ON) or [] if s in sensors]
-            ): field,
+            vol.Optional(A_ONLY_IF_ON, description=_suggest(A_ONLY_IF_ON, d)): field,
+            vol.Optional(A_NOT_IF_ON, description=_suggest(A_NOT_IF_ON, d)): field,
         }

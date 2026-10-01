@@ -178,15 +178,9 @@
         "sections": {
           "general": {
             "name": "Allgemein",
-            "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
+            "description": "Name der Instanz.",
             "data": {
-              "name": "Name",
-              "workday_sensors": "Werktags-/Feiertagssensoren",
-              "workday_invert": "Sensorwerte umkehren"
-            },
-            "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
-              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
+              "name": "Name"
             }
           },
           "notifications": {
@@ -1643,15 +1637,9 @@
           "sections": {
             "general": {
               "name": "Allgemein",
-              "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
+              "description": "Name der Instanz.",
               "data": {
-                "name": "Name",
-                "workday_sensors": "Werktags-/Feiertagssensoren",
-                "workday_invert": "Sensorwerte umkehren"
-              },
-              "data_description": {
-                "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
-                "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
+                "name": "Name"
               }
             },
             "notifications": {
@@ -1684,18 +1672,6 @@
         "alarm_general": {
           "title": "Einstellungen",
           "sections": {
-            "general": {
-              "name": "Allgemein",
-              "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
-              "data": {
-                "workday_sensors": "Werktags-/Feiertagssensoren",
-                "workday_invert": "Sensorwerte umkehren"
-              },
-              "data_description": {
-                "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
-                "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
-              }
-            },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
@@ -1743,8 +1719,8 @@
           },
           "data_description": {
             "media": "Datei oder Stream aus der Medienauswahl von Home Assistant.",
-            "only_if_on": "Nur wenn mindestens einer der gewählten Sensoren an ist (ODER), z. B. Werktagssensor. Ein nicht verfügbarer Sensor zählt als erfüllt. Die Auswahl erscheint nur, wenn in den Einstellungen Sensoren hinterlegt sind.",
-            "skip_if_on": "Nicht, sobald einer der gewählten Sensoren an ist (ODER), z. B. Feiertagssensor.",
+            "only_if_on": "Nur klingeln, wenn mindestens einer der gewählten Binärsensoren an ist (ODER), z. B. ein Werktagssensor. Ein nicht verfügbarer Sensor zählt als erfüllt.",
+            "skip_if_on": "Nicht klingeln, sobald einer der gewählten Binärsensoren an ist (ODER), z. B. ein Feiertagssensor oder ein Sensor „arbeitsfrei“. Ein nicht verfügbarer Sensor blockiert nie.",
             "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
             "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
           }

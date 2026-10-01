@@ -173,14 +173,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   STOP_/SNOOZE_<entry_id>` (Event `mobile_app_notification_action`) und `critical_data()`
   (iOS `push.interruption-level: critical`, Android `channel: alarm_stream`); der
   `Notifier` nimmt dafür `extra`. Der Controller hat wie die Poolsteuerung ein
-  `async def async_stop`. **Werktags-/Feiertagssensoren:** globale Liste `workday_sensors` im
-  Eintrag, pro Wecker `only_if_on` (mindestens einer an, ODER) und `skip_if_on` (einer an
-  blockiert, ODER), UND zwischen den Feldern; `check_conditions()` ist rein, ein unbekannter
-  oder nicht verfügbarer Sensor zählt bei `only_if_on` als erfüllt (fail-open), nur globale
-  Sensoren zählen. Die globale Option `workday_invert` (Eintrag, Standard aus) vertauscht „on“/„off“ aller
-  Sensoren (`invert` in `check_conditions()`), ein unbekannter Zustand bleibt unverändert. Übersprungen wird in `last_skipped` (im `Store`) festgehalten. Die Felder im
-  Wecker-Dialog erscheinen nur, wenn globale Sensoren existieren, sonst bleiben gespeicherte
-  Werte erhalten. „Nächster Wecker“ ignoriert die Bedingungen.
+  `async def async_stop`. **Werktags-/Feiertagssensoren** gehören zur Zeitplanung des einzelnen Weckers (Felder
+  `only_if_on`/`skip_if_on` im Wecker-Dialog neben Uhrzeit und Wochentagen, beliebige Binärsensoren, keine globale
+  Liste mehr): `only_if_on` = mindestens einer an (ODER), `skip_if_on` = einer an blockiert (ODER), UND zwischen den
+  Feldern; `check_conditions(alarm, get_state)` ist rein, ein unbekannter oder nicht verfügbarer Sensor zählt bei
+  `only_if_on` als erfüllt (fail-open) und blockiert bei `skip_if_on` nie. Eine Umkehr-Option gibt es nicht: ein
+  Sensor „arbeitsfrei“ gehört in `skip_if_on`. Übersprungen wird in `last_skipped` (im `Store`) festgehalten.
+  „Nächster Wecker“ ignoriert die Bedingungen.
 - Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Der Options-Flow des Briefkastens
   ist ein Menü (`mailbox_menu`: `mailbox`, `mailbox_sensitivity` nur mit Entität, `done`). Die Entität steht nur
   in den Einstellungen (nicht beim Anlegen) und wird dort **nur hinterlegt**; der Wert wird im eigenen

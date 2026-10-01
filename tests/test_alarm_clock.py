@@ -13,7 +13,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.ha_housekeeper import alarm_clock as ac
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure
 
 PLAYER = "media_player.bedroom"
 MEDIA = {"media_content_id": "media-source://media_source/local/wecker.mp3",
@@ -298,25 +298,20 @@ async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
     assert entry.options["alarms"] == []
 
 
-async def test_options_general_has_sensors_and_notifications(hass: HomeAssistant) -> None:
+async def test_options_general_has_only_notifications(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "alarm_general"})
     schema = result["data_schema"].schema
-    assert [str(k) for k in schema] == ["general", "notifications"]
-    general = next(v for k, v in schema.items() if str(k) == "general")
-    assert {str(k) for k in general.schema.schema} == {"workday_sensors", "workday_invert"}
+    assert [str(k) for k in schema] == ["notifications"]     # Sensoren gehören zum einzelnen Wecker
     ok = await flow.async_configure(
         result["flow_id"],
-        {"general": {"workday_sensors": [WORKDAY, HOLIDAY], "workday_invert": True},
-         "notifications": {"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
+        {"notifications": {"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
                            "critical": False, "message": "Aufwachen"}},
     )
     assert is_menu(ok)
     assert entry.options["critical"] is False and entry.options["message"] == "Aufwachen"
-    assert entry.options["workday_sensors"] == [WORKDAY, HOLIDAY]
-    assert entry.options["workday_invert"] is True
 
 
 # --- Werktags- und Feiertagssensoren ------------------------------------------------------------------
@@ -332,62 +327,42 @@ def _state(states):
 
 
 def test_conditions_or_semantics_and_fail_open() -> None:
-    glob = [WORKDAY, HOLIDAY, HOLIDAY2]
     only = alarm(only_if_on=[WORKDAY, HOLIDAY])
     # ODER: ein Sensor an genügt
-    assert ac.check_conditions(only, glob, _state({WORKDAY: "off", HOLIDAY: "on"}))[0] is True
-    assert ac.check_conditions(only, glob, _state({WORKDAY: "on", HOLIDAY: "off"}))[0] is True
-    met, reason, sensors = ac.check_conditions(only, glob, _state({WORKDAY: "off", HOLIDAY: "off"}))
+    assert ac.check_conditions(only, _state({WORKDAY: "off", HOLIDAY: "on"}))[0] is True
+    assert ac.check_conditions(only, _state({WORKDAY: "on", HOLIDAY: "off"}))[0] is True
+    met, reason, sensors = ac.check_conditions(only, _state({WORKDAY: "off", HOLIDAY: "off"}))
     assert (met, reason, sensors) == (False, "only_if_on", [WORKDAY, HOLIDAY])
     # nicht verfügbar / unbekannt / fehlend zählt als erfüllt
     for unknown in ("unavailable", "unknown", None):
-        assert ac.check_conditions(only, glob, _state({WORKDAY: "off", HOLIDAY: unknown}))[0] is True
+        assert ac.check_conditions(only, _state({WORKDAY: "off", HOLIDAY: unknown}))[0] is True
     skip = alarm(skip_if_on=[HOLIDAY, HOLIDAY2])
-    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "off", HOLIDAY2: "off"}))[0] is True
-    met, reason, sensors = ac.check_conditions(skip, glob, _state({HOLIDAY: "off", HOLIDAY2: "on"}))
+    assert ac.check_conditions(skip, _state({HOLIDAY: "off", HOLIDAY2: "off"}))[0] is True
+    met, reason, sensors = ac.check_conditions(skip, _state({HOLIDAY: "off", HOLIDAY2: "on"}))
     assert (met, reason, sensors) == (False, "skip_if_on", [HOLIDAY2])
-    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "unavailable"}))[0] is True
+    assert ac.check_conditions(skip, _state({HOLIDAY: "unavailable"}))[0] is True
     # UND zwischen den Feldern
     both = alarm(only_if_on=[WORKDAY], skip_if_on=[HOLIDAY])
-    assert ac.check_conditions(both, glob, _state({WORKDAY: "on", HOLIDAY: "off"}))[0] is True
-    assert ac.check_conditions(both, glob, _state({WORKDAY: "on", HOLIDAY: "on"}))[0] is False
-    assert ac.check_conditions(both, glob, _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is False
-    # ohne Bedingungen und mit entfernten Sensoren: immer erfüllt
-    assert ac.check_conditions(alarm(), glob, _state({}))[0] is True
-    assert ac.check_conditions(only, [], _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is True
-    assert ac.check_conditions(only, [HOLIDAY2], _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is True
+    assert ac.check_conditions(both, _state({WORKDAY: "on", HOLIDAY: "off"}))[0] is True
+    assert ac.check_conditions(both, _state({WORKDAY: "on", HOLIDAY: "on"}))[0] is False
+    assert ac.check_conditions(both, _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is False
+    # ohne Bedingungen: immer erfüllt
+    assert ac.check_conditions(alarm(), _state({}))[0] is True
 
 
-def test_conditions_inverted() -> None:
-    glob = [WORKDAY, HOLIDAY]
-    only = {"only_if_on": [WORKDAY]}
-    skip = {"skip_if_on": [HOLIDAY]}
-    # Sensor „arbeitsfrei“: aus = Werktag
-    assert ac.check_conditions(only, glob, _state({WORKDAY: "off"}), True)[0] is True
-    met, reason, sensors = ac.check_conditions(only, glob, _state({WORKDAY: "on"}), True)
-    assert (met, reason, sensors) == (False, "only_if_on", [WORKDAY])
-    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "on"}), True)[0] is True
-    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "off"}), True)[0] is False
-    # unbekannt bleibt unverändert: only fail-open, skip blockiert nie
-    for unknown in (None, "unavailable", "unknown"):
-        assert ac.check_conditions(only, glob, _state({WORKDAY: unknown}), True)[0] is True
-        assert ac.check_conditions(skip, glob, _state({HOLIDAY: unknown}), True)[0] is True
-
-
-async def test_invert_option_flips_sensor_values(hass: HomeAssistant, freezer) -> None:
-    hass.states.async_set(WORKDAY, "off")       # „arbeitsfrei“-Sensor: aus = Werktag
-    _, ctrl, env = await _setup(
-        hass, [alarm(only_if_on=[WORKDAY])], freezer,
-        workday_sensors=[WORKDAY], workday_invert=True)
-    await _advance(hass, freezer, seconds=3)
-    assert ctrl.ringing and len(env.play) == 1 and ctrl.last_skipped is None
+def test_day_off_sensor_is_covered_by_skip_if_on() -> None:
+    """Ein Sensor „arbeitsfrei“ statt „Werktag“ gehört in „nicht klingeln, wenn an“."""
+    off = alarm(skip_if_on=[WORKDAY])
+    assert ac.check_conditions(off, _state({WORKDAY: "off"}))[0] is True
+    assert ac.check_conditions(off, _state({WORKDAY: "on"}))[0] is False
+    assert ac.check_conditions(off, _state({WORKDAY: "unavailable"}))[0] is True   # blockiert nie
 
 
 async def test_alarm_skipped_when_condition_fails(hass: HomeAssistant, freezer) -> None:
     hass.states.async_set(WORKDAY, "off")
     hass.states.async_set(HOLIDAY, "off")
     _, ctrl, env = await _setup(
-        hass, [alarm(only_if_on=[WORKDAY])], freezer, workday_sensors=[WORKDAY, HOLIDAY])
+        hass, [alarm(only_if_on=[WORKDAY])], freezer)
     await _advance(hass, freezer, seconds=3)
     assert not ctrl.active and env.play == [] and env.push == []
     assert ctrl.last_skipped["alarm"] == "Aufstehen" and ctrl.last_skipped["reason"] == "only_if_on"
@@ -400,7 +375,7 @@ async def test_alarm_rings_when_any_sensor_on(hass: HomeAssistant, freezer) -> N
     hass.states.async_set(WORKDAY, "off")
     hass.states.async_set(HOLIDAY, "on")
     _, ctrl, env = await _setup(
-        hass, [alarm(only_if_on=[WORKDAY, HOLIDAY])], freezer, workday_sensors=[WORKDAY, HOLIDAY])
+        hass, [alarm(only_if_on=[WORKDAY, HOLIDAY])], freezer)
     await _advance(hass, freezer, seconds=3)
     assert ctrl.ringing and len(env.play) == 1 and ctrl.last_skipped is None
 
@@ -409,22 +384,15 @@ async def test_holiday_blocks_the_alarm(hass: HomeAssistant, freezer) -> None:
     hass.states.async_set(WORKDAY, "on")
     hass.states.async_set(HOLIDAY, "on")
     _, ctrl, env = await _setup(
-        hass, [alarm(skip_if_on=[HOLIDAY])], freezer, workday_sensors=[WORKDAY, HOLIDAY])
+        hass, [alarm(skip_if_on=[HOLIDAY])], freezer)
     await _advance(hass, freezer, seconds=3)
     assert env.play == [] and ctrl.last_skipped["reason"] == "skip_if_on"
-
-
-async def test_conditions_ignored_without_global_sensors(hass: HomeAssistant, freezer) -> None:
-    hass.states.async_set(WORKDAY, "off")
-    _, ctrl, env = await _setup(hass, [alarm(only_if_on=[WORKDAY])], freezer)    # keine globalen Sensoren
-    await _advance(hass, freezer, seconds=3)
-    assert ctrl.ringing and len(env.play) == 1
 
 
 async def test_skip_survives_reload_and_unavailable_sensor_rings(hass: HomeAssistant, freezer) -> None:
     hass.states.async_set(WORKDAY, "off")
     entry, ctrl, env = await _setup(
-        hass, [alarm(only_if_on=[WORKDAY])], freezer, workday_sensors=[WORKDAY])
+        hass, [alarm(only_if_on=[WORKDAY])], freezer)
     await _advance(hass, freezer, seconds=3)
     assert ctrl.last_skipped is not None
     assert await hass.config_entries.async_reload(entry.hub_id)
@@ -435,24 +403,15 @@ async def test_skip_survives_reload_and_unavailable_sensor_rings(hass: HomeAssis
     assert hass.data[DOMAIN][entry.entry_id].ringing
 
 
-async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> None:
-    hass.states.async_set(WORKDAY, "on", {"friendly_name": "Werktag"})
-    hass.states.async_set(HOLIDAY, "off", {"friendly_name": "Feiertag"})
+async def test_alarm_form_has_condition_fields_with_the_schedule(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
-    assert "only_if_on" not in {str(k) for k in result["data_schema"].schema}   # keine globalen Sensoren
-
-    update_entry(hass, entry, {**entry.options, "workday_sensors": [WORKDAY, HOLIDAY]})
-    await hass.async_block_till_done()
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     schema = result["data_schema"].schema
-    assert {"only_if_on", "skip_if_on"} <= {str(k) for k in schema}
-    field = next(v for k, v in schema.items() if str(k) == "only_if_on")
-    assert [(o["value"], o["label"]) for o in field.config["options"]] == [
-        (WORKDAY, "Werktag"), (HOLIDAY, "Feiertag")]
+    names = [str(k) for k in schema]
+    assert {"only_if_on", "skip_if_on"} <= set(names)                  # immer da, ohne globale Liste
+    assert names.index("only_if_on") < names.index("players")          # bei Uhrzeit und Wochentagen
     form = {"name": "Arbeit", "enabled": True, "time": "06:30:00", "weekdays": ["mon"],
             "players": [PLAYER], "media": MEDIA, "volume": 25, "snooze_minutes": 5,
             "auto_stop_minutes": 20, "only_if_on": [WORKDAY], "skip_if_on": [HOLIDAY]}
@@ -468,16 +427,3 @@ async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> Non
     result = await flow.async_configure(
         result["flow_id"], {**form, "only_if_on": [], "skip_if_on": []})
     assert entry.options["alarms"][0]["only_if_on"] == [] and entry.options["alarms"][0]["skip_if_on"] == []
-
-
-async def test_conditions_kept_when_global_sensors_removed(hass: HomeAssistant) -> None:
-    entry, _, _ = await _setup(hass, [alarm(only_if_on=[WORKDAY])])        # ohne globale Sensoren
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_alarm"})
-    result = await flow.async_configure(result["flow_id"], {"alarm": "a1"})
-    form = {"name": "Aufstehen", "enabled": True, "time": "07:00:00", "weekdays": ["mon"],
-            "players": [PLAYER], "media": MEDIA, "volume": 30, "snooze_minutes": 9,
-            "auto_stop_minutes": 30}
-    await flow.async_configure(result["flow_id"], form)
-    assert entry.options["alarms"][0]["only_if_on"] == [WORKDAY]            # bleibt erhalten

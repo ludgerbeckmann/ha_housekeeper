@@ -44,7 +44,6 @@ from .const import (
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,
     CONF_VIBRATION_SENSOR,
-    CONF_WORKDAY_SENSORS,
     DOMAIN,
     FUNCTION_ALARM,
     FUNCTION_DOOR_GUARD,
@@ -109,8 +108,7 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         for task in opt(CONF_TASKS, []) or []:
             entities += _listed(task.get("triggers"), "entity_id")
     elif function == FUNCTION_ALARM:
-        entities += _listed(opt(CONF_ALARMS, []), "players")
-        entities += [str(v) for v in opt(CONF_WORKDAY_SENSORS, []) or []]
+        entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
     if function == FUNCTION_UPDATER:
         devices += _listed(opt(CONF_SCHEDULES, []), CONF_MOBILE_TARGETS)
