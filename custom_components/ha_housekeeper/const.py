@@ -348,6 +348,7 @@ MONTH_MODES = [MONTH_FIRST, MONTH_LAST, MONTH_DAY]
 # --- Wecker ---
 CONF_ALARMS = "alarms"
 CONF_CRITICAL = "critical"
+CONF_WORKDAY_SENSORS = "workday_sensors"
 
 DEFAULT_ALARM_MESSAGE = "Wecker"
 DEFAULT_ALARM_VOLUME = 30
@@ -368,6 +369,8 @@ A_MEDIA = "media"
 A_VOLUME = "volume"
 A_SNOOZE = "snooze_minutes"
 A_AUTO_STOP = "auto_stop_minutes"
+A_ONLY_IF_ON = "only_if_on"
+A_NOT_IF_ON = "skip_if_on"
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [
@@ -378,6 +381,7 @@ OPTIONAL_KEYS = [
     CONF_POWER_ENTITY,
     CONF_SENSITIVITY_ENTITY,
     CONF_SENSITIVITY_VALUE,
+    CONF_WORKDAY_SENSORS,
 ]
 
 

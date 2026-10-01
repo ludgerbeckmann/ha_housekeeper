@@ -128,7 +128,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   STOP_/SNOOZE_<entry_id>` (Event `mobile_app_notification_action`) und `critical_data()`
   (iOS `push.interruption-level: critical`, Android `channel: alarm_stream`); der
   `Notifier` nimmt dafür `extra`. Der Controller hat wie die Poolsteuerung ein
-  `async def async_stop`.
+  `async def async_stop`. **Werktags-/Feiertagssensoren:** globale Liste `workday_sensors` im
+  Eintrag, pro Wecker `only_if_on` (mindestens einer an, ODER) und `skip_if_on` (einer an
+  blockiert, ODER), UND zwischen den Feldern; `check_conditions()` ist rein, ein unbekannter
+  oder nicht verfügbarer Sensor zählt bei `only_if_on` als erfüllt (fail-open), nur globale
+  Sensoren zählen. Übersprungen wird in `last_skipped` (im `Store`) festgehalten. Die Felder im
+  Wecker-Dialog erscheinen nur, wenn globale Sensoren existieren, sonst bleiben gespeicherte
+  Werte erhalten. „Nächster Wecker“ ignoriert die Bedingungen.
 - Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Feld nur in den
   Einstellungen (nicht beim Anlegen); der Wert wird im Folgeschritt `mailbox_sensitivity`
   passend zur Entität abgefragt (`number` → Zahl mit Grenzen der Entität, `select` → deren

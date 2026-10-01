@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timedelta
 import logging
 from typing import Any
@@ -15,6 +16,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     A_AUTO_STOP,
+    A_NOT_IF_ON,
+    A_ONLY_IF_ON,
     A_ENABLED,
     A_ID,
     A_MEDIA,
@@ -29,6 +32,7 @@ from .const import (
     CONF_ALARMS,
     CONF_CRITICAL,
     CONF_MESSAGE,
+    CONF_WORKDAY_SENSORS,
     DEFAULT_ALARM_AUTO_STOP,
     DEFAULT_ALARM_MESSAGE,
     DEFAULT_ALARM_SNOOZE,
@@ -105,6 +109,36 @@ def next_alarm(
     return best
 
 
+_UNKNOWN_STATES = (None, "unavailable", "unknown")
+
+
+def check_conditions(
+    alarm: dict[str, Any],
+    global_sensors: list[str],
+    get_state: Callable[[str], str | None],
+) -> tuple[bool, str | None, list[str]]:
+    """Werktags-/Feiertagsbedingungen eines Weckers prüfen: (erfüllt, Grund, Sensoren).
+
+    Nur Sensoren aus den globalen Einstellungen zählen. Innerhalb eines Feldes gilt ODER:
+    - „nur klingeln, wenn an“: mindestens ein gewählter Sensor ist an,
+    - „nicht klingeln, wenn an“: sobald ein gewählter Sensor an ist, klingelt der Wecker nicht.
+    Beide Felder sind UND-verknüpft. Ein nicht verfügbarer oder unbekannter Sensor zählt bei
+    „nur klingeln, wenn an“ als erfüllt (der Wecker klingelt dann eher einmal zu viel).
+    """
+    known = set(global_sensors or [])
+    only = [s for s in alarm.get(A_ONLY_IF_ON) or [] if s in known]
+    skip = [s for s in alarm.get(A_NOT_IF_ON) or [] if s in known]
+    if only:
+        states = {s: get_state(s) for s in only}
+        if not any(v == "on" or v in _UNKNOWN_STATES for v in states.values()):
+            return False, A_ONLY_IF_ON, only
+    if skip:
+        blocking = [s for s in skip if get_state(s) == "on"]
+        if blocking:
+            return False, A_NOT_IF_ON, blocking
+    return True, None, []
+
+
 def critical_data() -> dict[str, Any]:
     """Zusatzdaten der Push-Meldung für eine kritische Meldung (iOS und Android)."""
     return {
@@ -136,6 +170,7 @@ class AlarmClockController:
         self.snooze_until: datetime | None = None
         self.last_ring: datetime | None = None
         self.last_alarm: str | None = None
+        self.last_skipped: dict[str, Any] | None = None
         self._restore: dict[str, float | None] = {}  # ursprüngliche Lautstärken
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
@@ -184,6 +219,7 @@ class AlarmClockController:
                 "enabled": self.enabled,
                 "last_ring": self.last_ring.isoformat() if self.last_ring else None,
                 "last_alarm": self.last_alarm,
+                "last_skipped": self.last_skipped,
                 "restore": self._restore,
             }
         )
@@ -195,6 +231,7 @@ class AlarmClockController:
         stored = await self._store.async_load() or {}
         self.enabled = bool(stored.get("enabled", True))
         self.last_alarm = stored.get("last_alarm")
+        self.last_skipped = stored.get("last_skipped")
         if raw := stored.get("last_ring"):
             self.last_ring = dt_util.parse_datetime(raw)
         # Wurde Home Assistant während des Weckens neu gestartet, die Lautstärke zurücksetzen
@@ -218,7 +255,11 @@ class AlarmClockController:
                     and alarm.get(A_ENABLED, True)
                     and WEEKDAYS[dt_util.as_local(now).weekday()] in days
                 ):
-                    self.hass.async_create_task(self.async_ring(alarm))
+                    met, reason, sensors = self._conditions(alarm)
+                    if met:
+                        self.hass.async_create_task(self.async_ring(alarm))
+                    else:
+                        self.hass.async_create_task(self._async_skip(alarm, reason, sensors))
 
             self._unsubs.append(
                 async_track_time_change(
@@ -307,6 +348,27 @@ class AlarmClockController:
             if unsub := getattr(self, name):
                 unsub()
                 setattr(self, name, None)
+
+    def _conditions(self, alarm: dict[str, Any]) -> tuple[bool, str | None, list[str]]:
+        def state(entity_id: str) -> str | None:
+            found = self.hass.states.get(entity_id)
+            return found.state if found else None
+
+        return check_conditions(alarm, list(self._get(CONF_WORKDAY_SENSORS, []) or []), state)
+
+    async def _async_skip(
+        self, alarm: dict[str, Any], reason: str | None, sensors: list[str]
+    ) -> None:
+        """Wecker wegen einer nicht erfüllten Bedingung übersprungen: festhalten."""
+        self.last_skipped = {
+            "time": dt_util.utcnow().isoformat(),
+            "alarm": alarm.get(A_NAME),
+            "reason": reason,
+            "sensors": sensors,
+        }
+        _LOGGER.debug("%s: Wecker %s übersprungen (%s: %s)",
+                      self.entry.title, alarm.get(A_NAME), reason, sensors)
+        await self._async_save()
 
     async def async_ring(self, alarm: dict[str, Any]) -> None:
         """Wecker auslösen; ein noch laufender Alarm wird vorher beendet."""

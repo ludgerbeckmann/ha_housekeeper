@@ -185,9 +185,13 @@
         "sections": {
           "general": {
             "name": "Allgemein",
-            "description": "Name des Eintrags.",
+            "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
             "data": {
-              "name": "Name"
+              "name": "Name",
+              "workday_sensors": "Werktags-/Feiertagssensoren"
+            },
+            "data_description": {
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
             }
           },
           "notifications": {
@@ -837,6 +841,16 @@
       "alarm_general": {
         "title": "Einstellungen",
         "sections": {
+          "general": {
+            "name": "Allgemein",
+            "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
+            "data": {
+              "workday_sensors": "Werktags-/Feiertagssensoren"
+            },
+            "data_description": {
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
+            }
+          },
           "notifications": {
             "name": "Benachrichtigungen",
             "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
@@ -878,10 +892,14 @@
           "media": "Audiodatei",
           "volume": "Lautstärke",
           "snooze_minutes": "Schlummerzeit",
-          "auto_stop_minutes": "Automatisch stoppen nach (0 = nie)"
+          "auto_stop_minutes": "Automatisch stoppen nach (0 = nie)",
+          "only_if_on": "Nur klingeln, wenn an",
+          "skip_if_on": "Nicht klingeln, wenn an"
         },
         "data_description": {
           "media": "Datei oder Stream aus der Medienauswahl von Home Assistant.",
+          "only_if_on": "Nur wenn mindestens einer der gewählten Sensoren an ist (ODER), z. B. Werktagssensor. Ein nicht verfügbarer Sensor zählt als erfüllt. Die Auswahl erscheint nur, wenn in den Einstellungen Sensoren hinterlegt sind.",
+          "skip_if_on": "Nicht, sobald einer der gewählten Sensoren an ist (ODER), z. B. Feiertagssensor.",
           "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
           "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
         }

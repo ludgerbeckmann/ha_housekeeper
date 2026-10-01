@@ -185,9 +185,13 @@
         "sections": {
           "general": {
             "name": "General",
-            "description": "Name of the entry.",
+            "description": "Name of the entry and workday/holiday sensors for the alarms.",
             "data": {
-              "name": "Name"
+              "name": "Name",
+              "workday_sensors": "Workday/holiday sensors"
+            },
+            "data_description": {
+              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR."
             }
           },
           "notifications": {
@@ -837,6 +841,16 @@
       "alarm_general": {
         "title": "Settings",
         "sections": {
+          "general": {
+            "name": "General",
+            "description": "Name of the entry and workday/holiday sensors for the alarms.",
+            "data": {
+              "workday_sensors": "Workday/holiday sensors"
+            },
+            "data_description": {
+              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR."
+            }
+          },
           "notifications": {
             "name": "Notifications",
             "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
@@ -878,10 +892,14 @@
           "media": "Audio file",
           "volume": "Volume",
           "snooze_minutes": "Snooze time",
-          "auto_stop_minutes": "Stop automatically after (0 = never)"
+          "auto_stop_minutes": "Stop automatically after (0 = never)",
+          "only_if_on": "Only ring if on",
+          "skip_if_on": "Do not ring if on"
         },
         "data_description": {
           "media": "File or stream from the Home Assistant media browser.",
+          "only_if_on": "Only if at least one of the selected sensors is on (OR), e.g. workday sensor. An unavailable sensor counts as met. The selection only appears if sensors are set in the settings.",
+          "skip_if_on": "Not as soon as one of the selected sensors is on (OR), e.g. holiday sensor.",
           "snooze_minutes": "The alarm rings again after this time.",
           "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
         }

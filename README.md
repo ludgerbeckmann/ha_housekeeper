@@ -503,6 +503,8 @@ Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen).
 - die **Lautstärke** in Prozent (Standard 30)
 - die **Schlummerzeit** (Standard 9 Minuten)
 - **Automatisch stoppen nach** X Minuten (Standard 30, 0 = nie), jeweils pro Klingeln
+- optional **Werktags-/Feiertagsbedingungen** (nur, wenn in den Einstellungen Sensoren hinterlegt
+  sind, siehe unten)
 
 ### Ablauf
 
@@ -516,6 +518,25 @@ Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen).
    passiert auch nach einem Neustart von Home Assistant mitten im Wecken. Meldet ein Player
    keine Lautstärke, wird sie nicht zurückgesetzt.
 4. Löst ein Wecker aus, während ein anderer klingelt, wird der laufende beendet.
+
+### Werktags- und Feiertagssensoren
+
+In den Einstellungen (*Konfigurieren → Einstellungen*, Abschnitt *Allgemein*) hinterlegst du
+einen oder mehrere **Binärsensoren**, z. B. den Sensor der Werktags-Integration von Home
+Assistant. Bei jedem Wecker kannst du dann aus diesen Sensoren zwei optionale Bedingungen wählen:
+
+- **Nur klingeln, wenn an:** mindestens **einer** der gewählten Sensoren muss an sein (ODER),
+  z. B. Werktagssensor.
+- **Nicht klingeln, wenn an:** sobald **einer** der gewählten Sensoren an ist (ODER), klingelt der
+  Wecker nicht, z. B. Feiertagssensor.
+
+Beide Felder sind UND-verknüpft und gelten zusätzlich zu den Wochentagen. Die Bedingungen
+werden **zur Weckzeit** geprüft. Ein **nicht verfügbarer oder unbekannter** Sensor zählt bei
+„Nur klingeln, wenn an“ als erfüllt, der Wecker klingelt dann eher einmal zu viel als gar nicht.
+Ein übersprungener Wecker steht mit Grund und Sensoren im Attribut `skipped` des Sensors
+**Letzter Wecker**. Sensoren, die aus den Einstellungen entfernt wurden, werden bei den Weckern
+ignoriert. Der Sensor **Nächster Wecker** kennt die Bedingungen nicht (er kann künftige
+Werktage nicht vorhersagen) und zeigt den nächsten Termin nach Wochentag und Uhrzeit.
 
 ### Kritische Meldung
 
@@ -533,7 +554,8 @@ beiden Aktionen).
 
 - `switch` **Wecker aktiv** (aus = alle Wecker pausiert; ein klingelnder Wecker wird gestoppt)
 - `binary_sensor` **Wecker klingelt** (beim Schlummern aus, Attribute `snoozed`, `snooze_until`)
-- `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`)
+- `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`; beim
+  letzten Wecker außerdem `skipped` mit dem zuletzt übersprungenen Wecker)
 - `button` **Wecker stoppen** und **Schlummern**
 
 ## Entwicklung
