@@ -44,6 +44,7 @@ from .const import (
 from .notify import Notifier, entry_opt
 from .pool_dry_run import DryRunDetector
 from .pool_schedule import is_active, next_start, parse_windows
+from .reload import ReloadWhenIdle
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ STORE_VERSION = 1
 DRY_RUN_KIND = "dry_run"
 
 
-class PoolPumpController:
+class PoolPumpController(ReloadWhenIdle):
     """Verwaltet Zeitplan, manuellen Lauf und Laufzeitzähler einer Poolpumpe."""
 
     model = "Poolsteuerung"
@@ -139,6 +140,11 @@ class PoolPumpController:
     @property
     def schedule_active(self) -> bool:
         return is_active(self.windows, dt_util.now())
+
+    @property
+    def busy(self) -> bool:
+        """Manueller Lauf aktiv (wird nicht gespeichert und ginge beim Neuladen verloren)."""
+        return self.manual_active
 
     @property
     def manual_active(self) -> bool:
@@ -287,9 +293,11 @@ class PoolPumpController:
     async def _manual_expired(self, _now: datetime) -> None:
         self._manual_unsub = None
         await self._async_evaluate(dt_util.now())
+        self.async_idle()
 
     async def _tick(self, now: datetime) -> None:
         await self._async_evaluate(dt_util.as_local(now))
+        self.async_idle()
 
     def _roll_day(self, now: datetime) -> None:
         """Tageszähler bei Datumswechsel zurücksetzen."""

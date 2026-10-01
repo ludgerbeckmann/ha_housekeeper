@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 
 import voluptuous as vol
 
@@ -37,6 +38,8 @@ from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
+
+_LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -102,6 +105,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Eintrag nach einer Änderung neu laden, aber nicht mitten in einem Lauf."""
+    controller = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if controller is not None and getattr(controller, "busy", False):
+        controller.reload_requested = True
+        _LOGGER.info(
+            "%s: Änderungen werden übernommen, sobald der laufende Vorgang beendet ist",
+            entry.title,
+        )
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

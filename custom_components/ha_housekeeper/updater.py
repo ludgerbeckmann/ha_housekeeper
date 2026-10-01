@@ -50,6 +50,7 @@ from .const import (
     signal_update,
 )
 from .notify import Notifier, entry_opt
+from .reload import ReloadWhenIdle
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -269,7 +270,7 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
     )
 
 
-class UpdaterController:
+class UpdaterController(ReloadWhenIdle):
     """Führt die Update-Zeitpläne aus."""
 
     model = "Home Assistant Updater"
@@ -330,6 +331,11 @@ class UpdaterController:
     @property
     def running(self) -> bool:
         return self._running
+
+    @property
+    def busy(self) -> bool:
+        """Lauf aktiv oder Bericht nach einem Neustart noch offen."""
+        return self._running or self.pending is not None
 
     @property
     def next_run(self) -> datetime | None:
@@ -456,6 +462,7 @@ class UpdaterController:
         finally:
             self._running = False
             self._notify()
+            self.async_idle()
 
     async def _async_run(self, schedule: dict[str, Any], force_notify: bool) -> None:
         text = self._text()
@@ -699,3 +706,4 @@ class UpdaterController:
             self._schedule_by_id(pending.get("schedule_id"), pending.get("schedule"))
         )
         await self._async_finish(record, pending.get("schedule"), results, notifier)
+        self.async_idle()
