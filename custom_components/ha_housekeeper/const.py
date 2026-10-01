@@ -19,6 +19,20 @@ FUNCTION_UPDATER = "updater"
 FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
 
+CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
+
+# Anzeigenamen der Funktionen (Hub-Titel, Reparaturhinweise): (deutsch, englisch)
+FUNCTION_TITLES: dict[str, tuple[str, str]] = {
+    FUNCTION_MAILBOX: ("Benachrichtigung Briefkasten", "Mailbox notification"),
+    FUNCTION_DOOR_GUARD: ("Türwächter", "Door guard"),
+    FUNCTION_DOORBELL: ("Türklingel", "Doorbell"),
+    FUNCTION_POOL: ("Poolsteuerung", "Pool control"),
+    FUNCTION_KNX_SONOS: ("KNX/Sonos-Connector", "KNX/Sonos connector"),
+    FUNCTION_UPDATER: ("Home Assistant Updater", "Home Assistant Updater"),
+    FUNCTION_TASK_PLANNER: ("Aufgabenplaner", "Task planner"),
+    FUNCTION_ALARM: ("Wecker", "Alarm clock"),
+}
+
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [
         Platform.BINARY_SENSOR,

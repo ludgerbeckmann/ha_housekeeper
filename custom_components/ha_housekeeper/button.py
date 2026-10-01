@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import partial
+
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -10,8 +12,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers import entity_registry as er
 
 from .alarm_clock import AlarmClockController
-from .const import DOMAIN, TASK_ID, TASK_NAME
+from .const import TASK_ID, TASK_NAME
 from .doorbell import DoorbellController
+from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
 from .task_planner import TaskPlannerController
@@ -21,7 +24,16 @@ from .updater import UpdaterController
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    controller = hass.data[DOMAIN][entry.entry_id]
+    """Entitäten je Untereintrag (eigenes Gerät) des Hubs."""
+    for controller in hub_controllers(hass, entry):
+        _add_entities(
+            hass,
+            controller,
+            partial(async_add_entities, config_subentry_id=controller.entry.entry_id),
+        )
+
+
+def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     if isinstance(controller, DoorbellController):
         async_add_entities([DoorbellTestButton(controller)])
     elif isinstance(controller, UpdaterController):
@@ -30,10 +42,11 @@ async def async_setup_entry(
         async_add_entities([AlarmStopButton(controller), AlarmSnoozeButton(controller)])
     elif isinstance(controller, TaskPlannerController):
         tasks = controller.tasks
+        entry = controller.entry
         prefix = f"{entry.entry_id}_task_"
         keep = {f"{prefix}{task[TASK_ID]}" for task in tasks}
         registry = er.async_get(hass)
-        for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        for entity in er.async_entries_for_config_entry(registry, entry.hub_entry_id):
             if entity.domain == "button" and entity.unique_id.startswith(prefix):
                 if entity.unique_id not in keep:
                     registry.async_remove(entity.entity_id)

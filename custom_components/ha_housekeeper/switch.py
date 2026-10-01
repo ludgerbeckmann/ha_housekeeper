@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -11,8 +12,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .alarm_clock import AlarmClockController
-from .const import DOMAIN
 from .doorbell import DoorbellController
+from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
@@ -24,7 +25,16 @@ from .updater import UpdaterController
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    controller = hass.data[DOMAIN][entry.entry_id]
+    """Entitäten je Untereintrag (eigenes Gerät) des Hubs."""
+    for controller in hub_controllers(hass, entry):
+        _add_entities(
+            hass,
+            controller,
+            partial(async_add_entities, config_subentry_id=controller.entry.entry_id),
+        )
+
+
+def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     if isinstance(controller, DoorbellController):
         async_add_entities([DoorbellActiveSwitch(controller)])
     elif isinstance(controller, PoolPumpController):

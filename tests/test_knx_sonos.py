@@ -6,12 +6,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options
+from .helpers import is_menu, menu_options, make_entry, reconfigure
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PLAYER = "media_player.living_room"
@@ -39,9 +38,9 @@ async def _setup(hass: HomeAssistant, state="paused", attrs=None, **over):
          "media_title": "Song", "media_artist": "Artist", "media_album_name": "Album",
          **(attrs or {})},
     )
-    entry = MockConfigEntry(domain=DOMAIN, title="Sonos", data={**BASE, **over})
+    entry = make_entry(domain=DOMAIN, title="Sonos", data={**BASE, **over})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, mocks
 
@@ -70,13 +69,13 @@ async def test_config_flow_creates_entry(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "knx_sonos"}
     )
-    assert result["step_id"] == "knx_sonos"
+    assert result["step_id"] == "new_knx_sonos"
     ok = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Wohnzimmer", "player": PLAYER}
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["commands"] == [] and ok["data"]["status"] == []
-    assert ok["data"]["max_volume"] == 100
+    assert ok["subentries"][0]["data"]["commands"] == [] and ok["subentries"][0]["data"]["status"] == []
+    assert ok["subentries"][0]["data"]["max_volume"] == 100
 
 
 # --- Anmeldung bei der KNX-Integration ----------------------------------------------------
@@ -105,12 +104,12 @@ async def test_reregisters_on_reload_event_and_interval(hass: HomeAssistant) -> 
 
 async def test_waits_for_knx_service(hass: HomeAssistant) -> None:
     hass.states.async_set(PLAYER, "paused", {"volume_level": 0.3})
-    entry = MockConfigEntry(
+    entry = make_entry(
         domain=DOMAIN, title="Sonos",
         data={**BASE, "commands": [cmd("a", "1/2/3", "switch", "play")]},
     )
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     register = async_mock_service(hass, "knx", "event_register")   # KNX kommt später
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=6))
@@ -317,11 +316,11 @@ async def test_read_request_is_answered(hass: HomeAssistant) -> None:
 
 async def test_status_not_sent_without_knx_service(hass: HomeAssistant) -> None:
     hass.states.async_set(PLAYER, "paused", {"volume_level": 0.3})
-    entry = MockConfigEntry(domain=DOMAIN, title="Sonos", data={
+    entry = make_entry(domain=DOMAIN, title="Sonos", data={
         **BASE, "status": [{"id": "b", "name": "B", "source": "volume", "address": "5/0/2"}]})
     entry.add_to_hass(hass)
     send = async_mock_service(hass, "knx", "send")
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     assert send == []                           # KNX ist (noch) nicht bereit
 
@@ -331,8 +330,8 @@ async def test_status_not_sent_without_knx_service(hass: HomeAssistant) -> None:
 
 async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
     entry, _ = await _setup(hass)
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert result["step_id"] == "knx_menu"
     assert "edit_command" not in menu_options(result) and "edit_status" not in menu_options(result)
 

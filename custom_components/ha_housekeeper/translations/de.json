@@ -3,12 +3,12 @@
     "step": {
       "user": {
         "title": "Funktion hinzufügen",
-        "description": "Welche Funktion soll eingerichtet werden?",
+        "description": "Für welche Funktion soll ein Hub angelegt werden? Du richtest dabei gleich die erste Instanz ein, weitere kommen später über den Hub dazu.",
         "data": {
           "function_type": "Funktion"
         }
       },
-      "mailbox": {
+      "new_mailbox": {
         "title": "Benachrichtigung Briefkasten",
         "sections": {
           "general": {
@@ -49,7 +49,7 @@
           }
         }
       },
-      "door_guard": {
+      "new_door_guard": {
         "title": "Türwächter",
         "sections": {
           "general": {
@@ -92,7 +92,7 @@
           }
         }
       },
-      "doorbell": {
+      "new_doorbell": {
         "title": "Türklingel",
         "sections": {
           "general": {
@@ -110,7 +110,7 @@
           }
         }
       },
-      "pool_pump": {
+      "new_pool_pump": {
         "title": "Pool hinzufügen",
         "description": "Einen Pool anlegen und den Schalter der Pumpe wählen.",
         "data": {
@@ -118,7 +118,7 @@
           "pump_entity": "Pumpe (Schalter)"
         }
       },
-      "knx_sonos": {
+      "new_knx_sonos": {
         "title": "KNX/Sonos-Connector",
         "data": {
           "name": "Name",
@@ -126,7 +126,7 @@
         },
         "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren."
       },
-      "updater": {
+      "new_updater": {
         "title": "Home Assistant Updater",
         "data": {
           "name": "Name",
@@ -137,7 +137,7 @@
         },
         "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
       },
-      "task_planner": {
+      "new_task_planner": {
         "title": "Aufgabenplaner",
         "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
         "sections": {
@@ -165,7 +165,7 @@
           }
         }
       },
-      "alarm_clock": {
+      "new_alarm_clock": {
         "title": "Wecker",
         "description": "Ein Eintrag enthält mehrere Wecker; diese werden danach unter Konfigurieren angelegt. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
         "sections": {
@@ -231,783 +231,8 @@
       "no_media": "Wähle eine Audiodatei."
     },
     "abort": {
-      "already_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+      "already_configured": "Für diese Funktion gibt es schon einen Hub. Weitere Instanzen fügst du dort über die Schaltfläche „… hinzufügen“ hinzu.",
       "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
-    }
-  },
-  "options": {
-    "step": {
-      "mailbox": {
-        "title": "Benachrichtigung Briefkasten",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
-            "data": {
-              "vibration_sensor": "Vibrationssensor",
-              "debounce_seconds": "Entprellzeit",
-              "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
-              "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
-            },
-            "data_description": {
-              "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-              "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-              "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit über Post im Briefkasten informiert wird.",
-            "data": {
-              "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
-              "message": "Nachrichtentext",
-              "repeat_message": "Text bei erneutem Auslösen",
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
-              "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-            }
-          }
-        }
-      },
-      "menu": {
-        "title": "Türwächter",
-        "description": "Einstellungen und Regeln des Türwächters.",
-        "menu_options": {
-          "general": "Einstellungen",
-          "add_rule": "Regel hinzufügen",
-          "edit_rule": "Regel bearbeiten",
-          "delete_rule": "Regel löschen"
-        }
-      },
-      "general": {
-        "title": "Einstellungen",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
-            "data": {
-              "lock": "Schloss",
-              "contact": "Türkontakt (optional)",
-              "block_action": "Wenn beim Abschließen die Tür offen ist",
-              "retry_minutes": "Abschließen nachholen bis (Minuten)",
-              "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
-              "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
-              "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
-              "manual_override": "Bei manueller Bedienung des Schlosses",
-              "manual_pause_minutes": "Automatik pausieren für (Minuten)"
-            },
-            "data_description": {
-              "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
-              "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
-              "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
-              "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-              "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit der Türwächter meldet.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-            }
-          }
-        }
-      },
-      "edit_rule": {
-        "title": "Regel bearbeiten",
-        "data": {
-          "rule": "Regel"
-        }
-      },
-      "delete_rule": {
-        "title": "Regel löschen",
-        "data": {
-          "rule": "Regel"
-        }
-      },
-      "rule_type": {
-        "title": "Regel",
-        "data": {
-          "action": "Aktion",
-          "trigger": "Auslöser",
-          "enabled": "Aktiv"
-        }
-      },
-      "rule_state": {
-        "title": "Auslöser: Zustand einer Entität",
-        "data": {
-          "entity_id": "Entität",
-          "to_state": "Zielzustand",
-          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
-        },
-        "data_description": {
-          "to_state": "Zustandstext, z. B. home, on, armed_away. Die Regel löst beim Wechsel in diesen Zustand aus."
-        }
-      },
-      "rule_time": {
-        "title": "Auslöser: Uhrzeit",
-        "data": {
-          "time": "Uhrzeit",
-          "weekdays": "Wochentage"
-        }
-      },
-      "rule_door_closed": {
-        "title": "Auslöser: Tür geschlossen",
-        "data": {
-          "delay_seconds": "Abschließen nach (Sekunden)"
-        },
-        "data_description": {
-          "delay_seconds": "Zeit, die die Tür geschlossen sein muss."
-        }
-      },
-      "bell_menu": {
-        "title": "Türklingel",
-        "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
-        "menu_options": {
-          "bell_general": "Einstellungen",
-          "add_profile": "Profil hinzufügen",
-          "edit_profile": "Profil bearbeiten",
-          "delete_profile": "Profil löschen"
-        }
-      },
-      "bell_general": {
-        "title": "Einstellungen",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Auslöser und Entprellzeit.",
-            "data": {
-              "trigger_entity": "Auslöser (Sensor oder Ereignis)",
-              "debounce_seconds": "Sperrzeit"
-            },
-            "data_description": {
-              "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
-              "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
-            }
-          }
-        }
-      },
-      "edit_profile": {
-        "title": "Profil bearbeiten",
-        "data": {
-          "profile": "Profil"
-        }
-      },
-      "delete_profile": {
-        "title": "Profil löschen",
-        "data": {
-          "profile": "Profil"
-        }
-      },
-      "profile_basic": {
-        "title": "Zeitfenster-Profil",
-        "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
-        "sections": {
-          "timing": {
-            "name": "Zeitfenster",
-            "description": "Wann das Profil gilt.",
-            "data": {
-              "name": "Name",
-              "enabled": "Aktiv",
-              "from": "Von",
-              "to": "Bis",
-              "weekdays": "Wochentage"
-            },
-            "data_description": {
-              "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig."
-            }
-          },
-          "sound": {
-            "name": "Ton",
-            "description": "Optional. Ohne Media Player gibt dieses Profil keinen Ton aus.",
-            "data": {
-              "players": "Media Player",
-              "mode": "Ausgabe",
-              "tts_entity": "TTS-Dienst",
-              "text": "Ansagetext",
-              "media": "Klingelton",
-              "volume": "Lautstärke (0 = unverändert)"
-            },
-            "data_description": {
-              "tts_entity": "Nur bei Ausgabe „Ansage“.",
-              "text": "Nur bei Ausgabe „Ansage“.",
-              "media": "Nur bei Ausgabe „Klingelton“."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigung",
-            "description": "Optional. App-Push dieses Profils.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "message": "Push-Text",
-              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
-              "clear_after_hours": "Löscht die Meldung per clear_notification."
-            }
-          }
-        }
-      },
-      "pool_menu": {
-        "title": "Poolsteuerung",
-        "description": "Pumpe, Zeitfenster, Trockenlauf-Erkennung und Heizung der Poolsteuerung.",
-        "menu_options": {
-          "pool_general": "Pumpe ändern",
-          "add_window": "Zeitfenster hinzufügen",
-          "edit_window": "Zeitfenster bearbeiten",
-          "delete_window": "Zeitfenster löschen",
-          "dry_run": "Trockenlauferkennung",
-          "heater": "Poolheizung"
-        }
-      },
-      "pool_general": {
-        "title": "Pumpe",
-        "data": {
-          "pump_entity": "Pumpe (Schalter)"
-        }
-      },
-      "edit_window": {
-        "title": "Zeitfenster bearbeiten",
-        "data": {
-          "window": "Zeitfenster"
-        }
-      },
-      "delete_window": {
-        "title": "Zeitfenster löschen",
-        "data": {
-          "window": "Zeitfenster"
-        }
-      },
-      "window_edit": {
-        "title": "Zeitfenster",
-        "description": "Die Pumpe wird zum Beginn ein- und zum Ende ausgeschaltet. Liegt das Ende vor dem Beginn, läuft das Fenster über Mitternacht. Die Wochentage beziehen sich auf den Tag des Beginns.",
-        "data": {
-          "start": "Beginn",
-          "end": "Ende",
-          "days": "Wochentage"
-        }
-      },
-      "dry_run": {
-        "title": "Trockenlauferkennung",
-        "description": "Erkennt eine trocken laufende Pumpe: Die Pumpe ist an und die Leistung bleibt die eingestellte Dauer zwischen unterer und oberer Grenze. Ohne Leistungssensor ist die Funktion aus. Ein Alarm bleibt gehalten, bis er quittiert oder die Pumpe neu gestartet wird.",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Leistungssensor und Grenzen für die Trockenlauf-Erkennung.",
-            "data": {
-              "power_entity": "Leistungssensor (W)",
-              "dry_min_power": "Untere Grenze",
-              "dry_max_power": "Obere Grenze",
-              "dry_duration": "Dauer",
-              "dry_auto_off": "Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren"
-            },
-            "data_description": {
-              "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
-              "dry_auto_off": "Der Zeitplan wird erst nach dem Quittieren (Button) wieder aktiviert."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit bei Trockenlauf gemeldet wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-            }
-          }
-        }
-      },
-      "heater": {
-        "title": "Poolheizung",
-        "description": "Schaltet die Heizung nach der Temperatur: ab der Einschaltschwelle (oder darüber) ein, bei der Ausschaltschwelle (oder darunter) aus; dazwischen bleibt sie unverändert. Ohne Heizung ist die Funktion aus. Die Pumpe wird dabei nicht berücksichtigt.",
-        "data": {
-          "heater_entity": "Heizung (Schalter)",
-          "temperature_entity": "Temperatursensor",
-          "heater_on_above": "Einschalten ab (°C)",
-          "heater_off_below": "Ausschalten bei (°C)"
-        },
-        "data_description": {
-          "heater_entity": "Leer lassen, um die Heizung nicht zu steuern.",
-          "heater_off_below": "Muss unter der Einschaltschwelle liegen (Hysterese)."
-        }
-      },
-      "knx_menu": {
-        "title": "KNX/Sonos-Connector",
-        "description": "Lautsprecher-Profile sowie Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) je Profil.",
-        "menu_options": {
-          "add_speaker": "Lautsprecher-Profil hinzufügen",
-          "edit_speaker": "Lautsprecher-Profil bearbeiten",
-          "delete_speaker": "Lautsprecher-Profil löschen",
-          "add_command": "Befehl hinzufügen",
-          "edit_command": "Befehl bearbeiten",
-          "delete_command": "Befehl löschen",
-          "add_status": "Rückmeldung hinzufügen",
-          "edit_status": "Rückmeldung bearbeiten",
-          "delete_status": "Rückmeldung löschen"
-        }
-      },
-      "speaker_edit": {
-        "title": "Lautsprecher-Profil",
-        "description": "Ein Profil verbindet einen Sonos-Lautsprecher mit seinen Einstellungen. Befehle und Rückmeldungen gehören je zu einem Profil und haben eigene Gruppenadressen.",
-        "data": {
-          "name": "Name",
-          "enabled": "Aktiv",
-          "player": "Sonos-Lautsprecher",
-          "max_volume": "Maximale Lautstärke",
-          "volume_step": "Schrittweite Lauter/Leiser",
-          "stop_instead_of_pause": "Bei Pause stoppen statt pausieren (z. B. für Radiostreams)"
-        },
-        "data_description": {
-          "max_volume": "Begrenzt jede per KNX gesetzte Lautstärke nach oben.",
-          "volume_step": "Gilt für Lauter, Leiser und relatives Dimmen."
-        }
-      },
-      "edit_speaker": {
-        "title": "Lautsprecher-Profil bearbeiten",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "delete_speaker": {
-        "title": "Lautsprecher-Profil löschen",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "edit_command": {
-        "title": "Befehl bearbeiten",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "delete_command": {
-        "title": "Befehl löschen",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "edit_status": {
-        "title": "Rückmeldung bearbeiten",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "delete_status": {
-        "title": "Rückmeldung löschen",
-        "data": {
-          "item": "Eintrag"
-        }
-      },
-      "command_basic": {
-        "title": "Befehl (KNX an Sonos)",
-        "description": "Wird ausgeführt, wenn ein Schreibtelegramm auf der Gruppenadresse eintrifft.",
-        "data": {
-          "name": "Name",
-          "address": "Gruppenadresse (z. B. 1/2/3)",
-          "dpt": "Datentyp",
-          "action": "Aktion",
-          "profile": "Lautsprecher-Profil"
-        },
-        "data_description": {
-          "dpt": "Relatives Dimmen (3.007) gehört zur Aktion „Lautstärke dimmen“, „Stumm (Wert)“ braucht Schalten (1.001)."
-        }
-      },
-      "command_params": {
-        "title": "Angaben zum Befehl",
-        "data": {
-          "when": "Auslösen bei",
-          "scene": "Szenennummer (1–64)",
-          "volume": "Lautstärke",
-          "favorite": "Sonos-Favorit"
-        },
-        "data_description": {
-          "favorite": "Titel des Favoriten, wie er in der Sonos-App steht."
-        }
-      },
-      "status_edit": {
-        "title": "Rückmeldung (Sonos an KNX)",
-        "description": "Der Wert wird bei jeder Änderung gesendet; Leseanfragen auf der Adresse werden beantwortet.",
-        "data": {
-          "name": "Name",
-          "source": "Quelle",
-          "address": "Gruppenadresse (z. B. 1/2/3)",
-          "idle_text": "Text, wenn nichts wiedergegeben wird",
-          "profile": "Lautsprecher-Profil"
-        },
-        "data_description": {
-          "source": "Wiedergabe, Pause und Stumm werden als 1 Bit (1.001), die Lautstärke als Prozent (5.001) und Titel, Interpret, Album und Quelle als Text (16.001, 14 Zeichen) gesendet.",
-          "idle_text": "Nur für Textquellen."
-        }
-      },
-      "upd_menu": {
-        "title": "Home Assistant Updater",
-        "description": "Zeitpläne und Einstellungen des Updaters.",
-        "menu_options": {
-          "upd_general": "Einstellungen",
-          "add_schedule": "Zeitplan hinzufügen",
-          "edit_schedule": "Zeitplan bearbeiten",
-          "delete_schedule": "Zeitplan löschen"
-        }
-      },
-      "upd_general": {
-        "title": "Einstellungen",
-        "data": {
-          "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-        },
-        "data_description": {
-          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-        }
-      },
-      "edit_schedule": {
-        "title": "Zeitplan bearbeiten",
-        "data": {
-          "schedule": "Zeitplan"
-        }
-      },
-      "delete_schedule": {
-        "title": "Zeitplan löschen",
-        "data": {
-          "schedule": "Zeitplan"
-        }
-      },
-      "schedule_edit": {
-        "title": "Zeitplan",
-        "description": "Zeitpunkt, Aktionen und Benachrichtigung dieses Zeitplans. Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
-        "sections": {
-          "timing": {
-            "name": "Zeitpunkt",
-            "description": "Wann der Zeitplan läuft.",
-            "data": {
-              "name": "Name",
-              "enabled": "Aktiv",
-              "time": "Uhrzeit",
-              "weekdays": "Wochentage",
-              "trigger": "Auslöser",
-              "window_start": "Zeitfenster ab",
-              "window_end": "Zeitfenster bis"
-            },
-            "data_description": {
-              "trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung eines der gewählten Ziele; Uhrzeit und Wochentage werden dann ignoriert.",
-              "time": "Nur bei „Zu einer Uhrzeit“.",
-              "weekdays": "Nur bei „Zu einer Uhrzeit“.",
-              "window_start": "Nur bei „Sobald ein Update verfügbar wird“, optional. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt (auch über Mitternacht). Beide Felder leer = jederzeit.",
-              "window_end": "Ende des Zeitfensters (siehe „Zeitfenster ab“)."
-            }
-          },
-          "actions": {
-            "name": "Aktionen",
-            "description": "Was bei diesem Zeitplan geschieht.",
-            "data": {
-              "mode": "Aktion",
-              "components": "Komponenten",
-              "targets": "Einzelne Updates",
-              "backup": "Vor dem Installieren Sicherung anlegen"
-            },
-            "data_description": {
-              "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
-              "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
-              "backup": "Nur bei Updates, die eine Sicherung unterstützen."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit dieser Zeitplan meldet.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-            }
-          }
-        }
-      },
-      "tp_menu": {
-        "title": "Aufgabenplaner",
-        "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
-        "menu_options": {
-          "tp_general": "Einstellungen",
-          "add_task": "Aufgabe hinzufügen",
-          "edit_task": "Aufgabe bearbeiten",
-          "delete_task": "Aufgabe löschen"
-        }
-      },
-      "tp_general": {
-        "title": "Einstellungen",
-        "sections": {
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-            }
-          }
-        }
-      },
-      "edit_task": {
-        "title": "Aufgabe bearbeiten",
-        "data": {
-          "task": "Aufgabe"
-        }
-      },
-      "delete_task": {
-        "title": "Aufgabe löschen",
-        "data": {
-          "task": "Aufgabe"
-        }
-      },
-      "task_edit": {
-        "title": "Aufgabe",
-        "description": "Die Aktionen werden ausgeführt, sobald einer der Auslöser (nächster Schritt) eintritt. Meldungen gehen an die in den Einstellungen gewählten Wege.",
-        "data": {
-          "name": "Name",
-          "enabled": "Aufgabe aktiv",
-          "actions": "Aktionen",
-          "notify_start": "Benachrichtigen beim Start",
-          "notify_success": "Benachrichtigen bei Erfolg",
-          "notify_error": "Benachrichtigen bei Fehler"
-        },
-        "data_description": {
-          "actions": "Beliebige Home-Assistant-Aktionen, z. B. Dienstaufrufe, Verzögerungen, Bedingungen oder eine Benachrichtigung. In den Aktionen stehen die Variablen trigger und task zur Verfügung."
-        }
-      },
-      "task_triggers": {
-        "title": "Auslöser",
-        "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
-        "menu_options": {
-          "add_trigger": "Auslöser hinzufügen",
-          "delete_trigger": "Auslöser entfernen",
-          "task_save": "Aufgabe speichern"
-        }
-      },
-      "add_trigger": {
-        "title": "Auslöser hinzufügen",
-        "data": {
-          "type": "Art des Auslösers"
-        }
-      },
-      "delete_trigger": {
-        "title": "Auslöser entfernen",
-        "data": {
-          "trigger": "Auslöser"
-        }
-      },
-      "trigger_weekly": {
-        "title": "Auslöser: Wochentag und Uhrzeit",
-        "data": {
-          "time": "Uhrzeit",
-          "weekdays": "Wochentage"
-        }
-      },
-      "trigger_monthly": {
-        "title": "Auslöser: Monat",
-        "data": {
-          "month_mode": "Tag im Monat",
-          "month_day": "Bestimmter Tag",
-          "time": "Uhrzeit"
-        },
-        "data_description": {
-          "month_day": "Nur bei „Bestimmter Tag“. Hat der Monat weniger Tage, gilt der letzte Tag."
-        }
-      },
-      "trigger_once": {
-        "title": "Auslöser: einmaliger Zeitpunkt",
-        "data": {
-          "at": "Datum und Uhrzeit"
-        }
-      },
-      "trigger_interval": {
-        "title": "Auslöser: Intervall",
-        "data": {
-          "minutes": "Alle … Minuten"
-        },
-        "data_description": {
-          "minutes": "Gezählt ab dem Start des Aufgabenplaners (Home-Assistant-Start oder Neuladen)."
-        }
-      },
-      "trigger_state": {
-        "title": "Auslöser: Entität",
-        "data": {
-          "entity_id": "Entität",
-          "to_state": "Zielzustand",
-          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
-        },
-        "data_description": {
-          "to_state": "Zustandstext, z. B. on, home, open. Leer = jede Zustandsänderung."
-        }
-      },
-      "trigger_threshold": {
-        "title": "Auslöser: Grenzwert",
-        "data": {
-          "entity_id": "Sensor",
-          "above": "Über",
-          "below": "Unter",
-          "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
-        },
-        "data_description": {
-          "above": "Löst aus, wenn der Wert über diesen Wert steigt.",
-          "below": "Löst aus, wenn der Wert unter diesen Wert fällt. Beide Werte gesetzt = Bereich."
-        }
-      },
-      "alarm_menu": {
-        "title": "Wecker",
-        "description": "Wecker und Einstellungen.",
-        "menu_options": {
-          "alarm_general": "Einstellungen",
-          "add_alarm": "Wecker hinzufügen",
-          "edit_alarm": "Wecker bearbeiten",
-          "delete_alarm": "Wecker löschen"
-        }
-      },
-      "alarm_general": {
-        "title": "Einstellungen",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
-            "data": {
-              "workday_sensors": "Werktags-/Feiertagssensoren",
-              "workday_invert": "Sensorwerte umkehren"
-            },
-            "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
-              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "critical": "Als kritische Meldung senden",
-              "message": "Nachrichtentext"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
-              "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
-              "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
-            }
-          }
-        }
-      },
-      "edit_alarm": {
-        "title": "Wecker bearbeiten",
-        "data": {
-          "alarm": "Wecker"
-        }
-      },
-      "delete_alarm": {
-        "title": "Wecker löschen",
-        "data": {
-          "alarm": "Wecker"
-        }
-      },
-      "alarm_edit": {
-        "title": "Wecker",
-        "description": "Zur Weckzeit wird die Lautstärke gesetzt und die Audiodatei abgespielt. Beim Stoppen oder Schlummern wird die ursprüngliche Lautstärke wiederhergestellt.",
-        "data": {
-          "name": "Name",
-          "enabled": "Wecker aktiv",
-          "time": "Uhrzeit",
-          "weekdays": "Wochentage",
-          "players": "Media Player",
-          "media": "Audiodatei",
-          "volume": "Lautstärke",
-          "snooze_minutes": "Schlummerzeit",
-          "auto_stop_minutes": "Automatisch stoppen nach (0 = nie)",
-          "only_if_on": "Nur klingeln, wenn an",
-          "skip_if_on": "Nicht klingeln, wenn an"
-        },
-        "data_description": {
-          "media": "Datei oder Stream aus der Medienauswahl von Home Assistant.",
-          "only_if_on": "Nur wenn mindestens einer der gewählten Sensoren an ist (ODER), z. B. Werktagssensor. Ein nicht verfügbarer Sensor zählt als erfüllt. Die Auswahl erscheint nur, wenn in den Einstellungen Sensoren hinterlegt sind.",
-          "skip_if_on": "Nicht, sobald einer der gewählten Sensoren an ist (ODER), z. B. Feiertagssensor.",
-          "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
-          "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
-        }
-      },
-      "mailbox_sensitivity": {
-        "title": "Empfindlichkeit",
-        "description": "Wert für {entity}. Er wird nicht automatisch gesendet: Wecke den Sensor am Gerät auf und drücke dann den Button „Empfindlichkeit senden“.",
-        "data": {
-          "sensitivity_value": "Empfindlichkeit"
-        }
-      },
-      "mailbox_menu": {
-        "title": "Briefkasten",
-        "description": "Einstellungen des Briefkastens. Die Empfindlichkeit wird erst hier eingestellt, nachdem eine Entität dafür hinterlegt wurde.",
-        "menu_options": {
-          "mailbox": "Einstellungen",
-          "mailbox_sensitivity": "Empfindlichkeit einstellen"
-        }
-      }
-    },
-    "error": {
-      "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
-      "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
-      "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
-      "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
-      "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
-      "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
-      "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-      "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
-      "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
-      "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
-      "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
-      "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
-      "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
-      "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
-      "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
-      "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
-      "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
-      "invalid_address": "Ungültige Gruppenadresse.",
-      "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
-      "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
-      "no_update_selected": "Mindestens ein Update muss gewählt sein.",
-      "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
-      "no_actions": "Mindestens eine Aktion muss definiert sein.",
-      "invalid_datetime": "Ungültiges Datum.",
-      "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
-      "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
-      "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-      "no_media": "Wähle eine Audiodatei."
     }
   },
   "selector": {
@@ -1290,6 +515,1280 @@
     "device_missing": {
       "title": "Push-Ziel fehlt: {entity}",
       "description": "Die Funktion „{entry}“ ({function}) sendet Push-Meldungen an ein Gerät ({entity}), das es nicht mehr gibt (z. B. die Companion-App wurde entfernt). Wähle in den Einstellungen ein vorhandenes Gerät. Der Hinweis verschwindet von selbst, sobald das Ziel wieder stimmt."
+    },
+    "legacy_entry": {
+      "title": "Älteres Format: {entry}",
+      "description": "Der Eintrag „{entry}“ stammt aus einer älteren Version, in der jede Instanz ein eigener Eintrag war, und wird nicht mehr geladen. Lösche ihn und lege die Funktion neu an; dort gibt es jetzt einen Hub je Funktion, Instanzen sind Untereinträge."
+    }
+  },
+  "config_subentries": {
+    "mailbox": {
+      "initiate_flow": {
+        "user": "Briefkasten hinzufügen"
+      },
+      "entry_type": "Briefkasten",
+      "step": {
+        "new_mailbox": {
+          "title": "Benachrichtigung Briefkasten",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+              "data": {
+                "name": "Name",
+                "vibration_sensor": "Vibrationssensor",
+                "debounce_seconds": "Entprellzeit",
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+                "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
+              },
+              "data_description": {
+                "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+                "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit über Post im Briefkasten informiert wird.",
+              "data": {
+                "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+                "message": "Nachrichtentext",
+                "repeat_message": "Text bei erneutem Auslösen",
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+                "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "mailbox": {
+          "title": "Benachrichtigung Briefkasten",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+              "data": {
+                "vibration_sensor": "Vibrationssensor",
+                "debounce_seconds": "Entprellzeit",
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+                "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
+              },
+              "data_description": {
+                "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
+                "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
+                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit über Post im Briefkasten informiert wird.",
+              "data": {
+                "mobile_action": "Aktion „Briefkasten geleert“ in der Push-Meldung anzeigen",
+                "message": "Nachrichtentext",
+                "repeat_message": "Text bei erneutem Auslösen",
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_action": "Zeigt in der Meldung (iOS und Android) einen Knopf, der den Briefkasten als geleert markiert.",
+                "repeat_message": "Wird gesendet, wenn der Sensor erneut auslöst, obwohl noch Post vorhanden ist (mit der Aktion „geleert“).",
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "mailbox_menu": {
+          "title": "Briefkasten",
+          "description": "Einstellungen des Briefkastens. Die Empfindlichkeit wird erst hier eingestellt, nachdem eine Entität dafür hinterlegt wurde.",
+          "menu_options": {
+            "mailbox": "Einstellungen",
+            "mailbox_sensitivity": "Empfindlichkeit einstellen"
+          }
+        },
+        "mailbox_sensitivity": {
+          "title": "Empfindlichkeit",
+          "description": "Wert für {entity}. Er wird nicht automatisch gesendet: Wecke den Sensor am Gerät auf und drücke dann den Button „Empfindlichkeit senden“.",
+          "data": {
+            "sensitivity_value": "Empfindlichkeit"
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "door_guard": {
+      "initiate_flow": {
+        "user": "Türwächter hinzufügen"
+      },
+      "entry_type": "Türwächter",
+      "step": {
+        "new_door_guard": {
+          "title": "Türwächter",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+              "data": {
+                "name": "Name",
+                "lock": "Schloss",
+                "contact": "Türkontakt (optional)",
+                "block_action": "Wenn beim Abschließen die Tür offen ist",
+                "retry_minutes": "Abschließen nachholen bis (Minuten)",
+                "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+                "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+                "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+                "manual_override": "Bei manueller Bedienung des Schlosses",
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+              },
+              "data_description": {
+                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+                "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+                "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+                "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Türwächter meldet.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "menu": {
+          "title": "Türwächter",
+          "description": "Einstellungen und Regeln des Türwächters.",
+          "menu_options": {
+            "general": "Einstellungen",
+            "add_rule": "Regel hinzufügen",
+            "edit_rule": "Regel bearbeiten",
+            "delete_rule": "Regel löschen"
+          }
+        },
+        "general": {
+          "title": "Einstellungen",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+              "data": {
+                "lock": "Schloss",
+                "contact": "Türkontakt (optional)",
+                "block_action": "Wenn beim Abschließen die Tür offen ist",
+                "retry_minutes": "Abschließen nachholen bis (Minuten)",
+                "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
+                "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
+                "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
+                "manual_override": "Bei manueller Bedienung des Schlosses",
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+              },
+              "data_description": {
+                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+                "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
+                "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
+                "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Türwächter meldet.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "edit_rule": {
+          "title": "Regel bearbeiten",
+          "data": {
+            "rule": "Regel"
+          }
+        },
+        "delete_rule": {
+          "title": "Regel löschen",
+          "data": {
+            "rule": "Regel"
+          }
+        },
+        "rule_type": {
+          "title": "Regel",
+          "data": {
+            "action": "Aktion",
+            "trigger": "Auslöser",
+            "enabled": "Aktiv"
+          }
+        },
+        "rule_state": {
+          "title": "Auslöser: Zustand einer Entität",
+          "data": {
+            "entity_id": "Entität",
+            "to_state": "Zielzustand",
+            "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+          },
+          "data_description": {
+            "to_state": "Zustandstext, z. B. home, on, armed_away. Die Regel löst beim Wechsel in diesen Zustand aus."
+          }
+        },
+        "rule_time": {
+          "title": "Auslöser: Uhrzeit",
+          "data": {
+            "time": "Uhrzeit",
+            "weekdays": "Wochentage"
+          }
+        },
+        "rule_door_closed": {
+          "title": "Auslöser: Tür geschlossen",
+          "data": {
+            "delay_seconds": "Abschließen nach (Sekunden)"
+          },
+          "data_description": {
+            "delay_seconds": "Zeit, die die Tür geschlossen sein muss."
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "doorbell": {
+      "initiate_flow": {
+        "user": "Klingel hinzufügen"
+      },
+      "entry_type": "Türklingel",
+      "step": {
+        "new_doorbell": {
+          "title": "Türklingel",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Auslöser und Entprellzeit.",
+              "data": {
+                "name": "Name",
+                "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+                "debounce_seconds": "Sperrzeit"
+              },
+              "data_description": {
+                "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+              }
+            }
+          }
+        },
+        "bell_menu": {
+          "title": "Türklingel",
+          "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
+          "menu_options": {
+            "bell_general": "Einstellungen",
+            "add_profile": "Profil hinzufügen",
+            "edit_profile": "Profil bearbeiten",
+            "delete_profile": "Profil löschen"
+          }
+        },
+        "bell_general": {
+          "title": "Einstellungen",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Auslöser und Entprellzeit.",
+              "data": {
+                "trigger_entity": "Auslöser (Sensor oder Ereignis)",
+                "debounce_seconds": "Sperrzeit"
+              },
+              "data_description": {
+                "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
+                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+              }
+            }
+          }
+        },
+        "edit_profile": {
+          "title": "Profil bearbeiten",
+          "data": {
+            "profile": "Profil"
+          }
+        },
+        "delete_profile": {
+          "title": "Profil löschen",
+          "data": {
+            "profile": "Profil"
+          }
+        },
+        "profile_basic": {
+          "title": "Zeitfenster-Profil",
+          "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
+          "sections": {
+            "timing": {
+              "name": "Zeitfenster",
+              "description": "Wann das Profil gilt.",
+              "data": {
+                "name": "Name",
+                "enabled": "Aktiv",
+                "from": "Von",
+                "to": "Bis",
+                "weekdays": "Wochentage"
+              },
+              "data_description": {
+                "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig."
+              }
+            },
+            "sound": {
+              "name": "Ton",
+              "description": "Optional. Ohne Media Player gibt dieses Profil keinen Ton aus.",
+              "data": {
+                "players": "Media Player",
+                "mode": "Ausgabe",
+                "tts_entity": "TTS-Dienst",
+                "text": "Ansagetext",
+                "media": "Klingelton",
+                "volume": "Lautstärke (0 = unverändert)"
+              },
+              "data_description": {
+                "tts_entity": "Nur bei Ausgabe „Ansage“.",
+                "text": "Nur bei Ausgabe „Ansage“.",
+                "media": "Nur bei Ausgabe „Klingelton“."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigung",
+              "description": "Optional. App-Push dieses Profils.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "message": "Push-Text",
+                "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
+                "clear_after_hours": "Löscht die Meldung per clear_notification."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "pool_pump": {
+      "initiate_flow": {
+        "user": "Pool hinzufügen"
+      },
+      "entry_type": "Pool",
+      "step": {
+        "new_pool_pump": {
+          "title": "Pool hinzufügen",
+          "description": "Einen Pool anlegen und den Schalter der Pumpe wählen.",
+          "data": {
+            "name": "Name",
+            "pump_entity": "Pumpe (Schalter)"
+          }
+        },
+        "pool_menu": {
+          "title": "Poolsteuerung",
+          "description": "Pumpe, Zeitfenster, Trockenlauf-Erkennung und Heizung der Poolsteuerung.",
+          "menu_options": {
+            "pool_general": "Pumpe ändern",
+            "add_window": "Zeitfenster hinzufügen",
+            "edit_window": "Zeitfenster bearbeiten",
+            "delete_window": "Zeitfenster löschen",
+            "dry_run": "Trockenlauferkennung",
+            "heater": "Poolheizung"
+          }
+        },
+        "pool_general": {
+          "title": "Pumpe",
+          "data": {
+            "pump_entity": "Pumpe (Schalter)"
+          }
+        },
+        "edit_window": {
+          "title": "Zeitfenster bearbeiten",
+          "data": {
+            "window": "Zeitfenster"
+          }
+        },
+        "delete_window": {
+          "title": "Zeitfenster löschen",
+          "data": {
+            "window": "Zeitfenster"
+          }
+        },
+        "window_edit": {
+          "title": "Zeitfenster",
+          "description": "Die Pumpe wird zum Beginn ein- und zum Ende ausgeschaltet. Liegt das Ende vor dem Beginn, läuft das Fenster über Mitternacht. Die Wochentage beziehen sich auf den Tag des Beginns.",
+          "data": {
+            "start": "Beginn",
+            "end": "Ende",
+            "days": "Wochentage"
+          }
+        },
+        "dry_run": {
+          "title": "Trockenlauferkennung",
+          "description": "Erkennt eine trocken laufende Pumpe: Die Pumpe ist an und die Leistung bleibt die eingestellte Dauer zwischen unterer und oberer Grenze. Ohne Leistungssensor ist die Funktion aus. Ein Alarm bleibt gehalten, bis er quittiert oder die Pumpe neu gestartet wird.",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Leistungssensor und Grenzen für die Trockenlauf-Erkennung.",
+              "data": {
+                "power_entity": "Leistungssensor (W)",
+                "dry_min_power": "Untere Grenze",
+                "dry_max_power": "Obere Grenze",
+                "dry_duration": "Dauer",
+                "dry_auto_off": "Bei Trockenlauf Pumpe ausschalten und Zeitplan pausieren"
+              },
+              "data_description": {
+                "power_entity": "Ohne Leistungssensor ist die Erkennung aus.",
+                "dry_auto_off": "Der Zeitplan wird erst nach dem Quittieren (Button) wieder aktiviert."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit bei Trockenlauf gemeldet wird.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "heater": {
+          "title": "Poolheizung",
+          "description": "Schaltet die Heizung nach der Temperatur: ab der Einschaltschwelle (oder darüber) ein, bei der Ausschaltschwelle (oder darunter) aus; dazwischen bleibt sie unverändert. Ohne Heizung ist die Funktion aus. Die Pumpe wird dabei nicht berücksichtigt.",
+          "data": {
+            "heater_entity": "Heizung (Schalter)",
+            "temperature_entity": "Temperatursensor",
+            "heater_on_above": "Einschalten ab (°C)",
+            "heater_off_below": "Ausschalten bei (°C)"
+          },
+          "data_description": {
+            "heater_entity": "Leer lassen, um die Heizung nicht zu steuern.",
+            "heater_off_below": "Muss unter der Einschaltschwelle liegen (Hysterese)."
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "knx_sonos": {
+      "initiate_flow": {
+        "user": "KNX/Sonos-Anbindung hinzufügen"
+      },
+      "entry_type": "KNX/Sonos-Anbindung",
+      "step": {
+        "new_knx_sonos": {
+          "title": "KNX/Sonos-Connector",
+          "data": {
+            "name": "Name",
+            "player": "Sonos-Lautsprecher"
+          },
+          "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren."
+        },
+        "knx_menu": {
+          "title": "KNX/Sonos-Connector",
+          "description": "Lautsprecher-Profile sowie Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) je Profil.",
+          "menu_options": {
+            "add_speaker": "Lautsprecher-Profil hinzufügen",
+            "edit_speaker": "Lautsprecher-Profil bearbeiten",
+            "delete_speaker": "Lautsprecher-Profil löschen",
+            "add_command": "Befehl hinzufügen",
+            "edit_command": "Befehl bearbeiten",
+            "delete_command": "Befehl löschen",
+            "add_status": "Rückmeldung hinzufügen",
+            "edit_status": "Rückmeldung bearbeiten",
+            "delete_status": "Rückmeldung löschen"
+          }
+        },
+        "speaker_edit": {
+          "title": "Lautsprecher-Profil",
+          "description": "Ein Profil verbindet einen Sonos-Lautsprecher mit seinen Einstellungen. Befehle und Rückmeldungen gehören je zu einem Profil und haben eigene Gruppenadressen.",
+          "data": {
+            "name": "Name",
+            "enabled": "Aktiv",
+            "player": "Sonos-Lautsprecher",
+            "max_volume": "Maximale Lautstärke",
+            "volume_step": "Schrittweite Lauter/Leiser",
+            "stop_instead_of_pause": "Bei Pause stoppen statt pausieren (z. B. für Radiostreams)"
+          },
+          "data_description": {
+            "max_volume": "Begrenzt jede per KNX gesetzte Lautstärke nach oben.",
+            "volume_step": "Gilt für Lauter, Leiser und relatives Dimmen."
+          }
+        },
+        "edit_speaker": {
+          "title": "Lautsprecher-Profil bearbeiten",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "delete_speaker": {
+          "title": "Lautsprecher-Profil löschen",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "edit_command": {
+          "title": "Befehl bearbeiten",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "delete_command": {
+          "title": "Befehl löschen",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "edit_status": {
+          "title": "Rückmeldung bearbeiten",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "delete_status": {
+          "title": "Rückmeldung löschen",
+          "data": {
+            "item": "Eintrag"
+          }
+        },
+        "command_basic": {
+          "title": "Befehl (KNX an Sonos)",
+          "description": "Wird ausgeführt, wenn ein Schreibtelegramm auf der Gruppenadresse eintrifft.",
+          "data": {
+            "name": "Name",
+            "address": "Gruppenadresse (z. B. 1/2/3)",
+            "dpt": "Datentyp",
+            "action": "Aktion",
+            "profile": "Lautsprecher-Profil"
+          },
+          "data_description": {
+            "dpt": "Relatives Dimmen (3.007) gehört zur Aktion „Lautstärke dimmen“, „Stumm (Wert)“ braucht Schalten (1.001)."
+          }
+        },
+        "command_params": {
+          "title": "Angaben zum Befehl",
+          "data": {
+            "when": "Auslösen bei",
+            "scene": "Szenennummer (1–64)",
+            "volume": "Lautstärke",
+            "favorite": "Sonos-Favorit"
+          },
+          "data_description": {
+            "favorite": "Titel des Favoriten, wie er in der Sonos-App steht."
+          }
+        },
+        "status_edit": {
+          "title": "Rückmeldung (Sonos an KNX)",
+          "description": "Der Wert wird bei jeder Änderung gesendet; Leseanfragen auf der Adresse werden beantwortet.",
+          "data": {
+            "name": "Name",
+            "source": "Quelle",
+            "address": "Gruppenadresse (z. B. 1/2/3)",
+            "idle_text": "Text, wenn nichts wiedergegeben wird",
+            "profile": "Lautsprecher-Profil"
+          },
+          "data_description": {
+            "source": "Wiedergabe, Pause und Stumm werden als 1 Bit (1.001), die Lautstärke als Prozent (5.001) und Titel, Interpret, Album und Quelle als Text (16.001, 14 Zeichen) gesendet.",
+            "idle_text": "Nur für Textquellen."
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "updater": {
+      "initiate_flow": {
+        "user": "Updater hinzufügen"
+      },
+      "entry_type": "Updater",
+      "step": {
+        "new_updater": {
+          "title": "Home Assistant Updater",
+          "data": {
+            "name": "Name",
+            "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+          },
+          "data_description": {
+            "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+          },
+          "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
+        },
+        "upd_menu": {
+          "title": "Home Assistant Updater",
+          "description": "Zeitpläne und Einstellungen des Updaters.",
+          "menu_options": {
+            "upd_general": "Einstellungen",
+            "add_schedule": "Zeitplan hinzufügen",
+            "edit_schedule": "Zeitplan bearbeiten",
+            "delete_schedule": "Zeitplan löschen"
+          }
+        },
+        "upd_general": {
+          "title": "Einstellungen",
+          "data": {
+            "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+          },
+          "data_description": {
+            "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+          }
+        },
+        "edit_schedule": {
+          "title": "Zeitplan bearbeiten",
+          "data": {
+            "schedule": "Zeitplan"
+          }
+        },
+        "delete_schedule": {
+          "title": "Zeitplan löschen",
+          "data": {
+            "schedule": "Zeitplan"
+          }
+        },
+        "schedule_edit": {
+          "title": "Zeitplan",
+          "description": "Zeitpunkt, Aktionen und Benachrichtigung dieses Zeitplans. Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
+          "sections": {
+            "timing": {
+              "name": "Zeitpunkt",
+              "description": "Wann der Zeitplan läuft.",
+              "data": {
+                "name": "Name",
+                "enabled": "Aktiv",
+                "time": "Uhrzeit",
+                "weekdays": "Wochentage",
+                "trigger": "Auslöser",
+                "window_start": "Zeitfenster ab",
+                "window_end": "Zeitfenster bis"
+              },
+              "data_description": {
+                "trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung eines der gewählten Ziele; Uhrzeit und Wochentage werden dann ignoriert.",
+                "time": "Nur bei „Zu einer Uhrzeit“.",
+                "weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "window_start": "Nur bei „Sobald ein Update verfügbar wird“, optional. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt (auch über Mitternacht). Beide Felder leer = jederzeit.",
+                "window_end": "Ende des Zeitfensters (siehe „Zeitfenster ab“)."
+              }
+            },
+            "actions": {
+              "name": "Aktionen",
+              "description": "Was bei diesem Zeitplan geschieht.",
+              "data": {
+                "mode": "Aktion",
+                "components": "Komponenten",
+                "targets": "Einzelne Updates",
+                "backup": "Vor dem Installieren Sicherung anlegen"
+              },
+              "data_description": {
+                "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
+                "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
+                "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit dieser Zeitplan meldet.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "task_planner": {
+      "initiate_flow": {
+        "user": "Aufgabenplaner hinzufügen"
+      },
+      "entry_type": "Aufgabenplaner",
+      "step": {
+        "new_task_planner": {
+          "title": "Aufgabenplaner",
+          "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Name des Aufgabenplaners.",
+              "data": {
+                "name": "Name"
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "tp_menu": {
+          "title": "Aufgabenplaner",
+          "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
+          "menu_options": {
+            "tp_general": "Einstellungen",
+            "add_task": "Aufgabe hinzufügen",
+            "edit_task": "Aufgabe bearbeiten",
+            "delete_task": "Aufgabe löschen"
+          }
+        },
+        "tp_general": {
+          "title": "Einstellungen",
+          "sections": {
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "edit_task": {
+          "title": "Aufgabe bearbeiten",
+          "data": {
+            "task": "Aufgabe"
+          }
+        },
+        "delete_task": {
+          "title": "Aufgabe löschen",
+          "data": {
+            "task": "Aufgabe"
+          }
+        },
+        "task_edit": {
+          "title": "Aufgabe",
+          "description": "Die Aktionen werden ausgeführt, sobald einer der Auslöser (nächster Schritt) eintritt. Meldungen gehen an die in den Einstellungen gewählten Wege.",
+          "data": {
+            "name": "Name",
+            "enabled": "Aufgabe aktiv",
+            "actions": "Aktionen",
+            "notify_start": "Benachrichtigen beim Start",
+            "notify_success": "Benachrichtigen bei Erfolg",
+            "notify_error": "Benachrichtigen bei Fehler"
+          },
+          "data_description": {
+            "actions": "Beliebige Home-Assistant-Aktionen, z. B. Dienstaufrufe, Verzögerungen, Bedingungen oder eine Benachrichtigung. In den Aktionen stehen die Variablen trigger und task zur Verfügung."
+          }
+        },
+        "task_triggers": {
+          "title": "Auslöser",
+          "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
+          "menu_options": {
+            "add_trigger": "Auslöser hinzufügen",
+            "delete_trigger": "Auslöser entfernen",
+            "task_save": "Aufgabe speichern"
+          }
+        },
+        "add_trigger": {
+          "title": "Auslöser hinzufügen",
+          "data": {
+            "type": "Art des Auslösers"
+          }
+        },
+        "delete_trigger": {
+          "title": "Auslöser entfernen",
+          "data": {
+            "trigger": "Auslöser"
+          }
+        },
+        "trigger_weekly": {
+          "title": "Auslöser: Wochentag und Uhrzeit",
+          "data": {
+            "time": "Uhrzeit",
+            "weekdays": "Wochentage"
+          }
+        },
+        "trigger_monthly": {
+          "title": "Auslöser: Monat",
+          "data": {
+            "month_mode": "Tag im Monat",
+            "month_day": "Bestimmter Tag",
+            "time": "Uhrzeit"
+          },
+          "data_description": {
+            "month_day": "Nur bei „Bestimmter Tag“. Hat der Monat weniger Tage, gilt der letzte Tag."
+          }
+        },
+        "trigger_once": {
+          "title": "Auslöser: einmaliger Zeitpunkt",
+          "data": {
+            "at": "Datum und Uhrzeit"
+          }
+        },
+        "trigger_interval": {
+          "title": "Auslöser: Intervall",
+          "data": {
+            "minutes": "Alle … Minuten"
+          },
+          "data_description": {
+            "minutes": "Gezählt ab dem Start des Aufgabenplaners (Home-Assistant-Start oder Neuladen)."
+          }
+        },
+        "trigger_state": {
+          "title": "Auslöser: Entität",
+          "data": {
+            "entity_id": "Entität",
+            "to_state": "Zielzustand",
+            "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+          },
+          "data_description": {
+            "to_state": "Zustandstext, z. B. on, home, open. Leer = jede Zustandsänderung."
+          }
+        },
+        "trigger_threshold": {
+          "title": "Auslöser: Grenzwert",
+          "data": {
+            "entity_id": "Sensor",
+            "above": "Über",
+            "below": "Unter",
+            "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
+          },
+          "data_description": {
+            "above": "Löst aus, wenn der Wert über diesen Wert steigt.",
+            "below": "Löst aus, wenn der Wert unter diesen Wert fällt. Beide Werte gesetzt = Bereich."
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
+    },
+    "alarm_clock": {
+      "initiate_flow": {
+        "user": "Wecker-Eintrag hinzufügen"
+      },
+      "entry_type": "Wecker",
+      "step": {
+        "new_alarm_clock": {
+          "title": "Wecker",
+          "description": "Ein Eintrag enthält mehrere Wecker; diese werden danach unter Konfigurieren angelegt. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
+              "data": {
+                "name": "Name",
+                "workday_sensors": "Werktags-/Feiertagssensoren",
+                "workday_invert": "Sensorwerte umkehren"
+              },
+              "data_description": {
+                "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+                "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "critical": "Als kritische Meldung senden",
+                "message": "Nachrichtentext"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
+                "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
+                "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
+              }
+            }
+          }
+        },
+        "alarm_menu": {
+          "title": "Wecker",
+          "description": "Wecker und Einstellungen.",
+          "menu_options": {
+            "alarm_general": "Einstellungen",
+            "add_alarm": "Wecker hinzufügen",
+            "edit_alarm": "Wecker bearbeiten",
+            "delete_alarm": "Wecker löschen"
+          }
+        },
+        "alarm_general": {
+          "title": "Einstellungen",
+          "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
+              "data": {
+                "workday_sensors": "Werktags-/Feiertagssensoren",
+                "workday_invert": "Sensorwerte umkehren"
+              },
+              "data_description": {
+                "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+                "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Push-Meldung (kritisch) mit den Aktionen „Stoppen“ und „Schlummern“.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "critical": "Als kritische Meldung senden",
+                "message": "Nachrichtentext"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
+                "critical": "Durchbricht „Nicht stören“ und die Stummschaltung (iOS: kritischer Hinweis, Android: Alarm-Kanal). In der Companion-App müssen kritische Hinweise erlaubt sein.",
+                "message": "Die Meldung enthält die Aktionen „Stoppen“ und „Schlummern“."
+              }
+            }
+          }
+        },
+        "edit_alarm": {
+          "title": "Wecker bearbeiten",
+          "data": {
+            "alarm": "Wecker"
+          }
+        },
+        "delete_alarm": {
+          "title": "Wecker löschen",
+          "data": {
+            "alarm": "Wecker"
+          }
+        },
+        "alarm_edit": {
+          "title": "Wecker",
+          "description": "Zur Weckzeit wird die Lautstärke gesetzt und die Audiodatei abgespielt. Beim Stoppen oder Schlummern wird die ursprüngliche Lautstärke wiederhergestellt.",
+          "data": {
+            "name": "Name",
+            "enabled": "Wecker aktiv",
+            "time": "Uhrzeit",
+            "weekdays": "Wochentage",
+            "players": "Media Player",
+            "media": "Audiodatei",
+            "volume": "Lautstärke",
+            "snooze_minutes": "Schlummerzeit",
+            "auto_stop_minutes": "Automatisch stoppen nach (0 = nie)",
+            "only_if_on": "Nur klingeln, wenn an",
+            "skip_if_on": "Nicht klingeln, wenn an"
+          },
+          "data_description": {
+            "media": "Datei oder Stream aus der Medienauswahl von Home Assistant.",
+            "only_if_on": "Nur wenn mindestens einer der gewählten Sensoren an ist (ODER), z. B. Werktagssensor. Ein nicht verfügbarer Sensor zählt als erfüllt. Die Auswahl erscheint nur, wenn in den Einstellungen Sensoren hinterlegt sind.",
+            "skip_if_on": "Nicht, sobald einer der gewählten Sensoren an ist (ODER), z. B. Feiertagssensor.",
+            "snooze_minutes": "Nach dieser Zeit klingelt der Wecker erneut.",
+            "auto_stop_minutes": "Der Wecker wird nach dieser Zeit beendet, wenn niemand reagiert (jeweils pro Klingeln, auch nach dem Schlummern)."
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
+        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
+        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
+        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
+        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
+        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
+        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
+        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
+        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
+        "invalid_address": "Ungültige Gruppenadresse.",
+        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
+        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
+        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
+        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
+        "no_actions": "Mindestens eine Aktion muss definiert sein.",
+        "invalid_datetime": "Ungültiges Datum.",
+        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
+        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
+        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
+        "no_media": "Wähle eine Audiodatei."
+      },
+      "abort": {
+        "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+      }
     }
   }
 }

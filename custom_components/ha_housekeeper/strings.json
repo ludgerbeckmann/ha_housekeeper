@@ -3,12 +3,12 @@
     "step": {
       "user": {
         "title": "Add function",
-        "description": "Which function do you want to set up?",
+        "description": "For which function do you want to create a hub? You set up the first instance right away; more can be added later in the hub.",
         "data": {
           "function_type": "Function"
         }
       },
-      "mailbox": {
+      "new_mailbox": {
         "title": "Mailbox notification",
         "sections": {
           "general": {
@@ -49,7 +49,7 @@
           }
         }
       },
-      "door_guard": {
+      "new_door_guard": {
         "title": "Door guard",
         "sections": {
           "general": {
@@ -92,7 +92,7 @@
           }
         }
       },
-      "doorbell": {
+      "new_doorbell": {
         "title": "Doorbell",
         "sections": {
           "general": {
@@ -110,7 +110,7 @@
           }
         }
       },
-      "pool_pump": {
+      "new_pool_pump": {
         "title": "Add pool",
         "description": "Set up a pool and select the switch that controls the pump.",
         "data": {
@@ -118,7 +118,7 @@
           "pump_entity": "Pump (switch)"
         }
       },
-      "knx_sonos": {
+      "new_knx_sonos": {
         "title": "KNX/Sonos-Connector",
         "data": {
           "name": "Name",
@@ -126,7 +126,7 @@
         },
         "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
       },
-      "updater": {
+      "new_updater": {
         "title": "Home Assistant Updater",
         "data": {
           "name": "Name",
@@ -137,7 +137,7 @@
         },
         "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
       },
-      "task_planner": {
+      "new_task_planner": {
         "title": "Task planner",
         "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here.",
         "sections": {
@@ -165,7 +165,7 @@
           }
         }
       },
-      "alarm_clock": {
+      "new_alarm_clock": {
         "title": "Alarm clock",
         "description": "One entry holds several alarms; they are added afterwards under Configure. The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
         "sections": {
@@ -231,783 +231,8 @@
       "no_media": "Select an audio file."
     },
     "abort": {
-      "already_configured": "This pump is already configured for another pool.",
+      "already_configured": "There is already a hub for this function. Add further instances there with the “Add …” button.",
       "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
-    }
-  },
-  "options": {
-    "step": {
-      "mailbox": {
-        "title": "Mailbox notification",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Sensor, lockout time and automatic reset.",
-            "data": {
-              "vibration_sensor": "Vibration sensor",
-              "debounce_seconds": "Debounce time",
-              "auto_reset_hours": "Reset automatically after (0 = off)",
-              "sensitivity_entity": "Sensitivity entity (optional)"
-            },
-            "data_description": {
-              "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-              "debounce_seconds": "Further vibrations within this time are ignored.",
-              "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what text you are told about mail.",
-            "data": {
-              "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
-              "message": "Message text",
-              "repeat_message": "Text on repeated trigger",
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
-              "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "menu": {
-        "title": "Door guard",
-        "description": "Settings and rules of the door guard.",
-        "menu_options": {
-          "general": "Settings",
-          "add_rule": "Add rule",
-          "edit_rule": "Edit rule",
-          "delete_rule": "Delete rule"
-        }
-      },
-      "general": {
-        "title": "Settings",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Lock, door contact and behaviour of the door guard.",
-            "data": {
-              "lock": "Lock",
-              "contact": "Door contact (optional)",
-              "block_action": "If the door is open when locking",
-              "retry_minutes": "Retry locking for (minutes)",
-              "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
-              "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
-              "verify_seconds": "Verify lock after (seconds, 0 = off)",
-              "manual_override": "When the lock is operated manually",
-              "manual_pause_minutes": "Pause automation for (minutes)"
-            },
-            "data_description": {
-              "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
-              "block_action": "Only notify, or lock automatically once the door is closed.",
-              "retry_minutes": "Only applies to \"Lock after closing\".",
-              "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-              "manual_pause_minutes": "Only applies to \"Pause automation\"."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what the door guard reports.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "edit_rule": {
-        "title": "Edit rule",
-        "data": {
-          "rule": "Rule"
-        }
-      },
-      "delete_rule": {
-        "title": "Delete rule",
-        "data": {
-          "rule": "Rule"
-        }
-      },
-      "rule_type": {
-        "title": "Rule",
-        "data": {
-          "action": "Action",
-          "trigger": "Trigger",
-          "enabled": "Enabled"
-        }
-      },
-      "rule_state": {
-        "title": "Trigger: entity state",
-        "data": {
-          "entity_id": "Entity",
-          "to_state": "Target state",
-          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
-        },
-        "data_description": {
-          "to_state": "State text, e.g. home, on, armed_away. The rule fires on the change into this state."
-        }
-      },
-      "rule_time": {
-        "title": "Trigger: time",
-        "data": {
-          "time": "Time",
-          "weekdays": "Weekdays"
-        }
-      },
-      "rule_door_closed": {
-        "title": "Trigger: door closed",
-        "data": {
-          "delay_seconds": "Lock after (seconds)"
-        },
-        "data_description": {
-          "delay_seconds": "How long the door has to stay closed."
-        }
-      },
-      "bell_menu": {
-        "title": "Doorbell",
-        "description": "Settings and time window profiles of the doorbell.",
-        "menu_options": {
-          "bell_general": "Settings",
-          "add_profile": "Add profile",
-          "edit_profile": "Edit profile",
-          "delete_profile": "Delete profile"
-        }
-      },
-      "bell_general": {
-        "title": "Settings",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Trigger and debounce time.",
-            "data": {
-              "trigger_entity": "Trigger (sensor or event)",
-              "debounce_seconds": "Lockout time"
-            },
-            "data_description": {
-              "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-              "debounce_seconds": "Further rings within this time are ignored."
-            }
-          }
-        }
-      },
-      "edit_profile": {
-        "title": "Edit profile",
-        "data": {
-          "profile": "Profile"
-        }
-      },
-      "delete_profile": {
-        "title": "Delete profile",
-        "data": {
-          "profile": "Profile"
-        }
-      },
-      "profile_basic": {
-        "title": "Time window profile",
-        "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
-        "sections": {
-          "timing": {
-            "name": "Time window",
-            "description": "When the profile applies.",
-            "data": {
-              "name": "Name",
-              "enabled": "Enabled",
-              "from": "From",
-              "to": "To",
-              "weekdays": "Weekdays"
-            },
-            "data_description": {
-              "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day."
-            }
-          },
-          "sound": {
-            "name": "Sound",
-            "description": "Optional. Without media players this profile plays no sound.",
-            "data": {
-              "players": "Media Player",
-              "mode": "Output",
-              "tts_entity": "TTS service",
-              "text": "Announcement text",
-              "media": "Ringtone",
-              "volume": "Volume (0 = unchanged)"
-            },
-            "data_description": {
-              "tts_entity": "Only for the output “Announcement”.",
-              "text": "Only for the output “Announcement”.",
-              "media": "Only for the output “Ringtone”."
-            }
-          },
-          "notifications": {
-            "name": "Notification",
-            "description": "Optional. App push of this profile.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "message": "Push text",
-              "clear_after_hours": "Clear push after X hours (0 = never)"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
-              "clear_after_hours": "Removes the notification via clear_notification."
-            }
-          }
-        }
-      },
-      "pool_menu": {
-        "title": "Pool control",
-        "description": "Pump, time windows, dry-run detection and heater of the pool control.",
-        "menu_options": {
-          "pool_general": "Change pump",
-          "add_window": "Add time window",
-          "edit_window": "Edit time window",
-          "delete_window": "Delete time window",
-          "dry_run": "Dry-run detection",
-          "heater": "Pool heater"
-        }
-      },
-      "pool_general": {
-        "title": "Pump",
-        "data": {
-          "pump_entity": "Pump (switch)"
-        }
-      },
-      "edit_window": {
-        "title": "Edit time window",
-        "data": {
-          "window": "Time window"
-        }
-      },
-      "delete_window": {
-        "title": "Delete time window",
-        "data": {
-          "window": "Time window"
-        }
-      },
-      "window_edit": {
-        "title": "Time window",
-        "description": "The pump is switched on at the start and off at the end. If the end is earlier than the start, the window runs past midnight. The days refer to the day the window starts.",
-        "data": {
-          "start": "Start",
-          "end": "End",
-          "days": "Days"
-        }
-      },
-      "dry_run": {
-        "title": "Dry-run detection",
-        "description": "Detects a pump running dry: the pump is on and the power stays between the lower and upper limit for the set duration. Without a power sensor the feature is off. An alarm stays until acknowledged or the pump is restarted.",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Power sensor and limits for dry-run detection.",
-            "data": {
-              "power_entity": "Power sensor (W)",
-              "dry_min_power": "Lower limit",
-              "dry_max_power": "Upper limit",
-              "dry_duration": "Duration",
-              "dry_auto_off": "Switch the pump off on dry run and pause the schedule"
-            },
-            "data_description": {
-              "power_entity": "Without a power sensor the detection is off.",
-              "dry_auto_off": "The schedule is only re-enabled after acknowledging (button)."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what a dry run is reported.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "heater": {
-        "title": "Pool heater",
-        "description": "Switches the heater by temperature: on at the switch-on threshold (or above), off at the switch-off threshold (or below); in between it stays as it is. Without a heater the function is off. The pump is not taken into account.",
-        "data": {
-          "heater_entity": "Heater (switch)",
-          "temperature_entity": "Temperature sensor",
-          "heater_on_above": "Switch on at or above (°C)",
-          "heater_off_below": "Switch off at or below (°C)"
-        },
-        "data_description": {
-          "heater_entity": "Leave empty to not control a heater.",
-          "heater_off_below": "Must be below the switch-on threshold (hysteresis)."
-        }
-      },
-      "knx_menu": {
-        "title": "KNX/Sonos-Connector",
-        "description": "Speaker profiles plus commands (KNX to Sonos) and status feedback (Sonos to KNX) per profile.",
-        "menu_options": {
-          "add_speaker": "Add speaker profile",
-          "edit_speaker": "Edit speaker profile",
-          "delete_speaker": "Delete speaker profile",
-          "add_command": "Add command",
-          "edit_command": "Edit command",
-          "delete_command": "Delete command",
-          "add_status": "Add status feedback",
-          "edit_status": "Edit status feedback",
-          "delete_status": "Delete status feedback"
-        }
-      },
-      "speaker_edit": {
-        "title": "Speaker profile",
-        "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
-        "data": {
-          "name": "Name",
-          "enabled": "Enabled",
-          "player": "Sonos speaker",
-          "max_volume": "Maximum volume",
-          "volume_step": "Volume step size",
-          "stop_instead_of_pause": "Stop instead of pause (e.g. for radio streams)"
-        },
-        "data_description": {
-          "max_volume": "Caps every volume set via KNX.",
-          "volume_step": "Applies to volume up, volume down and relative dimming."
-        }
-      },
-      "edit_speaker": {
-        "title": "Edit speaker profile",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "delete_speaker": {
-        "title": "Delete speaker profile",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "edit_command": {
-        "title": "Edit command",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "delete_command": {
-        "title": "Delete command",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "edit_status": {
-        "title": "Edit status feedback",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "delete_status": {
-        "title": "Delete status feedback",
-        "data": {
-          "item": "Entry"
-        }
-      },
-      "command_basic": {
-        "title": "Command (KNX to Sonos)",
-        "description": "Runs when a write telegram arrives on the group address.",
-        "data": {
-          "name": "Name",
-          "address": "Group address (e.g. 1/2/3)",
-          "dpt": "Data type",
-          "action": "Action",
-          "profile": "Speaker profile"
-        },
-        "data_description": {
-          "dpt": "Relative dimming (3.007) belongs to the action \"Dim volume\", \"Mute (value)\" needs switching (1.001)."
-        }
-      },
-      "command_params": {
-        "title": "Command details",
-        "data": {
-          "when": "Trigger on",
-          "scene": "Scene number (1-64)",
-          "volume": "Volume",
-          "favorite": "Sonos favorite"
-        },
-        "data_description": {
-          "favorite": "Title of the favorite as shown in the Sonos app."
-        }
-      },
-      "status_edit": {
-        "title": "Status feedback (Sonos to KNX)",
-        "description": "The value is sent on every change; read requests on the address are answered.",
-        "data": {
-          "name": "Name",
-          "source": "Source",
-          "address": "Group address (e.g. 1/2/3)",
-          "idle_text": "Text when nothing is playing",
-          "profile": "Speaker profile"
-        },
-        "data_description": {
-          "source": "Playing, paused and muted are sent as 1 bit (1.001), volume as percent (5.001) and title, artist, album and source as text (16.001, 14 characters).",
-          "idle_text": "Text sources only."
-        }
-      },
-      "upd_menu": {
-        "title": "Home Assistant Updater",
-        "description": "Schedules and settings of the updater.",
-        "menu_options": {
-          "upd_general": "Settings",
-          "add_schedule": "Add schedule",
-          "edit_schedule": "Edit schedule",
-          "delete_schedule": "Delete schedule"
-        }
-      },
-      "upd_general": {
-        "title": "Settings",
-        "data": {
-          "timeout_minutes": "Time limit per update (minutes)"
-        },
-        "data_description": {
-          "timeout_minutes": "After this time an update counts as failed and the run continues."
-        }
-      },
-      "edit_schedule": {
-        "title": "Edit schedule",
-        "data": {
-          "schedule": "Schedule"
-        }
-      },
-      "delete_schedule": {
-        "title": "Delete schedule",
-        "data": {
-          "schedule": "Schedule"
-        }
-      },
-      "schedule_edit": {
-        "title": "Schedule",
-        "description": "Time, actions and notification of this schedule. At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
-        "sections": {
-          "timing": {
-            "name": "Time",
-            "description": "When the schedule runs.",
-            "data": {
-              "name": "Name",
-              "enabled": "Enabled",
-              "time": "Time",
-              "weekdays": "Weekdays",
-              "trigger": "Trigger",
-              "window_start": "Window from",
-              "window_end": "Window until"
-            },
-            "data_description": {
-              "trigger": "“At a set time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update is reported for one of the selected targets; time and weekdays are then ignored.",
-              "time": "Only for “At a set time”.",
-              "weekdays": "Only for “At a set time”.",
-              "window_start": "Only for “As soon as an update becomes available”, optional. Outside the window the run waits and is made up when it opens (also across midnight). Both fields empty = any time.",
-              "window_end": "End of the window (see “Window from”)."
-            }
-          },
-          "actions": {
-            "name": "Actions",
-            "description": "What this schedule does.",
-            "data": {
-              "mode": "Action",
-              "components": "Components",
-              "targets": "Individual updates",
-              "backup": "Create a backup before installing"
-            },
-            "data_description": {
-              "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
-              "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
-              "backup": "Only for updates that support a backup."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what this schedule reports.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "tp_menu": {
-        "title": "Task planner",
-        "description": "Tasks and settings of the task planner.",
-        "menu_options": {
-          "tp_general": "Settings",
-          "add_task": "Add task",
-          "edit_task": "Edit task",
-          "delete_task": "Delete task"
-        }
-      },
-      "tp_general": {
-        "title": "Settings",
-        "sections": {
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "edit_task": {
-        "title": "Edit task",
-        "data": {
-          "task": "Task"
-        }
-      },
-      "delete_task": {
-        "title": "Delete task",
-        "data": {
-          "task": "Task"
-        }
-      },
-      "task_edit": {
-        "title": "Task",
-        "description": "The actions run as soon as one of the triggers (next step) occurs. Messages go to the channels selected in the settings.",
-        "data": {
-          "name": "Name",
-          "enabled": "Task enabled",
-          "actions": "Actions",
-          "notify_start": "Notify on start",
-          "notify_success": "Notify on success",
-          "notify_error": "Notify on error"
-        },
-        "data_description": {
-          "actions": "Any Home Assistant actions, e.g. service calls, delays, conditions or a notification. The variables trigger and task are available in the actions."
-        }
-      },
-      "task_triggers": {
-        "title": "Triggers",
-        "description": "Task \"{task}\". As soon as one of these triggers occurs, the task runs:\n{triggers}",
-        "menu_options": {
-          "add_trigger": "Add trigger",
-          "delete_trigger": "Remove trigger",
-          "task_save": "Save task"
-        }
-      },
-      "add_trigger": {
-        "title": "Add trigger",
-        "data": {
-          "type": "Type of trigger"
-        }
-      },
-      "delete_trigger": {
-        "title": "Remove trigger",
-        "data": {
-          "trigger": "Trigger"
-        }
-      },
-      "trigger_weekly": {
-        "title": "Trigger: weekday and time",
-        "data": {
-          "time": "Time",
-          "weekdays": "Weekdays"
-        }
-      },
-      "trigger_monthly": {
-        "title": "Trigger: month",
-        "data": {
-          "month_mode": "Day of the month",
-          "month_day": "Specific day",
-          "time": "Time"
-        },
-        "data_description": {
-          "month_day": "Only for \"Specific day\". If the month is shorter, the last day is used."
-        }
-      },
-      "trigger_once": {
-        "title": "Trigger: one-time",
-        "data": {
-          "at": "Date and time"
-        }
-      },
-      "trigger_interval": {
-        "title": "Trigger: interval",
-        "data": {
-          "minutes": "Every … minutes"
-        },
-        "data_description": {
-          "minutes": "Counted from the start of the task planner (Home Assistant start or reload)."
-        }
-      },
-      "trigger_state": {
-        "title": "Trigger: entity",
-        "data": {
-          "entity_id": "Entity",
-          "to_state": "Target state",
-          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
-        },
-        "data_description": {
-          "to_state": "State text, e.g. on, home, open. Empty = any state change."
-        }
-      },
-      "trigger_threshold": {
-        "title": "Trigger: threshold",
-        "data": {
-          "entity_id": "Sensor",
-          "above": "Above",
-          "below": "Below",
-          "for_minutes": "Minimum duration (minutes, 0 = immediately)"
-        },
-        "data_description": {
-          "above": "Fires when the value rises above this value.",
-          "below": "Fires when the value falls below this value. Both set = range."
-        }
-      },
-      "alarm_menu": {
-        "title": "Alarm clock",
-        "description": "Alarms and settings.",
-        "menu_options": {
-          "alarm_general": "Settings",
-          "add_alarm": "Add alarm",
-          "edit_alarm": "Edit alarm",
-          "delete_alarm": "Delete alarm"
-        }
-      },
-      "alarm_general": {
-        "title": "Settings",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name of the entry and workday/holiday sensors for the alarms.",
-            "data": {
-              "workday_sensors": "Workday/holiday sensors",
-              "workday_invert": "Invert sensor values"
-            },
-            "data_description": {
-              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
-              "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "critical": "Send as critical notification",
-              "message": "Message text"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
-              "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
-              "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
-            }
-          }
-        }
-      },
-      "edit_alarm": {
-        "title": "Edit alarm",
-        "data": {
-          "alarm": "Alarm"
-        }
-      },
-      "delete_alarm": {
-        "title": "Delete alarm",
-        "data": {
-          "alarm": "Alarm"
-        }
-      },
-      "alarm_edit": {
-        "title": "Alarm",
-        "description": "At the alarm time the volume is set and the audio file is played. On stop or snooze the original volume is restored.",
-        "data": {
-          "name": "Name",
-          "enabled": "Alarm enabled",
-          "time": "Time",
-          "weekdays": "Weekdays",
-          "players": "Media players",
-          "media": "Audio file",
-          "volume": "Volume",
-          "snooze_minutes": "Snooze time",
-          "auto_stop_minutes": "Stop automatically after (0 = never)",
-          "only_if_on": "Only ring if on",
-          "skip_if_on": "Do not ring if on"
-        },
-        "data_description": {
-          "media": "File or stream from the Home Assistant media browser.",
-          "only_if_on": "Only if at least one of the selected sensors is on (OR), e.g. workday sensor. An unavailable sensor counts as met. The selection only appears if sensors are set in the settings.",
-          "skip_if_on": "Not as soon as one of the selected sensors is on (OR), e.g. holiday sensor.",
-          "snooze_minutes": "The alarm rings again after this time.",
-          "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
-        }
-      },
-      "mailbox_sensitivity": {
-        "title": "Sensitivity",
-        "description": "Value for {entity}. It is not sent automatically: wake the sensor on the device, then press the \"Send sensitivity\" button.",
-        "data": {
-          "sensitivity_value": "Sensitivity"
-        }
-      },
-      "mailbox_menu": {
-        "title": "Mailbox",
-        "description": "Settings of the mailbox. The sensitivity is only set here, after an entity has been stored for it.",
-        "menu_options": {
-          "mailbox": "Settings",
-          "mailbox_sensitivity": "Set sensitivity"
-        }
-      }
-    },
-    "error": {
-      "no_method": "At least one notification method with a target must be enabled.",
-      "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
-      "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
-      "no_contact": "This trigger needs a door contact in the settings.",
-      "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
-      "no_weekday": "Select at least one weekday.",
-      "no_targets": "Select at least one target for app push.",
-      "no_output": "The profile needs at least one media player or app push.",
-      "no_tts": "Announcement needs a TTS service and a text.",
-      "no_ringtone": "Select an audio file for the ringtone.",
-      "no_temperature": "Select a temperature sensor for the heater.",
-      "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
-      "too_many_windows": "Maximum number of time windows reached.",
-      "start_equals_end": "Start and end must differ.",
-      "min_ge_max": "The lower limit must be below the upper limit.",
-      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
-      "last_profile": "The last profile cannot be deleted.",
-      "invalid_address": "Invalid group address.",
-      "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
-      "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
-      "no_update_selected": "Select at least one update.",
-      "invalid_window": "The window needs a start and an end, and they must differ.",
-      "no_actions": "Define at least one action.",
-      "invalid_datetime": "Invalid date.",
-      "in_past": "The time is in the past.",
-      "for_needs_state": "A minimum duration needs a target state.",
-      "no_threshold": "Set at least \"Above\" or \"Below\".",
-      "no_media": "Select an audio file."
     }
   },
   "selector": {
@@ -1290,6 +515,1280 @@
     "device_missing": {
       "title": "Push target missing: {entity}",
       "description": "The function \"{entry}\" ({function}) sends push notifications to a device ({entity}) that no longer exists (e.g. the companion app was removed). Select an existing device in the settings. This notice disappears by itself as soon as the target is valid again."
+    },
+    "legacy_entry": {
+      "title": "Old format: {entry}",
+      "description": "The entry \"{entry}\" comes from an older version in which every instance was its own entry and is no longer loaded. Delete it and set the function up again; there is now one hub per function and instances are subentries."
+    }
+  },
+  "config_subentries": {
+    "mailbox": {
+      "initiate_flow": {
+        "user": "Add mailbox"
+      },
+      "entry_type": "Mailbox",
+      "step": {
+        "new_mailbox": {
+          "title": "Mailbox notification",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Sensor, lockout time and automatic reset.",
+              "data": {
+                "name": "Name",
+                "vibration_sensor": "Vibration sensor",
+                "debounce_seconds": "Debounce time",
+                "auto_reset_hours": "Reset automatically after (0 = off)",
+                "sensitivity_entity": "Sensitivity entity (optional)"
+              },
+              "data_description": {
+                "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
+                "debounce_seconds": "Further vibrations within this time are ignored.",
+                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what text you are told about mail.",
+              "data": {
+                "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+                "message": "Message text",
+                "repeat_message": "Text on repeated trigger",
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+                "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "mailbox": {
+          "title": "Mailbox notification",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Sensor, lockout time and automatic reset.",
+              "data": {
+                "vibration_sensor": "Vibration sensor",
+                "debounce_seconds": "Debounce time",
+                "auto_reset_hours": "Reset automatically after (0 = off)",
+                "sensitivity_entity": "Sensitivity entity (optional)"
+              },
+              "data_description": {
+                "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
+                "debounce_seconds": "Further vibrations within this time are ignored.",
+                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what text you are told about mail.",
+              "data": {
+                "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
+                "message": "Message text",
+                "repeat_message": "Text on repeated trigger",
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
+                "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "mailbox_menu": {
+          "title": "Mailbox",
+          "description": "Settings of the mailbox. The sensitivity is only set here, after an entity has been stored for it.",
+          "menu_options": {
+            "mailbox": "Settings",
+            "mailbox_sensitivity": "Set sensitivity"
+          }
+        },
+        "mailbox_sensitivity": {
+          "title": "Sensitivity",
+          "description": "Value for {entity}. It is not sent automatically: wake the sensor on the device, then press the \"Send sensitivity\" button.",
+          "data": {
+            "sensitivity_value": "Sensitivity"
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "door_guard": {
+      "initiate_flow": {
+        "user": "Add door guard"
+      },
+      "entry_type": "Door guard",
+      "step": {
+        "new_door_guard": {
+          "title": "Door guard",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Lock, door contact and behaviour of the door guard.",
+              "data": {
+                "name": "Name",
+                "lock": "Lock",
+                "contact": "Door contact (optional)",
+                "block_action": "If the door is open when locking",
+                "retry_minutes": "Retry locking for (minutes)",
+                "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+                "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+                "verify_seconds": "Verify lock after (seconds, 0 = off)",
+                "manual_override": "When the lock is operated manually",
+                "manual_pause_minutes": "Pause automation for (minutes)"
+              },
+              "data_description": {
+                "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+                "block_action": "Only notify, or lock automatically once the door is closed.",
+                "retry_minutes": "Only applies to \"Lock after closing\".",
+                "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+                "manual_pause_minutes": "Only applies to \"Pause automation\"."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the door guard reports.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "menu": {
+          "title": "Door guard",
+          "description": "Settings and rules of the door guard.",
+          "menu_options": {
+            "general": "Settings",
+            "add_rule": "Add rule",
+            "edit_rule": "Edit rule",
+            "delete_rule": "Delete rule"
+          }
+        },
+        "general": {
+          "title": "Settings",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Lock, door contact and behaviour of the door guard.",
+              "data": {
+                "lock": "Lock",
+                "contact": "Door contact (optional)",
+                "block_action": "If the door is open when locking",
+                "retry_minutes": "Retry locking for (minutes)",
+                "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
+                "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
+                "verify_seconds": "Verify lock after (seconds, 0 = off)",
+                "manual_override": "When the lock is operated manually",
+                "manual_pause_minutes": "Pause automation for (minutes)"
+              },
+              "data_description": {
+                "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
+                "block_action": "Only notify, or lock automatically once the door is closed.",
+                "retry_minutes": "Only applies to \"Lock after closing\".",
+                "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
+                "manual_pause_minutes": "Only applies to \"Pause automation\"."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the door guard reports.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "edit_rule": {
+          "title": "Edit rule",
+          "data": {
+            "rule": "Rule"
+          }
+        },
+        "delete_rule": {
+          "title": "Delete rule",
+          "data": {
+            "rule": "Rule"
+          }
+        },
+        "rule_type": {
+          "title": "Rule",
+          "data": {
+            "action": "Action",
+            "trigger": "Trigger",
+            "enabled": "Enabled"
+          }
+        },
+        "rule_state": {
+          "title": "Trigger: entity state",
+          "data": {
+            "entity_id": "Entity",
+            "to_state": "Target state",
+            "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+          },
+          "data_description": {
+            "to_state": "State text, e.g. home, on, armed_away. The rule fires on the change into this state."
+          }
+        },
+        "rule_time": {
+          "title": "Trigger: time",
+          "data": {
+            "time": "Time",
+            "weekdays": "Weekdays"
+          }
+        },
+        "rule_door_closed": {
+          "title": "Trigger: door closed",
+          "data": {
+            "delay_seconds": "Lock after (seconds)"
+          },
+          "data_description": {
+            "delay_seconds": "How long the door has to stay closed."
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "doorbell": {
+      "initiate_flow": {
+        "user": "Add doorbell"
+      },
+      "entry_type": "Doorbell",
+      "step": {
+        "new_doorbell": {
+          "title": "Doorbell",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Trigger and debounce time.",
+              "data": {
+                "name": "Name",
+                "trigger_entity": "Trigger (sensor or event)",
+                "debounce_seconds": "Lockout time"
+              },
+              "data_description": {
+                "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+                "debounce_seconds": "Further rings within this time are ignored."
+              }
+            }
+          }
+        },
+        "bell_menu": {
+          "title": "Doorbell",
+          "description": "Settings and time window profiles of the doorbell.",
+          "menu_options": {
+            "bell_general": "Settings",
+            "add_profile": "Add profile",
+            "edit_profile": "Edit profile",
+            "delete_profile": "Delete profile"
+          }
+        },
+        "bell_general": {
+          "title": "Settings",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Trigger and debounce time.",
+              "data": {
+                "trigger_entity": "Trigger (sensor or event)",
+                "debounce_seconds": "Lockout time"
+              },
+              "data_description": {
+                "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
+                "debounce_seconds": "Further rings within this time are ignored."
+              }
+            }
+          }
+        },
+        "edit_profile": {
+          "title": "Edit profile",
+          "data": {
+            "profile": "Profile"
+          }
+        },
+        "delete_profile": {
+          "title": "Delete profile",
+          "data": {
+            "profile": "Profile"
+          }
+        },
+        "profile_basic": {
+          "title": "Time window profile",
+          "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
+          "sections": {
+            "timing": {
+              "name": "Time window",
+              "description": "When the profile applies.",
+              "data": {
+                "name": "Name",
+                "enabled": "Enabled",
+                "from": "From",
+                "to": "To",
+                "weekdays": "Weekdays"
+              },
+              "data_description": {
+                "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day."
+              }
+            },
+            "sound": {
+              "name": "Sound",
+              "description": "Optional. Without media players this profile plays no sound.",
+              "data": {
+                "players": "Media Player",
+                "mode": "Output",
+                "tts_entity": "TTS service",
+                "text": "Announcement text",
+                "media": "Ringtone",
+                "volume": "Volume (0 = unchanged)"
+              },
+              "data_description": {
+                "tts_entity": "Only for the output “Announcement”.",
+                "text": "Only for the output “Announcement”.",
+                "media": "Only for the output “Ringtone”."
+              }
+            },
+            "notifications": {
+              "name": "Notification",
+              "description": "Optional. App push of this profile.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "message": "Push text",
+                "clear_after_hours": "Clear push after X hours (0 = never)"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
+                "clear_after_hours": "Removes the notification via clear_notification."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "pool_pump": {
+      "initiate_flow": {
+        "user": "Add pool"
+      },
+      "entry_type": "Pool",
+      "step": {
+        "new_pool_pump": {
+          "title": "Add pool",
+          "description": "Set up a pool and select the switch that controls the pump.",
+          "data": {
+            "name": "Name",
+            "pump_entity": "Pump (switch)"
+          }
+        },
+        "pool_menu": {
+          "title": "Pool control",
+          "description": "Pump, time windows, dry-run detection and heater of the pool control.",
+          "menu_options": {
+            "pool_general": "Change pump",
+            "add_window": "Add time window",
+            "edit_window": "Edit time window",
+            "delete_window": "Delete time window",
+            "dry_run": "Dry-run detection",
+            "heater": "Pool heater"
+          }
+        },
+        "pool_general": {
+          "title": "Pump",
+          "data": {
+            "pump_entity": "Pump (switch)"
+          }
+        },
+        "edit_window": {
+          "title": "Edit time window",
+          "data": {
+            "window": "Time window"
+          }
+        },
+        "delete_window": {
+          "title": "Delete time window",
+          "data": {
+            "window": "Time window"
+          }
+        },
+        "window_edit": {
+          "title": "Time window",
+          "description": "The pump is switched on at the start and off at the end. If the end is earlier than the start, the window runs past midnight. The days refer to the day the window starts.",
+          "data": {
+            "start": "Start",
+            "end": "End",
+            "days": "Days"
+          }
+        },
+        "dry_run": {
+          "title": "Dry-run detection",
+          "description": "Detects a pump running dry: the pump is on and the power stays between the lower and upper limit for the set duration. Without a power sensor the feature is off. An alarm stays until acknowledged or the pump is restarted.",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Power sensor and limits for dry-run detection.",
+              "data": {
+                "power_entity": "Power sensor (W)",
+                "dry_min_power": "Lower limit",
+                "dry_max_power": "Upper limit",
+                "dry_duration": "Duration",
+                "dry_auto_off": "Switch the pump off on dry run and pause the schedule"
+              },
+              "data_description": {
+                "power_entity": "Without a power sensor the detection is off.",
+                "dry_auto_off": "The schedule is only re-enabled after acknowledging (button)."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what a dry run is reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "heater": {
+          "title": "Pool heater",
+          "description": "Switches the heater by temperature: on at the switch-on threshold (or above), off at the switch-off threshold (or below); in between it stays as it is. Without a heater the function is off. The pump is not taken into account.",
+          "data": {
+            "heater_entity": "Heater (switch)",
+            "temperature_entity": "Temperature sensor",
+            "heater_on_above": "Switch on at or above (°C)",
+            "heater_off_below": "Switch off at or below (°C)"
+          },
+          "data_description": {
+            "heater_entity": "Leave empty to not control a heater.",
+            "heater_off_below": "Must be below the switch-on threshold (hysteresis)."
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "knx_sonos": {
+      "initiate_flow": {
+        "user": "Add KNX/Sonos connection"
+      },
+      "entry_type": "KNX/Sonos connection",
+      "step": {
+        "new_knx_sonos": {
+          "title": "KNX/Sonos-Connector",
+          "data": {
+            "name": "Name",
+            "player": "Sonos speaker"
+          },
+          "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
+        },
+        "knx_menu": {
+          "title": "KNX/Sonos-Connector",
+          "description": "Speaker profiles plus commands (KNX to Sonos) and status feedback (Sonos to KNX) per profile.",
+          "menu_options": {
+            "add_speaker": "Add speaker profile",
+            "edit_speaker": "Edit speaker profile",
+            "delete_speaker": "Delete speaker profile",
+            "add_command": "Add command",
+            "edit_command": "Edit command",
+            "delete_command": "Delete command",
+            "add_status": "Add status feedback",
+            "edit_status": "Edit status feedback",
+            "delete_status": "Delete status feedback"
+          }
+        },
+        "speaker_edit": {
+          "title": "Speaker profile",
+          "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
+          "data": {
+            "name": "Name",
+            "enabled": "Enabled",
+            "player": "Sonos speaker",
+            "max_volume": "Maximum volume",
+            "volume_step": "Volume step size",
+            "stop_instead_of_pause": "Stop instead of pause (e.g. for radio streams)"
+          },
+          "data_description": {
+            "max_volume": "Caps every volume set via KNX.",
+            "volume_step": "Applies to volume up, volume down and relative dimming."
+          }
+        },
+        "edit_speaker": {
+          "title": "Edit speaker profile",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "delete_speaker": {
+          "title": "Delete speaker profile",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "edit_command": {
+          "title": "Edit command",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "delete_command": {
+          "title": "Delete command",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "edit_status": {
+          "title": "Edit status feedback",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "delete_status": {
+          "title": "Delete status feedback",
+          "data": {
+            "item": "Entry"
+          }
+        },
+        "command_basic": {
+          "title": "Command (KNX to Sonos)",
+          "description": "Runs when a write telegram arrives on the group address.",
+          "data": {
+            "name": "Name",
+            "address": "Group address (e.g. 1/2/3)",
+            "dpt": "Data type",
+            "action": "Action",
+            "profile": "Speaker profile"
+          },
+          "data_description": {
+            "dpt": "Relative dimming (3.007) belongs to the action \"Dim volume\", \"Mute (value)\" needs switching (1.001)."
+          }
+        },
+        "command_params": {
+          "title": "Command details",
+          "data": {
+            "when": "Trigger on",
+            "scene": "Scene number (1-64)",
+            "volume": "Volume",
+            "favorite": "Sonos favorite"
+          },
+          "data_description": {
+            "favorite": "Title of the favorite as shown in the Sonos app."
+          }
+        },
+        "status_edit": {
+          "title": "Status feedback (Sonos to KNX)",
+          "description": "The value is sent on every change; read requests on the address are answered.",
+          "data": {
+            "name": "Name",
+            "source": "Source",
+            "address": "Group address (e.g. 1/2/3)",
+            "idle_text": "Text when nothing is playing",
+            "profile": "Speaker profile"
+          },
+          "data_description": {
+            "source": "Playing, paused and muted are sent as 1 bit (1.001), volume as percent (5.001) and title, artist, album and source as text (16.001, 14 characters).",
+            "idle_text": "Text sources only."
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "updater": {
+      "initiate_flow": {
+        "user": "Add updater"
+      },
+      "entry_type": "Updater",
+      "step": {
+        "new_updater": {
+          "title": "Home Assistant Updater",
+          "data": {
+            "name": "Name",
+            "timeout_minutes": "Time limit per update (minutes)"
+          },
+          "data_description": {
+            "timeout_minutes": "After this time an update counts as failed and the run continues."
+          },
+          "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
+        },
+        "upd_menu": {
+          "title": "Home Assistant Updater",
+          "description": "Schedules and settings of the updater.",
+          "menu_options": {
+            "upd_general": "Settings",
+            "add_schedule": "Add schedule",
+            "edit_schedule": "Edit schedule",
+            "delete_schedule": "Delete schedule"
+          }
+        },
+        "upd_general": {
+          "title": "Settings",
+          "data": {
+            "timeout_minutes": "Time limit per update (minutes)"
+          },
+          "data_description": {
+            "timeout_minutes": "After this time an update counts as failed and the run continues."
+          }
+        },
+        "edit_schedule": {
+          "title": "Edit schedule",
+          "data": {
+            "schedule": "Schedule"
+          }
+        },
+        "delete_schedule": {
+          "title": "Delete schedule",
+          "data": {
+            "schedule": "Schedule"
+          }
+        },
+        "schedule_edit": {
+          "title": "Schedule",
+          "description": "Time, actions and notification of this schedule. At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
+          "sections": {
+            "timing": {
+              "name": "Time",
+              "description": "When the schedule runs.",
+              "data": {
+                "name": "Name",
+                "enabled": "Enabled",
+                "time": "Time",
+                "weekdays": "Weekdays",
+                "trigger": "Trigger",
+                "window_start": "Window from",
+                "window_end": "Window until"
+              },
+              "data_description": {
+                "trigger": "“At a set time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update is reported for one of the selected targets; time and weekdays are then ignored.",
+                "time": "Only for “At a set time”.",
+                "weekdays": "Only for “At a set time”.",
+                "window_start": "Only for “As soon as an update becomes available”, optional. Outside the window the run waits and is made up when it opens (also across midnight). Both fields empty = any time.",
+                "window_end": "End of the window (see “Window from”)."
+              }
+            },
+            "actions": {
+              "name": "Actions",
+              "description": "What this schedule does.",
+              "data": {
+                "mode": "Action",
+                "components": "Components",
+                "targets": "Individual updates",
+                "backup": "Create a backup before installing"
+              },
+              "data_description": {
+                "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
+                "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
+                "backup": "Only for updates that support a backup."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what this schedule reports.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "task_planner": {
+      "initiate_flow": {
+        "user": "Add task planner"
+      },
+      "entry_type": "Task planner",
+      "step": {
+        "new_task_planner": {
+          "title": "Task planner",
+          "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here.",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Name of the task planner.",
+              "data": {
+                "name": "Name"
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "tp_menu": {
+          "title": "Task planner",
+          "description": "Tasks and settings of the task planner.",
+          "menu_options": {
+            "tp_general": "Settings",
+            "add_task": "Add task",
+            "edit_task": "Edit task",
+            "delete_task": "Delete task"
+          }
+        },
+        "tp_general": {
+          "title": "Settings",
+          "sections": {
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "edit_task": {
+          "title": "Edit task",
+          "data": {
+            "task": "Task"
+          }
+        },
+        "delete_task": {
+          "title": "Delete task",
+          "data": {
+            "task": "Task"
+          }
+        },
+        "task_edit": {
+          "title": "Task",
+          "description": "The actions run as soon as one of the triggers (next step) occurs. Messages go to the channels selected in the settings.",
+          "data": {
+            "name": "Name",
+            "enabled": "Task enabled",
+            "actions": "Actions",
+            "notify_start": "Notify on start",
+            "notify_success": "Notify on success",
+            "notify_error": "Notify on error"
+          },
+          "data_description": {
+            "actions": "Any Home Assistant actions, e.g. service calls, delays, conditions or a notification. The variables trigger and task are available in the actions."
+          }
+        },
+        "task_triggers": {
+          "title": "Triggers",
+          "description": "Task \"{task}\". As soon as one of these triggers occurs, the task runs:\n{triggers}",
+          "menu_options": {
+            "add_trigger": "Add trigger",
+            "delete_trigger": "Remove trigger",
+            "task_save": "Save task"
+          }
+        },
+        "add_trigger": {
+          "title": "Add trigger",
+          "data": {
+            "type": "Type of trigger"
+          }
+        },
+        "delete_trigger": {
+          "title": "Remove trigger",
+          "data": {
+            "trigger": "Trigger"
+          }
+        },
+        "trigger_weekly": {
+          "title": "Trigger: weekday and time",
+          "data": {
+            "time": "Time",
+            "weekdays": "Weekdays"
+          }
+        },
+        "trigger_monthly": {
+          "title": "Trigger: month",
+          "data": {
+            "month_mode": "Day of the month",
+            "month_day": "Specific day",
+            "time": "Time"
+          },
+          "data_description": {
+            "month_day": "Only for \"Specific day\". If the month is shorter, the last day is used."
+          }
+        },
+        "trigger_once": {
+          "title": "Trigger: one-time",
+          "data": {
+            "at": "Date and time"
+          }
+        },
+        "trigger_interval": {
+          "title": "Trigger: interval",
+          "data": {
+            "minutes": "Every … minutes"
+          },
+          "data_description": {
+            "minutes": "Counted from the start of the task planner (Home Assistant start or reload)."
+          }
+        },
+        "trigger_state": {
+          "title": "Trigger: entity",
+          "data": {
+            "entity_id": "Entity",
+            "to_state": "Target state",
+            "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+          },
+          "data_description": {
+            "to_state": "State text, e.g. on, home, open. Empty = any state change."
+          }
+        },
+        "trigger_threshold": {
+          "title": "Trigger: threshold",
+          "data": {
+            "entity_id": "Sensor",
+            "above": "Above",
+            "below": "Below",
+            "for_minutes": "Minimum duration (minutes, 0 = immediately)"
+          },
+          "data_description": {
+            "above": "Fires when the value rises above this value.",
+            "below": "Fires when the value falls below this value. Both set = range."
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
+    },
+    "alarm_clock": {
+      "initiate_flow": {
+        "user": "Add alarm entry"
+      },
+      "entry_type": "Alarm clock",
+      "step": {
+        "new_alarm_clock": {
+          "title": "Alarm clock",
+          "description": "One entry holds several alarms; they are added afterwards under Configure. The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Name of the entry and workday/holiday sensors for the alarms.",
+              "data": {
+                "name": "Name",
+                "workday_sensors": "Workday/holiday sensors",
+                "workday_invert": "Invert sensor values"
+              },
+              "data_description": {
+                "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
+                "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "critical": "Send as critical notification",
+                "message": "Message text"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
+                "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
+                "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
+              }
+            }
+          }
+        },
+        "alarm_menu": {
+          "title": "Alarm clock",
+          "description": "Alarms and settings.",
+          "menu_options": {
+            "alarm_general": "Settings",
+            "add_alarm": "Add alarm",
+            "edit_alarm": "Edit alarm",
+            "delete_alarm": "Delete alarm"
+          }
+        },
+        "alarm_general": {
+          "title": "Settings",
+          "sections": {
+            "general": {
+              "name": "General",
+              "description": "Name of the entry and workday/holiday sensors for the alarms.",
+              "data": {
+                "workday_sensors": "Workday/holiday sensors",
+                "workday_invert": "Invert sensor values"
+              },
+              "data_description": {
+                "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
+                "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "critical": "Send as critical notification",
+                "message": "Message text"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
+                "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
+                "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
+              }
+            }
+          }
+        },
+        "edit_alarm": {
+          "title": "Edit alarm",
+          "data": {
+            "alarm": "Alarm"
+          }
+        },
+        "delete_alarm": {
+          "title": "Delete alarm",
+          "data": {
+            "alarm": "Alarm"
+          }
+        },
+        "alarm_edit": {
+          "title": "Alarm",
+          "description": "At the alarm time the volume is set and the audio file is played. On stop or snooze the original volume is restored.",
+          "data": {
+            "name": "Name",
+            "enabled": "Alarm enabled",
+            "time": "Time",
+            "weekdays": "Weekdays",
+            "players": "Media players",
+            "media": "Audio file",
+            "volume": "Volume",
+            "snooze_minutes": "Snooze time",
+            "auto_stop_minutes": "Stop automatically after (0 = never)",
+            "only_if_on": "Only ring if on",
+            "skip_if_on": "Do not ring if on"
+          },
+          "data_description": {
+            "media": "File or stream from the Home Assistant media browser.",
+            "only_if_on": "Only if at least one of the selected sensors is on (OR), e.g. workday sensor. An unavailable sensor counts as met. The selection only appears if sensors are set in the settings.",
+            "skip_if_on": "Not as soon as one of the selected sensors is on (OR), e.g. holiday sensor.",
+            "snooze_minutes": "The alarm rings again after this time.",
+            "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
+        "no_contact": "This trigger needs a door contact in the settings.",
+        "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
+        "no_weekday": "Select at least one weekday.",
+        "no_targets": "Select at least one target for app push.",
+        "no_output": "The profile needs at least one media player or app push.",
+        "no_tts": "Announcement needs a TTS service and a text.",
+        "no_ringtone": "Select an audio file for the ringtone.",
+        "no_temperature": "Select a temperature sensor for the heater.",
+        "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
+        "too_many_windows": "Maximum number of time windows reached.",
+        "start_equals_end": "Start and end must differ.",
+        "min_ge_max": "The lower limit must be below the upper limit.",
+        "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+        "last_profile": "The last profile cannot be deleted.",
+        "invalid_address": "Invalid group address.",
+        "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
+        "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
+        "no_update_selected": "Select at least one update.",
+        "invalid_window": "The window needs a start and an end, and they must differ.",
+        "no_actions": "Define at least one action.",
+        "invalid_datetime": "Invalid date.",
+        "in_past": "The time is in the past.",
+        "for_needs_state": "A minimum duration needs a target state.",
+        "no_threshold": "Set at least \"Above\" or \"Below\".",
+        "no_media": "Select an audio file."
+      },
+      "abort": {
+        "pump_configured": "This pump is already configured for another pool.",
+        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      }
     }
   }
 }

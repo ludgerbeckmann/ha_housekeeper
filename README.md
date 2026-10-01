@@ -4,8 +4,9 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
 Eine Custom Integration, die verschiedene Smart-Home-Anwendungsfälle
-bündelt. **Jede Funktion wird als eigener Integrationseintrag angelegt** -
-beim Hinzufügen wählst du zuerst den Funktionstyp aus.
+bündelt. **Jede Funktion ist ein Hub** (Integrationseintrag, benannt wie die Funktion, z. B.
+„Türklingel“); die einzelnen **Instanzen** (eine Klingel, ein Pool, ein Wecker-Eintrag …) sind
+**Untereinträge** des Hubs mit eigenem Gerät.
 
 ## Funktionen
 
@@ -22,7 +23,7 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 
 ## Bedienung der Einstellungen
 
-*Konfigurieren* öffnet bei jeder Funktion ein **Menü**: Die Einträge (Einstellungen, hinzufügen,
+Das **Zahnrad** einer Instanz (*Neu konfigurieren*) öffnet ein **Menü**: Die Einträge (Einstellungen, hinzufügen,
 bearbeiten, löschen …) sind direkt anklickbar, es gibt keinen OK-Button. Nach einem Dialog
 geht es zurück ins Menü, das **X** oben links schließt es. Änderungen werden bei jedem Schritt
 sofort gespeichert, das Schließen verliert also nichts.
@@ -51,8 +52,16 @@ Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Ho
 **Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
 kopieren und neu starten.
 
-Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*
-und den Funktionstyp wählen.
+Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*,
+den Funktionstyp wählen und die erste Instanz einrichten. Dabei entsteht der **Hub** der
+Funktion (je Funktionstyp einer). **Weitere Instanzen** (z. B. eine zweite Klingel oder ein
+zweiter Pool) fügst du im Hub über die Schaltfläche **„… hinzufügen“** hinzu; jede Instanz hat ihr
+Zahnrad (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder
+neuer.
+
+**Update von einer älteren Version:** Bisher war jede Instanz ein eigener Eintrag. Diese
+Einträge werden nicht mehr geladen; es erscheint ein Reparaturhinweis. Lösche den alten Eintrag
+und lege die Funktion neu an.
 
 ## Benachrichtigung Briefkasten
 

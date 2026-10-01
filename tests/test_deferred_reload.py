@@ -5,11 +5,11 @@ from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
+from .helpers import make_entry, update_entry
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PLAYER = "media_player.bedroom"
@@ -21,15 +21,15 @@ ALARM = {"id": "a1", "name": "Wecker", "enabled": True, "time": "07:00:00", "wee
 
 
 async def _entry(hass: HomeAssistant, data: dict, title="Test", options=None):
-    entry = MockConfigEntry(domain=DOMAIN, title=title, data=data, options=options or {})
+    entry = make_entry(domain=DOMAIN, title=title, data=data, options=options or {})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry, hass.data[DOMAIN][entry.entry_id]
 
 
 async def _save(hass: HomeAssistant, entry, **options) -> None:
-    hass.config_entries.async_update_entry(entry, options={**entry.options, **options})
+    update_entry(hass, entry, {**entry.options, **options})
     await hass.async_block_till_done()
 
 
@@ -103,7 +103,7 @@ async def test_removed_entry_while_pending_is_harmless(hass: HomeAssistant) -> N
     await _save(hass, entry, message="x")
     assert ctrl.reload_requested
     ctrl.reload_requested = True
-    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.config_entries.async_remove(entry.hub_id)
     await hass.async_block_till_done()
     ctrl.async_idle()                                                          # kein Fehler, kein Neuladen
     await hass.async_block_till_done()

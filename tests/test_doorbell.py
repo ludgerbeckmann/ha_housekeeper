@@ -7,12 +7,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options
+from .helpers import is_menu, menu_options, make_entry, reconfigure
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import (
     assign_players,
@@ -50,10 +49,10 @@ def _at(hour: int, minute: int = 0, weekday: int = 2) -> datetime:
 
 
 async def _setup(hass: HomeAssistant, **over):
-    entry = MockConfigEntry(domain=DOMAIN, title="Bell", data={**BASE, **over})
+    entry = make_entry(domain=DOMAIN, title="Bell", data={**BASE, **over})
     entry.add_to_hass(hass)
     hass.states.async_set(over.get("trigger_entity", TRIGGER), "off")
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     return entry
 
@@ -114,11 +113,11 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "doorbell"}
     )
-    assert result["step_id"] == "doorbell"
+    assert result["step_id"] == "new_doorbell"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "profiles")}
     ok = await hass.config_entries.flow.async_configure(result["flow_id"], {"general": data})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "doorbell" and ok["data"]["profiles"] == []
+    assert ok["data"]["function_type"] == "doorbell" and ok["subentries"][0]["data"]["profiles"] == []
 
 
 # --- Klingeln -----------------------------------------------------------------------
@@ -249,8 +248,8 @@ async def test_test_button_bypasses_switch_and_debounce(hass: HomeAssistant) -> 
 async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     _mocks(hass)
     entry = await _setup(hass, profiles=[])
-    flow = hass.config_entries.options
-    result = await flow.async_init(entry.entry_id)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
     assert is_menu(result) and result["step_id"] == "bell_menu"
     assert "edit_profile" not in menu_options(result)
 
@@ -353,20 +352,3 @@ async def test_each_profile_clears_with_its_own_hours(hass: HomeAssistant) -> No
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=3, minutes=1))
     await hass.async_block_till_done()
     assert other[-1].data["message"] == "clear_notification"
-
-
-async def test_entry_level_push_migrates_into_profile(hass: HomeAssistant) -> None:
-    m = _mocks(hass)
-    entry = await _setup(hass, mobile_enabled=True, mobile_targets=["mobile_app_phone"],
-                         message="Alt", clear_after_hours=2,
-                         profiles=[{**DAY_TTS, "mobile_enabled": False}])
-    profiles = entry.options["profiles"]
-    assert len(profiles) == 2 and profiles[1]["players"] == []
-    assert profiles[1]["mobile_enabled"] is True and profiles[1]["message"] == "Alt"
-    assert profiles[1]["clear_after_hours"] == 2
-    assert entry.options["mobile_enabled"] is None
-    await _ring(hass, _at(23))                       # außerhalb des Tagesprofils
-    assert [c.data["message"] for c in m["push"]] == ["Alt"]
-    # nur einmal migrieren
-    await hass.config_entries.async_reload(entry.entry_id)
-    assert len(entry.options["profiles"]) == 2

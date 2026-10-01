@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import partial
+
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -11,8 +13,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .alarm_clock import AlarmClockController
-from .const import DOMAIN
 from .door_guard import DoorGuardController
+from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
 
@@ -20,7 +22,16 @@ from .pool_pump import PoolPumpController
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    controller = hass.data[DOMAIN][entry.entry_id]
+    """Entitäten je Untereintrag (eigenes Gerät) des Hubs."""
+    for controller in hub_controllers(hass, entry):
+        _add_entities(
+            hass,
+            controller,
+            partial(async_add_entities, config_subentry_id=controller.entry.entry_id),
+        )
+
+
+def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     if isinstance(controller, DoorGuardController):
         async_add_entities([DoorOpenTooLongSensor(controller)])
     elif isinstance(controller, AlarmClockController):
