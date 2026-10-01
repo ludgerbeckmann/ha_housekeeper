@@ -141,7 +141,7 @@ class PoolOptions:
         options = ["pool_general", "add_window"]
         if self._windows():
             options += ["edit_window", "delete_window"]
-        options += ["dry_run", "heater", "done"]
+        options += ["dry_run", "heater"]
         return await self._menu("pool_menu", options, user_input)
 
     async def async_step_pool_general(

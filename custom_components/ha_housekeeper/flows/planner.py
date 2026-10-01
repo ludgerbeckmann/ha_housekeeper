@@ -97,7 +97,6 @@ class TaskPlannerOptions:
         options = ["tp_general", "add_task"]
         if self._tasks():
             options += ["edit_task", "delete_task"]
-        options.append("done")
         return await self._menu("tp_menu", options, user_input)
 
     async def async_step_tp_general(

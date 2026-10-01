@@ -165,7 +165,6 @@ class KnxSonosOptions:
         options.append("add_status")
         if self._status_list():
             options += ["edit_status", "delete_status"]
-        options.append("done")
         return await self._menu("knx_menu", options, user_input)
 
     def _speaker_picker_schema(self) -> vol.Schema:

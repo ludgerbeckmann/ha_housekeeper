@@ -185,24 +185,18 @@ class OptionsBase:
         self,
         step_id: str,
         options: list[str],
-        user_input: dict[str, Any] | None,
+        user_input: dict[str, Any] | None = None,
         placeholders: dict[str, str] | None = None,
     ) -> ConfigFlowResult:
-        """Menü als Formular: Auswahlliste mit „Weiter“ unten rechts statt Menüpunkten.
+        """Natives Menü: Die Einträge sind direkt anklickbar, das X schließt den Dialog.
 
-        Die gewählte Aktion ist der Name eines Schritts (`async_step_<aktion>`).
+        Die gewählte Aktion ist der Name eines Schritts (`async_step_<aktion>`). Gespeichert wird
+        bei jedem Schritt sofort (`_save`), ein Abschlussknopf ist nicht nötig. Die Beschriftungen
+        stehen je Menüschritt unter `menu_options`.
         """
-        if user_input is not None and user_input.get("action") in options:
-            return await getattr(self, f"async_step_{user_input['action']}")()
-        return self.async_show_form(
+        return self.async_show_menu(
             step_id=step_id,
-            data_schema=vol.Schema(
-                {
-                    vol.Required("action"): _select(
-                        options, "menu_action", mode=selector.SelectSelectorMode.LIST
-                    )
-                }
-            ),
+            menu_options=options,
             description_placeholders=placeholders,
         )
 
@@ -210,8 +204,3 @@ class OptionsBase:
         self.hass.config_entries.async_update_entry(
             self.config_entry, options={**self.config_entry.options, **options}
         )
-
-    async def async_step_done(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        return self.async_create_entry(data=dict(self.config_entry.options))

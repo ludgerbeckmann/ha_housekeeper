@@ -71,7 +71,7 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
         await hass.async_block_till_done()
         flow = hass.config_entries.options
         result = await flow.async_init(entry.entry_id)
-        result = await flow.async_configure(result["flow_id"], {"action": menu_item})
+        result = await flow.async_configure(result["flow_id"], {"next_step_id": menu_item})
         assert result["step_id"] == step
         schema = result["data_schema"].schema
         # Türklingel: Push steckt in den Profilen, daher nur „Allgemein“
@@ -91,7 +91,7 @@ async def test_door_options_save_flat(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "general"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "general"})
     flat = {"lock": "lock.tuer", "block_action": "notify", "retry_minutes": 10,
             "open_alert_minutes": 15, "open_alert_repeat_minutes": 10, "verify_seconds": 30,
             "manual_override": "ignore", "manual_pause_minutes": 60, "mobile_enabled": False,
@@ -117,7 +117,7 @@ async def test_planner_options_only_notifications_section(hass: HomeAssistant) -
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "tp_general"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "tp_general"})
     assert [str(k) for k in result["data_schema"].schema] == ["notifications"]
     bad = await flow.async_configure(
         result["flow_id"],

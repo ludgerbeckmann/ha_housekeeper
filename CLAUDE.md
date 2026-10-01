@@ -136,13 +136,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `description`, `data`, `data_description`); das Top-Level-`data` entfällt dann. In Tests die
   Eingaben verschachtelt übergeben (`tests/helpers.py: sectioned()`). Die Übersetzungen
   werden aus den Feldschlüsseln verteilt: Benachrichtigungsfelder gehören zu `notifications`.
-- Menüs im Options-Flow sind **Formulare**, keine `async_show_menu`-Menüs: `_menu()` zeigt
-  ein Formular mit dem Feld `action` (Auswahlliste, `SelectSelector` LIST, Übersetzungs-
-  schlüssel `menu_action`) und „Weiter“ unten rechts; die Auswahl ist der Schritt
-  (`async_step_<aktion>`), `done` heißt „Speichern & schließen“. Die Beschriftungen der
-  Einträge stehen gesammelt unter `selector.menu_action.options`, in den Menüschritten nur
-  `title`, `description` und `data.action`. Neuer Menüeintrag = Schritt + Beschriftung dort.
-  Tests: `tests/helpers.py` (`is_menu()`, `menu_options()`), Auswahl über `{"action": ...}`.
+- Menüs im Options-Flow sind **native Menüs** (`async_show_menu`): `_menu()` zeigt die Einträge direkt
+  anklickbar (kein OK/„Weiter“, das X schließt, **kein** Eintrag „Speichern & schließen“); die Auswahl ist
+  der Schritt (`async_step_<aktion>`). Gespeichert wird bei jedem Schritt sofort über `_save()`, deshalb
+  braucht es keinen Abschluss. Die Beschriftungen stehen je Menüschritt unter `menu_options`. Neuer
+  Menüeintrag = Schritt + Beschriftung dort. Tests: `tests/helpers.py` (`is_menu()`, `menu_options()`),
+  Auswahl über `{"next_step_id": ...}`.
 - Push-Ziele: native **Geräteauswahl** (`DeviceSelector`, `integration: mobile_app`,
   `_mobile_selector()`), gespeichert werden **Geräte-IDs** der Geräteverwaltung.
   `notify.resolve_mobile_services()` macht beim Senden daraus `mobile_app_<slug(device_name)>`

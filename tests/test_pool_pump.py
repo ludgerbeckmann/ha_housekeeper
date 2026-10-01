@@ -359,15 +359,13 @@ async def test_user_flow_and_duplicate(hass):
 
 
 async def test_options_windows_add_edit_delete(hass):
-    from homeassistant.data_entry_flow import FlowResultType
-
     entry = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     assert result["step_id"] == "pool_menu"
-    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater", "done"]
+    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater"]
 
-    result = await flow.async_configure(result["flow_id"], {"action": "add_window"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
     bad = await flow.async_configure(
         result["flow_id"], {"start": "08:00:00", "end": "08:00:00", "days": ["mon"]}
     )
@@ -384,7 +382,7 @@ async def test_options_windows_add_edit_delete(hass):
     (window,) = entry.options["windows"]
     assert window["start"] == "08:00:00" and window["days"] == ["mon"]
 
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_window"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_window"})
     result = await flow.async_configure(result["flow_id"], {"window": window["id"]})
     result = await flow.async_configure(
         result["flow_id"], {"start": "07:00:00", "end": "09:00:00", "days": ["mon", "tue"]}
@@ -392,11 +390,9 @@ async def test_options_windows_add_edit_delete(hass):
     (edited,) = entry.options["windows"]
     assert edited["id"] == window["id"] and edited["start"] == "07:00:00"
 
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_window"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_window"})
     result = await flow.async_configure(result["flow_id"], {"window": window["id"]})
     assert entry.options["windows"] == []
-    done = await flow.async_configure(result["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
 async def test_options_max_windows(hass):
@@ -414,7 +410,7 @@ async def test_options_max_windows(hass):
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_window"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
     result = await flow.async_configure(
         result["flow_id"], {"start": "10:00:00", "end": "11:00:00", "days": ["tue"]}
     )
@@ -427,7 +423,7 @@ async def test_options_dry_run_set_validate_and_clear(hass):
 
     async def open_dry():
         r = await flow.async_init(entry.entry_id)
-        return await flow.async_configure(r["flow_id"], {"action": "dry_run"})
+        return await flow.async_configure(r["flow_id"], {"next_step_id": "dry_run"})
 
     base = {"dry_duration": 5, "dry_auto_off": True, "mobile_enabled": False,
             "tts_enabled": False, "persistent_enabled": True}
@@ -569,7 +565,7 @@ async def test_options_heater_set_validate_and_clear(hass: HomeAssistant):
 
     async def start():
         r = await flow.async_init(entry.entry_id)
-        return await flow.async_configure(r["flow_id"], {"action": "heater"})
+        return await flow.async_configure(r["flow_id"], {"next_step_id": "heater"})
 
     result = await start()
     assert result["step_id"] == "heater"

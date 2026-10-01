@@ -338,7 +338,7 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
 
     # Lautsprecher-Profil bearbeiten (ältere Einträge: Profil „Standard“ aus dem Eintrag)
     assert "delete_speaker" not in menu_options(result)
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
     result = await flow.async_configure(result["flow_id"], {"item": "default"})
     assert result["step_id"] == "speaker_edit"
     result = await flow.async_configure(
@@ -350,7 +350,7 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
     assert speaker["max_volume"] == 70 and speaker["stop_instead_of_pause"] is True
 
     # Befehl mit Favorit (zwei Schritte)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
     bad = await flow.async_configure(
         result["flow_id"], {"name": "Jazz", "address": "x/y", "dpt": "switch", "action": "favorite"})
     assert bad["errors"] == {"base": "invalid_address"}
@@ -369,13 +369,13 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
     assert command["favorite"] == "Jazz" and command["when"] == "on" and "scene" not in command
 
     # Befehl ohne Zusatzangaben wird sofort gespeichert (Dimmen)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
     result = await flow.async_configure(
         result["flow_id"], {"name": "Dim", "address": "1/0/2", "dpt": "dimming", "action": "volume_dim"})
     assert is_menu(result) and len(entry.options["commands"]) == 2
 
     # Bearbeiten: auf Szene umstellen, alte Schlüssel verschwinden
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_command"})
     result = await flow.async_configure(result["flow_id"], {"item": command["id"]})
     result = await flow.async_configure(
         result["flow_id"], {"name": "Jazz", "address": "1/0/1", "dpt": "scene", "action": "favorite"})
@@ -384,12 +384,12 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
     assert edited["scene"] == 5 and edited["favorite"] == "Radio" and "when" not in edited
 
     # Löschen
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_command"})
     result = await flow.async_configure(result["flow_id"], {"item": command["id"]})
     assert [c["name"] for c in entry.options["commands"]] == ["Dim"]
 
     # Rückmeldung: hinzufügen, bearbeiten, löschen
-    result = await flow.async_configure(result["flow_id"], {"action": "add_status"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_status"})
     bad = await flow.async_configure(
         result["flow_id"], {"name": "Titel", "source": "title", "address": "nope", "idle_text": ""})
     assert bad["errors"] == {"base": "invalid_address"}
@@ -397,14 +397,12 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
         bad["flow_id"], {"name": "Titel", "source": "title", "address": "5/0/4", "idle_text": "Pause"})
     (status,) = entry.options["status"]
     assert status["idle_text"] == "Pause"
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_status"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_status"})
     result = await flow.async_configure(result["flow_id"], {"item": status["id"]})
     result = await flow.async_configure(
         result["flow_id"], {"name": "Laut", "source": "volume", "address": "5/0/5", "idle_text": "x"})
     (edited_status,) = entry.options["status"]
     assert edited_status["source"] == "volume" and "idle_text" not in edited_status
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_status"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_status"})
     result = await flow.async_configure(result["flow_id"], {"item": status["id"]})
     assert entry.options["status"] == []
-    done = await flow.async_configure(result["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY

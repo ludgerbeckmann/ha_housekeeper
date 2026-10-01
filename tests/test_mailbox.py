@@ -91,9 +91,9 @@ async def test_options_flow_sections_and_clearing(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert is_menu(result) and result["step_id"] == "mailbox_menu"
-    assert menu_options(result) == ["mailbox", "done"]       # ohne Entität kein Empfindlichkeits-Punkt
+    assert menu_options(result) == ["mailbox"]       # ohne Entität kein Empfindlichkeits-Punkt
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"action": "mailbox"})
+        result["flow_id"], {"next_step_id": "mailbox"})
     assert result["step_id"] == "mailbox"
     assert {str(k) for k in result["data_schema"].schema} == {"general", "notifications"}
     general = {str(k) for k in next(
@@ -111,7 +111,7 @@ async def test_options_flow_sections_validation(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"action": "mailbox"})
+        result["flow_id"], {"next_step_id": "mailbox"})
     flat = {k: v for k, v in DATA.items() if k != "name"}
     flat.update(mobile_enabled=False, persistent_enabled=False)
     bad = await hass.config_entries.options.async_configure(result["flow_id"], _sections(flat))

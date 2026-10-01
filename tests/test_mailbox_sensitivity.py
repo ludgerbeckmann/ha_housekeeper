@@ -50,7 +50,7 @@ async def test_field_only_in_settings(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"action": "mailbox"})
+        result["flow_id"], {"next_step_id": "mailbox"})
     general = next(v for k, v in result["data_schema"].schema.items() if str(k) == "general")
     assert "sensitivity_entity" in {str(k) for k in general.schema.schema}
 
@@ -59,7 +59,7 @@ async def test_without_entity_nothing_changes(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"action": "mailbox"})
+        result["flow_id"], {"next_step_id": "mailbox"})
     done = await hass.config_entries.options.async_configure(result["flow_id"], _flat())
     assert is_menu(done) and "mailbox_sensitivity" not in menu_options(done)
     assert entry.options["sensitivity_entity"] is None and entry.options["sensitivity_value"] is None
@@ -70,7 +70,7 @@ async def test_without_entity_nothing_changes(hass: HomeAssistant) -> None:
 async def _open_settings(hass, entry):
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    return flow, await flow.async_configure(result["flow_id"], {"action": "mailbox"})
+    return flow, await flow.async_configure(result["flow_id"], {"next_step_id": "mailbox"})
 
 
 async def test_entity_is_stored_without_asking_for_a_value(hass: HomeAssistant) -> None:
@@ -79,7 +79,7 @@ async def test_entity_is_stored_without_asking_for_a_value(hass: HomeAssistant) 
     flow, result = await _open_settings(hass, entry)
     result = await flow.async_configure(result["flow_id"], _flat(sensitivity_entity=NUMBER))
     # kein Wertedialog direkt danach: zurück ins Menü, Punkt „Empfindlichkeit einstellen“ ist da
-    assert is_menu(result) and menu_options(result) == ["mailbox", "mailbox_sensitivity", "done"]
+    assert is_menu(result) and menu_options(result) == ["mailbox", "mailbox_sensitivity"]
     assert entry.options["sensitivity_entity"] == NUMBER
     assert entry.options["sensitivity_value"] is None
     await hass.async_block_till_done()
@@ -91,8 +91,8 @@ async def test_number_value_set_later_from_the_menu(hass: HomeAssistant) -> None
     entry = await _setup(hass, sensitivity_entity=NUMBER)
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    assert menu_options(result) == ["mailbox", "mailbox_sensitivity", "done"]
-    result = await flow.async_configure(result["flow_id"], {"action": "mailbox_sensitivity"})
+    assert menu_options(result) == ["mailbox", "mailbox_sensitivity"]
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "mailbox_sensitivity"})
     assert result["type"] is FlowResultType.FORM and result["step_id"] == "mailbox_sensitivity"
     assert result["description_placeholders"] == {"entity": NUMBER}
     selector = next(iter(result["data_schema"].schema.values()))
@@ -109,7 +109,7 @@ async def test_select_flow_offers_the_entitys_options(hass: HomeAssistant) -> No
     entry = await _setup(hass, sensitivity_entity=SELECT)
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "mailbox_sensitivity"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "mailbox_sensitivity"})
     selector = next(iter(result["data_schema"].schema.values()))
     assert list(selector.config["options"]) == ["low", "medium", "high"] or [
         o["value"] for o in selector.config["options"]] == ["low", "medium", "high"]
@@ -126,7 +126,7 @@ async def test_value_kept_when_saving_settings_and_dropped_on_entity_change(
     flow, result = await _open_settings(hass, entry)
     result = await flow.async_configure(result["flow_id"], _flat(sensitivity_entity=NUMBER))
     assert entry.options["sensitivity_value"] == 12      # gleiche Entität: Wert bleibt
-    result = await flow.async_configure(result["flow_id"], {"action": "mailbox"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "mailbox"})
     result = await flow.async_configure(result["flow_id"], _flat(sensitivity_entity=SELECT))
     assert entry.options["sensitivity_entity"] == SELECT
     assert entry.options["sensitivity_value"] is None    # andere Entität: alter Wert verworfen

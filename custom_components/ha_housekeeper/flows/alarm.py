@@ -105,7 +105,6 @@ class AlarmOptions:
         options = ["alarm_general", "add_alarm"]
         if self._alarms():
             options += ["edit_alarm", "delete_alarm"]
-        options.append("done")
         return await self._menu("alarm_menu", options, user_input)
 
     async def async_step_alarm_general(

@@ -272,7 +272,7 @@ async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     assert is_menu(result) and "edit_alarm" not in menu_options(result)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     assert result["step_id"] == "alarm_edit"
     form = {"name": "Früh", "enabled": True, "time": "06:30:00", "weekdays": ["mon", "tue"],
             "players": [PLAYER], "media": MEDIA, "volume": 25, "snooze_minutes": 5,
@@ -288,24 +288,22 @@ async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
     assert created["players"] == [PLAYER] and created["snooze_minutes"] == 5
     await hass.async_block_till_done()
 
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_alarm"})
     result = await flow.async_configure(result["flow_id"], {"alarm": created["id"]})
     result = await flow.async_configure(result["flow_id"], {**form, "volume": 40})
     (edited,) = entry.options["alarms"]
     assert edited["id"] == created["id"] and edited["volume"] == 40
 
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_alarm"})
     result = await flow.async_configure(result["flow_id"], {"alarm": created["id"]})
     assert entry.options["alarms"] == []
-    done = await flow.async_configure(result["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
 async def test_options_general_has_sensors_and_notifications(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "alarm_general"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "alarm_general"})
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]
     general = next(v for k, v in schema.items() if str(k) == "general")
@@ -444,14 +442,14 @@ async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> Non
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     assert "only_if_on" not in {str(k) for k in result["data_schema"].schema}   # keine globalen Sensoren
 
     hass.config_entries.async_update_entry(
         entry, options={**entry.options, "workday_sensors": [WORKDAY, HOLIDAY]})
     await hass.async_block_till_done()
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
     schema = result["data_schema"].schema
     assert {"only_if_on", "skip_if_on"} <= {str(k) for k in schema}
     field = next(v for k, v in schema.items() if str(k) == "only_if_on")
@@ -467,7 +465,7 @@ async def test_alarm_form_offers_only_global_sensors(hass: HomeAssistant) -> Non
 
     # Bedingungen leeren
     await hass.async_block_till_done()
-    result = await flow.async_configure(done["flow_id"], {"action": "edit_alarm"})
+    result = await flow.async_configure(done["flow_id"], {"next_step_id": "edit_alarm"})
     result = await flow.async_configure(result["flow_id"], {"alarm": created["id"]})
     result = await flow.async_configure(
         result["flow_id"], {**form, "only_if_on": [], "skip_if_on": []})
@@ -478,7 +476,7 @@ async def test_conditions_kept_when_global_sensors_removed(hass: HomeAssistant) 
     entry, _, _ = await _setup(hass, [alarm(only_if_on=[WORKDAY])])        # ohne globale Sensoren
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_alarm"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_alarm"})
     result = await flow.async_configure(result["flow_id"], {"alarm": "a1"})
     form = {"name": "Aufstehen", "enabled": True, "time": "07:00:00", "weekdays": ["mon"],
             "players": [PLAYER], "media": MEDIA, "volume": 30, "snooze_minutes": 9,

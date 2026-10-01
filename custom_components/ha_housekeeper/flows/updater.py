@@ -79,7 +79,6 @@ class UpdaterOptions:
         options = ["upd_general", "add_schedule"]
         if self._schedules():
             options += ["edit_schedule", "delete_schedule"]
-        options.append("done")
         return await self._menu("upd_menu", options, user_input)
 
     async def async_step_upd_general(

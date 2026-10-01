@@ -362,7 +362,7 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     result = await flow.async_init(entry.entry_id)
     assert result["step_id"] == "upd_menu" and "edit_schedule" not in menu_options(result)
 
-    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["timing", "actions", "notifications"]
     assert all(v.options["collapsed"] is False for v in schema.values())
@@ -388,7 +388,7 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert created["persistent_enabled"] is True and created["mobile_enabled"] is False
     assert "timing" not in created and "notifications" not in created
 
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
     result = await flow.async_configure(
         result["flow_id"],
@@ -399,17 +399,15 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert edited["targets"] == [CORE] and edited["backup"] is True
     assert edited["mobile_targets"] == ["mobile_app_phone"]
 
-    result = await flow.async_configure(result["flow_id"], {"action": "upd_general"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
     assert {str(k) for k in result["data_schema"].schema} == {"timeout_minutes"}
     result = await flow.async_configure(result["flow_id"], {"timeout_minutes": 10})
     assert entry.options["timeout_minutes"] == 10
     assert is_menu(result)
 
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
     assert entry.options["schedules"] == []
-    done = await flow.async_configure(result["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
 # --- Komponenten ------------------------------------------------------------------------------
@@ -496,7 +494,7 @@ async def test_options_flow_components_only(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     bad = await flow.async_configure(
         result["flow_id"], sched_form(timing={"name": "Nachts"}, actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}
@@ -548,7 +546,7 @@ async def test_general_settings_keep_entry_fallback(hass: HomeAssistant) -> None
     entry, ctrl, push = await _setup(hass, [schedule(mode="notify")])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "upd_general"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
     await flow.async_configure(result["flow_id"], {"timeout_minutes": 15})
     await hass.async_block_till_done()
     ctrl = hass.data[DOMAIN][entry.entry_id]
@@ -714,7 +712,7 @@ async def test_options_flow_available_trigger(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     bad = await flow.async_configure(result["flow_id"], sched_form(
         timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00"}))
     assert bad["errors"] == {"base": "invalid_window"}

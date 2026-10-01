@@ -280,8 +280,11 @@
       "menu": {
         "title": "Türwächter",
         "description": "Einstellungen und Regeln des Türwächters.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "general": "Einstellungen",
+          "add_rule": "Regel hinzufügen",
+          "edit_rule": "Regel bearbeiten",
+          "delete_rule": "Regel löschen"
         }
       },
       "general": {
@@ -376,8 +379,11 @@
       "bell_menu": {
         "title": "Türklingel",
         "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "bell_general": "Einstellungen",
+          "add_profile": "Profil hinzufügen",
+          "edit_profile": "Profil bearbeiten",
+          "delete_profile": "Profil löschen"
         }
       },
       "bell_general": {
@@ -463,8 +469,13 @@
       "pool_menu": {
         "title": "Poolsteuerung",
         "description": "Pumpe, Zeitfenster, Trockenlauf-Erkennung und Heizung der Poolsteuerung.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "pool_general": "Pumpe ändern",
+          "add_window": "Zeitfenster hinzufügen",
+          "edit_window": "Zeitfenster bearbeiten",
+          "delete_window": "Zeitfenster löschen",
+          "dry_run": "Trockenlauferkennung",
+          "heater": "Poolheizung"
         }
       },
       "pool_general": {
@@ -547,8 +558,16 @@
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
         "description": "Lautsprecher-Profile sowie Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) je Profil.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "add_speaker": "Lautsprecher-Profil hinzufügen",
+          "edit_speaker": "Lautsprecher-Profil bearbeiten",
+          "delete_speaker": "Lautsprecher-Profil löschen",
+          "add_command": "Befehl hinzufügen",
+          "edit_command": "Befehl bearbeiten",
+          "delete_command": "Befehl löschen",
+          "add_status": "Rückmeldung hinzufügen",
+          "edit_status": "Rückmeldung bearbeiten",
+          "delete_status": "Rückmeldung löschen"
         }
       },
       "speaker_edit": {
@@ -647,8 +666,11 @@
       "upd_menu": {
         "title": "Home Assistant Updater",
         "description": "Zeitpläne und Einstellungen des Updaters.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "upd_general": "Einstellungen",
+          "add_schedule": "Zeitplan hinzufügen",
+          "edit_schedule": "Zeitplan bearbeiten",
+          "delete_schedule": "Zeitplan löschen"
         }
       },
       "upd_general": {
@@ -731,8 +753,11 @@
       "tp_menu": {
         "title": "Aufgabenplaner",
         "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "tp_general": "Einstellungen",
+          "add_task": "Aufgabe hinzufügen",
+          "edit_task": "Aufgabe bearbeiten",
+          "delete_task": "Aufgabe löschen"
         }
       },
       "tp_general": {
@@ -785,8 +810,10 @@
       "task_triggers": {
         "title": "Auslöser",
         "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "add_trigger": "Auslöser hinzufügen",
+          "delete_trigger": "Auslöser entfernen",
+          "task_save": "Aufgabe speichern"
         }
       },
       "add_trigger": {
@@ -861,8 +888,11 @@
       "alarm_menu": {
         "title": "Wecker",
         "description": "Wecker und Einstellungen.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "alarm_general": "Einstellungen",
+          "add_alarm": "Wecker hinzufügen",
+          "edit_alarm": "Wecker bearbeiten",
+          "delete_alarm": "Wecker löschen"
         }
       },
       "alarm_general": {
@@ -943,8 +973,9 @@
       "mailbox_menu": {
         "title": "Briefkasten",
         "description": "Einstellungen des Briefkastens. Die Empfindlichkeit wird erst hier eingestellt, nachdem eine Entität dafür hinterlegt wurde.",
-        "data": {
-          "action": "Was möchtest du tun?"
+        "menu_options": {
+          "mailbox": "Einstellungen",
+          "mailbox_sensitivity": "Empfindlichkeit einstellen"
         }
       }
     },
@@ -1117,51 +1148,6 @@
         "first": "Erster Tag des Monats",
         "last": "Letzter Tag des Monats",
         "day": "Bestimmter Tag"
-      }
-    },
-    "menu_action": {
-      "options": {
-        "general": "Einstellungen",
-        "add_rule": "Regel hinzufügen",
-        "edit_rule": "Regel bearbeiten",
-        "delete_rule": "Regel löschen",
-        "done": "Speichern & schließen",
-        "bell_general": "Einstellungen",
-        "add_profile": "Profil hinzufügen",
-        "edit_profile": "Profil bearbeiten",
-        "delete_profile": "Profil löschen",
-        "pool_general": "Pumpe ändern",
-        "add_window": "Zeitfenster hinzufügen",
-        "edit_window": "Zeitfenster bearbeiten",
-        "delete_window": "Zeitfenster löschen",
-        "dry_run": "Trockenlauferkennung",
-        "heater": "Poolheizung",
-        "add_speaker": "Lautsprecher-Profil hinzufügen",
-        "edit_speaker": "Lautsprecher-Profil bearbeiten",
-        "delete_speaker": "Lautsprecher-Profil löschen",
-        "add_command": "Befehl hinzufügen",
-        "edit_command": "Befehl bearbeiten",
-        "delete_command": "Befehl löschen",
-        "add_status": "Rückmeldung hinzufügen",
-        "edit_status": "Rückmeldung bearbeiten",
-        "delete_status": "Rückmeldung löschen",
-        "upd_general": "Einstellungen",
-        "add_schedule": "Zeitplan hinzufügen",
-        "edit_schedule": "Zeitplan bearbeiten",
-        "delete_schedule": "Zeitplan löschen",
-        "tp_general": "Einstellungen",
-        "add_task": "Aufgabe hinzufügen",
-        "edit_task": "Aufgabe bearbeiten",
-        "delete_task": "Aufgabe löschen",
-        "add_trigger": "Auslöser hinzufügen",
-        "delete_trigger": "Auslöser entfernen",
-        "task_save": "Aufgabe speichern",
-        "alarm_general": "Einstellungen",
-        "add_alarm": "Wecker hinzufügen",
-        "edit_alarm": "Wecker bearbeiten",
-        "delete_alarm": "Wecker löschen",
-        "mailbox": "Einstellungen",
-        "mailbox_sensitivity": "Empfindlichkeit einstellen"
       }
     }
   },

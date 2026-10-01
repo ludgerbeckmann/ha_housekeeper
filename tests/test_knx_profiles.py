@@ -206,7 +206,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     assert menu_options(result)[:3] == ["add_speaker", "edit_speaker", "add_command"]   # nur ein Profil
 
     # Befehl bei nur einem Profil: kein Profilfeld, aber dem Profil zugeordnet
-    result = await flow.async_configure(result["flow_id"], {"action": "add_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
     assert "profile" not in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(
         result["flow_id"], {"name": "Play", "address": "1/0/1", "dpt": "switch", "action": "play"})
@@ -214,7 +214,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     assert is_menu(result) and entry.options["commands"][0]["profile"] == "default"
 
     # zweites Profil
-    result = await flow.async_configure(result["flow_id"], {"action": "add_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_speaker"})
     result = await flow.async_configure(
         result["flow_id"],
         {"name": "Küche", "player": KITCHEN, "max_volume": 60, "volume_step": 3,
@@ -225,7 +225,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     kitchen_id = speakers[1]["id"]
 
     # Befehl und Rückmeldung für das zweite Profil: Profilfeld erscheint
-    result = await flow.async_configure(result["flow_id"], {"action": "add_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
     assert "profile" in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(
         result["flow_id"],
@@ -233,7 +233,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
          "profile": kitchen_id})
     assert is_menu(result)                                       # mute_set braucht keine Zusatzangaben
     assert entry.options["commands"][1]["profile"] == kitchen_id
-    result = await flow.async_configure(result["flow_id"], {"action": "add_status"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_status"})
     assert "profile" in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(
         result["flow_id"],
@@ -242,7 +242,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     assert entry.options["status"][0]["profile"] == kitchen_id
 
     # Listen zeigen das Profil
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_command"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_command"})
     labels = [o["label"] for o in next(iter(result["data_schema"].schema.values())).config["options"]]
     assert labels == ["Play [Standard]: 1/0/1 → Play", "Küche stumm [Küche]: 2/0/1 → Mute (value)"]
     result = await flow.async_configure(result["flow_id"], {"item": entry.options["commands"][1]["id"]})
@@ -253,7 +253,7 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
     assert entry.options["commands"][1]["profile"] == "default"          # Profil geändert
 
     # Löschen: nicht, solange Befehle oder Rückmeldungen das Profil nutzen
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_speaker"})
     blocked = await flow.async_configure(result["flow_id"], {"item": "default"})
     assert blocked["errors"] == {"base": "profile_in_use"}                # Befehle nutzen es
     blocked = await flow.async_configure(blocked["flow_id"], {"item": kitchen_id})
@@ -261,10 +261,10 @@ async def test_options_flow_profiles_commands_and_delete_rules(hass: HomeAssista
 
     # Rückmeldung entfernen, dann lässt sich das Profil „Küche“ löschen
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_status"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_status"})
     result = await flow.async_configure(result["flow_id"], {"item": entry.options["status"][0]["id"]})
     assert entry.options["status"] == []
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_speaker"})
     result = await flow.async_configure(result["flow_id"], {"item": kitchen_id})
     assert is_menu(result)
     assert [s["id"] for s in entry.options["speakers"]] == ["default"]
