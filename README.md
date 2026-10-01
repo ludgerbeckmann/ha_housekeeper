@@ -172,37 +172,46 @@ Pro Klingel ein Eintrag. Als **Auslöser** dient ein `binary_sensor` (löst beim
 Wechsel auf `on` aus) oder eine `event`-Entität (löst bei jedem Ereignis aus).
 Eine **Sperrzeit** (Standard 10 s) ignoriert weiteres Klingeln.
 
-### Audio: Zeitfenster-Profile
+### Zeitfenster-Profile (Ton und Push)
 
 Unter *Konfigurieren* legst du beliebig viele **Profile** an (Menü: Einstellungen,
-Profil hinzufügen/bearbeiten/löschen). Ein Profil besteht aus:
+Profil hinzufügen/bearbeiten/löschen). Ein Profil hat **ein** Formular mit drei Abschnitten:
 
-- Name, **Von/Bis** und Wochentagen. Liegt *Bis* vor *Von*, gilt das Fenster
+**Zeitfenster**
+
+- Name, aktiv, **Von/Bis** und Wochentage. Liegt *Bis* vor *Von*, gilt das Fenster
   über Mitternacht (z. B. 22:00 bis 06:00) und gehört zum Wochentag, an dem es
   beginnt. *Von = Bis* bedeutet ganztägig.
-- einem oder mehreren **Media Playern**
-- der Ausgabe: entweder **Ansage (TTS)** mit TTS-Dienst und eigenem Text, oder
-  **Klingelton** aus der Medienbibliothek
-- optional einer Lautstärke (0 = unverändert)
 
-Beim Klingeln werden alle Profile ausgeführt, deren Zeitfenster gerade passt.
-Die Player werden gleichzeitig bedient; ein Player, der in mehreren passenden
-Profilen steht, wird nur einmal bedient, und zwar vom ersten. Liegt kein Profil
-im Zeitfenster, bleibt es stumm (der Push geht trotzdem raus).
+**Ton** (optional)
 
-### Push
+- ein oder mehrere **Media Player**; ohne Player gibt das Profil keinen Ton aus
+- die Ausgabe: **Ansage (TTS)** mit TTS-Dienst und eigenem Text, oder **Klingelton**
+  aus der Medienbibliothek
+- optional eine Lautstärke (0 = unverändert)
 
-Ein oder mehrere Companion-App-Geräte, Push-Text und **„Push nach X
-Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über
-denselben Tag, ein erneutes Klingeln ersetzt die Meldung und startet die
-Löschfrist neu. Push ist unabhängig von den Audio-Zeitfenstern.
+**Benachrichtigung** (optional)
+
+- **App-Push** an ein oder mehrere Companion-App-Geräte, Push-Text und **„Push nach X
+  Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über denselben
+  Tag, ein erneutes Klingeln ersetzt die Meldung und startet die Löschfrist neu.
+
+Ein Profil braucht mindestens Ton **oder** Push; ein Profil nur mit Push (z. B. nachts
+„nur aufs Handy, kein Ton“) ist möglich. Beim Klingeln werden **alle** Profile
+ausgeführt, deren Zeitfenster gerade passt – gleichberechtigt. Ein Player oder ein
+Push-Ziel, das in mehreren passenden Profilen steht, wird nur einmal bedient, und zwar
+vom ersten. Liegt kein Profil im Zeitfenster, bleibt es stumm.
+
+Der Push steht **nur noch in den Profilen**. Ältere Einträge mit Push im Eintrag werden
+beim Start automatisch übernommen: als ganztägiges Profil „Benachrichtigung“ ohne Ton
+(gleiches Verhalten wie vorher).
 
 ### Entitäten
 
 - `switch` **Klingel aktiv** (aus = komplett stumm, Audio und Push)
 - `sensor` **Letztes Klingeln** (Zeitstempel)
-- `button` **Test-Klingeln** (spielt aus, was jetzt im Zeitfenster passt, und
-  sendet den Push; umgeht Schalter und Sperrzeit)
+- `button` **Test-Klingeln** (spielt aus und sendet, was jetzt im Zeitfenster passt;
+  umgeht Schalter und Sperrzeit)
 
 ## Poolsteuerung
 

@@ -163,12 +163,15 @@ async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
-    assert "enabled" in {str(k) for k in result["data_schema"].schema}
+    sections = result["data_schema"].schema
+    timing = next(v for k, v in sections.items() if str(k) == "timing")
+    assert "enabled" in {str(k) for k in timing.schema.schema}
     result = await flow.async_configure(result["flow_id"], {
-        "name": "Nacht", "enabled": False, "from": "22:00:00", "to": "06:00:00", "weekdays": ALL,
-        "players": ["media_player.a"], "mode": "ringtone"})
-    result = await flow.async_configure(result["flow_id"], {
-        "media": {"media_content_id": "x", "media_content_type": "audio/mpeg"}, "volume": 10})
+        "timing": {"name": "Nacht", "enabled": False, "from": "22:00:00", "to": "06:00:00",
+                   "weekdays": ALL},
+        "sound": {"players": ["media_player.a"], "mode": "ringtone", "volume": 10,
+                  "media": {"media_content_id": "x", "media_content_type": "audio/mpeg"}},
+        "notifications": {"mobile_enabled": False, "message": "x", "clear_after_hours": 0}})
     assert is_menu(result) and entry.options["profiles"][0]["enabled"] is False
 
 

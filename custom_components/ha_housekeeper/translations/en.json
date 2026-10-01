@@ -107,20 +107,6 @@
               "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
               "debounce_seconds": "Further rings within this time are ignored."
             }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "Push message to the devices and when it is cleared again.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "message": "Push text",
-              "clear_after_hours": "Clear push after X hours (0 = never)"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
-              "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
-            }
           }
         }
       },
@@ -220,7 +206,9 @@
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
       "no_weekday": "Select at least one weekday.",
       "no_targets": "Select at least one target for app push.",
-      "no_players": "Select at least one media player.",
+      "no_output": "The profile needs at least one media player or app push.",
+      "no_tts": "Announcement needs a TTS service and a text.",
+      "no_ringtone": "Select an audio file for the ringtone.",
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
@@ -402,20 +390,6 @@
               "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
               "debounce_seconds": "Further rings within this time are ignored."
             }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "Push message to the devices and when it is cleared again.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "message": "Push text",
-              "clear_after_hours": "Clear push after X hours (0 = never)"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible.",
-              "clear_after_hours": "Removes the notification via clear_notification. Audio output is set up with time window profiles in the menu."
-            }
           }
         }
       },
@@ -433,33 +407,53 @@
       },
       "profile_basic": {
         "title": "Time window profile",
-        "data": {
-          "name": "Name",
-          "enabled": "Enabled",
-          "from": "From",
-          "to": "To",
-          "weekdays": "Weekdays",
-          "players": "Media Player",
-          "mode": "Output"
-        },
-        "data_description": {
-          "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on.",
-          "players": "Each player is used only once per ring, by the first matching profile."
-        }
-      },
-      "profile_tts": {
-        "title": "Announcement",
-        "data": {
-          "tts_entity": "TTS service",
-          "text": "Text",
-          "volume": "Volume (0 = unchanged)"
-        }
-      },
-      "profile_ringtone": {
-        "title": "Ringtone",
-        "data": {
-          "media": "Ringtone",
-          "volume": "Volume (0 = unchanged)"
+        "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
+        "sections": {
+          "timing": {
+            "name": "Time window",
+            "description": "When the profile applies.",
+            "data": {
+              "name": "Name",
+              "enabled": "Enabled",
+              "from": "From",
+              "to": "To",
+              "weekdays": "Weekdays"
+            },
+            "data_description": {
+              "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day."
+            }
+          },
+          "sound": {
+            "name": "Sound",
+            "description": "Optional. Without media players this profile plays no sound.",
+            "data": {
+              "players": "Media Player",
+              "mode": "Output",
+              "tts_entity": "TTS service",
+              "text": "Announcement text",
+              "media": "Ringtone",
+              "volume": "Volume (0 = unchanged)"
+            },
+            "data_description": {
+              "tts_entity": "Only for the output “Announcement”.",
+              "text": "Only for the output “Announcement”.",
+              "media": "Only for the output “Ringtone”."
+            }
+          },
+          "notifications": {
+            "name": "Notification",
+            "description": "Optional. App push of this profile.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (companion app devices)",
+              "message": "Push text",
+              "clear_after_hours": "Clear push after X hours (0 = never)"
+            },
+            "data_description": {
+              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
+              "clear_after_hours": "Removes the notification via clear_notification."
+            }
+          }
         }
       },
       "pool_menu": {
@@ -935,7 +929,9 @@
       "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
       "no_weekday": "Select at least one weekday.",
       "no_targets": "Select at least one target for app push.",
-      "no_players": "Select at least one media player.",
+      "no_output": "The profile needs at least one media player or app push.",
+      "no_tts": "Announcement needs a TTS service and a text.",
+      "no_ringtone": "Select an audio file for the ringtone.",
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",

@@ -9,14 +9,11 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
 from ..const import (
-    CONF_CLEAR_HOURS,
     CONF_DEBOUNCE,
-    CONF_MESSAGE,
-    CONF_MOBILE_ENABLED,
-    CONF_MOBILE_TARGETS,
     CONF_NAME,
     CONF_PROFILES,
     CONF_TRIGGER_ENTITY,
@@ -26,10 +23,14 @@ from ..const import (
     MODE_KEYS,
     MODE_RINGTONE,
     MODE_TTS,
+    P_CLEAR_HOURS,
     P_ENABLED,
     P_FROM,
     P_ID,
     P_MEDIA,
+    P_MESSAGE,
+    P_MOBILE_ENABLED,
+    P_MOBILE_TARGETS,
     P_MODE,
     P_NAME,
     P_PLAYERS,
@@ -42,6 +43,7 @@ from ..const import (
 )
 from ..doorbell import profile_summary
 from .common import (
+    SECTION_NOTIFICATIONS,
     _flatten_sections,
     _mobile_selector,
     _mobile_suggest,
@@ -69,35 +71,11 @@ def _bell_schema(
             CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_RING_DEBOUNCE)
         )
     ] = _number(0, 3600, "s")
-    notifications: dict[Any, Any] = {
-        vol.Required(
-            CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
-        ): bool,
-        vol.Optional(
-            CONF_MOBILE_TARGETS, description=_mobile_suggest(hass, defaults)
-        ): _mobile_selector(),
-        vol.Required(
-            CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, DEFAULT_RING_MESSAGE)
-        ): str,
-        vol.Required(
-            CONF_CLEAR_HOURS,
-            default=defaults.get(CONF_CLEAR_HOURS, DEFAULT_CLEAR_HOURS),
-        ): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=0,
-                max=168,
-                step=0.5,
-                unit_of_measurement="h",
-                mode=selector.NumberSelectorMode.BOX,
-            )
-        ),
-    }
-    return _sections_schema(fields, notifications)
+    return _sections_schema(fields, {})
 
 
 def _validate_bell(user_input: dict[str, Any]) -> dict[str, str]:
-    if user_input.get(CONF_MOBILE_ENABLED) and not user_input.get(CONF_MOBILE_TARGETS):
-        return {"base": "no_targets"}
+    """Der Eintrag selbst hat keine Pflichtprüfung mehr (Push steckt in den Profilen)."""
     return {}
 
 
@@ -189,102 +167,105 @@ class DoorbellOptions:
     async def async_step_profile_basic(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Alle Angaben eines Profils in einem Formular: Zeitfenster, Ton, Benachrichtigung."""
         errors: dict[str, str] = {}
         d = self._draft
         if user_input is not None:
-            if not user_input.get(P_PLAYERS):
-                errors["base"] = "no_players"
-            elif not user_input.get(P_WEEKDAYS):
+            flat = _flatten_sections(user_input)
+            mode = flat.get(P_MODE, MODE_TTS)
+            push = bool(flat.get(P_MOBILE_ENABLED))
+            if not flat.get(P_WEEKDAYS):
                 errors["base"] = "no_weekday"
+            elif not flat.get(P_PLAYERS) and not push:
+                errors["base"] = "no_output"
+            elif push and not flat.get(P_MOBILE_TARGETS):
+                errors["base"] = "no_targets"
+            elif flat.get(P_PLAYERS) and mode == MODE_TTS and not (
+                flat.get(P_TTS_ENTITY) and flat.get(P_TEXT)
+            ):
+                errors["base"] = "no_tts"
+            elif flat.get(P_PLAYERS) and mode == MODE_RINGTONE and not (
+                flat.get(P_MEDIA) or {}
+            ).get("media_content_id"):
+                errors["base"] = "no_ringtone"
             else:
-                self._draft.update(user_input)
-                return await getattr(self, f"async_step_profile_{user_input[P_MODE]}")()
-            d = user_input
+                self._draft = flat
+                return await self._finish_profile()
+            d = flat
+        timing: dict[Any, Any] = {
+            vol.Required(P_NAME, description=_suggest(P_NAME, d)): str,
+            vol.Required(P_ENABLED, default=d.get(P_ENABLED, True)): bool,
+            vol.Required(P_FROM, default=d.get(P_FROM, "07:00:00")): selector.TimeSelector(),
+            vol.Required(P_TO, default=d.get(P_TO, "22:00:00")): selector.TimeSelector(),
+            vol.Required(P_WEEKDAYS, default=d.get(P_WEEKDAYS, WEEKDAYS)): _select(
+                WEEKDAYS, "weekday", multiple=True, mode=selector.SelectSelectorMode.LIST
+            ),
+        }
+        sound: dict[Any, Any] = {
+            vol.Optional(
+                P_PLAYERS, description=_suggest(P_PLAYERS, d)
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="media_player", multiple=True)
+            ),
+            vol.Required(P_MODE, default=d.get(P_MODE, MODE_TTS)): _select(
+                [MODE_TTS, MODE_RINGTONE], "profile_mode", mode=selector.SelectSelectorMode.LIST
+            ),
+            vol.Optional(
+                P_TTS_ENTITY, description=_suggest(P_TTS_ENTITY, d)
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="tts")),
+            vol.Optional(P_TEXT, default=d.get(P_TEXT, DEFAULT_RING_MESSAGE)): str,
+            vol.Optional(P_MEDIA, description=_suggest(P_MEDIA, d)): selector.MediaSelector(
+                selector.MediaSelectorConfig(accept=["audio/*"])
+            ),
+            vol.Required(P_VOLUME, default=d.get(P_VOLUME, 0)): _number(0, 100, "%"),
+        }
+        notifications: dict[Any, Any] = {
+            vol.Required(
+                P_MOBILE_ENABLED, default=d.get(P_MOBILE_ENABLED, False)
+            ): bool,
+            vol.Optional(P_MOBILE_TARGETS, description=_mobile_suggest(self.hass, d)): _mobile_selector(),
+            vol.Required(P_MESSAGE, default=d.get(P_MESSAGE, DEFAULT_RING_MESSAGE)): str,
+            vol.Required(
+                P_CLEAR_HOURS, default=d.get(P_CLEAR_HOURS, DEFAULT_CLEAR_HOURS)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=168, step=0.5, unit_of_measurement="h",
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+        }
         return self.async_show_form(
             step_id="profile_basic",
             data_schema=vol.Schema(
                 {
-                    vol.Required(P_NAME, description=_suggest(P_NAME, d)): str,
-                    vol.Required(P_ENABLED, default=d.get(P_ENABLED, True)): bool,
-                    vol.Required(
-                        P_FROM, default=d.get(P_FROM, "07:00:00")
-                    ): selector.TimeSelector(),
-                    vol.Required(
-                        P_TO, default=d.get(P_TO, "22:00:00")
-                    ): selector.TimeSelector(),
-                    vol.Required(P_WEEKDAYS, default=d.get(P_WEEKDAYS, WEEKDAYS)): _select(
-                        WEEKDAYS,
-                        "weekday",
-                        multiple=True,
-                        mode=selector.SelectSelectorMode.LIST,
-                    ),
-                    vol.Required(
-                        P_PLAYERS, description=_suggest(P_PLAYERS, d)
-                    ): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="media_player", multiple=True)
-                    ),
-                    vol.Required(P_MODE, default=d.get(P_MODE, MODE_TTS)): _select(
-                        [MODE_TTS, MODE_RINGTONE],
-                        "profile_mode",
-                        mode=selector.SelectSelectorMode.LIST,
+                    vol.Required("timing"): section(vol.Schema(timing), {"collapsed": False}),
+                    vol.Required("sound"): section(vol.Schema(sound), {"collapsed": False}),
+                    vol.Required(SECTION_NOTIFICATIONS): section(
+                        vol.Schema(notifications), {"collapsed": False}
                     ),
                 }
             ),
             errors=errors,
         )
 
-    async def async_step_profile_tts(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._draft.update(user_input)
-            return await self._finish_profile()
-        d = self._draft
-        return self.async_show_form(
-            step_id="profile_tts",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        P_TTS_ENTITY, description=_suggest(P_TTS_ENTITY, d)
-                    ): selector.EntitySelector(selector.EntitySelectorConfig(domain="tts")),
-                    vol.Required(P_TEXT, default=d.get(P_TEXT, DEFAULT_RING_MESSAGE)): str,
-                    vol.Required(P_VOLUME, default=d.get(P_VOLUME, 0)): _number(0, 100, "%"),
-                }
-            ),
-        )
-
-    async def async_step_profile_ringtone(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._draft.update(user_input)
-            return await self._finish_profile()
-        d = self._draft
-        return self.async_show_form(
-            step_id="profile_ringtone",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        P_MEDIA, description=_suggest(P_MEDIA, d)
-                    ): selector.MediaSelector(
-                        selector.MediaSelectorConfig(accept=["audio/*"])
-                    ),
-                    vol.Required(P_VOLUME, default=d.get(P_VOLUME, 0)): _number(0, 100, "%"),
-                }
-            ),
-        )
-
     async def _finish_profile(self) -> ConfigFlowResult:
-        mode = self._draft[P_MODE]
+        d = self._draft
+        has_sound = bool(d.get(P_PLAYERS))
+        keys = [P_NAME, P_ENABLED, P_FROM, P_TO, P_WEEKDAYS, P_PLAYERS]
         profile: dict[str, Any] = {
             P_ID: self._edit_id or uuid.uuid4().hex[:8],
-            **{
-                k: self._draft[k]
-                for k in (P_NAME, P_ENABLED, P_FROM, P_TO, P_WEEKDAYS, P_PLAYERS, P_MODE, P_VOLUME)
-                if k in self._draft
-            },
-            **{k: self._draft[k] for k in MODE_KEYS[mode] if k in self._draft},
+            **{k: d[k] for k in keys if k in d},
+            P_MOBILE_ENABLED: bool(d.get(P_MOBILE_ENABLED)),
+            P_MOBILE_TARGETS: d.get(P_MOBILE_TARGETS) or [],
+            P_MESSAGE: d.get(P_MESSAGE) or DEFAULT_RING_MESSAGE,
+            P_CLEAR_HOURS: d.get(P_CLEAR_HOURS, DEFAULT_CLEAR_HOURS),
+            P_PLAYERS: d.get(P_PLAYERS) or [],
         }
+        if has_sound:
+            mode = d.get(P_MODE, MODE_TTS)
+            profile[P_MODE] = mode
+            profile[P_VOLUME] = d.get(P_VOLUME, 0)
+            profile.update({k: d[k] for k in MODE_KEYS[mode] if k in d})
         profiles = self._profiles()
         if self._edit_id:
             profiles = [profile if p[P_ID] == self._edit_id else p for p in profiles]

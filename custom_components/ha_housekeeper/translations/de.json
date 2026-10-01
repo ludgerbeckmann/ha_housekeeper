@@ -107,20 +107,6 @@
               "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
               "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
             }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "message": "Push-Text",
-              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
-              "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
-            }
           }
         }
       },
@@ -220,7 +206,9 @@
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
       "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
       "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-      "no_players": "Mindestens ein Media Player muss gewählt sein.",
+      "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+      "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+      "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
@@ -402,20 +390,6 @@
               "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
               "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
             }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Push-Meldung an die Geräte und wann sie wieder gelöscht wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-              "message": "Push-Text",
-              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
-            },
-            "data_description": {
-              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts.",
-              "clear_after_hours": "Löscht die Meldung per clear_notification. Die Audio-Ausgabe wird über Zeitfenster-Profile im Menü festgelegt."
-            }
           }
         }
       },
@@ -433,33 +407,53 @@
       },
       "profile_basic": {
         "title": "Zeitfenster-Profil",
-        "data": {
-          "name": "Name",
-          "enabled": "Aktiv",
-          "from": "Von",
-          "to": "Bis",
-          "weekdays": "Wochentage",
-          "players": "Media Player",
-          "mode": "Ausgabe"
-        },
-        "data_description": {
-          "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt.",
-          "players": "Jeder Player wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil."
-        }
-      },
-      "profile_tts": {
-        "title": "Ansage",
-        "data": {
-          "tts_entity": "TTS-Dienst",
-          "text": "Text",
-          "volume": "Lautstärke (0 = unverändert)"
-        }
-      },
-      "profile_ringtone": {
-        "title": "Klingelton",
-        "data": {
-          "media": "Klingelton",
-          "volume": "Lautstärke (0 = unverändert)"
+        "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
+        "sections": {
+          "timing": {
+            "name": "Zeitfenster",
+            "description": "Wann das Profil gilt.",
+            "data": {
+              "name": "Name",
+              "enabled": "Aktiv",
+              "from": "Von",
+              "to": "Bis",
+              "weekdays": "Wochentage"
+            },
+            "data_description": {
+              "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig."
+            }
+          },
+          "sound": {
+            "name": "Ton",
+            "description": "Optional. Ohne Media Player gibt dieses Profil keinen Ton aus.",
+            "data": {
+              "players": "Media Player",
+              "mode": "Ausgabe",
+              "tts_entity": "TTS-Dienst",
+              "text": "Ansagetext",
+              "media": "Klingelton",
+              "volume": "Lautstärke (0 = unverändert)"
+            },
+            "data_description": {
+              "tts_entity": "Nur bei Ausgabe „Ansage“.",
+              "text": "Nur bei Ausgabe „Ansage“.",
+              "media": "Nur bei Ausgabe „Klingelton“."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigung",
+            "description": "Optional. App-Push dieses Profils.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+              "message": "Push-Text",
+              "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+            },
+            "data_description": {
+              "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
+              "clear_after_hours": "Löscht die Meldung per clear_notification."
+            }
+          }
         }
       },
       "pool_menu": {
@@ -935,7 +929,9 @@
       "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
       "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
       "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-      "no_players": "Mindestens ein Media Player muss gewählt sein.",
+      "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
+      "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+      "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",

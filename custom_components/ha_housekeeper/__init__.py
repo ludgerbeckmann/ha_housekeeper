@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import uuid
 
 import voluptuous as vol
 
@@ -17,6 +18,25 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     ATTR_DURATION,
     ATTR_ENTRY_ID,
+    CONF_CLEAR_HOURS,
+    CONF_MESSAGE,
+    CONF_MOBILE_ENABLED,
+    CONF_MOBILE_TARGETS,
+    CONF_PROFILES,
+    DEFAULT_CLEAR_HOURS,
+    DEFAULT_RING_MESSAGE,
+    P_CLEAR_HOURS,
+    P_ENABLED,
+    P_FROM,
+    P_ID,
+    P_MESSAGE,
+    P_MOBILE_ENABLED,
+    P_MOBILE_TARGETS,
+    P_NAME,
+    P_PLAYERS,
+    P_TO,
+    P_WEEKDAYS,
+    WEEKDAYS,
     CONF_FUNCTION_TYPE,
     DOMAIN,
     FUNCTION_ALARM,
@@ -31,6 +51,7 @@ from .const import (
     SERVICE_RUN_PUMP,
 )
 from .alarm_clock import AlarmClockController
+from .notify import entry_opt
 from .issues import async_remove_entry_issues, async_setup_checks
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
@@ -91,9 +112,49 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+def _migrate_doorbell_push(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Push-Einstellungen der Türklingel aus dem Eintrag in ein Profil übernehmen.
+
+    Ältere Einträge hatten den App-Push einmal im Eintrag. Er steht jetzt nur noch in den
+    Profilen: Die bisherigen Einstellungen werden als ganztägiges Profil „Benachrichtigung“
+    (ohne Ton) übernommen, die Eintragswerte danach geleert (so läuft das nur einmal).
+    """
+    get = entry_opt(entry)
+    if not get(CONF_MOBILE_ENABLED):
+        return
+    profiles = list(get(CONF_PROFILES, []) or [])
+    german = (hass.config.language or "").startswith("de")
+    profiles.append(
+        {
+            P_ID: uuid.uuid4().hex[:8],
+            P_NAME: "Benachrichtigung" if german else "Notification",
+            P_ENABLED: True,
+            P_FROM: "00:00:00",
+            P_TO: "00:00:00",
+            P_WEEKDAYS: list(WEEKDAYS),
+            P_PLAYERS: [],
+            P_MOBILE_ENABLED: True,
+            P_MOBILE_TARGETS: list(get(CONF_MOBILE_TARGETS, []) or []),
+            P_MESSAGE: get(CONF_MESSAGE) or DEFAULT_RING_MESSAGE,
+            P_CLEAR_HOURS: get(CONF_CLEAR_HOURS, DEFAULT_CLEAR_HOURS),
+        }
+    )
+    hass.config_entries.async_update_entry(
+        entry,
+        options={
+            **entry.options,
+            CONF_PROFILES: profiles,
+            CONF_MOBILE_ENABLED: None,
+            CONF_MOBILE_TARGETS: None,
+        },
+    )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Eintrag einrichten - je nach Funktionstyp."""
     function_type = entry.data[CONF_FUNCTION_TYPE]
+    if function_type == FUNCTION_DOORBELL:
+        _migrate_doorbell_push(hass, entry)
     controller = CONTROLLERS[function_type](hass, entry)
     await controller.async_start()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = controller

@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned
+from .helpers import is_menu, menu_options
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import (
     assign_players,
@@ -26,7 +26,12 @@ MEDIA = {"media_content_id": "media-source://media_source/local/bell.mp3",
          "media_content_type": "audio/mpeg"}
 DAY_TTS = {"id": "p1", "name": "Tag", "from": "07:00:00", "to": "22:00:00",
            "weekdays": ALL_DAYS, "players": ["media_player.kitchen"], "mode": "tts",
-           "tts_entity": "tts.home", "text": "Es klingelt", "volume": 0}
+           "tts_entity": "tts.home", "text": "Es klingelt", "volume": 0,
+           "mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
+           "message": "Ding", "clear_after_hours": 1}
+PUSH_ALL = {"id": "p4", "name": "Push", "from": "00:00:00", "to": "00:00:00",
+            "weekdays": ALL_DAYS, "players": [], "mobile_enabled": True,
+            "mobile_targets": ["mobile_app_phone"], "message": "Nur Push", "clear_after_hours": 1}
 NIGHT_RING = {"id": "p2", "name": "Nacht", "from": "22:00:00", "to": "06:00:00",
               "weekdays": ["fri"], "players": ["media_player.bedroom"], "mode": "ringtone",
               "media": MEDIA, "volume": 30}
@@ -35,8 +40,7 @@ ALL_DAY = {"id": "p3", "name": "Immer", "from": "00:00:00", "to": "00:00:00",
            "mode": "ringtone", "media": MEDIA, "volume": 0}
 BASE = {
     "function_type": "doorbell", "name": "Bell", "trigger_entity": TRIGGER,
-    "debounce_seconds": 10, "mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
-    "message": "Ding", "clear_after_hours": 1, "profiles": [DAY_TTS],
+    "debounce_seconds": 10, "profiles": [DAY_TTS],
 }
 
 
@@ -112,11 +116,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     )
     assert result["step_id"] == "doorbell"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "profiles")}
-    bad = await hass.config_entries.flow.async_configure(
-        result["flow_id"], sectioned({**data, "mobile_targets": []})
-    )
-    assert bad["errors"] == {"base": "no_targets"}
-    ok = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(data))
+    ok = await hass.config_entries.flow.async_configure(result["flow_id"], {"general": data})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "doorbell" and ok["data"]["profiles"] == []
 
@@ -139,10 +139,10 @@ async def test_ring_tts_and_push_in_window(hass: HomeAssistant) -> None:
 
 async def test_ring_outside_window_only_push(hass: HomeAssistant) -> None:
     m = _mocks(hass)
-    await _setup(hass)
+    await _setup(hass, profiles=[DAY_TTS, PUSH_ALL])
     await _ring(hass, _at(23))
     assert m["tts"] == [] and m["play"] == []
-    assert len(m["push"]) == 1
+    assert len(m["push"]) == 1 and m["push"][0].data["message"] == "Nur Push"
 
 
 async def test_ringtone_with_volume(hass: HomeAssistant) -> None:
@@ -214,7 +214,7 @@ async def test_push_cleared_after_hours(hass: HomeAssistant) -> None:
 
 async def test_no_clear_when_zero_hours(hass: HomeAssistant) -> None:
     m = _mocks(hass)
-    await _setup(hass, clear_after_hours=0)
+    await _setup(hass, profiles=[{**DAY_TTS, "clear_after_hours": 0}])
     await _ring(hass, _at(12))
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=30))
     await hass.async_block_till_done()
@@ -223,7 +223,7 @@ async def test_no_clear_when_zero_hours(hass: HomeAssistant) -> None:
 
 async def test_push_disabled_audio_only(hass: HomeAssistant) -> None:
     m = _mocks(hass)
-    await _setup(hass, mobile_enabled=False)
+    await _setup(hass, profiles=[{**DAY_TTS, "mobile_enabled": False}])
     await _ring(hass, _at(12))
     assert m["push"] == [] and len(m["tts"]) == 1
 
@@ -255,44 +255,120 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert "edit_profile" not in menu_options(result)
 
     result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
+    schema = result["data_schema"].schema
+    assert [str(k) for k in schema] == ["timing", "sound", "notifications"]
+
+    def form(timing=None, sound=None, notifications=None):
+        return {
+            "timing": {"name": "Tag", "enabled": True, "from": "07:00:00", "to": "22:00:00",
+                       "weekdays": ALL_DAYS, **(timing or {})},
+            "sound": {"mode": "tts", "volume": 0, **(sound or {})},
+            "notifications": {"mobile_enabled": False, "message": "Ding",
+                              "clear_after_hours": 1, **(notifications or {})},
+        }
+
+    bad = await flow.async_configure(result["flow_id"], form())
+    assert bad["errors"] == {"base": "no_output"}
     bad = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Tag", "from": "07:00:00", "to": "22:00:00", "weekdays": ALL_DAYS,
-         "players": [], "mode": "tts"},
-    )
-    assert bad["errors"] == {"base": "no_players"}
+        bad["flow_id"], form(notifications={"mobile_enabled": True}))
+    assert bad["errors"] == {"base": "no_targets"}
+    bad = await flow.async_configure(
+        bad["flow_id"], form(sound={"players": ["media_player.kitchen"]}))
+    assert bad["errors"] == {"base": "no_tts"}
+    bad = await flow.async_configure(
+        bad["flow_id"], form(sound={"players": ["media_player.kitchen"], "mode": "ringtone"}))
+    assert bad["errors"] == {"base": "no_ringtone"}
     result = await flow.async_configure(
         bad["flow_id"],
-        {"name": "Tag", "from": "07:00:00", "to": "22:00:00", "weekdays": ALL_DAYS,
-         "players": ["media_player.kitchen"], "mode": "tts"},
-    )
-    assert result["step_id"] == "profile_tts"
-    result = await flow.async_configure(
-        result["flow_id"], {"tts_entity": "tts.home", "text": "Hallo", "volume": 20}
-    )
+        form(sound={"players": ["media_player.kitchen"], "tts_entity": "tts.home",
+                    "text": "Hallo", "volume": 20},
+             notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
     assert is_menu(result)
     assert len(entry.options["profiles"]) == 1
     tts_profile = entry.options["profiles"][0]
     assert tts_profile["text"] == "Hallo" and tts_profile["mode"] == "tts"
+    assert tts_profile["mobile_enabled"] is True
+    assert tts_profile["mobile_targets"] == ["mobile_app_phone"]
+    assert tts_profile["message"] == "Ding" and tts_profile["clear_after_hours"] == 1
 
     # Profil auf Klingelton umstellen: alte TTS-Schlüssel verschwinden
     result = await flow.async_configure(result["flow_id"], {"action": "edit_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": tts_profile["id"]})
     result = await flow.async_configure(
         result["flow_id"],
-        {"name": "Tag", "from": "07:00:00", "to": "22:00:00", "weekdays": ALL_DAYS,
-         "players": ["media_player.kitchen"], "mode": "ringtone"},
-    )
-    assert result["step_id"] == "profile_ringtone"
-    result = await flow.async_configure(result["flow_id"], {"media": MEDIA, "volume": 0})
+        form(sound={"players": ["media_player.kitchen"], "mode": "ringtone", "media": MEDIA}))
     profile = entry.options["profiles"][0]
     assert profile["id"] == tts_profile["id"] and profile["mode"] == "ringtone"
     assert "text" not in profile and "tts_entity" not in profile
     assert profile["media"]["media_content_id"] == MEDIA["media_content_id"]
     assert "Tag" in profile_summary(hass, profile)
 
+    # Profil nur mit Push: kein Ton, keine Player
+    result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
+    result = await flow.async_configure(
+        result["flow_id"],
+        form(timing={"name": "Nur Push"},
+             notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
+    push_only = entry.options["profiles"][1]
+    assert push_only["players"] == [] and "mode" not in push_only
+    assert "Push" in profile_summary(hass, push_only)
+
     result = await flow.async_configure(result["flow_id"], {"action": "delete_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": profile["id"]})
+    result = await flow.async_configure(result["flow_id"], {"action": "delete_profile"})
+    result = await flow.async_configure(result["flow_id"], {"profile": push_only["id"]})
     assert entry.options["profiles"] == []
     done = await flow.async_configure(result["flow_id"], {"action": "done"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
+
+
+# --- Push je Profil ------------------------------------------------------------------
+
+
+async def test_all_matching_profiles_push_equally(hass: HomeAssistant) -> None:
+    other = async_mock_service(hass, "notify", "mobile_app_tablet")
+    m = _mocks(hass)
+    second = {**PUSH_ALL, "mobile_targets": ["mobile_app_phone", "mobile_app_tablet"],
+              "message": "Zweites"}
+    await _setup(hass, profiles=[DAY_TTS, second])
+    await _ring(hass, _at(12))
+    assert [c.data["message"] for c in m["push"]] == ["Ding"]      # Handy: erstes Profil
+    assert [c.data["message"] for c in other] == ["Zweites"]       # Tablet: zweites Profil
+
+
+async def test_profile_without_push_sends_nothing(hass: HomeAssistant) -> None:
+    m = _mocks(hass)
+    await _setup(hass, profiles=[{**DAY_TTS, "mobile_enabled": False}, PUSH_ALL])
+    await _ring(hass, _at(12))
+    assert len(m["tts"]) == 1 and [c.data["message"] for c in m["push"]] == ["Nur Push"]
+
+
+async def test_each_profile_clears_with_its_own_hours(hass: HomeAssistant) -> None:
+    other = async_mock_service(hass, "notify", "mobile_app_tablet")
+    m = _mocks(hass)
+    second = {**PUSH_ALL, "mobile_targets": ["mobile_app_tablet"], "clear_after_hours": 3}
+    await _setup(hass, profiles=[DAY_TTS, second])
+    await _ring(hass, _at(12))
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=1, minutes=1))
+    await hass.async_block_till_done()
+    assert m["push"][-1].data["message"] == "clear_notification" and len(other) == 1
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=3, minutes=1))
+    await hass.async_block_till_done()
+    assert other[-1].data["message"] == "clear_notification"
+
+
+async def test_entry_level_push_migrates_into_profile(hass: HomeAssistant) -> None:
+    m = _mocks(hass)
+    entry = await _setup(hass, mobile_enabled=True, mobile_targets=["mobile_app_phone"],
+                         message="Alt", clear_after_hours=2,
+                         profiles=[{**DAY_TTS, "mobile_enabled": False}])
+    profiles = entry.options["profiles"]
+    assert len(profiles) == 2 and profiles[1]["players"] == []
+    assert profiles[1]["mobile_enabled"] is True and profiles[1]["message"] == "Alt"
+    assert profiles[1]["clear_after_hours"] == 2
+    assert entry.options["mobile_enabled"] is None
+    await _ring(hass, _at(23))                       # außerhalb des Tagesprofils
+    assert [c.data["message"] for c in m["push"]] == ["Alt"]
+    # nur einmal migrieren
+    await hass.config_entries.async_reload(entry.entry_id)
+    assert len(entry.options["profiles"]) == 2
