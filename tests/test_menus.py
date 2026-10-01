@@ -76,7 +76,9 @@ def test_translations_cover_all_menu_options() -> None:
             assert list(steps[step_id]["data"]) == ["action"], (name, step_id)
         assert labels["done"] in ("Save & close", "Speichern & schließen")
         # jeder Eintrag, den ein Menü anbieten kann, hat eine Beschriftung
-        source = (COMPONENT / "config_flow.py").read_text(encoding="utf-8")
+        source = (COMPONENT / "config_flow.py").read_text(encoding="utf-8") + "".join(
+            path.read_text(encoding="utf-8") for path in (COMPONENT / "flows").glob("*.py")
+        )
         for option in ("general", "add_rule", "edit_rule", "delete_rule", "bell_general", "add_profile",
                        "pool_general", "add_window", "dry_run", "add_speaker", "edit_speaker", "delete_speaker", "add_command",
                        "add_status", "upd_general", "add_schedule", "tp_general", "add_task",

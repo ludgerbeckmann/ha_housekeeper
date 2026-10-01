@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
-from custom_components.ha_housekeeper.config_flow import _mobile_selector, _mobile_suggest
+from custom_components.ha_housekeeper.flows.common import _mobile_selector, _mobile_suggest
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.notify import (
     Notifier,
