@@ -162,6 +162,14 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Registry-Ereignissen. Deaktivierte/nicht verfügbare Entitäten zählen als vorhanden. Neue Funktion
   mit Entitätsfeldern = Eintrag in `collect_references()`. Platzhalter `{entry}`, `{function}`,
   `{entity}` sind echte ASCII-Platzhalter.
+- **Einzelschalter „aktiv“** (`enabled`, Standard an) bei Updater-Zeitplänen (`U_ENABLED`),
+  Türklingel-Profilen (`P_ENABLED`), Türwächter-Regeln (`R_ENABLED`) und KNX-Lautsprecher-Profilen
+  (`S_ENABLED`), wie bei Weckern und Aufgaben: Der Controller ignoriert ausgeschaltete Elemente
+  (`UpdaterController.schedules` = nur aktive, `all_schedules` = alle; `DoorGuardController._rules()`
+  nur aktive; `assign_players()` überspringt ausgeschaltete Profile; beim KNX-Connector liefert
+  `_player_state()` für ein ausgeschaltetes Profil `None`, die Befehle/Rückmeldungen ruhen). Die
+  Dialoge (`flows/`) arbeiten dagegen mit **allen** Elementen. Beim Briefkasten gibt es den
+  Schalter `mailbox_active` (im `Store`, aus = Vibrationen werden ignoriert).
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu, **aber nicht mitten in einem Lauf**: `__init__._async_reload` merkt das

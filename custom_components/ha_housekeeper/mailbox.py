@@ -51,6 +51,7 @@ class MailboxController:
         self.hass = hass
         self.entry = entry
         self.has_mail = False
+        self.enabled = True
         self.last_delivery: datetime | None = None
         self._last_trigger: float | None = None
         self._unsubs: list = []
@@ -76,6 +77,7 @@ class MailboxController:
     async def async_start(self) -> None:
         stored = await self._store.async_load() or {}
         self.has_mail = bool(stored.get("has_mail", False))
+        self.enabled = bool(stored.get("enabled", True))
         if (raw := stored.get("last_delivery")) and (
             parsed := dt_util.parse_datetime(raw)
         ):
@@ -137,6 +139,7 @@ class MailboxController:
     async def _async_save(self) -> None:
         await self._store.async_save(
             {
+                "enabled": self.enabled,
                 "has_mail": self.has_mail,
                 "last_delivery": self.last_delivery.isoformat()
                 if self.last_delivery
@@ -144,6 +147,11 @@ class MailboxController:
             }
         )
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
+
+    async def async_set_enabled(self, enabled: bool) -> None:
+        """Benachrichtigung ein- oder ausschalten (aus = Vibrationen werden ignoriert)."""
+        self.enabled = enabled
+        await self._async_save()
 
     async def async_reset(self) -> None:
         """Briefkasten als geleert markieren."""
@@ -187,6 +195,8 @@ class MailboxController:
 
     async def async_trigger(self) -> None:
         """Vibration erkannt: Post vermerken und benachrichtigen."""
+        if not self.enabled:
+            return
         now = time.monotonic()
         debounce = float(self._opt(CONF_DEBOUNCE, DEFAULT_DEBOUNCE))
         if self._last_trigger is not None and now - self._last_trigger < debounce:

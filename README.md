@@ -36,6 +36,15 @@ laufender **Update-Lauf** (auch ein noch offener Bericht nach einem Neustart), e
 **Aufgabe** und ein **manueller Poolpumpen-Lauf**. Die Einstellungen gelten dann nach dem Ende
 dieses Vorgangs.
 
+## Einzelne Elemente ein- und ausschalten
+
+Wecker, Aufgaben, Updater-Zeitpläne, Türklingel-Profile, Türwächter-Regeln und
+KNX/Sonos-Lautsprecher-Profile haben im Dialog ein Feld **Aktiv**. Ein ausgeschaltetes Element
+wird ignoriert (Standard: an, bestehende Elemente bleiben aktiv) und in den Listen mit „aus“
+markiert. Bei einem ausgeschalteten Updater-Zeitplan zählen auch seine Updates und
+Benachrichtigungswege nicht für „Verfügbare Updates“ und „Jetzt prüfen“; ein ausgeschaltetes
+KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus.
+
 ## Installation
 
 **HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
@@ -99,6 +108,8 @@ im Dialog dem passenden Gerät zugeordnet.
 
 ### Entitäten
 
+- `switch` **Briefkasten-Benachrichtigung aktiv** (aus = Vibrationen werden ignoriert; „Briefkasten
+  geleert“ funktioniert weiter)
 - `binary_sensor` **Post vorhanden**
 - `sensor` **Letzter Posteinwurf** (Zeitstempel)
 - `button` **Briefkasten geleert**
