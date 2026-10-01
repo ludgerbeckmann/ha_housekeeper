@@ -29,6 +29,13 @@ rechts geht es in den gewählten Dialog und danach zurück zur Liste. **Speicher
 beendet den Dialog. Änderungen werden sofort gespeichert, das Schließen mit X verliert also
 nichts.
 
+Nach dem Speichern wird der Eintrag neu geladen. Läuft gerade etwas, das ein Neuladen nicht
+überstünde, **wartet das Neuladen** bis zum Ende und wird dann einmal ausgeführt (mehrere
+Änderungen ergeben nur ein Neuladen): ein klingelnder oder schlummernder **Wecker**, ein
+laufender **Update-Lauf** (auch ein noch offener Bericht nach einem Neustart), eine laufende
+**Aufgabe** und ein **manueller Poolpumpen-Lauf**. Die Einstellungen gelten dann nach dem Ende
+dieses Vorgangs.
+
 ## Installation
 
 **HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,

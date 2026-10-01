@@ -148,7 +148,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   nichts eingestellt ist.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
-  den Eintrag neu.
+  den Eintrag neu, **aber nicht mitten in einem Lauf**: `__init__._async_reload` merkt das
+  Neuladen vor (`reload_requested`), wenn der Controller `busy` ist; das Mixin `ReloadWhenIdle`
+  (`reload.py`) führt es in `async_idle()` aus, sobald etwas endet. `busy` gilt für Wecker
+  (klingelnd/schlummernd), Updater (Lauf oder offener `pending`-Bericht), Aufgabenplaner
+  (laufende Aufgabe) und Poolsteuerung (manueller Lauf). Ein neuer Controller mit Zuständen,
+  die ein Neuladen nicht überstehen, erbt das Mixin, überschreibt `busy` und ruft `async_idle()`.
 - iOS/Android-Aktion „Briefkasten geleert“: `data.actions` in der
   notify-Nachricht, Auswertung über das Event `mobile_app_notification_action`
   (Action-ID enthält die `entry_id`).
