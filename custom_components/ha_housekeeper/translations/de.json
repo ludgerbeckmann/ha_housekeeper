@@ -174,10 +174,12 @@
             "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
             "data": {
               "name": "Name",
-              "workday_sensors": "Werktags-/Feiertagssensoren"
+              "workday_sensors": "Werktags-/Feiertagssensoren",
+              "workday_invert": "Sensorwerte umkehren"
             },
             "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
             }
           },
           "notifications": {
@@ -854,10 +856,12 @@
             "name": "Allgemein",
             "description": "Name des Eintrags und Werktags-/Feiertagssensoren für die Wecker.",
             "data": {
-              "workday_sensors": "Werktags-/Feiertagssensoren"
+              "workday_sensors": "Werktags-/Feiertagssensoren",
+              "workday_invert": "Sensorwerte umkehren"
             },
             "data_description": {
-              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft."
+              "workday_sensors": "Binärsensoren, z. B. der Sensor der Werktags-Integration. Sie lassen sich bei jedem Wecker als Bedingung wählen. Mehrere Sensoren werden mit ODER verknüpft.",
+              "workday_invert": "Aus gilt als an und umgekehrt, bei allen Sensoren und Weckern, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet. Ein nicht verfügbarer Sensor bleibt unverändert."
             }
           },
           "notifications": {

@@ -32,6 +32,7 @@ from .const import (
     CONF_ALARMS,
     CONF_CRITICAL,
     CONF_MESSAGE,
+    CONF_WORKDAY_INVERT,
     CONF_WORKDAY_SENSORS,
     DEFAULT_ALARM_AUTO_STOP,
     DEFAULT_ALARM_MESSAGE,
@@ -117,6 +118,7 @@ def check_conditions(
     alarm: dict[str, Any],
     global_sensors: list[str],
     get_state: Callable[[str], str | None],
+    invert: bool = False,
 ) -> tuple[bool, str | None, list[str]]:
     """Werktags-/Feiertagsbedingungen eines Weckers prüfen: (erfüllt, Grund, Sensoren).
 
@@ -125,7 +127,13 @@ def check_conditions(
     - „nicht klingeln, wenn an“: sobald ein gewählter Sensor an ist, klingelt der Wecker nicht.
     Beide Felder sind UND-verknüpft. Ein nicht verfügbarer oder unbekannter Sensor zählt bei
     „nur klingeln, wenn an“ als erfüllt (der Wecker klingelt dann eher einmal zu viel).
+    Mit `invert` gilt „aus“ als „an“ und umgekehrt (z. B. ein Sensor „arbeitsfrei“ statt
+    „Werktag“); ein unbekannter oder nicht verfügbarer Sensor bleibt unverändert.
     """
+    if invert:
+        flip = {"on": "off", "off": "on"}
+        raw_state = get_state
+        get_state = lambda entity_id: flip.get(raw_state(entity_id), raw_state(entity_id))  # noqa: E731
     known = set(global_sensors or [])
     only = [s for s in alarm.get(A_ONLY_IF_ON) or [] if s in known]
     skip = [s for s in alarm.get(A_NOT_IF_ON) or [] if s in known]
@@ -360,7 +368,12 @@ class AlarmClockController(ReloadWhenIdle):
             found = self.hass.states.get(entity_id)
             return found.state if found else None
 
-        return check_conditions(alarm, list(self._get(CONF_WORKDAY_SENSORS, []) or []), state)
+        return check_conditions(
+            alarm,
+            list(self._get(CONF_WORKDAY_SENSORS, []) or []),
+            state,
+            bool(self._get(CONF_WORKDAY_INVERT, False)),
+        )
 
     async def _async_skip(
         self, alarm: dict[str, Any], reason: str | None, sensors: list[str]
