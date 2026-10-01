@@ -50,8 +50,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - Türklingel-Profile liegen als Liste in `options["profiles"]` (Schlüssel `P_*`
   in `const.py`). `in_window()`/`assign_players()` in `doorbell.py` sind reine
   Funktionen (Fenster über Mitternacht gehören zum Starttag, ein Player wird
-  nur vom ersten passenden Profil bedient). Push über `Notifier`, Audio über
-  `async_safe_call`. Löschzeitpunkt (`clear_at`) wird im `Store` gehalten.
+  nur vom ersten passenden Profil bedient). Ein Profil hat Zeitfenster, **Ton** (optional,
+  `players`/`mode`/TTS/Medien/`volume`) und **Push** (`mobile_enabled`, `mobile_targets`, `message`,
+  `clear_after_hours`); ein Profil braucht Ton oder Push. Der Push steht **nur im Profil**, nicht
+  im Eintrag: `assign_push()` liefert alle passenden Profile gleichberechtigt, jedes Ziel nur einmal
+  (erstes Profil); je Profil ein eigener `Notifier` (`_notifier_for(targets)`). Löschzeitpunkte stehen
+  je Profil im `Store` (`clears`, älteres `clear_at` = Schlüssel `*`). `__init__._migrate_doorbell_push`
+  übernimmt den Push älterer Einträge einmalig als ganztägiges Profil „Benachrichtigung“ ohne Ton und
+  setzt die Eintragswerte auf `None`. Der Profil-Dialog ist **ein** Formular mit den Abschnitten
+  `timing`, `sound`, `notifications` (`profile_basic`). Audio über `async_safe_call`.
 - `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und
   `pool_dry_run.py` sind reine Logik ohne HA-Imports und unverändert aus dem
   Ursprungsprojekt. Der Controller ist der einzige mit `async def async_stop`

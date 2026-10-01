@@ -120,6 +120,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
     if function == FUNCTION_UPDATER:
         devices += _listed(opt(CONF_SCHEDULES, []), CONF_MOBILE_TARGETS)
+    if function == FUNCTION_DOORBELL:
+        devices += _listed(opt(CONF_PROFILES, []), CONF_MOBILE_TARGETS)
     entities = list(dict.fromkeys(e for e in entities if e and "." in e))
     return entities, list(dict.fromkeys(d for d in devices if d))
 

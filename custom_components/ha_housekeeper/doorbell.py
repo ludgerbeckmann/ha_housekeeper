@@ -17,9 +17,9 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_CLEAR_HOURS,
+    CONF_MOBILE_ENABLED,
+    CONF_MOBILE_TARGETS,
     CONF_DEBOUNCE,
-    CONF_MESSAGE,
     CONF_PROFILES,
     CONF_TRIGGER_ENTITY,
     DEFAULT_CLEAR_HOURS,
@@ -27,7 +27,12 @@ from .const import (
     DEFAULT_RING_MESSAGE,
     DOMAIN,
     MODE_TTS,
+    P_CLEAR_HOURS,
     P_ENABLED,
+    P_ID,
+    P_MESSAGE,
+    P_MOBILE_ENABLED,
+    P_MOBILE_TARGETS,
     P_FROM,
     P_MEDIA,
     P_MODE,
@@ -49,8 +54,8 @@ STORE_VERSION = 1
 _IGNORED_STATES = (STATE_UNAVAILABLE, STATE_UNKNOWN)
 
 _WORDS = {
-    "de": {"players": "Player", MODE_TTS: "Ansage", "ringtone": "Klingelton", "off": "aus"},
-    "en": {"players": "players", MODE_TTS: "announcement", "ringtone": "ringtone", "off": "off"},
+    "de": {"players": "Player", MODE_TTS: "Ansage", "ringtone": "Klingelton", "off": "aus", "push": "Push"},
+    "en": {"players": "players", MODE_TTS: "announcement", "ringtone": "ringtone", "off": "off", "push": "push"},
 }
 
 
@@ -60,11 +65,15 @@ def profile_summary(hass: HomeAssistant, profile: dict[str, Any]) -> str:
     days = profile.get(P_WEEKDAYS) or WEEKDAYS
     day_text = "" if len(days) == 7 else f", {', '.join(days)}"
     off = "" if profile.get(P_ENABLED, True) else f", {words['off']}"
+    parts = []
+    if players := len(profile.get(P_PLAYERS) or []):
+        parts.append(f"{players} {words['players']}")
+        parts.append(words.get(profile.get(P_MODE), profile.get(P_MODE)))
+    if profile.get(P_MOBILE_ENABLED):
+        parts.append(words["push"])
     return (
         f"{profile.get(P_NAME)}: {str(profile.get(P_FROM, ''))[:5]}–"
-        f"{str(profile.get(P_TO, ''))[:5]}{day_text}, "
-        f"{len(profile.get(P_PLAYERS) or [])} {words['players']}, "
-        f"{words.get(profile.get(P_MODE), profile.get(P_MODE))}{off}"
+        f"{str(profile.get(P_TO, ''))[:5]}{day_text}, {', '.join(parts)}{off}"
     )
 
 
@@ -109,6 +118,26 @@ def assign_players(
     return result
 
 
+def assign_push(
+    profiles: list[dict[str, Any]], now_local: datetime
+) -> list[tuple[dict[str, Any], list[str]]]:
+    """Passende Profile mit App-Push; alle gelten gleichberechtigt, jedes Ziel nur einmal."""
+    claimed: set[str] = set()
+    result: list[tuple[dict[str, Any], list[str]]] = []
+    for profile in profiles:
+        if (
+            not profile.get(P_ENABLED, True)
+            or not profile.get(P_MOBILE_ENABLED)
+            or not in_window(profile, now_local)
+        ):
+            continue
+        targets = [t for t in profile.get(P_MOBILE_TARGETS) or [] if t not in claimed]
+        claimed.update(targets)
+        if targets:
+            result.append((profile, targets))
+    return result
+
+
 class DoorbellController:
     """Reagiert auf den Klingel-Auslöser mit Audio und Push."""
 
@@ -119,15 +148,25 @@ class DoorbellController:
         self.entry = entry
         self.enabled = True
         self.last_ring: datetime | None = None
-        self._clear_at: datetime | None = None
+        self._clear_at: dict[str, datetime] = {}
         self._last_trigger: float | None = None
-        self._clear_unsub = None
+        self._clear_unsubs: dict[str, Any] = {}
         self._unsub = None
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
-        self._notifier = Notifier(
-            hass, self._get, f"{DOMAIN}_{entry.entry_id}", lambda: entry.title
+
+    def _notifier_for(self, targets: list[str]) -> Notifier:
+        """Notifier nur für die App-Push-Ziele eines Profils."""
+        values = {CONF_MOBILE_ENABLED: True, CONF_MOBILE_TARGETS: targets}
+        return Notifier(
+            self.hass,
+            lambda key, default=None: values.get(key, default),
+            f"{DOMAIN}_{self.entry.entry_id}",
+            lambda: self.entry.title,
         )
+
+    def _profiles(self) -> list[dict[str, Any]]:
+        return list(self._opt(CONF_PROFILES, []) or [])
 
     def _opt(self, key: str, default: Any = None) -> Any:
         return self._get(key, default)
@@ -139,9 +178,14 @@ class DoorbellController:
         self.enabled = bool(stored.get("enabled", True))
         if raw := stored.get("last_ring"):
             self.last_ring = dt_util.parse_datetime(raw)
-        if raw := stored.get("clear_at"):
-            self._clear_at = dt_util.parse_datetime(raw)
-        self._schedule_clear()
+        for key, raw in (stored.get("clears") or {}).items():
+            if (parsed := dt_util.parse_datetime(raw)) is not None:
+                self._clear_at[key] = parsed
+        if raw := stored.get("clear_at"):  # älteres Format: ein Zeitpunkt für alle Ziele
+            if (parsed := dt_util.parse_datetime(raw)) is not None:
+                self._clear_at.setdefault("*", parsed)
+        for key in list(self._clear_at):
+            self._schedule_clear(key)
         self._unsub = async_track_state_change_event(
             self.hass, [self._opt(CONF_TRIGGER_ENTITY)], self._on_trigger
         )
@@ -160,7 +204,7 @@ class DoorbellController:
             {
                 "enabled": self.enabled,
                 "last_ring": self.last_ring.isoformat() if self.last_ring else None,
-                "clear_at": self._clear_at.isoformat() if self._clear_at else None,
+                "clears": {k: v.isoformat() for k, v in self._clear_at.items()},
             }
         )
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
@@ -199,12 +243,11 @@ class DoorbellController:
             self.last_ring = dt_util.utcnow()
             await self._async_save()
 
-        assignments = assign_players(
-            list(self._opt(CONF_PROFILES, []) or []), dt_util.now()
-        )
+        now = dt_util.now()
+        profiles = self._profiles()
         results = await asyncio.gather(
-            *(self._play(profile, players) for profile, players in assignments),
-            self._push(),
+            *(self._play(profile, players) for profile, players in assign_players(profiles, now)),
+            *(self._push(profile, targets) for profile, targets in assign_push(profiles, now)),
             return_exceptions=True,
         )
         for result in results:
@@ -253,31 +296,43 @@ class DoorbellController:
 
     # --- Push ----------------------------------------------------------------
 
-    async def _push(self) -> None:
-        if not self._notifier._targets():  # noqa: SLF001
-            return
-        await self._notifier.async_send(self._opt(CONF_MESSAGE) or DEFAULT_RING_MESSAGE)
-        hours = float(self._opt(CONF_CLEAR_HOURS, DEFAULT_CLEAR_HOURS))
+    async def _push(self, profile: dict[str, Any], targets: list[str]) -> None:
+        await self._notifier_for(targets).async_send(
+            profile.get(P_MESSAGE) or DEFAULT_RING_MESSAGE
+        )
+        hours = float(
+            DEFAULT_CLEAR_HOURS
+            if profile.get(P_CLEAR_HOURS) is None
+            else profile[P_CLEAR_HOURS]
+        )
         if hours > 0:
-            self._clear_at = dt_util.utcnow() + timedelta(hours=hours)
-            self._schedule_clear()
+            key = str(profile.get(P_ID))
+            self._clear_at[key] = dt_util.utcnow() + timedelta(hours=hours)
+            self._schedule_clear(key)
             await self._async_save()
 
-    def _cancel_clear(self) -> None:
-        if self._clear_unsub:
-            self._clear_unsub()
-            self._clear_unsub = None
+    def _cancel_clear(self, key: str | None = None) -> None:
+        for k in [key] if key is not None else list(self._clear_unsubs):
+            if unsub := self._clear_unsubs.pop(k, None):
+                unsub()
 
-    def _schedule_clear(self) -> None:
-        self._cancel_clear()
-        if self._clear_at is None:
+    def _clear_targets(self, key: str) -> list[str]:
+        """Push-Ziele, die beim Löschen angesprochen werden (Profil, sonst alle Profile)."""
+        profiles = self._profiles()
+        if match := next((p for p in profiles if str(p.get(P_ID)) == key), None):
+            return list(match.get(P_MOBILE_TARGETS) or [])
+        return [t for p in profiles for t in p.get(P_MOBILE_TARGETS) or []]
+
+    def _schedule_clear(self, key: str) -> None:
+        self._cancel_clear(key)
+        if (clear_at := self._clear_at.get(key)) is None:
             return
-        remaining = (self._clear_at - dt_util.utcnow()).total_seconds()
+        remaining = (clear_at - dt_util.utcnow()).total_seconds()
 
         async def _clear(_now: datetime) -> None:
-            self._clear_unsub = None
-            self._clear_at = None
-            await self._notifier.async_clear()
+            self._clear_unsubs.pop(key, None)
+            self._clear_at.pop(key, None)
+            await self._notifier_for(self._clear_targets(key)).async_clear()
             await self._async_save()
 
-        self._clear_unsub = async_call_later(self.hass, max(remaining, 0), _clear)
+        self._clear_unsubs[key] = async_call_later(self.hass, max(remaining, 0), _clear)

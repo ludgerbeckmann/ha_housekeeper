@@ -32,9 +32,6 @@ def _assert_sections(schema, general: set[str], notifications: set[str]) -> None
          {"name", "lock", "contact", "block_action", "retry_minutes", "open_alert_minutes",
           "open_alert_repeat_minutes", "verify_seconds", "manual_override", "manual_pause_minutes"},
          NOTIFY_FIELDS),
-        ("doorbell",
-         {"name", "trigger_entity", "debounce_seconds"},
-         {"mobile_enabled", "mobile_targets", "message", "clear_after_hours"}),
         ("task_planner", {"name"}, NOTIFY_FIELDS),
     ],
 )
@@ -45,6 +42,16 @@ async def test_config_forms_have_sections(hass: HomeAssistant, function, general
     )
     assert result["step_id"] == function
     _assert_sections(result["data_schema"].schema, general, notifications)
+
+
+async def test_doorbell_config_form_has_only_general_section(hass: HomeAssistant) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"function_type": "doorbell"}
+    )
+    schema = result["data_schema"].schema
+    assert [str(k) for k in schema] == ["general"]
+    assert _fields(next(iter(schema.values()))) == {"name", "trigger_entity", "debounce_seconds"}
 
 
 async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
@@ -67,7 +74,9 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
         result = await flow.async_configure(result["flow_id"], {"action": menu_item})
         assert result["step_id"] == step
         schema = result["data_schema"].schema
-        assert [str(k) for k in schema] == ["general", "notifications"]
+        # Türklingel: Push steckt in den Profilen, daher nur „Allgemein“
+        assert [str(k) for k in schema] == (
+            ["general"] if step == "bell_general" else ["general", "notifications"])
         assert "name" not in _fields(next(v for k, v in schema.items() if str(k) == "general"))
 
 
