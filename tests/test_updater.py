@@ -13,7 +13,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned
+from .helpers import is_menu, menu_options
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -338,17 +338,22 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"function_type": "updater"})
     assert result["step_id"] == "updater"
-    data = {"name": "Updater", "timeout_minutes": 30, "mobile_enabled": False,
-            "tts_enabled": False, "persistent_enabled": False}
-    bad = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(data))
-    assert bad["errors"] == {"base": "no_method"}
-    no_target = await hass.config_entries.flow.async_configure(
-        bad["flow_id"], sectioned({**data, "mobile_enabled": True}))
-    assert no_target["errors"] == {"base": "no_targets"}
+    assert {str(k) for k in result["data_schema"].schema} == {"name", "timeout_minutes"}
     ok = await hass.config_entries.flow.async_configure(
-        no_target["flow_id"], sectioned({**data, "persistent_enabled": True}))
+        result["flow_id"], {"name": "Updater", "timeout_minutes": 30})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["function_type"] == "updater" and ok["data"]["schedules"] == []
+    assert "mobile_enabled" not in ok["data"]               # Benachrichtigung je Zeitplan
+
+
+def sched_form(timing=None, actions=None, notifications=None):
+    """Zeitplan-Formular mit den Abschnitten Zeitpunkt, Aktionen und Benachrichtigungen."""
+    return {
+        "timing": {"name": "Sonntag", "time": "03:00:00", "weekdays": ["sun"], **(timing or {})},
+        "actions": {"mode": "notify", "targets": [ADDON, DEVICE], "backup": False, **(actions or {})},
+        "notifications": {"mobile_enabled": False, "tts_enabled": False,
+                          "persistent_enabled": True, **(notifications or {})},
+    }
 
 
 async def test_options_flow_schedules(hass: HomeAssistant) -> None:
@@ -358,36 +363,46 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert result["step_id"] == "upd_menu" and "edit_schedule" not in menu_options(result)
 
     result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
-    form = {"name": "Sonntag", "time": "03:00:00", "weekdays": ["sun"], "mode": "notify",
-            "targets": [ADDON, DEVICE], "backup": False}
-    bad = await flow.async_configure(result["flow_id"], {**form, "targets": []})
+    schema = result["data_schema"].schema
+    assert [str(k) for k in schema] == ["timing", "actions", "notifications"]
+    assert all(v.options["collapsed"] is False for v in schema.values())
+    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {"name", "time", "weekdays"}
+
+    bad = await flow.async_configure(result["flow_id"], sched_form(actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}
-    none = await flow.async_configure(bad["flow_id"], {**form, "weekdays": []})
+    none = await flow.async_configure(bad["flow_id"], sched_form(timing={"weekdays": []}))
     assert none["errors"] == {"base": "no_weekday"}
-    result = await flow.async_configure(none["flow_id"], form)
+    nomethod = await flow.async_configure(
+        none["flow_id"], sched_form(notifications={"persistent_enabled": False}))
+    assert nomethod["errors"] == {"base": "no_method"}
+    notarget = await flow.async_configure(
+        nomethod["flow_id"], sched_form(notifications={"mobile_enabled": True}))
+    assert notarget["errors"] == {"base": "no_targets"}
+    result = await flow.async_configure(notarget["flow_id"], sched_form())
     assert is_menu(result)
     (created,) = entry.options["schedules"]
     assert created["targets"] == [ADDON, DEVICE] and created["mode"] == "notify"
-    assert created["backup"] is False
+    assert created["backup"] is False and created["name"] == "Sonntag"
+    # Benachrichtigung steckt im Zeitplan (flach), nicht in Abschnitten
+    assert created["persistent_enabled"] is True and created["mobile_enabled"] is False
+    assert "timing" not in created and "notifications" not in created
 
     result = await flow.async_configure(result["flow_id"], {"action": "edit_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
     result = await flow.async_configure(
-        result["flow_id"], {**form, "mode": "install", "backup": True, "targets": [CORE]})
+        result["flow_id"],
+        sched_form(actions={"mode": "install", "backup": True, "targets": [CORE]},
+                   notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
     (edited,) = entry.options["schedules"]
     assert edited["id"] == created["id"] and edited["mode"] == "install"
     assert edited["targets"] == [CORE] and edited["backup"] is True
+    assert edited["mobile_targets"] == ["mobile_app_phone"]
 
     result = await flow.async_configure(result["flow_id"], {"action": "upd_general"})
-    bad = await flow.async_configure(
-        result["flow_id"], sectioned({"timeout_minutes": 10, "mobile_enabled": False,
-                                      "tts_enabled": False, "persistent_enabled": False}))
-    assert bad["errors"] == {"base": "no_method"}
-    result = await flow.async_configure(
-        bad["flow_id"], sectioned({"timeout_minutes": 10, "mobile_enabled": True,
-                                   "mobile_targets": ["mobile_app_phone"],
-                                   "tts_enabled": False, "persistent_enabled": False}))
+    assert {str(k) for k in result["data_schema"].schema} == {"timeout_minutes"}
+    result = await flow.async_configure(result["flow_id"], {"timeout_minutes": 10})
     assert entry.options["timeout_minutes"] == 10
+    assert is_menu(result)
 
     result = await flow.async_configure(result["flow_id"], {"action": "delete_schedule"})
     result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
@@ -481,11 +496,106 @@ async def test_options_flow_components_only(hass: HomeAssistant) -> None:
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
     result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
-    form = {"name": "Nachts", "time": "03:00:00", "weekdays": ["sun"], "mode": "install",
-            "backup": False}
-    bad = await flow.async_configure(result["flow_id"], form)
+    bad = await flow.async_configure(
+        result["flow_id"], sched_form(timing={"name": "Nachts"}, actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}
-    ok = await flow.async_configure(bad["flow_id"], {**form, "components": ["addons", "esphome"]})
+    ok = await flow.async_configure(
+        bad["flow_id"],
+        sched_form(timing={"name": "Nachts"},
+                   actions={"mode": "install", "targets": [], "components": ["addons", "esphome"]}))
     assert is_menu(ok)
     (created,) = entry.options["schedules"]
     assert created["components"] == ["addons", "esphome"] and created["targets"] == []
+
+
+# --- Benachrichtigung je Zeitplan ----------------------------------------------------------------
+
+
+def own(sched, **notify):
+    """Zeitplan mit eigenen Benachrichtigungseinstellungen."""
+    base = {"mobile_enabled": False, "mobile_targets": None, "tts_enabled": False,
+            "tts_entity": None, "tts_player": None, "persistent_enabled": False}
+    return {**sched, **base, **notify}
+
+
+async def test_each_schedule_uses_its_own_channels(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    put(hass, DEVICE)
+    other = async_mock_service(hass, "notify", "mobile_app_other")
+    persist = async_mock_service(hass, "persistent_notification", "create")
+    plan_push = own(schedule("p", targets=[ADDON], mode="notify"),
+                    mobile_enabled=True, mobile_targets=["mobile_app_other"])
+    plan_persist = own(schedule("q", targets=[DEVICE], mode="notify"), persistent_enabled=True)
+    _, ctrl, push = await _setup(hass, [plan_push, plan_persist])
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert len(other) == 1 and push == [] and persist == []         # nur der eigene Push-Weg
+    await ctrl.async_run_schedule(ctrl.schedules[1])
+    assert len(other) == 1 and push == [] and len(persist) == 1     # nur die persistente Meldung
+
+
+async def test_old_schedule_falls_back_to_entry_settings(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    Installer(hass)
+    # Zeitplan ohne eigene Einstellungen: der Eintrag (BASE: Push an mobile_app_phone) gilt
+    _, ctrl, push = await _setup(hass, [schedule(mode="notify")])
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert len(push) == 1
+
+
+async def test_general_settings_keep_entry_fallback(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    entry, ctrl, push = await _setup(hass, [schedule(mode="notify")])
+    flow = hass.config_entries.options
+    result = await flow.async_init(entry.entry_id)
+    result = await flow.async_configure(result["flow_id"], {"action": "upd_general"})
+    await flow.async_configure(result["flow_id"], {"timeout_minutes": 15})
+    await hass.async_block_till_done()
+    ctrl = hass.data[DOMAIN][entry.entry_id]
+    assert entry.options["timeout_minutes"] == 15 and "mobile_targets" not in entry.options
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert len(push) == 1                                            # Rückfall bleibt erhalten
+
+
+async def test_check_now_uses_union_of_all_schedules(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    other = async_mock_service(hass, "notify", "mobile_app_other")
+    persist = async_mock_service(hass, "persistent_notification", "create")
+    tts = async_mock_service(hass, "tts", "speak")
+    plans = [
+        own(schedule("a", targets=[ADDON]), mobile_enabled=True, mobile_targets=["mobile_app_phone"]),
+        own(schedule("b", targets=[ADDON]), mobile_enabled=True,
+            mobile_targets=["mobile_app_phone", "mobile_app_other"], persistent_enabled=True),
+        own(schedule("c", targets=[ADDON]), tts_enabled=True, tts_entity="tts.home",
+            tts_player="media_player.kitchen"),
+    ]
+    _, ctrl, push = await _setup(hass, plans)
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.updater_check_now"}, blocking=True)
+    assert len(push) == 1 and len(other) == 1                        # jedes Ziel genau einmal
+    assert len(persist) == 1
+    assert [c.data["media_player_entity_id"] for c in tts] == ["media_player.kitchen"]
+
+
+async def test_union_notify_pure(hass: HomeAssistant) -> None:
+    entry_get = lambda key, default=None: {"mobile_enabled": True,          # noqa: E731
+                                           "mobile_targets": ["mobile_app_phone"]}.get(key, default)
+    plans = [schedule("old"), own(schedule("new"), persistent_enabled=True)]
+    union = upd.union_notify(plans, entry_get)
+    assert union["mobile_enabled"] is True and union["mobile_targets"] == ["mobile_app_phone"]
+    assert union["persistent_enabled"] is True and union["tts_enabled"] is False
+    empty = upd.union_notify([], entry_get)
+    assert empty["mobile_enabled"] is False and empty["persistent_enabled"] is False
+
+
+async def test_report_after_restart_uses_the_schedules_channels(hass: HomeAssistant) -> None:
+    put(hass, CORE)
+    persist = async_mock_service(hass, "persistent_notification", "create")
+    plan = own(schedule("p", targets=[CORE]), persistent_enabled=True)
+    _, ctrl, push = await _setup(hass, [plan])
+    ctrl.pending = {"schedule": plan["name"], "schedule_id": "p", "results": [],
+                    "current": {"entity": CORE, "name": "core", "from": "1.0", "to": "2.0"},
+                    "deferred": []}
+    hass.states.async_set(CORE, "off", {"installed_version": "2.0", "latest_version": "2.0",
+                                        "title": "core", "supported_features": 0})
+    await ctrl._async_finalize_pending(0)                                # noqa: SLF001
+    assert push == [] and len(persist) == 1 and "core" in persist[0].data["message"]

@@ -142,35 +142,14 @@
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications go to the channels selected here.",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name and time limit.",
-            "data": {
-              "name": "Name",
-              "timeout_minutes": "Time limit per update (minutes)"
-            },
-            "data_description": {
-              "timeout_minutes": "After this time an update counts as failed and the run continues."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what update runs are reported.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-            }
-          }
-        }
+        "data": {
+          "name": "Name",
+          "timeout_minutes": "Time limit per update (minutes)"
+        },
+        "data_description": {
+          "timeout_minutes": "After this time an update counts as failed and the run continues."
+        },
+        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
       },
       "task_planner": {
         "title": "Task planner",
@@ -636,32 +615,11 @@
       },
       "upd_general": {
         "title": "Settings",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name and time limit.",
-            "data": {
-              "timeout_minutes": "Time limit per update (minutes)"
-            },
-            "data_description": {
-              "timeout_minutes": "After this time an update counts as failed and the run continues."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what update runs are reported.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-            }
-          }
+        "data": {
+          "timeout_minutes": "Time limit per update (minutes)"
+        },
+        "data_description": {
+          "timeout_minutes": "After this time an update counts as failed and the run continues."
         }
       },
       "edit_schedule": {
@@ -678,20 +636,47 @@
       },
       "schedule_edit": {
         "title": "Schedule",
-        "description": "At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
-        "data": {
-          "name": "Name",
-          "time": "Time",
-          "weekdays": "Weekdays",
-          "mode": "Action",
-          "components": "Components",
-          "targets": "Individual updates",
-          "backup": "Create a backup before installing"
-        },
-        "data_description": {
-          "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
-          "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
-          "backup": "Only for updates that support a backup."
+        "description": "Time, actions and notification of this schedule. At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
+        "sections": {
+          "timing": {
+            "name": "Time",
+            "description": "When the schedule runs.",
+            "data": {
+              "name": "Name",
+              "time": "Time",
+              "weekdays": "Weekdays"
+            }
+          },
+          "actions": {
+            "name": "Actions",
+            "description": "What this schedule does.",
+            "data": {
+              "mode": "Action",
+              "components": "Components",
+              "targets": "Individual updates",
+              "backup": "Create a backup before installing"
+            },
+            "data_description": {
+              "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
+              "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
+              "backup": "Only for updates that support a backup."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what this schedule reports.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "tp_menu": {
