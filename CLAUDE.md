@@ -21,6 +21,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Architektur
 
+- **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
+  `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`/`done`) und
+  je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
+  `updater.py`, `planner.py`, `alarm.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py` enthält nur den
+  `HousekeeperConfigFlow` (Funktionstyp wählen, Eintrag anlegen) und den
+  `HousekeeperOptionsFlow`, der alle Options-Klassen zusammensetzt. Neue Funktion = neues Modul in
+  `flows/` plus Eintrag in `config_flow.py`.
+
 - `const.py`: `FUNCTION_PLATFORMS` ist die Registry Funktionstyp → Plattformen.
   **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Config-Flow-Schritt
   `async_step_<typ>`, Controller-Klasse, Plattformdateien, Übersetzungen
