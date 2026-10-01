@@ -1,7 +1,8 @@
 # CLAUDE.md – Projektkontext für Claude Code
 
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
-„Housekeeper“): mehrere Funktionen, jede als eigener Config-Entry mit
+„Hausmeister“; die Domain und der Repo-Name bleiben `ha_housekeeper`, sonst gehen bestehende
+Einträge verloren): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
 portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) und `alarm_clock` („Wecker“).

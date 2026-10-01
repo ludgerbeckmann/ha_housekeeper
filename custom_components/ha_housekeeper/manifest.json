@@ -1,6 +1,6 @@
 {
   "domain": "ha_housekeeper",
-  "name": "Housekeeper",
+  "name": "Hausmeister",
   "after_dependencies": ["knx"],
   "codeowners": ["@ludgerbeckmann"],
   "config_flow": true,
