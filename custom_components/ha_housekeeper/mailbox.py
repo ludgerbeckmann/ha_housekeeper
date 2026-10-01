@@ -10,6 +10,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 from homeassistant.helpers.storage import Store
@@ -23,6 +24,8 @@ from .const import (
     CONF_MESSAGE,
     CONF_MOBILE_ACTION,
     CONF_REPEAT_MESSAGE,
+    CONF_SENSITIVITY_ENTITY,
+    CONF_SENSITIVITY_VALUE,
     CONF_VIBRATION_SENSOR,
     DEFAULT_AUTO_RESET_HOURS,
     DEFAULT_DEBOUNCE,
@@ -97,6 +100,37 @@ class MailboxController:
 
     async def async_remove_data(self) -> None:
         await self._store.async_remove()
+
+    # --- Empfindlichkeit (nur auf Anforderung) ---------------------------
+
+    @property
+    def sensitivity_configured(self) -> bool:
+        return bool(
+            self._opt(CONF_SENSITIVITY_ENTITY)
+            and self._opt(CONF_SENSITIVITY_VALUE) not in (None, "")
+        )
+
+    async def async_send_sensitivity(self) -> None:
+        """Eingestellte Empfindlichkeit an den Sensor senden.
+
+        Nur auf Anforderung (Button), nie automatisch: Batteriesensoren übernehmen
+        solche Einstellungen meist nur, wenn sie am Gerät aufgeweckt wurden. Fehler
+        werden nicht verschluckt, damit sie dem Bedienenden angezeigt werden.
+        """
+        if not self.sensitivity_configured:
+            raise ServiceValidationError("Empfindlichkeit ist nicht eingestellt")
+        entity_id = str(self._opt(CONF_SENSITIVITY_ENTITY))
+        value = self._opt(CONF_SENSITIVITY_VALUE)
+        if entity_id.startswith("select."):
+            await self.hass.services.async_call(
+                "select", "select_option",
+                {"entity_id": entity_id, "option": str(value)}, blocking=True,
+            )
+        else:
+            await self.hass.services.async_call(
+                "number", "set_value",
+                {"entity_id": entity_id, "value": float(value)}, blocking=True,
+            )
 
     # --- Zustand ---------------------------------------------------------
 

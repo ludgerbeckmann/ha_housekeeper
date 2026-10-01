@@ -114,6 +114,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (iOS `push.interruption-level: critical`, Android `channel: alarm_stream`); der
   `Notifier` nimmt dafür `extra`. Der Controller hat wie die Poolsteuerung ein
   `async def async_stop`.
+- Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Feld nur in den
+  Einstellungen (nicht beim Anlegen); der Wert wird im Folgeschritt `mailbox_sensitivity`
+  passend zur Entität abgefragt (`number` → Zahl mit Grenzen der Entität, `select` → deren
+  Stufen). Gesendet wird **ausschließlich** über den Button `send_sensitivity`
+  (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren
+  müssen am Gerät aufgeweckt werden). Der Button wird per `remove_unconfigured()` entfernt, wenn
+  nichts eingestellt ist.
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.
 - Optionen (`entry.options`) haben Vorrang vor `entry.data`; Änderungen laden
   den Eintrag neu.

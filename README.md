@@ -58,6 +58,14 @@ Der Dialog ist in zwei ausgeklappte Abschnitte gegliedert.
 - **Vibrationssensor** (`binary_sensor`)
 - **Entprellzeit** (Standard 60 s; weitere Vibrationen in dieser Zeit werden ignoriert)
 - **Auto-Reset** nach X Stunden (0 = aus)
+- **Empfindlichkeits-Entität** (optional, nur unter *Konfigurieren*): die `number`- oder
+  `select`-Entität des Sensors für seine Empfindlichkeit, z. B. bei Zigbee2MQTT
+  `number.vibrationssensor_sensitivity`. Nach dem Speichern folgt ein kurzer Schritt, in dem du
+  den **Wert** einstellst (Zahlenfeld mit den Grenzen der Entität bzw. die Stufen der
+  `select`-Entität). Der Wert wird **nie automatisch** gesendet, weil Batteriesensoren ihn
+  meist nur übernehmen, wenn sie am Gerät aufgeweckt wurden: Sensor aufwecken, dann den
+  Button **Empfindlichkeit senden** drücken. Schlägt das Senden fehl, wird die Fehlermeldung
+  angezeigt. Leeren der Entität entfernt Wert und Button.
 
 **Benachrichtigungen**
 

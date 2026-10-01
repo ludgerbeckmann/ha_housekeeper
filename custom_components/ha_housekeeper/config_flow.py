@@ -49,6 +49,8 @@ from .const import (
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
     CONF_REPEAT_MESSAGE,
+    CONF_SENSITIVITY_ENTITY,
+    CONF_SENSITIVITY_VALUE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
     CONF_SCHEDULES,
@@ -422,6 +424,16 @@ def _mailbox_schema(
             default=defaults.get(CONF_AUTO_RESET_HOURS, DEFAULT_AUTO_RESET_HOURS),
         )
     ] = _number(0, 168, "h")
+    if not with_name:
+        # nur in den Einstellungen: Entität, an die die Empfindlichkeit auf Anforderung geht
+        general[
+            vol.Optional(
+                CONF_SENSITIVITY_ENTITY,
+                description=_suggest(CONF_SENSITIVITY_ENTITY, defaults),
+            )
+        ] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["number", "select"])
+        )
 
     notifications: dict[Any, Any] = dict(_notify_fields(hass, defaults, with_action=True))
     notifications[
@@ -1034,12 +1046,56 @@ class HousekeeperOptionsFlow(OptionsFlow):
             flat = _flatten_sections(user_input)
             errors = _validate_notify(flat, require_method=True)
             if not errors:
+                if flat.get(CONF_SENSITIVITY_ENTITY):
+                    self._draft = flat
+                    return await self.async_step_mailbox_sensitivity()
                 return self.async_create_entry(data=_with_cleared(flat))
             defaults = flat
         return self.async_show_form(
             step_id="mailbox",
             data_schema=_mailbox_schema(self.hass, defaults, with_name=False),
             errors=errors,
+        )
+
+    async def async_step_mailbox_sensitivity(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wert der Empfindlichkeit, passend zur gewählten Entität (Zahl oder Stufe)."""
+        entity_id = self._draft[CONF_SENSITIVITY_ENTITY]
+        if user_input is not None:
+            data = {**self._draft, CONF_SENSITIVITY_VALUE: user_input[CONF_SENSITIVITY_VALUE]}
+            return self.async_create_entry(data=_with_cleared(data))
+        state = self.hass.states.get(entity_id)
+        attrs = state.attributes if state else {}
+        if entity_id.startswith("select."):
+            options = [str(o) for o in attrs.get("options") or []]
+            value_selector: Any = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=options,
+                    custom_value=not options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
+        else:
+            value_selector = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=float(attrs.get("min", -1000000)),
+                    max=float(attrs.get("max", 1000000)),
+                    step=attrs.get("step", "any"),
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            )
+        return self.async_show_form(
+            step_id="mailbox_sensitivity",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_SENSITIVITY_VALUE,
+                        description=_suggest(CONF_SENSITIVITY_VALUE, self._current),
+                    ): value_selector
+                }
+            ),
+            description_placeholders={"entity": entity_id},
         )
 
     # Türwächter: Menü

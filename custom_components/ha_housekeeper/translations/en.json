@@ -18,11 +18,13 @@
               "name": "Name",
               "vibration_sensor": "Vibration sensor",
               "debounce_seconds": "Debounce time",
-              "auto_reset_hours": "Reset automatically after (0 = off)"
+              "auto_reset_hours": "Reset automatically after (0 = off)",
+              "sensitivity_entity": "Sensitivity entity (optional)"
             },
             "data_description": {
               "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-              "debounce_seconds": "Further vibrations within this time are ignored."
+              "debounce_seconds": "Further vibrations within this time are ignored.",
+              "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
             }
           },
           "notifications": {
@@ -266,11 +268,13 @@
             "data": {
               "vibration_sensor": "Vibration sensor",
               "debounce_seconds": "Debounce time",
-              "auto_reset_hours": "Reset automatically after (0 = off)"
+              "auto_reset_hours": "Reset automatically after (0 = off)",
+              "sensitivity_entity": "Sensitivity entity (optional)"
             },
             "data_description": {
               "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-              "debounce_seconds": "Further vibrations within this time are ignored."
+              "debounce_seconds": "Further vibrations within this time are ignored.",
+              "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
             }
           },
           "notifications": {
@@ -878,6 +882,13 @@
           "snooze_minutes": "The alarm rings again after this time.",
           "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
         }
+      },
+      "mailbox_sensitivity": {
+        "title": "Sensitivity",
+        "description": "Value for {entity}. It is not sent automatically: wake the sensor on the device, then press the \"Send sensitivity\" button.",
+        "data": {
+          "sensitivity_value": "Sensitivity"
+        }
       }
     },
     "error": {
@@ -1156,6 +1167,9 @@
       },
       "alarm_snooze": {
         "name": "Snooze alarm"
+      },
+      "send_sensitivity": {
+        "name": "Send sensitivity"
       }
     },
     "switch": {

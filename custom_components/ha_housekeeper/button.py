@@ -44,7 +44,12 @@ async def async_setup_entry(
         else:
             remove_unconfigured(hass, "button", controller, "dry_run_acknowledge")
     else:
-        async_add_entities([MailboxEmptiedButton(controller)])
+        buttons: list[FunctionEntity] = [MailboxEmptiedButton(controller)]
+        if controller.sensitivity_configured:
+            buttons.append(MailboxSensitivityButton(controller))
+        else:
+            remove_unconfigured(hass, "button", controller, "send_sensitivity")
+        async_add_entities(buttons)
 
 
 class MailboxEmptiedButton(FunctionEntity, ButtonEntity):
@@ -131,3 +136,15 @@ class AlarmSnoozeButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_snooze()
+
+
+class MailboxSensitivityButton(FunctionEntity, ButtonEntity):
+    """Sendet die eingestellte Empfindlichkeit an den Vibrationssensor (nur auf Knopfdruck)."""
+
+    _attr_icon = "mdi:tune-vertical"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "send_sensitivity")
+
+    async def async_press(self) -> None:
+        await self._controller.async_send_sensitivity()
