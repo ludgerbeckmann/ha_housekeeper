@@ -570,6 +570,10 @@ Assistant. Bei jedem Wecker kannst du dann aus diesen Sensoren zwei optionale Be
 - **Nicht klingeln, wenn an:** sobald **einer** der gewählten Sensoren an ist (ODER), klingelt der
   Wecker nicht, z. B. Feiertagssensor.
 
+Mit **Sensorwerte umkehren** (Einstellungen, Abschnitt *Allgemein*, Standard aus) gilt bei allen
+Sensoren *aus* als *an* und umgekehrt, z. B. wenn ein Sensor „arbeitsfrei“ statt „Werktag“ meldet.
+Ein nicht verfügbarer oder unbekannter Sensor bleibt dabei unverändert.
+
 Beide Felder sind UND-verknüpft und gelten zusätzlich zu den Wochentagen. Die Bedingungen
 werden **zur Weckzeit** geprüft. Ein **nicht verfügbarer oder unbekannter** Sensor zählt bei
 „Nur klingeln, wenn an“ als erfüllt, der Wecker klingelt dann eher einmal zu viel als gar nicht.

@@ -174,10 +174,12 @@
             "description": "Name of the entry and workday/holiday sensors for the alarms.",
             "data": {
               "name": "Name",
-              "workday_sensors": "Workday/holiday sensors"
+              "workday_sensors": "Workday/holiday sensors",
+              "workday_invert": "Invert sensor values"
             },
             "data_description": {
-              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR."
+              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
+              "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
             }
           },
           "notifications": {
@@ -854,10 +856,12 @@
             "name": "General",
             "description": "Name of the entry and workday/holiday sensors for the alarms.",
             "data": {
-              "workday_sensors": "Workday/holiday sensors"
+              "workday_sensors": "Workday/holiday sensors",
+              "workday_invert": "Invert sensor values"
             },
             "data_description": {
-              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR."
+              "workday_sensors": "Binary sensors, e.g. the sensor of the Workday integration. They can be selected as a condition for each alarm. Several sensors are combined with OR.",
+              "workday_invert": "Off counts as on and vice versa, for all sensors and alarms, e.g. when a sensor reports “day off” instead of “workday”. An unavailable sensor stays unchanged."
             }
           },
           "notifications": {

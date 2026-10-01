@@ -27,6 +27,7 @@ from ..const import (
     A_WEEKDAYS,
     CONF_ALARMS,
     CONF_CRITICAL,
+    CONF_WORKDAY_INVERT,
     CONF_WORKDAY_SENSORS,
     DEFAULT_ALARM_AUTO_STOP,
     DEFAULT_ALARM_MESSAGE,
@@ -66,6 +67,9 @@ def _alarm_settings_schema(
     ] = selector.EntitySelector(
         selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
     )
+    general[
+        vol.Required(CONF_WORKDAY_INVERT, default=defaults.get(CONF_WORKDAY_INVERT, False))
+    ] = bool
     notifications: dict[Any, Any] = {
         vol.Required(
             CONF_MOBILE_ENABLED, default=defaults.get(CONF_MOBILE_ENABLED, True)
