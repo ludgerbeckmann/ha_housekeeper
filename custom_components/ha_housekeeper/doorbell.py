@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_RING_MESSAGE,
     DOMAIN,
     MODE_TTS,
+    P_ENABLED,
     P_FROM,
     P_MEDIA,
     P_MODE,
@@ -48,8 +49,8 @@ STORE_VERSION = 1
 _IGNORED_STATES = (STATE_UNAVAILABLE, STATE_UNKNOWN)
 
 _WORDS = {
-    "de": {"players": "Player", MODE_TTS: "Ansage", "ringtone": "Klingelton"},
-    "en": {"players": "players", MODE_TTS: "announcement", "ringtone": "ringtone"},
+    "de": {"players": "Player", MODE_TTS: "Ansage", "ringtone": "Klingelton", "off": "aus"},
+    "en": {"players": "players", MODE_TTS: "announcement", "ringtone": "ringtone", "off": "off"},
 }
 
 
@@ -58,11 +59,12 @@ def profile_summary(hass: HomeAssistant, profile: dict[str, Any]) -> str:
     words = _WORDS["de" if (hass.config.language or "").startswith("de") else "en"]
     days = profile.get(P_WEEKDAYS) or WEEKDAYS
     day_text = "" if len(days) == 7 else f", {', '.join(days)}"
+    off = "" if profile.get(P_ENABLED, True) else f", {words['off']}"
     return (
         f"{profile.get(P_NAME)}: {str(profile.get(P_FROM, ''))[:5]}–"
         f"{str(profile.get(P_TO, ''))[:5]}{day_text}, "
         f"{len(profile.get(P_PLAYERS) or [])} {words['players']}, "
-        f"{words.get(profile.get(P_MODE), profile.get(P_MODE))}"
+        f"{words.get(profile.get(P_MODE), profile.get(P_MODE))}{off}"
     )
 
 
@@ -98,7 +100,7 @@ def assign_players(
     claimed: set[str] = set()
     result: list[tuple[dict[str, Any], list[str]]] = []
     for profile in profiles:
-        if not in_window(profile, now_local):
+        if not profile.get(P_ENABLED, True) or not in_window(profile, now_local):
             continue
         players = [p for p in profile.get(P_PLAYERS) or [] if p not in claimed]
         claimed.update(players)

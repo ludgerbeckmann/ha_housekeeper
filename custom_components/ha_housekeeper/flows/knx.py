@@ -36,6 +36,7 @@ from ..const import (
     K_ID,
     K_IDLE_TEXT,
     K_NAME,
+    S_ENABLED,
     K_SCENE,
     K_SOURCE,
     K_VOLUME,
@@ -67,6 +68,7 @@ def _speaker_schema(defaults: dict[str, Any]) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(K_NAME, description=_suggest(K_NAME, defaults)): str,
+            vol.Required(S_ENABLED, default=defaults.get(S_ENABLED, True)): bool,
             vol.Required(
                 CONF_PLAYER, description=_suggest(CONF_PLAYER, defaults)
             ): _SONOS_SELECTOR,
@@ -173,7 +175,9 @@ class KnxSonosOptions:
                     selector.SelectSelectorConfig(
                         options=[
                             selector.SelectOptionDict(
-                                value=p[K_ID], label=f"{p[K_NAME]} ({p.get(CONF_PLAYER)})"
+                                value=p[K_ID],
+                                label=f"{p[K_NAME]} ({p.get(CONF_PLAYER)})"
+                                + ("" if p.get(S_ENABLED, True) else (" (aus)" if (self.hass.config.language or "").startswith("de") else " (off)")),
                             )
                             for p in self._speakers()
                         ],
@@ -236,6 +240,7 @@ class KnxSonosOptions:
             speaker = {
                 K_ID: self._edit_id or uuid.uuid4().hex[:8],
                 K_NAME: user_input[K_NAME],
+                S_ENABLED: user_input.get(S_ENABLED, True),
                 CONF_PLAYER: user_input[CONF_PLAYER],
                 CONF_MAX_VOLUME: user_input[CONF_MAX_VOLUME],
                 CONF_VOLUME_STEP: user_input[CONF_VOLUME_STEP],

@@ -349,7 +349,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
 def sched_form(timing=None, actions=None, notifications=None):
     """Zeitplan-Formular mit den Abschnitten Zeitpunkt, Aktionen und Benachrichtigungen."""
     return {
-        "timing": {"name": "Sonntag", "time": "03:00:00", "weekdays": ["sun"], **(timing or {})},
+        "timing": {"name": "Sonntag", "enabled": True, "time": "03:00:00", "weekdays": ["sun"], **(timing or {})},
         "actions": {"mode": "notify", "targets": [ADDON, DEVICE], "backup": False, **(actions or {})},
         "notifications": {"mobile_enabled": False, "tts_enabled": False,
                           "persistent_enabled": True, **(notifications or {})},
@@ -366,7 +366,7 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["timing", "actions", "notifications"]
     assert all(v.options["collapsed"] is False for v in schema.values())
-    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {"name", "time", "weekdays"}
+    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {"name", "enabled", "time", "weekdays"}
 
     bad = await flow.async_configure(result["flow_id"], sched_form(actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}

@@ -34,6 +34,7 @@ from ..const import (
     MANUAL_PAUSE,
     R_ACTION,
     R_DELAY,
+    R_ENABLED,
     R_ENTITY,
     R_FOR_MINUTES,
     R_ID,
@@ -228,6 +229,7 @@ class DoorGuardOptions:
                         [TRIGGER_STATE, TRIGGER_TIME, TRIGGER_DOOR_CLOSED],
                         "rule_trigger",
                     ),
+                    vol.Required(R_ENABLED, default=draft.get(R_ENABLED, True)): bool,
                 }
             ),
             errors=errors,
@@ -310,6 +312,7 @@ class DoorGuardOptions:
             R_ID: self._edit_id or uuid.uuid4().hex[:8],
             R_ACTION: self._draft[R_ACTION],
             R_TRIGGER: trigger,
+            R_ENABLED: self._draft.get(R_ENABLED, True),
             **{k: self._draft[k] for k in TRIGGER_KEYS[trigger] if k in self._draft},
         }
         rules = self._rules()

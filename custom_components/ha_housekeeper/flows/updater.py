@@ -21,6 +21,7 @@ from ..const import (
     DEFAULT_TIMEOUT_MINUTES,
     U_BACKUP,
     U_COMPONENTS,
+    U_ENABLED,
     U_ID,
     U_MODE,
     U_NAME,
@@ -168,6 +169,7 @@ class UpdaterOptions:
                 schedule = {
                     U_ID: self._edit_id or uuid.uuid4().hex[:8],
                     U_NAME: flat[U_NAME],
+                    U_ENABLED: flat.get(U_ENABLED, True),
                     U_TIME: flat[U_TIME],
                     U_WEEKDAYS: flat[U_WEEKDAYS],
                     U_MODE: flat[U_MODE],
@@ -188,6 +190,7 @@ class UpdaterOptions:
             d = flat
         timing: dict[Any, Any] = {
             vol.Required(U_NAME, description=_suggest(U_NAME, d)): str,
+            vol.Required(U_ENABLED, default=d.get(U_ENABLED, True)): bool,
             vol.Required(
                 U_TIME, default=d.get(U_TIME, "03:00:00")
             ): selector.TimeSelector(),

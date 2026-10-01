@@ -63,6 +63,7 @@ from .const import (
     K_PROFILE,
     K_SCENE,
     K_SOURCE,
+    S_ENABLED,
     K_VOLUME,
     K_WHEN,
     SRC_ALBUM,
@@ -259,7 +260,14 @@ class KnxSonosController:
 
     @property
     def players(self) -> list[str]:
-        return list(dict.fromkeys(p[CONF_PLAYER] for p in self.profiles if p.get(CONF_PLAYER)))
+        """Lautsprecher der aktiven Profile."""
+        return list(
+            dict.fromkeys(
+                p[CONF_PLAYER]
+                for p in self.profiles
+                if p.get(CONF_PLAYER) and p.get(S_ENABLED, True)
+            )
+        )
 
     def _profile(self, item: dict[str, Any]) -> dict[str, Any] | None:
         return profile_for(self.profiles, item)
@@ -274,8 +282,8 @@ class KnxSonosController:
         self._notify()
 
     def _player_state(self, profile: dict[str, Any] | None):
-        if not profile or not profile.get(CONF_PLAYER):
-            return None
+        if not profile or not profile.get(CONF_PLAYER) or not profile.get(S_ENABLED, True):
+            return None  # kein Profil oder Profil ausgeschaltet
         state = self.hass.states.get(profile[CONF_PLAYER])
         if state is None or state.state in _UNKNOWN:
             return None

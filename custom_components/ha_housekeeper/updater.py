@@ -38,6 +38,7 @@ from .const import (
     DOMAIN,
     U_BACKUP,
     U_COMPONENTS,
+    U_ENABLED,
     U_ID,
     U_MODE,
     U_NAME,
@@ -218,6 +219,8 @@ def next_run(schedules: list[dict[str, Any]], now: datetime) -> datetime | None:
     """Nächster Startzeitpunkt aller Zeitpläne nach `now` (lokale Zeit)."""
     best: datetime | None = None
     for schedule in schedules:
+        if not schedule.get(U_ENABLED, True):
+            continue
         at = dt_util.parse_time(str(schedule.get(U_TIME, "")))
         if at is None:
             continue
@@ -259,9 +262,10 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
     parts = [names[c] for c in COMPONENT_ORDER if c in (schedule.get(U_COMPONENTS) or [])]
     if explicit := len(schedule.get(U_TARGETS) or []):
         parts.append(f"{explicit} {unit}")
+    off = "" if schedule.get(U_ENABLED, True) else (", aus" if german else ", off")
     return (
         f"{schedule.get(U_NAME)}: {str(schedule.get(U_TIME, ''))[:5]}{day_text}, "
-        f"{', '.join(parts)}, {mode_text}"
+        f"{', '.join(parts)}, {mode_text}{off}"
     )
 
 
@@ -303,10 +307,10 @@ class UpdaterController:
         return Notifier(self.hass, opt, f"{DOMAIN}_{self.entry.entry_id}", lambda: self.entry.title)
 
     def _schedule_by_id(self, schedule_id: str | None, name: str | None) -> dict[str, Any] | None:
-        for schedule in self.schedules:
+        for schedule in self.all_schedules:
             if schedule_id is not None and schedule.get(U_ID) == schedule_id:
                 return schedule
-        return next((s for s in self.schedules if name and s.get(U_NAME) == name), None)
+        return next((s for s in self.all_schedules if name and s.get(U_NAME) == name), None)
 
     def _opt(self, key: str, default: Any = None) -> Any:
         return self._get(key, default)
@@ -315,8 +319,13 @@ class UpdaterController:
         return _TEXT["de" if (self.hass.config.language or "").startswith("de") else "en"]
 
     @property
-    def schedules(self) -> list[dict[str, Any]]:
+    def all_schedules(self) -> list[dict[str, Any]]:
         return list(self._opt(CONF_SCHEDULES, []) or [])
+
+    @property
+    def schedules(self) -> list[dict[str, Any]]:
+        """Aktive Zeitpläne (ausgeschaltete werden ignoriert)."""
+        return [s for s in self.all_schedules if s.get(U_ENABLED, True)]
 
     @property
     def running(self) -> bool:
