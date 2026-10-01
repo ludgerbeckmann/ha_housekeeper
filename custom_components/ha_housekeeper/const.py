@@ -33,6 +33,12 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
 }
 
+def function_title(hass, function_type: str) -> str:
+    """Anzeigename der Funktion (Hub-Titel, Vorgabe für Instanznamen) in der Sprache von Home Assistant."""
+    german, english = FUNCTION_TITLES[function_type]
+    return german if (hass.config.language or "").startswith("de") else english
+
+
 FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     FUNCTION_MAILBOX: [
         Platform.BINARY_SENSOR,

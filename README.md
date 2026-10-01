@@ -53,7 +53,8 @@ Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Ho
 kopieren und neu starten.
 
 Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*,
-den Funktionstyp wählen und die erste Instanz einrichten. Dabei entsteht der **Hub** der
+im Menü die Funktion anklicken und die erste Instanz einrichten (der Name ist mit dem Funktionsnamen
+vorbelegt). Dabei entsteht der **Hub** der
 Funktion (je Funktionstyp einer). **Weitere Instanzen** (z. B. eine zweite Klingel oder ein
 zweiter Pool) fügst du im Hub über die Schaltfläche **„… hinzufügen“** hinzu; jede Instanz hat ihr
 Zahnrad (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder

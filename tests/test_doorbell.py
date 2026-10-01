@@ -111,7 +111,7 @@ def test_assign_players_dedupes_first_profile_wins() -> None:
 async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "doorbell"}
+        result["flow_id"], {"next_step_id": "hub_doorbell"}
     )
     assert result["step_id"] == "new_doorbell"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "profiles")}

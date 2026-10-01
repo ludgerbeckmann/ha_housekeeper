@@ -251,7 +251,7 @@ async def test_unknown_original_volume_is_not_reset(hass: HomeAssistant, freezer
 async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "alarm_clock"})
+        result["flow_id"], {"next_step_id": "hub_alarm_clock"})
     assert result["step_id"] == "new_alarm_clock"
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]

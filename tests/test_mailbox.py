@@ -51,9 +51,9 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "user"}
     )
-    assert result["type"] is FlowResultType.FORM and result["step_id"] == "user"
+    assert result["type"] is FlowResultType.MENU and result["step_id"] == "user"
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "mailbox"}
+        result["flow_id"], {"next_step_id": "hub_mailbox"}
     )
     assert result["step_id"] == "new_mailbox"
     bad = await hass.config_entries.flow.async_configure(
@@ -74,7 +74,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
 async def test_form_has_two_expanded_sections(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "mailbox"}
+        result["flow_id"], {"next_step_id": "hub_mailbox"}
     )
     schema = result["data_schema"].schema
     assert [str(key) for key in schema] == ["general", "notifications"]
@@ -193,7 +193,7 @@ async def test_push_targets_in_flow_schema(hass: HomeAssistant) -> None:
     async_mock_service(hass, "notify", "mobile_app_iphone_ludger")
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "mailbox"}
+        result["flow_id"], {"next_step_id": "hub_mailbox"}
     )
     assert result["step_id"] == "new_mailbox"
     ok = await hass.config_entries.flow.async_configure(

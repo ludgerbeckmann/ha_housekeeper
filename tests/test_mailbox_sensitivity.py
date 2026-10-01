@@ -42,7 +42,7 @@ def _flat(**over):
 async def test_field_only_in_settings(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "mailbox"})
+        result["flow_id"], {"next_step_id": "hub_mailbox"})
     general = next(v for k, v in result["data_schema"].schema.items() if str(k) == "general")
     assert "sensitivity_entity" not in {str(k) for k in general.schema.schema}
 

@@ -58,7 +58,7 @@ async def _telegram(hass, destination, data, *, direction="Incoming", telegramty
 async def test_config_flow_needs_knx(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "knx_sonos"}
+        result["flow_id"], {"next_step_id": "hub_knx_sonos"}
     )
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "knx_missing"
 
@@ -67,7 +67,7 @@ async def test_config_flow_creates_entry(hass: HomeAssistant) -> None:
     async_mock_service(hass, "knx", "event_register")
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "knx_sonos"}
+        result["flow_id"], {"next_step_id": "hub_knx_sonos"}
     )
     assert result["step_id"] == "new_knx_sonos"
     ok = await hass.config_entries.flow.async_configure(

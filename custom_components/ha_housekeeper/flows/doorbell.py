@@ -15,6 +15,8 @@ from homeassistant.helpers import selector
 from ..const import (
     CONF_DEBOUNCE,
     CONF_NAME,
+    FUNCTION_DOORBELL,
+    function_title,
     CONF_PROFILES,
     CONF_TRIGGER_ENTITY,
     DEFAULT_CLEAR_HOURS,
@@ -60,7 +62,7 @@ def _bell_schema(
 ) -> vol.Schema:
     fields: dict[Any, Any] = {}
     if with_name:
-        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Türklingel"))] = str
+        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_DOORBELL)))] = str
     fields[
         vol.Required(CONF_TRIGGER_ENTITY, description=_suggest(CONF_TRIGGER_ENTITY, defaults))
     ] = selector.EntitySelector(

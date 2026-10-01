@@ -22,7 +22,8 @@ from ..const import (
     DEFAULT_AUTO_RESET_HOURS,
     DEFAULT_DEBOUNCE,
     DEFAULT_MESSAGE,
-    DEFAULT_NAME,
+    FUNCTION_MAILBOX,
+    function_title,
     DEFAULT_REPEAT_MESSAGE,
 )
 from .common import (
@@ -43,7 +44,7 @@ def _mailbox_schema(
     general: dict[Any, Any] = {}
     if with_name:
         general[
-            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME))
+            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_MAILBOX)))
         ] = str
     general[
         vol.Required(

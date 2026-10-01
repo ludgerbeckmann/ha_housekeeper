@@ -275,7 +275,7 @@ async def test_variables_available_in_actions(hass: HomeAssistant) -> None:
 async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "task_planner"}
+        result["flow_id"], {"next_step_id": "hub_task_planner"}
     )
     assert result["step_id"] == "new_task_planner"
     bad = await hass.config_entries.flow.async_configure(
