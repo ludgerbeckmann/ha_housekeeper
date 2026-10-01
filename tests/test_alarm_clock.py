@@ -309,16 +309,17 @@ async def test_options_general_has_sensors_and_notifications(hass: HomeAssistant
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]
     general = next(v for k, v in schema.items() if str(k) == "general")
-    assert {str(k) for k in general.schema.schema} == {"workday_sensors"}
+    assert {str(k) for k in general.schema.schema} == {"workday_sensors", "workday_invert"}
     ok = await flow.async_configure(
         result["flow_id"],
-        {"general": {"workday_sensors": [WORKDAY, HOLIDAY]},
+        {"general": {"workday_sensors": [WORKDAY, HOLIDAY], "workday_invert": True},
          "notifications": {"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
                            "critical": False, "message": "Aufwachen"}},
     )
     assert is_menu(ok)
     assert entry.options["critical"] is False and entry.options["message"] == "Aufwachen"
     assert entry.options["workday_sensors"] == [WORKDAY, HOLIDAY]
+    assert entry.options["workday_invert"] is True
 
 
 # --- Werktags- und Feiertagssensoren ------------------------------------------------------------------
@@ -358,6 +359,31 @@ def test_conditions_or_semantics_and_fail_open() -> None:
     assert ac.check_conditions(alarm(), glob, _state({}))[0] is True
     assert ac.check_conditions(only, [], _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is True
     assert ac.check_conditions(only, [HOLIDAY2], _state({WORKDAY: "off", HOLIDAY: "off"}))[0] is True
+
+
+def test_conditions_inverted() -> None:
+    glob = [WORKDAY, HOLIDAY]
+    only = {"only_if_on": [WORKDAY]}
+    skip = {"skip_if_on": [HOLIDAY]}
+    # Sensor „arbeitsfrei“: aus = Werktag
+    assert ac.check_conditions(only, glob, _state({WORKDAY: "off"}), True)[0] is True
+    met, reason, sensors = ac.check_conditions(only, glob, _state({WORKDAY: "on"}), True)
+    assert (met, reason, sensors) == (False, "only_if_on", [WORKDAY])
+    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "on"}), True)[0] is True
+    assert ac.check_conditions(skip, glob, _state({HOLIDAY: "off"}), True)[0] is False
+    # unbekannt bleibt unverändert: only fail-open, skip blockiert nie
+    for unknown in (None, "unavailable", "unknown"):
+        assert ac.check_conditions(only, glob, _state({WORKDAY: unknown}), True)[0] is True
+        assert ac.check_conditions(skip, glob, _state({HOLIDAY: unknown}), True)[0] is True
+
+
+async def test_invert_option_flips_sensor_values(hass: HomeAssistant, freezer) -> None:
+    hass.states.async_set(WORKDAY, "off")       # „arbeitsfrei“-Sensor: aus = Werktag
+    _, ctrl, env = await _setup(
+        hass, [alarm(only_if_on=[WORKDAY])], freezer,
+        workday_sensors=[WORKDAY], workday_invert=True)
+    await _advance(hass, freezer, seconds=3)
+    assert ctrl.ringing and len(env.play) == 1 and ctrl.last_skipped is None
 
 
 async def test_alarm_skipped_when_condition_fails(hass: HomeAssistant, freezer) -> None:

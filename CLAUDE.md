@@ -165,7 +165,8 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Eintrag, pro Wecker `only_if_on` (mindestens einer an, ODER) und `skip_if_on` (einer an
   blockiert, ODER), UND zwischen den Feldern; `check_conditions()` ist rein, ein unbekannter
   oder nicht verfügbarer Sensor zählt bei `only_if_on` als erfüllt (fail-open), nur globale
-  Sensoren zählen. Übersprungen wird in `last_skipped` (im `Store`) festgehalten. Die Felder im
+  Sensoren zählen. Die globale Option `workday_invert` (Eintrag, Standard aus) vertauscht „on“/„off“ aller
+  Sensoren (`invert` in `check_conditions()`), ein unbekannter Zustand bleibt unverändert. Übersprungen wird in `last_skipped` (im `Store`) festgehalten. Die Felder im
   Wecker-Dialog erscheinen nur, wenn globale Sensoren existieren, sonst bleiben gespeicherte
   Werte erhalten. „Nächster Wecker“ ignoriert die Bedingungen.
 - Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Feld nur in den
