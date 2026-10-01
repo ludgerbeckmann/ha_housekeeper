@@ -114,10 +114,14 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Einträge stehen gesammelt unter `selector.menu_action.options`, in den Menüschritten nur
   `title`, `description` und `data.action`. Neuer Menüeintrag = Schritt + Beschriftung dort.
   Tests: `tests/helpers.py` (`is_menu()`, `menu_options()`), Auswahl über `{"action": ...}`.
-- Push-Ziele (`_mobile_selector()`): Mit `custom_value` zeigt die Oberfläche nur die Werte
-  statt der Beschriftungen („Gerätename (Dienst)“). Deshalb gibt es freie Eingabe nur, wenn
-  keine `mobile_app_*`-Dienste gefunden werden; bereits gespeicherte Ziele bleiben als
-  Option erhalten.
+- Push-Ziele: native **Geräteauswahl** (`DeviceSelector`, `integration: mobile_app`,
+  `_mobile_selector()`), gespeichert werden **Geräte-IDs** der Geräteverwaltung.
+  `notify.resolve_mobile_services()` macht beim Senden daraus `mobile_app_<slug(device_name)>`
+  (Dienst der Companion-App, ohne Doppelte; ältere Einträge mit direktem Dienstnamen werden
+  unverändert unterstützt). `targets_for_form()` ordnet ältere Dienstnamen für die Vorbelegung
+  dem Gerät zu (nicht zuordenbare bleiben stehen). Notify-**Entitäten** kommen nicht infrage,
+  weil sie keine Aktionen und keine kritische Meldung können. Alle Sende-Wege laufen über
+  `Notifier._targets()`.
 - `alarm_clock.py`: Wecker in `options["alarms"]` (Schlüssel `A_*`), Push-Einstellungen im
   Eintrag (`mobile_*`, `critical`, `message`). Beim Wecken werden die **ursprünglichen
   Lautstärken** der Player gemerkt (`_restore`, auch im `Store`), Lautstärke gesetzt,

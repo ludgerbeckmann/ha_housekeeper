@@ -2,12 +2,8 @@
 
 import pytest
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.ha_housekeeper.config_flow import _mobile_selector
 from custom_components.ha_housekeeper.const import DOMAIN
 
 from .helpers import is_menu, sectioned
@@ -99,26 +95,6 @@ async def test_door_options_save_flat(hass: HomeAssistant) -> None:
     assert entry.options["open_alert_minutes"] == 15
     assert entry.options["contact"] == "binary_sensor.tuer"
     assert "general" not in entry.options and "notifications" not in entry.options
-
-
-async def test_push_targets_are_labelled_and_not_free_text(hass: HomeAssistant) -> None:
-    MockConfigEntry(
-        domain="mobile_app", data={"device_name": "iPhone Ludger", "webhook_id": "a"}
-    ).add_to_hass(hass)
-    async_mock_service(hass, "notify", "mobile_app_iphone_ludger")
-    config = _mobile_selector(hass).config
-    assert config["custom_value"] is False
-    assert [(o["value"], o["label"]) for o in config["options"]] == [
-        ("mobile_app_iphone_ludger", "iPhone Ludger (mobile_app_iphone_ludger)")
-    ]
-    # bereits gespeicherte, nicht (mehr) bekannte Ziele bleiben auswählbar
-    kept = _mobile_selector(hass, ["notify.mobile_app_altes_geraet"]).config["options"]
-    assert {o["value"] for o in kept} == {"mobile_app_iphone_ludger", "mobile_app_altes_geraet"}
-
-
-async def test_push_targets_free_text_when_no_services(hass: HomeAssistant) -> None:
-    config = _mobile_selector(hass).config
-    assert config["options"] == [] and config["custom_value"] is True
 
 
 async def test_planner_options_only_notifications_section(hass: HomeAssistant) -> None:
