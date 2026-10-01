@@ -3,9 +3,16 @@
     "step": {
       "user": {
         "title": "Funktion hinzufügen",
-        "description": "Für welche Funktion soll ein Hub angelegt werden? Du richtest dabei gleich die erste Instanz ein, weitere kommen später über den Hub dazu.",
-        "data": {
-          "function_type": "Funktion"
+        "description": "Für welche Funktion soll ein Hub angelegt werden? Du richtest dabei gleich die erste Instanz ein. Gibt es für die Funktion schon einen Hub, fügst du weitere Instanzen dort über die Schaltfläche „… hinzufügen“ hinzu.",
+        "menu_options": {
+          "hub_mailbox": "Benachrichtigung Briefkasten",
+          "hub_door_guard": "Türwächter",
+          "hub_doorbell": "Türklingel",
+          "hub_pool_pump": "Poolsteuerung",
+          "hub_knx_sonos": "KNX/Sonos-Connector",
+          "hub_updater": "Home Assistant Updater",
+          "hub_task_planner": "Aufgabenplaner",
+          "hub_alarm_clock": "Wecker"
         }
       },
       "new_mailbox": {
@@ -135,11 +142,11 @@
         "data_description": {
           "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
         },
-        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
+        "description": "Diese Instanz enthält mehrere Zeitpläne; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen stellst du je Zeitplan ein."
       },
       "new_task_planner": {
         "title": "Aufgabenplaner",
-        "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
+        "description": "Diese Instanz enthält mehrere Aufgaben; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen gehen an die hier gewählten Wege.",
         "sections": {
           "general": {
             "name": "Allgemein",
@@ -167,7 +174,7 @@
       },
       "new_alarm_clock": {
         "title": "Wecker",
-        "description": "Ein Eintrag enthält mehrere Wecker; diese werden danach unter Konfigurieren angelegt. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
+        "description": "Diese Instanz enthält mehrere Wecker; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
         "sections": {
           "general": {
             "name": "Allgemein",
@@ -236,18 +243,6 @@
     }
   },
   "selector": {
-    "function_type": {
-      "options": {
-        "mailbox": "Benachrichtigung Briefkasten",
-        "door_guard": "Türwächter",
-        "doorbell": "Türklingel",
-        "pool_pump": "Poolsteuerung",
-        "knx_sonos": "KNX/Sonos-Connector",
-        "updater": "Home Assistant Updater",
-        "task_planner": "Aufgabenplaner",
-        "alarm_clock": "Wecker"
-      }
-    },
     "block_action": {
       "options": {
         "notify": "Nur melden",
@@ -1306,7 +1301,7 @@
           "data_description": {
             "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
           },
-          "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
+          "description": "Diese Instanz enthält mehrere Zeitpläne; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen stellst du je Zeitplan ein."
         },
         "upd_menu": {
           "title": "Home Assistant Updater",
@@ -1439,7 +1434,7 @@
       "step": {
         "new_task_planner": {
           "title": "Aufgabenplaner",
-          "description": "Ein Eintrag enthält mehrere Aufgaben; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
+          "description": "Diese Instanz enthält mehrere Aufgaben; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen gehen an die hier gewählten Wege.",
           "sections": {
             "general": {
               "name": "Allgemein",
@@ -1644,7 +1639,7 @@
       "step": {
         "new_alarm_clock": {
           "title": "Wecker",
-          "description": "Ein Eintrag enthält mehrere Wecker; diese werden danach unter Konfigurieren angelegt. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
+          "description": "Diese Instanz enthält mehrere Wecker; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Die Push-Meldung mit „Stoppen“ und „Schlummern“ geht an die hier gewählten Geräte.",
           "sections": {
             "general": {
               "name": "Allgemein",

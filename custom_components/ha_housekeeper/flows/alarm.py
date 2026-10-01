@@ -39,6 +39,8 @@ from ..const import (
     CONF_MOBILE_ENABLED,
     CONF_MOBILE_TARGETS,
     CONF_NAME,
+    FUNCTION_ALARM,
+    function_title,
     WEEKDAYS,
 )
 from .common import (
@@ -59,7 +61,7 @@ def _alarm_settings_schema(
     """Eintrag: Name (nur beim Anlegen), Werktagssensoren und die Push-Meldung."""
     general: dict[Any, Any] = {}
     if with_name:
-        general[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Wecker"))] = str
+        general[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_ALARM)))] = str
     general[
         vol.Optional(
             CONF_WORKDAY_SENSORS, description=_suggest(CONF_WORKDAY_SENSORS, defaults)

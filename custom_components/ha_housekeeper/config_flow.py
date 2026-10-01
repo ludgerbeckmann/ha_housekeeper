@@ -15,7 +15,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow
-from homeassistant.helpers import selector
 
 from .const import (
     CONF_ALARMS,
@@ -43,9 +42,9 @@ from .const import (
     FUNCTION_PLATFORMS,
     FUNCTION_POOL,
     FUNCTION_TASK_PLANNER,
-    FUNCTION_TITLES,
     FUNCTION_UPDATER,
     CONF_HUB,
+    function_title,
 )
 from .flows.alarm import AlarmOptions, _alarm_settings_schema, _validate_alarm_settings
 from .flows.common import OptionsBase, _flatten_sections, _validate_notify
@@ -72,12 +71,6 @@ _MENU_STEPS = {
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
 }
-
-
-def function_title(hass: Any, function_type: str) -> str:
-    """Anzeigename der Funktion (Titel des Hubs) in der Sprache von Home Assistant."""
-    german, english = FUNCTION_TITLES[function_type]
-    return german if (hass.config.language or "").startswith("de") else english
 
 
 class NewInstanceSteps:
@@ -176,7 +169,7 @@ class NewInstanceSteps:
             step_id="new_pool_pump",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_NAME, default="Pool"): str,
+                    vol.Required(CONF_NAME, default=function_title(self.hass, FUNCTION_POOL)): str,
                     vol.Required(CONF_PUMP_ENTITY): _PUMP_SELECTOR,
                 }
             ),
@@ -203,7 +196,7 @@ class NewInstanceSteps:
             step_id="new_knx_sonos",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_NAME, default="KNX Sonos"): str,
+                    vol.Required(CONF_NAME, default=function_title(self.hass, FUNCTION_KNX_SONOS)): str,
                     vol.Required(CONF_PLAYER): _SONOS_SELECTOR,
                 }
             ),
@@ -279,36 +272,27 @@ class HousekeeperConfigFlow(NewInstanceSteps, ConfigFlow, domain=DOMAIN):
     """Hub einer Funktion anlegen (mit der ersten Instanz)."""
 
     VERSION = 1
+    _function_type: str = ""
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        if user_input is not None:
-            function_type = user_input[CONF_FUNCTION_TYPE]
-            await self.async_set_unique_id(f"{CONF_HUB}:{function_type}")
-            self._abort_if_unique_id_configured()
-            return await getattr(self, f"async_step_new_{function_type}")()
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_FUNCTION_TYPE, default=FUNCTION_MAILBOX
-                    ): selector.SelectSelector(
-                        selector.SelectSelectorConfig(
-                            options=list(FUNCTION_PLATFORMS),
-                            translation_key=CONF_FUNCTION_TYPE,
-                            mode=selector.SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
+        """Funktion wählen: natives Menü, ein Klick öffnet das Anlege-Formular."""
+        return self.async_show_menu(
+            step_id="user", menu_options=[f"hub_{t}" for t in FUNCTION_PLATFORMS]
         )
+
+    async def _start_hub(self, function_type: str) -> ConfigFlowResult:
+        """Je Funktionstyp gibt es einen Hub; weitere Instanzen kommen über dessen Schaltfläche."""
+        self._function_type = function_type
+        await self.async_set_unique_id(f"{CONF_HUB}:{function_type}")
+        self._abort_if_unique_id_configured()
+        return await getattr(self, f"async_step_new_{function_type}")()
 
     async def _finish_new(
         self, title: str, data: dict[str, Any], unique_id: str | None = None
     ) -> ConfigFlowResult:
-        function_type = self.unique_id.split(":", 1)[1]  # type: ignore[union-attr]
+        function_type = self._function_type
         return self.async_create_entry(
             title=function_title(self.hass, function_type),
             data={CONF_FUNCTION_TYPE: function_type, CONF_HUB: True},
@@ -332,6 +316,18 @@ class HousekeeperConfigFlow(NewInstanceSteps, ConfigFlow, domain=DOMAIN):
         if not config_entry.data.get(CONF_HUB) or function_type not in FUNCTION_PLATFORMS:
             return {}
         return {function_type: HousekeeperSubentryFlow}
+
+
+def _hub_step(function_type: str):
+    async def step(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return await self._start_hub(function_type)
+
+    step.__name__ = f"async_step_hub_{function_type}"
+    return step
+
+
+for _function_type in FUNCTION_PLATFORMS:
+    setattr(HousekeeperConfigFlow, f"async_step_hub_{_function_type}", _hub_step(_function_type))
 
 
 # --- Untereintrags-Flow ---------------------------------------------------------

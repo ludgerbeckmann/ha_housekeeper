@@ -153,12 +153,12 @@ async def test_second_hub_of_the_same_type_is_refused(hass: HomeAssistant) -> No
     hub.add_to_hass(hass)
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "doorbell"})
+        result["flow_id"], {"next_step_id": "hub_doorbell"})
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "already_configured"
     # andere Funktion: möglich
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "updater"})
+        result["flow_id"], {"next_step_id": "hub_updater"})
     assert result["step_id"] == "new_updater"
 
 
@@ -196,3 +196,18 @@ async def test_busy_sibling_defers_the_reload_of_the_whole_hub(hass: HomeAssista
     await first.async_stop_alarm()
     await hass.async_block_till_done()
     assert hass.data[DOMAIN][second_id] is not second                                       # jetzt nachgeholt
+
+
+async def test_function_menu_lists_all_functions_and_defaults_to_function_names(
+    hass: HomeAssistant,
+) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    assert result["type"] is FlowResultType.MENU
+    assert sorted(result["menu_options"]) == sorted([
+        "hub_mailbox", "hub_door_guard", "hub_doorbell", "hub_pool_pump", "hub_knx_sonos",
+        "hub_updater", "hub_task_planner", "hub_alarm_clock"])
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "hub_updater"})
+    assert result["step_id"] == "new_updater"
+    name = next(k for k in result["data_schema"].schema if str(k) == "name")
+    assert name.default() == "Home Assistant Updater"             # Vorgabe = Funktionsname

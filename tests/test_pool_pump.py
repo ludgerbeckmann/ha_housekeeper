@@ -336,7 +336,7 @@ async def test_user_flow_and_duplicate(hass):
     hass.states.async_set("switch.pump", "off")
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "pool_pump"}
+        result["flow_id"], {"next_step_id": "hub_pool_pump"}
     )
     assert result["step_id"] == "new_pool_pump"
     result = await hass.config_entries.flow.async_configure(
@@ -354,7 +354,7 @@ async def test_user_flow_and_duplicate(hass):
     # zweiter Hub desselben Typs: nicht möglich, weitere Pools kommen als Untereintrag
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "pool_pump"}
+        result["flow_id"], {"next_step_id": "hub_pool_pump"}
     )
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "already_configured"
 

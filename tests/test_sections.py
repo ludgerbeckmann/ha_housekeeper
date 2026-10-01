@@ -37,7 +37,7 @@ def _assert_sections(schema, general: set[str], notifications: set[str]) -> None
 async def test_config_forms_have_sections(hass: HomeAssistant, function, general, notifications) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": function}
+        result["flow_id"], {"next_step_id": f"hub_{function}"}
     )
     assert result["step_id"] == f"new_{function}"
     _assert_sections(result["data_schema"].schema, general, notifications)
@@ -46,7 +46,7 @@ async def test_config_forms_have_sections(hass: HomeAssistant, function, general
 async def test_doorbell_config_form_has_only_general_section(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "doorbell"}
+        result["flow_id"], {"next_step_id": "hub_doorbell"}
     )
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general"]

@@ -36,8 +36,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
   `updater.py`, `planner.py`, `alarm.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `NewInstanceSteps` (Anlege-Formulare
-  `async_step_new_<typ>`), `HousekeeperConfigFlow` (Funktionstyp wählen → Hub mit **erstem Untereintrag** anlegen;
-  je Typ nur ein Hub, `unique_id` `hub:<typ>`) und `HousekeeperSubentryFlow` (Schritt `user` = Instanz hinzufügen,
+  `async_step_new_<typ>`), `HousekeeperConfigFlow` (Schritt `user` = **natives Menü** mit allen Funktionen, jeder Eintrag `hub_<typ>` prüft
+  die `unique_id` `hub:<typ>` (je Typ nur ein Hub, sonst Abbruch) und startet `new_<typ>` → Hub mit **erstem Untereintrag**;
+  die Vorgabe des Instanznamens ist `function_title()` = Funktionsname) und `HousekeeperSubentryFlow` (Schritt `user` = Instanz hinzufügen,
   `reconfigure` = das Menü des Typs, `_MENU_STEPS`); er setzt alle Options-Klassen zusammen, `_current`/`_save`
   lesen und schreiben die Daten des Untereintrags (`async_update_subentry`). Pumpen dürfen nur einmal vorkommen
   (`unique_id` des Untereintrags). Neue Funktion = neues Modul in `flows/` plus Einträge in `config_flow.py`.
@@ -45,8 +46,8 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `initiate_flow.user`, `entry_type`), die Anlege-Schritte des Hubs unter `config.step.new_<typ>`.
 
 - `const.py`: `FUNCTION_PLATFORMS` ist die Registry Funktionstyp → Plattformen.
-  **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Config-Flow-Schritt
-  `async_step_<typ>`, Controller-Klasse, Plattformdateien, Übersetzungen
+  **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Anlege-Schritt
+  `async_step_new_<typ>` (Menüeintrag `hub_<typ>` entsteht automatisch), Controller-Klasse, Plattformdateien, Übersetzungen
   (`selector.function_type.options.<typ>`, `config_subentries.<typ>`, `FUNCTION_TITLES`), Controller-Registry in `__init__.py`.
 - `mailbox.py` / `door_guard.py`: je ein Controller pro Funktion (Logik, Zustand
   in `Store`). Registry Typ → Controller in `__init__.py` (`CONTROLLERS`).

@@ -3,9 +3,16 @@
     "step": {
       "user": {
         "title": "Add function",
-        "description": "For which function do you want to create a hub? You set up the first instance right away; more can be added later in the hub.",
-        "data": {
-          "function_type": "Function"
+        "description": "For which function do you want to create a hub? You set up the first instance right away. If the function already has a hub, add further instances there with the “Add …” button.",
+        "menu_options": {
+          "hub_mailbox": "Mailbox notification",
+          "hub_door_guard": "Door guard",
+          "hub_doorbell": "Doorbell",
+          "hub_pool_pump": "Pool control",
+          "hub_knx_sonos": "KNX/Sonos-Connector",
+          "hub_updater": "Home Assistant Updater",
+          "hub_task_planner": "Task planner",
+          "hub_alarm_clock": "Alarm clock"
         }
       },
       "new_mailbox": {
@@ -135,11 +142,11 @@
         "data_description": {
           "timeout_minutes": "After this time an update counts as failed and the run continues."
         },
-        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
+        "description": "This instance holds several schedules; you add them afterwards via the gear icon (Reconfigure). Notifications are set per schedule."
       },
       "new_task_planner": {
         "title": "Task planner",
-        "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here.",
+        "description": "This instance holds several tasks; you add them afterwards via the gear icon (Reconfigure). Notifications go to the channels selected here.",
         "sections": {
           "general": {
             "name": "General",
@@ -167,7 +174,7 @@
       },
       "new_alarm_clock": {
         "title": "Alarm clock",
-        "description": "One entry holds several alarms; they are added afterwards under Configure. The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
+        "description": "This instance holds several alarms; you add them afterwards via the gear icon (Reconfigure). The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
         "sections": {
           "general": {
             "name": "General",
@@ -236,18 +243,6 @@
     }
   },
   "selector": {
-    "function_type": {
-      "options": {
-        "mailbox": "Mailbox notification",
-        "door_guard": "Door guard",
-        "doorbell": "Doorbell",
-        "pool_pump": "Pool control",
-        "knx_sonos": "KNX/Sonos-Connector",
-        "updater": "Home Assistant Updater",
-        "task_planner": "Task planner",
-        "alarm_clock": "Alarm clock"
-      }
-    },
     "block_action": {
       "options": {
         "notify": "Only notify",
@@ -1306,7 +1301,7 @@
           "data_description": {
             "timeout_minutes": "After this time an update counts as failed and the run continues."
           },
-          "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
+          "description": "This instance holds several schedules; you add them afterwards via the gear icon (Reconfigure). Notifications are set per schedule."
         },
         "upd_menu": {
           "title": "Home Assistant Updater",
@@ -1439,7 +1434,7 @@
       "step": {
         "new_task_planner": {
           "title": "Task planner",
-          "description": "One entry holds several tasks; they are added afterwards under Configure. Notifications go to the channels selected here.",
+          "description": "This instance holds several tasks; you add them afterwards via the gear icon (Reconfigure). Notifications go to the channels selected here.",
           "sections": {
             "general": {
               "name": "General",
@@ -1644,7 +1639,7 @@
       "step": {
         "new_alarm_clock": {
           "title": "Alarm clock",
-          "description": "One entry holds several alarms; they are added afterwards under Configure. The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
+          "description": "This instance holds several alarms; you add them afterwards via the gear icon (Reconfigure). The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
           "sections": {
             "general": {
               "name": "General",

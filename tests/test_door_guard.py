@@ -58,7 +58,7 @@ async def test_config_flow(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": "user"}
     )
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "door_guard"}
+        result["flow_id"], {"next_step_id": "hub_door_guard"}
     )
     assert result["step_id"] == "new_door_guard"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules")}

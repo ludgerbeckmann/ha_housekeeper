@@ -335,7 +335,7 @@ async def test_sensors(hass: HomeAssistant) -> None:
 async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"function_type": "updater"})
+        result["flow_id"], {"next_step_id": "hub_updater"})
     assert result["step_id"] == "new_updater"
     assert {str(k) for k in result["data_schema"].schema} == {"name", "timeout_minutes"}
     ok = await hass.config_entries.flow.async_configure(
