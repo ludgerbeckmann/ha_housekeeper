@@ -939,6 +939,13 @@
         "data": {
           "sensitivity_value": "Sensitivity"
         }
+      },
+      "mailbox_menu": {
+        "title": "Mailbox",
+        "description": "Settings of the mailbox. The sensitivity is only set here, after an entity has been stored for it.",
+        "data": {
+          "action": "What would you like to do?"
+        }
       }
     },
     "error": {
@@ -1152,7 +1159,9 @@
         "alarm_general": "Settings",
         "add_alarm": "Add alarm",
         "edit_alarm": "Edit alarm",
-        "delete_alarm": "Delete alarm"
+        "delete_alarm": "Delete alarm",
+        "mailbox": "Settings",
+        "mailbox_sensitivity": "Set sensitivity"
       }
     }
   },
