@@ -24,23 +24,12 @@ def sectioned(flat: dict) -> dict:
     }
 
 
-def _action_options(result) -> list[str]:
-    schema = result["data_schema"].schema
-    key = next(k for k in schema if str(k) == "action")
-    return [o if isinstance(o, str) else o["value"] for o in schema[key].config["options"]]
-
-
 def is_menu(result) -> bool:
-    """Das Menü ist ein Formular mit der Auswahl „action“ (Liste und „Weiter“)."""
+    """Das Konfigurationsmenü ist ein natives Home-Assistant-Menü."""
     from homeassistant.data_entry_flow import FlowResultType
 
-    schema = result.get("data_schema")
-    return (
-        result["type"] is FlowResultType.FORM
-        and schema is not None
-        and any(str(k) == "action" for k in schema.schema)
-    )
+    return result["type"] is FlowResultType.MENU
 
 
 def menu_options(result) -> list[str]:
-    return _action_options(result)
+    return list(result["menu_options"])

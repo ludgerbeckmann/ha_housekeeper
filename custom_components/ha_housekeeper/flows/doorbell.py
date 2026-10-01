@@ -91,7 +91,6 @@ class DoorbellOptions:
         options = ["bell_general", "add_profile"]
         if self._profiles():
             options += ["edit_profile", "delete_profile"]
-        options.append("done")
         return await self._menu("bell_menu", options, user_input)
 
     async def async_step_bell_general(

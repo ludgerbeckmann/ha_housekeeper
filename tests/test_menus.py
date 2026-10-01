@@ -1,11 +1,10 @@
-"""Menüs der Einstellungen als Formular mit Auswahlliste und „Weiter“."""
+"""Menüs der Einstellungen: native Menüs, direkt anklickbar, ohne Abschlusseintrag."""
 
 import json
 from pathlib import Path
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_housekeeper.const import DOMAIN
@@ -40,48 +39,47 @@ async def _open(hass: HomeAssistant, data: dict):
 
 
 @pytest.mark.parametrize("function", list(ENTRIES))
-async def test_menu_is_form_ending_with_save_and_close(hass: HomeAssistant, function) -> None:
+async def test_menu_is_native_without_done_entry(hass: HomeAssistant, function) -> None:
     _, result = await _open(hass, ENTRIES[function])
     assert is_menu(result)
     options = menu_options(result)
-    assert options[-1] == "done"
+    assert "done" not in options
     assert not any(
         (o.startswith("edit_") and o != "edit_speaker") or o.startswith("delete_") for o in options
     )
 
 
-async def test_menu_selection_dispatches_and_done_closes(hass: HomeAssistant) -> None:
+async def test_menu_selection_dispatches(hass: HomeAssistant) -> None:
     entry, result = await _open(hass, ENTRIES["updater"])
     flow = hass.config_entries.options
-    result = await flow.async_configure(result["flow_id"], {"action": "add_schedule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
     assert result["step_id"] == "schedule_edit" and not is_menu(result)
-    # ungültige Auswahl wird von der Oberfläche abgelehnt
+    # ungültige Auswahl wird abgelehnt
     _, menu = await _open(
         hass, {**ENTRIES["task_planner"], "name": "Planer 2"}
     )
     with pytest.raises(Exception):  # noqa: B017
-        await flow.async_configure(menu["flow_id"], {"action": "gibt_es_nicht"})
-    done = await flow.async_configure(menu["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
+        await flow.async_configure(menu["flow_id"], {"next_step_id": "gibt_es_nicht"})
 
 
 def test_translations_cover_all_menu_options() -> None:
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         data = json.loads((COMPONENT / name).read_text(encoding="utf-8"))
-        labels = data["selector"]["menu_action"]["options"]
         steps = data["options"]["step"]
-        assert not any("menu_options" in step for step in steps.values()), name
-        for step_id in ("menu", "bell_menu", "pool_menu", "knx_menu", "upd_menu", "tp_menu",
-                        "task_triggers", "alarm_menu"):
-            assert list(steps[step_id]["data"]) == ["action"], (name, step_id)
-        assert labels["done"] in ("Save & close", "Speichern & schließen")
-        # jeder Eintrag, den ein Menü anbieten kann, hat eine Beschriftung
+        assert "menu_action" not in data.get("selector", {}), name
+        menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
+        assert set(menus) == {"menu", "bell_menu", "pool_menu", "knx_menu", "upd_menu", "tp_menu",
+                              "task_triggers", "alarm_menu", "mailbox_menu"}, name
+        assert not any("done" in labels for labels in menus.values()), name
+        # jeder Eintrag, den ein Menü anbieten kann, hat in seinem Menü eine Beschriftung
+        labels = {option for options in menus.values() for option in options}
         source = (COMPONENT / "config_flow.py").read_text(encoding="utf-8") + "".join(
             path.read_text(encoding="utf-8") for path in (COMPONENT / "flows").glob("*.py")
         )
         for option in ("general", "add_rule", "edit_rule", "delete_rule", "bell_general", "add_profile",
-                       "pool_general", "add_window", "dry_run", "add_speaker", "edit_speaker", "delete_speaker", "add_command",
-                       "add_status", "upd_general", "add_schedule", "tp_general", "add_task",
-                       "add_trigger", "delete_trigger", "task_save", "alarm_general", "add_alarm",
-                       "edit_alarm", "delete_alarm", "done"):
+                       "pool_general", "add_window", "dry_run", "heater", "add_speaker", "edit_speaker",
+                       "delete_speaker", "add_command", "add_status", "upd_general", "add_schedule",
+                       "tp_general", "add_task", "add_trigger", "delete_trigger", "task_save",
+                       "alarm_general", "add_alarm", "edit_alarm", "delete_alarm", "mailbox",
+                       "mailbox_sensitivity"):
             assert option in labels and f'"{option}"' in source, (name, option)

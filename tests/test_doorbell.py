@@ -254,7 +254,7 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert is_menu(result) and result["step_id"] == "bell_menu"
     assert "edit_profile" not in menu_options(result)
 
-    result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["timing", "sound", "notifications"]
 
@@ -292,7 +292,7 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert tts_profile["message"] == "Ding" and tts_profile["clear_after_hours"] == 1
 
     # Profil auf Klingelton umstellen: alte TTS-Schlüssel verschwinden
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": tts_profile["id"]})
     result = await flow.async_configure(
         result["flow_id"],
@@ -304,7 +304,7 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert "Tag" in profile_summary(hass, profile)
 
     # Profil nur mit Push: kein Ton, keine Player
-    result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
     result = await flow.async_configure(
         result["flow_id"],
         form(timing={"name": "Nur Push"},
@@ -313,13 +313,11 @@ async def test_options_flow_profiles(hass: HomeAssistant) -> None:
     assert push_only["players"] == [] and "mode" not in push_only
     assert "Push" in profile_summary(hass, push_only)
 
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": profile["id"]})
-    result = await flow.async_configure(result["flow_id"], {"action": "delete_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_profile"})
     result = await flow.async_configure(result["flow_id"], {"profile": push_only["id"]})
     assert entry.options["profiles"] == []
-    done = await flow.async_configure(result["flow_id"], {"action": "done"})
-    assert done["type"] is FlowResultType.CREATE_ENTRY
 
 
 # --- Push je Profil ------------------------------------------------------------------

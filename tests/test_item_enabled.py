@@ -135,7 +135,7 @@ async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_rule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
     assert "enabled" in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(
         result["flow_id"], {"action": "lock", "trigger": "time", "enabled": False})
@@ -145,7 +145,7 @@ async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
     (saved,) = entry.options["rules"]
     assert saved["enabled"] is False
     # Standard: aktiv
-    result = await flow.async_configure(result["flow_id"], {"action": "add_rule"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
     result = await flow.async_configure(result["flow_id"], {"action": "lock", "trigger": "time"})
     await flow.async_configure(result["flow_id"], {"time": "23:00:00", "weekdays": ["tue"]})
     assert entry.options["rules"][1]["enabled"] is True
@@ -162,7 +162,7 @@ async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "add_profile"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
     sections = result["data_schema"].schema
     timing = next(v for k, v in sections.items() if str(k) == "timing")
     assert "enabled" in {str(k) for k in timing.schema.schema}
@@ -227,7 +227,7 @@ async def test_knx_speaker_flow_stores_enabled_and_marks_picker(hass: HomeAssist
     await hass.async_block_till_done()
     flow = hass.config_entries.options
     result = await flow.async_init(entry.entry_id)
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
     result = await flow.async_configure(result["flow_id"], {"item": "default"})
     assert "enabled" in {str(k) for k in result["data_schema"].schema}
     result = await flow.async_configure(result["flow_id"], {
@@ -235,7 +235,7 @@ async def test_knx_speaker_flow_stores_enabled_and_marks_picker(hass: HomeAssist
         "volume_step": 5, "stop_instead_of_pause": False})
     assert entry.options["speakers"][0]["enabled"] is False
     await hass.async_block_till_done()
-    result = await flow.async_configure(result["flow_id"], {"action": "edit_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
     labels = [o["label"] for o in next(iter(result["data_schema"].schema.values())).config["options"]]
     assert labels == ["Standard (media_player.a) (off)"]
 

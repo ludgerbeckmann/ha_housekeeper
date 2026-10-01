@@ -95,7 +95,6 @@ class MailboxOptions:
         options = ["mailbox"]
         if self._current.get(CONF_SENSITIVITY_ENTITY):
             options.append("mailbox_sensitivity")
-        options.append("done")
         return await self._menu("mailbox_menu", options, user_input)
 
     async def async_step_mailbox(

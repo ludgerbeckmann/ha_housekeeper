@@ -22,12 +22,10 @@ beim Hinzufügen wählst du zuerst den Funktionstyp aus.
 
 ## Bedienung der Einstellungen
 
-Bei Funktionen mit Listen (Türwächter, Türklingel, Poolsteuerung, KNX/Sonos-Connector,
-Home Assistant Updater, Aufgabenplaner) öffnet *Konfigurieren* eine Auswahlliste „Was
-möchtest du tun?“ (Einstellungen, hinzufügen, bearbeiten, löschen …). Mit **Weiter** unten
-rechts geht es in den gewählten Dialog und danach zurück zur Liste. **Speichern & schließen**
-beendet den Dialog. Änderungen werden sofort gespeichert, das Schließen mit X verliert also
-nichts.
+*Konfigurieren* öffnet bei jeder Funktion ein **Menü**: Die Einträge (Einstellungen, hinzufügen,
+bearbeiten, löschen …) sind direkt anklickbar, es gibt keinen OK-Button. Nach einem Dialog
+geht es zurück ins Menü, das **X** oben links schließt es. Änderungen werden bei jedem Schritt
+sofort gespeichert, das Schließen verliert also nichts.
 
 Nach dem Speichern wird der Eintrag neu geladen. Läuft gerade etwas, das ein Neuladen nicht
 überstünde, **wartet das Neuladen** bis zum Ende und wird dann einmal ausgeführt (mehrere
