@@ -148,7 +148,7 @@ class KnxLastCommandSensor(FunctionEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         last = self._controller.last_command or {}
-        return {k: last.get(k) for k in ("name", "address", "action", "value")}
+        return {k: last.get(k) for k in ("profile", "name", "address", "action", "value")}
 
 
 class UpdaterLastRunSensor(FunctionEntity, SensorEntity):

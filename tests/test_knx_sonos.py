@@ -336,12 +336,18 @@ async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
     assert result["step_id"] == "knx_menu"
     assert "edit_command" not in menu_options(result) and "edit_status" not in menu_options(result)
 
-    # Einstellungen
-    result = await flow.async_configure(result["flow_id"], {"action": "knx_general"})
+    # Lautsprecher-Profil bearbeiten (ältere Einträge: Profil „Standard“ aus dem Eintrag)
+    assert "delete_speaker" not in menu_options(result)
+    result = await flow.async_configure(result["flow_id"], {"action": "edit_speaker"})
+    result = await flow.async_configure(result["flow_id"], {"item": "default"})
+    assert result["step_id"] == "speaker_edit"
     result = await flow.async_configure(
         result["flow_id"],
-        {"player": PLAYER, "max_volume": 70, "volume_step": 10, "stop_instead_of_pause": True})
-    assert entry.options["max_volume"] == 70 and entry.options["stop_instead_of_pause"] is True
+        {"name": "Wohnzimmer", "player": PLAYER, "max_volume": 70, "volume_step": 10,
+         "stop_instead_of_pause": True})
+    (speaker,) = entry.options["speakers"]
+    assert speaker["id"] == "default" and speaker["name"] == "Wohnzimmer"
+    assert speaker["max_volume"] == 70 and speaker["stop_instead_of_pause"] is True
 
     # Befehl mit Favorit (zwei Schritte)
     result = await flow.async_configure(result["flow_id"], {"action": "add_command"})

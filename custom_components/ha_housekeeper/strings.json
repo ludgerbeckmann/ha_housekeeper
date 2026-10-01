@@ -138,7 +138,7 @@
           "name": "Name",
           "player": "Sonos speaker"
         },
-        "description": "Builds on the KNX integration of Home Assistant. One entry per speaker; commands and status feedback follow afterwards under Configure."
+        "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
       },
       "updater": {
         "title": "Home Assistant Updater",
@@ -220,6 +220,8 @@
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
+      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+      "last_profile": "The last profile cannot be deleted.",
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
@@ -525,14 +527,16 @@
       },
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
-        "description": "Commands (KNX to Sonos) and status feedback (Sonos to KNX) of the speaker.",
+        "description": "Speaker profiles plus commands (KNX to Sonos) and status feedback (Sonos to KNX) per profile.",
         "data": {
           "action": "What would you like to do?"
         }
       },
-      "knx_general": {
-        "title": "Settings",
+      "speaker_edit": {
+        "title": "Speaker profile",
+        "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
         "data": {
+          "name": "Name",
           "player": "Sonos speaker",
           "max_volume": "Maximum volume",
           "volume_step": "Volume step size",
@@ -541,6 +545,18 @@
         "data_description": {
           "max_volume": "Caps every volume set via KNX.",
           "volume_step": "Applies to volume up, volume down and relative dimming."
+        }
+      },
+      "edit_speaker": {
+        "title": "Edit speaker profile",
+        "data": {
+          "item": "Entry"
+        }
+      },
+      "delete_speaker": {
+        "title": "Delete speaker profile",
+        "data": {
+          "item": "Entry"
         }
       },
       "edit_command": {
@@ -574,7 +590,8 @@
           "name": "Name",
           "address": "Group address (e.g. 1/2/3)",
           "dpt": "Data type",
-          "action": "Action"
+          "action": "Action",
+          "profile": "Speaker profile"
         },
         "data_description": {
           "dpt": "Relative dimming (3.007) belongs to the action \"Dim volume\", \"Mute (value)\" needs switching (1.001)."
@@ -599,7 +616,8 @@
           "name": "Name",
           "source": "Source",
           "address": "Group address (e.g. 1/2/3)",
-          "idle_text": "Text when nothing is playing"
+          "idle_text": "Text when nothing is playing",
+          "profile": "Speaker profile"
         },
         "data_description": {
           "source": "Playing, paused and muted are sent as 1 bit (1.001), volume as percent (5.001) and title, artist, album and source as text (16.001, 14 characters).",
@@ -888,6 +906,8 @@
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
+      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+      "last_profile": "The last profile cannot be deleted.",
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
@@ -1050,7 +1070,9 @@
         "edit_window": "Edit time window",
         "delete_window": "Delete time window",
         "dry_run": "Dry-run detection",
-        "knx_general": "Settings",
+        "add_speaker": "Add speaker profile",
+        "edit_speaker": "Edit speaker profile",
+        "delete_speaker": "Delete speaker profile",
         "add_command": "Add command",
         "edit_command": "Edit command",
         "delete_command": "Delete command",

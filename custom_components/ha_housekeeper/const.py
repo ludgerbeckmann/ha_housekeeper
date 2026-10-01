@@ -181,8 +181,11 @@ CONF_VOLUME_STEP = "volume_step"
 CONF_STOP_INSTEAD = "stop_instead_of_pause"
 CONF_COMMANDS = "commands"
 CONF_STATUS = "status"
+CONF_SPEAKERS = "speakers"
 
 DEFAULT_MAX_VOLUME = 100
+DEFAULT_SPEAKER_ID = "default"
+DEFAULT_SPEAKER_NAME = "Standard"
 DEFAULT_VOLUME_STEP = 5
 
 # Befehl (KNX -> Sonos) und Rückmeldung (Sonos -> KNX): Schlüssel
@@ -197,6 +200,7 @@ K_VOLUME = "volume"
 K_FAVORITE = "favorite"
 K_SOURCE = "source"
 K_IDLE_TEXT = "idle_text"
+K_PROFILE = "profile"
 
 # Datentypen der Befehle
 DPT_SWITCH = "switch"  # 1.001

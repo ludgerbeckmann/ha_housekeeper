@@ -268,18 +268,30 @@ Automationen und Dashboards an die neuen Entity-IDs und die Aktion
 
 ## KNX/Sonos-Connector
 
-Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
+Verbindet KNX-Gruppenadressen mit einem oder mehreren Sonos-Lautsprechern, in beide Richtungen.
 Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
 (Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
 eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
-sonst bricht das Hinzufügen ab. Pro Lautsprecher ein Eintrag.
+sonst bricht das Hinzufügen ab. Mehrere Lautsprecher werden als **Profile** in einem Eintrag
+verwaltet.
 
-### Einstellungen
+### Lautsprecher-Profile
 
-Unter *Konfigurieren → Einstellungen*: Sonos-Lautsprecher, **Maximale Lautstärke**
-(begrenzt jede per KNX gesetzte Lautstärke), **Schrittweite** für Lauter/Leiser und
-Dimmen sowie die Option **Bei Pause stoppen statt pausieren** (z. B. für
-Radiostreams, die sich nicht pausieren lassen).
+Unter *Konfigurieren* legst du die Profile an (hinzufügen, bearbeiten, löschen). Ein Profil hat:
+
+- **Name** und **Sonos-Lautsprecher**
+- **Maximale Lautstärke** (begrenzt jede per KNX gesetzte Lautstärke)
+- **Schrittweite** für Lauter/Leiser und Dimmen
+- die Option **Bei Pause stoppen statt pausieren** (z. B. für Radiostreams, die sich nicht
+  pausieren lassen)
+
+Jeder **Befehl** und jede **Rückmeldung** gehört zu einem Profil (Auswahl im Dialog, sobald es
+mehrere Profile gibt) und hat **eigene Gruppenadressen**. Der Lautsprecher, den du beim
+Hinzufügen wählst, wird das erste Profil „Standard“; bestehende Einträge laufen unverändert
+weiter, alle bisherigen Befehle und Rückmeldungen gehören dann zu diesem Profil. Ohne
+Profilangabe gilt immer das erste Profil. Ein Profil lässt sich nur löschen, wenn kein Befehl
+und keine Rückmeldung es mehr nutzt, und das letzte Profil bleibt erhalten. Eine Gruppierung
+der Lautsprecher über Sonos gehört nicht dazu.
 
 ### Befehle (KNX → Sonos)
 
@@ -319,7 +331,7 @@ gesendet, solange der Lautsprecher nicht spielt.
 
 - `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
   Einschalten werden die Rückmeldungen neu gesendet)
-- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name, Adresse, Aktion, Wert)
+- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Profil, Name, Adresse, Aktion, Wert)
 
 ### Hinweise
 
