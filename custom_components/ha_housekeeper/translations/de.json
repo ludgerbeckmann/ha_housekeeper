@@ -142,35 +142,14 @@
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Name und Zeitlimit.",
-            "data": {
-              "name": "Name",
-              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-            },
-            "data_description": {
-              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit über Update-Läufe informiert wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-            }
-          }
-        }
+        "data": {
+          "name": "Name",
+          "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+        },
+        "data_description": {
+          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+        },
+        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
       },
       "task_planner": {
         "title": "Aufgabenplaner",
@@ -636,32 +615,11 @@
       },
       "upd_general": {
         "title": "Einstellungen",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Name und Zeitlimit.",
-            "data": {
-              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-            },
-            "data_description": {
-              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit über Update-Läufe informiert wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-            }
-          }
+        "data": {
+          "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+        },
+        "data_description": {
+          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
         }
       },
       "edit_schedule": {
@@ -678,20 +636,47 @@
       },
       "schedule_edit": {
         "title": "Zeitplan",
-        "description": "Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
-        "data": {
-          "name": "Name",
-          "time": "Uhrzeit",
-          "weekdays": "Wochentage",
-          "mode": "Aktion",
-          "components": "Komponenten",
-          "targets": "Einzelne Updates",
-          "backup": "Vor dem Installieren Sicherung anlegen"
-        },
-        "data_description": {
-          "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
-          "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
-          "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+        "description": "Zeitpunkt, Aktionen und Benachrichtigung dieses Zeitplans. Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
+        "sections": {
+          "timing": {
+            "name": "Zeitpunkt",
+            "description": "Wann der Zeitplan läuft.",
+            "data": {
+              "name": "Name",
+              "time": "Uhrzeit",
+              "weekdays": "Wochentage"
+            }
+          },
+          "actions": {
+            "name": "Aktionen",
+            "description": "Was bei diesem Zeitplan geschieht.",
+            "data": {
+              "mode": "Aktion",
+              "components": "Komponenten",
+              "targets": "Einzelne Updates",
+              "backup": "Vor dem Installieren Sicherung anlegen"
+            },
+            "data_description": {
+              "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
+              "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
+              "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit dieser Zeitplan meldet.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "tp_menu": {
