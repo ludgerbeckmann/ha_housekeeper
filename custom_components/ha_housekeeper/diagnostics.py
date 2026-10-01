@@ -80,12 +80,23 @@ async def async_get_config_entry_diagnostics(
             },
         }
     if isinstance(controller, KnxSonosController):
-        player = hass.states.get(controller.player)
         result["state"] = {
             "enabled": controller.enabled,
             "knx_available": controller._knx_available,  # noqa: SLF001
             "last_command": controller.last_command,
-            "player_state": player.state if player else None,
+            "profiles": [
+                {
+                    "id": profile.get("id"),
+                    "name": profile.get("name"),
+                    "player": profile.get("player"),
+                    "player_state": (
+                        state.state
+                        if (state := hass.states.get(profile.get("player", "")))
+                        else None
+                    ),
+                }
+                for profile in controller.profiles
+            ],
             "registered_addresses": sorted(
                 {*controller._commands_by_ga, *controller._status_by_ga}  # noqa: SLF001
             ),

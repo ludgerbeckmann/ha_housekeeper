@@ -45,7 +45,9 @@ async def test_menu_is_form_ending_with_save_and_close(hass: HomeAssistant, func
     assert is_menu(result)
     options = menu_options(result)
     assert options[-1] == "done"
-    assert not any(o.startswith("edit_") or o.startswith("delete_") for o in options)
+    assert not any(
+        (o.startswith("edit_") and o != "edit_speaker") or o.startswith("delete_") for o in options
+    )
 
 
 async def test_menu_selection_dispatches_and_done_closes(hass: HomeAssistant) -> None:
@@ -76,7 +78,7 @@ def test_translations_cover_all_menu_options() -> None:
         # jeder Eintrag, den ein Menü anbieten kann, hat eine Beschriftung
         source = (COMPONENT / "config_flow.py").read_text(encoding="utf-8")
         for option in ("general", "add_rule", "edit_rule", "delete_rule", "bell_general", "add_profile",
-                       "pool_general", "add_window", "dry_run", "knx_general", "add_command",
+                       "pool_general", "add_window", "dry_run", "add_speaker", "edit_speaker", "delete_speaker", "add_command",
                        "add_status", "upd_general", "add_schedule", "tp_general", "add_task",
                        "add_trigger", "delete_trigger", "task_save", "alarm_general", "add_alarm",
                        "edit_alarm", "delete_alarm", "done"):

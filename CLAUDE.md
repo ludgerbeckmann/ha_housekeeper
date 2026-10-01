@@ -67,7 +67,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   werden mit `response: true` beantwortet. Befehle und Rückmeldungen liegen als Listen
   in `options["commands"]`/`options["status"]` (Schlüssel `K_*`). `mute_set` hat keine
   Bedingung (folgt dem Wert). Der Übersetzungsschlüssel des Schalters ist
-  `connector_active` (nicht `active`, der gehört zur Türklingel).
+  `connector_active` (nicht `active`, der gehört zur Türklingel). **Mehrere Lautsprecher =
+  Profile** in `options["speakers"]` (Schlüssel `id`, `name`, `player`, `max_volume`,
+  `volume_step`, `stop_instead_of_pause`); Befehle/Rückmeldungen tragen `K_PROFILE` und haben
+  eigene Adressen. `speaker_profiles()` bildet für ältere Einträge (nur `player` und Co. im
+  Eintrag) ein Profil „Standard“ (id `default`); `profile_for()` löst ein Profil auf, ohne
+  Angabe gilt das erste. Lautstärkegrenze, Schritt und „stoppen statt pausieren“ kommen aus
+  dem Profil, der Controller beobachtet alle Player. Löschen eines Profils ist blockiert,
+  solange Befehle/Rückmeldungen es nutzen. Menüeinträge: `add/edit/delete_speaker`
+  (nicht `*_profile`, das gehört zur Türklingel).
 - `updater.py`: Zeitpläne in `options["schedules"]` (Schlüssel `U_*`), je Zeitplan eigene
   Zielliste (`update`-Entitäten), Modus (melden/installieren) und Sicherung. Installiert
   wird über `update.install` **nacheinander**; Supervisor, Core und OS (Entity-IDs in

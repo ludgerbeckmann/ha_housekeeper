@@ -40,10 +40,13 @@ from .const import (
     CONF_COMMANDS,
     CONF_MAX_VOLUME,
     CONF_PLAYER,
+    CONF_SPEAKERS,
     CONF_STATUS,
     CONF_STOP_INSTEAD,
     CONF_VOLUME_STEP,
     DEFAULT_MAX_VOLUME,
+    DEFAULT_SPEAKER_ID,
+    DEFAULT_SPEAKER_NAME,
     DEFAULT_VOLUME_STEP,
     DOMAIN,
     DPT_DIMMING,
@@ -57,6 +60,7 @@ from .const import (
     K_ID,
     K_IDLE_TEXT,
     K_NAME,
+    K_PROFILE,
     K_SCENE,
     K_SOURCE,
     K_VOLUME,
@@ -164,20 +168,58 @@ def _words(hass: HomeAssistant) -> dict[str, str]:
     return _WORDS["de" if (hass.config.language or "").startswith("de") else "en"]
 
 
-def command_summary(hass: HomeAssistant, command: dict[str, Any]) -> str:
+def speaker_profiles(get: Any) -> list[dict[str, Any]]:
+    """Lautsprecher-Profile des Eintrags.
+
+    Ältere Einträge haben keine Profile, nur einen Lautsprecher samt Einstellungen im
+    Eintrag; daraus wird ein Profil „Standard“ gebildet, dem alle bisherigen Befehle und
+    Rückmeldungen gehören.
+    """
+    speakers = list(get(CONF_SPEAKERS, []) or [])
+    if speakers:
+        return speakers
+    if player := get(CONF_PLAYER):
+        return [
+            {
+                K_ID: DEFAULT_SPEAKER_ID,
+                K_NAME: DEFAULT_SPEAKER_NAME,
+                CONF_PLAYER: player,
+                CONF_MAX_VOLUME: get(CONF_MAX_VOLUME, DEFAULT_MAX_VOLUME),
+                CONF_VOLUME_STEP: get(CONF_VOLUME_STEP, DEFAULT_VOLUME_STEP),
+                CONF_STOP_INSTEAD: bool(get(CONF_STOP_INSTEAD, False)),
+            }
+        ]
+    return []
+
+
+def profile_for(
+    profiles: list[dict[str, Any]], item: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Profil eines Befehls oder einer Rückmeldung (ohne Angabe: das erste Profil)."""
+    wanted = item.get(K_PROFILE)
+    return next((p for p in profiles if p.get(K_ID) == wanted), profiles[0] if profiles else None)
+
+
+def command_summary(
+    hass: HomeAssistant, command: dict[str, Any], profile_name: str | None = None
+) -> str:
     """Kurzbeschreibung eines Befehls für Listen im Options-Flow."""
     words = _words(hass)
+    where = f" [{profile_name}]" if profile_name else ""
     return (
-        f"{command.get(K_NAME)}: {command.get(K_ADDRESS)} → "
+        f"{command.get(K_NAME)}{where}: {command.get(K_ADDRESS)} → "
         f"{words.get(command.get(K_ACTION), command.get(K_ACTION))}"
     )
 
 
-def status_summary(hass: HomeAssistant, status: dict[str, Any]) -> str:
+def status_summary(
+    hass: HomeAssistant, status: dict[str, Any], profile_name: str | None = None
+) -> str:
     """Kurzbeschreibung einer Rückmeldung für Listen im Options-Flow."""
     words = _words(hass)
+    where = f" [{profile_name}]" if profile_name else ""
     return (
-        f"{status.get(K_NAME)}: "
+        f"{status.get(K_NAME)}{where}: "
         f"{words.get(status.get(K_SOURCE), status.get(K_SOURCE))} → {status.get(K_ADDRESS)}"
     )
 
@@ -206,8 +248,21 @@ class KnxSonosController:
         return self._get(key, default)
 
     @property
-    def player(self) -> str:
-        return self._opt(CONF_PLAYER)
+    def profiles(self) -> list[dict[str, Any]]:
+        return speaker_profiles(self._get)
+
+    @property
+    def player(self) -> str | None:
+        """Lautsprecher des ersten Profils (Rückwärtskompatibilität, Diagnose)."""
+        profiles = self.profiles
+        return profiles[0].get(CONF_PLAYER) if profiles else None
+
+    @property
+    def players(self) -> list[str]:
+        return list(dict.fromkeys(p[CONF_PLAYER] for p in self.profiles if p.get(CONF_PLAYER)))
+
+    def _profile(self, item: dict[str, Any]) -> dict[str, Any] | None:
+        return profile_for(self.profiles, item)
 
     def _notify(self) -> None:
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
@@ -218,8 +273,10 @@ class KnxSonosController:
         )
         self._notify()
 
-    def _player_state(self):
-        state = self.hass.states.get(self.player)
+    def _player_state(self, profile: dict[str, Any] | None):
+        if not profile or not profile.get(CONF_PLAYER):
+            return None
+        state = self.hass.states.get(profile[CONF_PLAYER])
         if state is None or state.state in _UNKNOWN:
             return None
         return state
@@ -244,7 +301,7 @@ class KnxSonosController:
         )
         self._unsubs.append(
             async_track_state_change_event(
-                self.hass, [self.player], self._on_player_change
+                self.hass, self.players, self._on_player_change
             )
         )
         self._unsubs.append(
@@ -364,13 +421,18 @@ class KnxSonosController:
         if decoded is None or not decoded[1]:
             return
         value = decoded[0]
-        state = self._player_state()
+        profile = self._profile(command)
+        state = self._player_state(profile)
         if state is None:
-            _LOGGER.debug("%s: Lautsprecher %s nicht verfügbar", self.entry.title, self.player)
+            _LOGGER.debug(
+                "%s: Lautsprecher %s nicht verfügbar",
+                self.entry.title, (profile or {}).get(CONF_PLAYER),
+            )
             return
-        await self._async_do(command.get(K_ACTION), command, value, state)
+        await self._async_do(command.get(K_ACTION), command, value, state, profile)
         self.last_command = {
             "time": dt_util.utcnow().isoformat(),
+            "profile": profile.get(K_NAME),
             "name": command.get(K_NAME),
             "address": command.get(K_ADDRESS),
             "action": command.get(K_ACTION),
@@ -378,73 +440,79 @@ class KnxSonosController:
         }
         await self._async_save()
 
-    def _clamp(self, percent: float) -> float:
-        maximum = float(self._opt(CONF_MAX_VOLUME, DEFAULT_MAX_VOLUME))
+    @staticmethod
+    def _clamp(profile: dict[str, Any], percent: float) -> float:
+        maximum = float(profile.get(CONF_MAX_VOLUME, DEFAULT_MAX_VOLUME))
         return max(0.0, min(float(percent), maximum))
 
-    async def _async_player_call(self, service: str, **data: Any) -> None:
+    async def _async_player_call(
+        self, profile: dict[str, Any], service: str, **data: Any
+    ) -> None:
         await async_safe_call(
-            self.hass, "media_player", service, {"entity_id": self.player, **data}
+            self.hass, "media_player", service,
+            {"entity_id": profile[CONF_PLAYER], **data},
         )
 
-    async def _async_set_volume(self, percent: float) -> None:
+    async def _async_set_volume(self, profile: dict[str, Any], percent: float) -> None:
         await self._async_player_call(
-            "volume_set", volume_level=round(self._clamp(percent) / 100, 2)
+            profile, "volume_set", volume_level=round(self._clamp(profile, percent) / 100, 2)
         )
 
     def _current_volume_percent(self, state) -> float | None:
         level = state.attributes.get("volume_level")
         return None if level is None else float(level) * 100
 
-    async def _async_pause(self) -> None:
-        stop = bool(self._opt(CONF_STOP_INSTEAD, False))
-        await self._async_player_call("media_stop" if stop else "media_pause")
+    async def _async_pause(self, profile: dict[str, Any]) -> None:
+        stop = bool(profile.get(CONF_STOP_INSTEAD, False))
+        await self._async_player_call(profile, "media_stop" if stop else "media_pause")
 
-    async def _async_do(self, action: str, command: dict[str, Any], value: Any, state) -> None:
-        step = float(self._opt(CONF_VOLUME_STEP, DEFAULT_VOLUME_STEP))
+    async def _async_do(
+        self, action: str, command: dict[str, Any], value: Any, state, profile: dict[str, Any]
+    ) -> None:
+        step = float(profile.get(CONF_VOLUME_STEP, DEFAULT_VOLUME_STEP))
         if action == ACT_PLAY:
-            await self._async_player_call("media_play")
+            await self._async_player_call(profile, "media_play")
         elif action == ACT_PAUSE:
-            await self._async_pause()
+            await self._async_pause(profile)
         elif action == ACT_PLAY_PAUSE:
             if state.state == STATE_PLAYING:
-                await self._async_pause()
+                await self._async_pause(profile)
             else:
-                await self._async_player_call("media_play")
+                await self._async_player_call(profile, "media_play")
         elif action == ACT_STOP:
-            await self._async_player_call("media_stop")
+            await self._async_player_call(profile, "media_stop")
         elif action == ACT_NEXT:
-            await self._async_player_call("media_next_track")
+            await self._async_player_call(profile, "media_next_track")
         elif action == ACT_PREVIOUS:
-            await self._async_player_call("media_previous_track")
+            await self._async_player_call(profile, "media_previous_track")
         elif action == ACT_VOLUME_SET:
             if command.get(K_DPT) == DPT_PERCENT:
-                await self._async_set_volume(value)
+                await self._async_set_volume(profile, value)
             elif command.get(K_VOLUME) is not None:
-                await self._async_set_volume(float(command[K_VOLUME]))
+                await self._async_set_volume(profile, float(command[K_VOLUME]))
         elif action in (ACT_VOLUME_UP, ACT_VOLUME_DOWN, ACT_VOLUME_DIM):
             current = self._current_volume_percent(state)
             if current is None:
                 return
             up = action == ACT_VOLUME_UP or (action == ACT_VOLUME_DIM and value)
-            await self._async_set_volume(current + step if up else current - step)
+            await self._async_set_volume(profile, current + step if up else current - step)
         elif action == ACT_MUTE:
-            await self._async_player_call("volume_mute", is_volume_muted=True)
+            await self._async_player_call(profile, "volume_mute", is_volume_muted=True)
         elif action == ACT_UNMUTE:
-            await self._async_player_call("volume_mute", is_volume_muted=False)
+            await self._async_player_call(profile, "volume_mute", is_volume_muted=False)
         elif action == ACT_MUTE_TOGGLE:
             muted = bool(state.attributes.get("is_volume_muted"))
-            await self._async_player_call("volume_mute", is_volume_muted=not muted)
+            await self._async_player_call(profile, "volume_mute", is_volume_muted=not muted)
         elif action == ACT_MUTE_SET:
-            await self._async_player_call("volume_mute", is_volume_muted=bool(value))
+            await self._async_player_call(profile, "volume_mute", is_volume_muted=bool(value))
         elif action == ACT_FAVORITE and command.get(K_FAVORITE):
-            await self._async_player_call("select_source", source=command[K_FAVORITE])
+            await self._async_player_call(profile, "select_source", source=command[K_FAVORITE])
 
     # --- Rückmeldungen (Sonos -> KNX) -------------------------------------------
 
     def _status_value(self, status: dict[str, Any]) -> Any:
         """Aktuellen Wert der Quelle bestimmen (None = nicht senden)."""
-        state = self._player_state()
+        state = self._player_state(self._profile(status))
         if state is None:
             return None
         source = status.get(K_SOURCE)

@@ -138,39 +138,18 @@
           "name": "Name",
           "player": "Sonos speaker"
         },
-        "description": "Builds on the KNX integration of Home Assistant. One entry per speaker; commands and status feedback follow afterwards under Configure."
+        "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications go to the channels selected here.",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name and time limit.",
-            "data": {
-              "name": "Name",
-              "timeout_minutes": "Time limit per update (minutes)"
-            },
-            "data_description": {
-              "timeout_minutes": "After this time an update counts as failed and the run continues."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what update runs are reported.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-            }
-          }
-        }
+        "data": {
+          "name": "Name",
+          "timeout_minutes": "Time limit per update (minutes)"
+        },
+        "data_description": {
+          "timeout_minutes": "After this time an update counts as failed and the run continues."
+        },
+        "description": "One entry holds several schedules; they are added afterwards under Configure. Notifications are set per schedule."
       },
       "task_planner": {
         "title": "Task planner",
@@ -241,6 +220,8 @@
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
+      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+      "last_profile": "The last profile cannot be deleted.",
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
@@ -546,14 +527,16 @@
       },
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
-        "description": "Commands (KNX to Sonos) and status feedback (Sonos to KNX) of the speaker.",
+        "description": "Speaker profiles plus commands (KNX to Sonos) and status feedback (Sonos to KNX) per profile.",
         "data": {
           "action": "What would you like to do?"
         }
       },
-      "knx_general": {
-        "title": "Settings",
+      "speaker_edit": {
+        "title": "Speaker profile",
+        "description": "A profile ties a Sonos speaker to its settings. Commands and status feedback each belong to one profile and have their own group addresses.",
         "data": {
+          "name": "Name",
           "player": "Sonos speaker",
           "max_volume": "Maximum volume",
           "volume_step": "Volume step size",
@@ -562,6 +545,18 @@
         "data_description": {
           "max_volume": "Caps every volume set via KNX.",
           "volume_step": "Applies to volume up, volume down and relative dimming."
+        }
+      },
+      "edit_speaker": {
+        "title": "Edit speaker profile",
+        "data": {
+          "item": "Entry"
+        }
+      },
+      "delete_speaker": {
+        "title": "Delete speaker profile",
+        "data": {
+          "item": "Entry"
         }
       },
       "edit_command": {
@@ -595,7 +590,8 @@
           "name": "Name",
           "address": "Group address (e.g. 1/2/3)",
           "dpt": "Data type",
-          "action": "Action"
+          "action": "Action",
+          "profile": "Speaker profile"
         },
         "data_description": {
           "dpt": "Relative dimming (3.007) belongs to the action \"Dim volume\", \"Mute (value)\" needs switching (1.001)."
@@ -620,7 +616,8 @@
           "name": "Name",
           "source": "Source",
           "address": "Group address (e.g. 1/2/3)",
-          "idle_text": "Text when nothing is playing"
+          "idle_text": "Text when nothing is playing",
+          "profile": "Speaker profile"
         },
         "data_description": {
           "source": "Playing, paused and muted are sent as 1 bit (1.001), volume as percent (5.001) and title, artist, album and source as text (16.001, 14 characters).",
@@ -636,32 +633,11 @@
       },
       "upd_general": {
         "title": "Settings",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name and time limit.",
-            "data": {
-              "timeout_minutes": "Time limit per update (minutes)"
-            },
-            "data_description": {
-              "timeout_minutes": "After this time an update counts as failed and the run continues."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what update runs are reported.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (notify services)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
-            }
-          }
+        "data": {
+          "timeout_minutes": "Time limit per update (minutes)"
+        },
+        "data_description": {
+          "timeout_minutes": "After this time an update counts as failed and the run continues."
         }
       },
       "edit_schedule": {
@@ -678,20 +654,47 @@
       },
       "schedule_edit": {
         "title": "Schedule",
-        "description": "At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
-        "data": {
-          "name": "Name",
-          "time": "Time",
-          "weekdays": "Weekdays",
-          "mode": "Action",
-          "components": "Components",
-          "targets": "Individual updates",
-          "backup": "Create a backup before installing"
-        },
-        "data_description": {
-          "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
-          "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
-          "backup": "Only for updates that support a backup."
+        "description": "Time, actions and notification of this schedule. At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
+        "sections": {
+          "timing": {
+            "name": "Time",
+            "description": "When the schedule runs.",
+            "data": {
+              "name": "Name",
+              "time": "Time",
+              "weekdays": "Weekdays"
+            }
+          },
+          "actions": {
+            "name": "Actions",
+            "description": "What this schedule does.",
+            "data": {
+              "mode": "Action",
+              "components": "Components",
+              "targets": "Individual updates",
+              "backup": "Create a backup before installing"
+            },
+            "data_description": {
+              "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
+              "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
+              "backup": "Only for updates that support a backup."
+            }
+          },
+          "notifications": {
+            "name": "Notifications",
+            "description": "How and with what this schedule reports.",
+            "data": {
+              "mobile_enabled": "Enable app push",
+              "mobile_targets": "Push targets (notify services)",
+              "tts_enabled": "Enable voice announcement",
+              "tts_entity": "TTS service",
+              "tts_player": "Speaker (media_player)",
+              "persistent_enabled": "Persistent notification in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Services such as mobile_app_iphone. Multiple devices possible."
+            }
+          }
         }
       },
       "tp_menu": {
@@ -903,6 +906,8 @@
       "too_many_windows": "Maximum number of time windows reached.",
       "start_equals_end": "Start and end must differ.",
       "min_ge_max": "The lower limit must be below the upper limit.",
+      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
+      "last_profile": "The last profile cannot be deleted.",
       "invalid_address": "Invalid group address.",
       "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
       "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
@@ -1065,7 +1070,9 @@
         "edit_window": "Edit time window",
         "delete_window": "Delete time window",
         "dry_run": "Dry-run detection",
-        "knx_general": "Settings",
+        "add_speaker": "Add speaker profile",
+        "edit_speaker": "Edit speaker profile",
+        "delete_speaker": "Delete speaker profile",
         "add_command": "Add command",
         "edit_command": "Edit command",
         "delete_command": "Delete command",

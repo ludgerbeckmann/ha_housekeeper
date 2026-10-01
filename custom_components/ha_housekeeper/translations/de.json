@@ -138,39 +138,18 @@
           "name": "Name",
           "player": "Sonos-Lautsprecher"
         },
-        "description": "Setzt auf der KNX-Integration von Home Assistant auf. Pro Lautsprecher ein Eintrag; Befehle und Rückmeldungen folgen danach unter Konfigurieren."
+        "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren."
       },
       "updater": {
         "title": "Home Assistant Updater",
-        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen gehen an die hier gewählten Wege.",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Name und Zeitlimit.",
-            "data": {
-              "name": "Name",
-              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-            },
-            "data_description": {
-              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit über Update-Läufe informiert wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-            }
-          }
-        }
+        "data": {
+          "name": "Name",
+          "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+        },
+        "data_description": {
+          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+        },
+        "description": "Ein Eintrag enthält mehrere Zeitpläne; diese werden danach unter Konfigurieren angelegt. Benachrichtigungen stellst du je Zeitplan ein."
       },
       "task_planner": {
         "title": "Aufgabenplaner",
@@ -241,6 +220,8 @@
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+      "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+      "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
       "invalid_address": "Ungültige Gruppenadresse.",
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
@@ -546,14 +527,16 @@
       },
       "knx_menu": {
         "title": "KNX/Sonos-Connector",
-        "description": "Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) des Lautsprechers.",
+        "description": "Lautsprecher-Profile sowie Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) je Profil.",
         "data": {
           "action": "Was möchtest du tun?"
         }
       },
-      "knx_general": {
-        "title": "Einstellungen",
+      "speaker_edit": {
+        "title": "Lautsprecher-Profil",
+        "description": "Ein Profil verbindet einen Sonos-Lautsprecher mit seinen Einstellungen. Befehle und Rückmeldungen gehören je zu einem Profil und haben eigene Gruppenadressen.",
         "data": {
+          "name": "Name",
           "player": "Sonos-Lautsprecher",
           "max_volume": "Maximale Lautstärke",
           "volume_step": "Schrittweite Lauter/Leiser",
@@ -562,6 +545,18 @@
         "data_description": {
           "max_volume": "Begrenzt jede per KNX gesetzte Lautstärke nach oben.",
           "volume_step": "Gilt für Lauter, Leiser und relatives Dimmen."
+        }
+      },
+      "edit_speaker": {
+        "title": "Lautsprecher-Profil bearbeiten",
+        "data": {
+          "item": "Eintrag"
+        }
+      },
+      "delete_speaker": {
+        "title": "Lautsprecher-Profil löschen",
+        "data": {
+          "item": "Eintrag"
         }
       },
       "edit_command": {
@@ -595,7 +590,8 @@
           "name": "Name",
           "address": "Gruppenadresse (z. B. 1/2/3)",
           "dpt": "Datentyp",
-          "action": "Aktion"
+          "action": "Aktion",
+          "profile": "Lautsprecher-Profil"
         },
         "data_description": {
           "dpt": "Relatives Dimmen (3.007) gehört zur Aktion „Lautstärke dimmen“, „Stumm (Wert)“ braucht Schalten (1.001)."
@@ -620,7 +616,8 @@
           "name": "Name",
           "source": "Quelle",
           "address": "Gruppenadresse (z. B. 1/2/3)",
-          "idle_text": "Text, wenn nichts wiedergegeben wird"
+          "idle_text": "Text, wenn nichts wiedergegeben wird",
+          "profile": "Lautsprecher-Profil"
         },
         "data_description": {
           "source": "Wiedergabe, Pause und Stumm werden als 1 Bit (1.001), die Lautstärke als Prozent (5.001) und Titel, Interpret, Album und Quelle als Text (16.001, 14 Zeichen) gesendet.",
@@ -636,32 +633,11 @@
       },
       "upd_general": {
         "title": "Einstellungen",
-        "sections": {
-          "general": {
-            "name": "Allgemein",
-            "description": "Name und Zeitlimit.",
-            "data": {
-              "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-            },
-            "data_description": {
-              "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-            }
-          },
-          "notifications": {
-            "name": "Benachrichtigungen",
-            "description": "Wie und womit über Update-Läufe informiert wird.",
-            "data": {
-              "mobile_enabled": "App-Push aktivieren",
-              "mobile_targets": "Push-Ziele (notify-Dienste)",
-              "tts_enabled": "Sprachausgabe aktivieren",
-              "tts_entity": "TTS-Dienst",
-              "tts_player": "Lautsprecher (media_player)",
-              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
-            }
-          }
+        "data": {
+          "timeout_minutes": "Zeitlimit pro Update (Minuten)"
+        },
+        "data_description": {
+          "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
         }
       },
       "edit_schedule": {
@@ -678,20 +654,47 @@
       },
       "schedule_edit": {
         "title": "Zeitplan",
-        "description": "Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
-        "data": {
-          "name": "Name",
-          "time": "Uhrzeit",
-          "weekdays": "Wochentage",
-          "mode": "Aktion",
-          "components": "Komponenten",
-          "targets": "Einzelne Updates",
-          "backup": "Vor dem Installieren Sicherung anlegen"
-        },
-        "data_description": {
-          "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
-          "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
-          "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+        "description": "Zeitpunkt, Aktionen und Benachrichtigung dieses Zeitplans. Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
+        "sections": {
+          "timing": {
+            "name": "Zeitpunkt",
+            "description": "Wann der Zeitplan läuft.",
+            "data": {
+              "name": "Name",
+              "time": "Uhrzeit",
+              "weekdays": "Wochentage"
+            }
+          },
+          "actions": {
+            "name": "Aktionen",
+            "description": "Was bei diesem Zeitplan geschieht.",
+            "data": {
+              "mode": "Aktion",
+              "components": "Komponenten",
+              "targets": "Einzelne Updates",
+              "backup": "Vor dem Installieren Sicherung anlegen"
+            },
+            "data_description": {
+              "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
+              "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
+              "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+            }
+          },
+          "notifications": {
+            "name": "Benachrichtigungen",
+            "description": "Wie und womit dieser Zeitplan meldet.",
+            "data": {
+              "mobile_enabled": "App-Push aktivieren",
+              "mobile_targets": "Push-Ziele (notify-Dienste)",
+              "tts_enabled": "Sprachausgabe aktivieren",
+              "tts_entity": "TTS-Dienst",
+              "tts_player": "Lautsprecher (media_player)",
+              "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+            },
+            "data_description": {
+              "mobile_targets": "Dienste wie mobile_app_iphone. Mehrere Geräte möglich."
+            }
+          }
         }
       },
       "tp_menu": {
@@ -903,6 +906,8 @@
       "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
       "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
       "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
+      "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
+      "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
       "invalid_address": "Ungültige Gruppenadresse.",
       "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
       "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
@@ -1065,7 +1070,9 @@
         "edit_window": "Zeitfenster bearbeiten",
         "delete_window": "Zeitfenster löschen",
         "dry_run": "Trockenlauferkennung",
-        "knx_general": "Einstellungen",
+        "add_speaker": "Lautsprecher-Profil hinzufügen",
+        "edit_speaker": "Lautsprecher-Profil bearbeiten",
+        "delete_speaker": "Lautsprecher-Profil löschen",
         "add_command": "Befehl hinzufügen",
         "edit_command": "Befehl bearbeiten",
         "delete_command": "Befehl löschen",
