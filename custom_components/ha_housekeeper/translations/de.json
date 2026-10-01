@@ -1243,5 +1243,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "entity_missing": {
+      "title": "Entität fehlt: {entity}",
+      "description": "Die Funktion „{entry}“ ({function}) verwendet die Entität {entity}, die es nicht mehr gibt (gelöscht oder umbenannt). Wähle in den Einstellungen der Funktion eine vorhandene Entität oder stelle die Entität wieder her. Der Hinweis verschwindet von selbst, sobald sie wieder existiert oder nicht mehr verwendet wird."
+    },
+    "device_missing": {
+      "title": "Push-Ziel fehlt: {entity}",
+      "description": "Die Funktion „{entry}“ ({function}) sendet Push-Meldungen an ein Gerät ({entity}), das es nicht mehr gibt (z. B. die Companion-App wurde entfernt). Wähle in den Einstellungen ein vorhandenes Gerät. Der Hinweis verschwindet von selbst, sobald das Ziel wieder stimmt."
+    }
   }
 }

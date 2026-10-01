@@ -1243,5 +1243,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "entity_missing": {
+      "title": "Entity missing: {entity}",
+      "description": "The function \"{entry}\" ({function}) uses the entity {entity}, which no longer exists (deleted or renamed). Select an existing entity in the settings of the function or restore the entity. This notice disappears by itself as soon as it exists again or is no longer used."
+    },
+    "device_missing": {
+      "title": "Push target missing: {entity}",
+      "description": "The function \"{entry}\" ({function}) sends push notifications to a device ({entity}) that no longer exists (e.g. the companion app was removed). Select an existing device in the settings. This notice disappears by itself as soon as the target is valid again."
+    }
   }
 }

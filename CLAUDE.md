@@ -155,6 +155,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren
   müssen am Gerät aufgeweckt werden). Der Button wird per `remove_unconfigured()` entfernt, wenn
   nichts eingestellt ist.
+- `issues.py`: Reparaturhinweise (Issue-Registry). `collect_references(entry)` sammelt je Funktion alle
+  Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
+  `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.
+  Prüfung 300 s nach dem Start, stündlich und entprellt (`EVENT_DELAY_SECONDS`) nach Entity-/Geräte-
+  Registry-Ereignissen. Deaktivierte/nicht verfügbare Entitäten zählen als vorhanden. Neue Funktion
+  mit Entitätsfeldern = Eintrag in `collect_references()`. Platzhalter `{entry}`, `{function}`,
+  `{entity}` sind echte ASCII-Platzhalter.
 - **Einzelschalter „aktiv“** (`enabled`, Standard an) bei Updater-Zeitplänen (`U_ENABLED`),
   Türklingel-Profilen (`P_ENABLED`), Türwächter-Regeln (`R_ENABLED`) und KNX-Lautsprecher-Profilen
   (`S_ENABLED`), wie bei Weckern und Aufgaben: Der Controller ignoriert ausgeschaltete Elemente
