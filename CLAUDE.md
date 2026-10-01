@@ -1,7 +1,7 @@
 # CLAUDE.md – Projektkontext für Claude Code
 
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
-„Hausmeister“; die Domain und der Repo-Name bleiben `ha_housekeeper`, sonst gehen bestehende
+„Home Assistant Hausmeister“; die Domain und der Repo-Name bleiben `ha_housekeeper`, sonst gehen bestehende
 Einträge verloren): mehrere Funktionen, jede als eigener Config-Entry mit
 `function_type`. Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
@@ -104,7 +104,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Werte des Zeitplans, ältere Zeitpläne ohne `mobile_enabled` nutzen die des Eintrags als
   Rückfall (deshalb darf `upd_general` kein `_with_cleared` nutzen), „Jetzt prüfen“ die
   Vereinigung (`union_notify()`), der Neustartbericht den Zeitplan aus `pending["schedule_id"]`.
-  Der Eintrag selbst hat nur Name und `timeout_minutes`.
+  Der Eintrag selbst hat nur Name und `timeout_minutes`. **Auslöser je Zeitplan** (`trigger`: `time` Standard, `on_available`): Bei `on_available`
+  reagiert `_on_target_change` auf `became_available()` (Wechsel auf „on“ oder neue
+  `latest_version`) einer Ziel-Entität des Zeitplans, bündelt `AVAILABLE_DELAY` Sekunden und startet
+  den Lauf; optionales Zeitfenster `window_start`/`window_end` (`in_run_window()`, über Mitternacht),
+  außerhalb wird zu Fensterbeginn (`_track_window_start`) nachgeholt; läuft schon ein Lauf, wird
+  der Zeitplan in `_queued` vorgemerkt. Uhrzeit/Wochentage und „Nächster Lauf“ ignorieren solche
+  Zeitpläne. Kein Nachholen beim Start.
 - Formular-Abschnitte (`section` aus `homeassistant.data_entry_flow`, standardmäßig
   `collapsed: False`): Die Grunddialoge von Briefkasten, Türwächter, Türklingel,
   Home Assistant Updater, Aufgabenplaner und der Trockenlauf-Dialog der Poolsteuerung haben die

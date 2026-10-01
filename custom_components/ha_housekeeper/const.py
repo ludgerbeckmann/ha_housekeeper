@@ -293,6 +293,12 @@ U_TARGETS = "targets"
 U_BACKUP = "backup"
 U_COMPONENTS = "components"
 U_ENABLED = "enabled"
+U_TRIGGER = "trigger"
+U_WINDOW_START = "window_start"
+U_WINDOW_END = "window_end"
+TRIGGER_TIME = "time"
+TRIGGER_AVAILABLE = "on_available"
+TRIGGERS = [TRIGGER_TIME, TRIGGER_AVAILABLE]
 
 # Komponenten, die ein Zeitplan als Ganzes auswählen kann
 COMP_CORE = "core"

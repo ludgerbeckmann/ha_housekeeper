@@ -1,6 +1,6 @@
 {
   "domain": "ha_housekeeper",
-  "name": "Hausmeister",
+  "name": "Home Assistant Hausmeister",
   "after_dependencies": ["knx"],
   "codeowners": ["@ludgerbeckmann"],
   "config_flow": true,
@@ -8,5 +8,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/ludgerbeckmann/ha_housekeeper/issues",
   "requirements": [],
-  "version": "0.16.0"
+  "version": "0.17.0"
 }
