@@ -939,6 +939,13 @@
         "data": {
           "sensitivity_value": "Empfindlichkeit"
         }
+      },
+      "mailbox_menu": {
+        "title": "Briefkasten",
+        "description": "Einstellungen des Briefkastens. Die Empfindlichkeit wird erst hier eingestellt, nachdem eine Entität dafür hinterlegt wurde.",
+        "data": {
+          "action": "Was möchtest du tun?"
+        }
       }
     },
     "error": {
@@ -1152,7 +1159,9 @@
         "alarm_general": "Einstellungen",
         "add_alarm": "Wecker hinzufügen",
         "edit_alarm": "Wecker bearbeiten",
-        "delete_alarm": "Wecker löschen"
+        "delete_alarm": "Wecker löschen",
+        "mailbox": "Einstellungen",
+        "mailbox_sensitivity": "Empfindlichkeit einstellen"
       }
     }
   },

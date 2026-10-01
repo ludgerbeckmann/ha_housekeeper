@@ -169,9 +169,11 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Sensoren (`invert` in `check_conditions()`), ein unbekannter Zustand bleibt unverändert. Übersprungen wird in `last_skipped` (im `Store`) festgehalten. Die Felder im
   Wecker-Dialog erscheinen nur, wenn globale Sensoren existieren, sonst bleiben gespeicherte
   Werte erhalten. „Nächster Wecker“ ignoriert die Bedingungen.
-- Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Feld nur in den
-  Einstellungen (nicht beim Anlegen); der Wert wird im Folgeschritt `mailbox_sensitivity`
-  passend zur Entität abgefragt (`number` → Zahl mit Grenzen der Entität, `select` → deren
+- Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Der Options-Flow des Briefkastens
+  ist ein Menü (`mailbox_menu`: `mailbox`, `mailbox_sensitivity` nur mit Entität, `done`). Die Entität steht nur
+  in den Einstellungen (nicht beim Anlegen) und wird dort **nur hinterlegt**; der Wert wird im eigenen
+  Menüschritt `mailbox_sensitivity` (nicht automatisch nach dem Speichern) passend zur Entität abgefragt;
+  beim Speichern der Einstellungen bleibt er bei gleicher Entität erhalten, bei anderer/leerer Entität wird er verworfen (`number` → Zahl mit Grenzen der Entität, `select` → deren
   Stufen). Gesendet wird **ausschließlich** über den Button `send_sensitivity`
   (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren
   müssen am Gerät aufgeweckt werden). Der Button wird per `remove_unconfigured()` entfernt, wenn

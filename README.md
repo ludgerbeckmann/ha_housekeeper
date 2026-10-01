@@ -76,9 +76,11 @@ Der Dialog ist in zwei ausgeklappte Abschnitte gegliedert.
 - **Auto-Reset** nach X Stunden (0 = aus)
 - **Empfindlichkeits-Entität** (optional, nur unter *Konfigurieren*): die `number`- oder
   `select`-Entität des Sensors für seine Empfindlichkeit, z. B. bei Zigbee2MQTT
-  `number.vibrationssensor_sensitivity`. Nach dem Speichern folgt ein kurzer Schritt, in dem du
-  den **Wert** einstellst (Zahlenfeld mit den Grenzen der Entität bzw. die Stufen der
-  `select`-Entität). Der Wert wird **nie automatisch** gesendet, weil Batteriesensoren ihn
+  `number.vibrationssensor_sensitivity`. Die Entität wird nur **hinterlegt**; den **Wert**
+  stellst du danach im Konfigurationsmenü über den eigenen Punkt **Empfindlichkeit einstellen**
+  ein (Zahlenfeld mit den Grenzen der Entität bzw. die Stufen der `select`-Entität; der Punkt
+  erscheint erst, wenn eine Entität hinterlegt ist). Der Wert bleibt beim Speichern der
+  Einstellungen erhalten, solange die Entität dieselbe ist. Der Wert wird **nie automatisch** gesendet, weil Batteriesensoren ihn
   meist nur übernehmen, wenn sie am Gerät aufgeweckt wurden: Sensor aufwecken, dann den
   Button **Empfindlichkeit senden** drücken. Schlägt das Senden fehl, wird die Fehlermeldung
   angezeigt. Leeren der Entität entfernt Wert und Button.

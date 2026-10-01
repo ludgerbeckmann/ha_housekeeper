@@ -89,6 +89,15 @@ def _mailbox_schema(
 class MailboxOptions:
     """Options-Flow-Schritte: Benachrichtigung Briefkasten."""
 
+    async def async_step_mailbox_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        options = ["mailbox"]
+        if self._current.get(CONF_SENSITIVITY_ENTITY):
+            options.append("mailbox_sensitivity")
+        options.append("done")
+        return await self._menu("mailbox_menu", options, user_input)
+
     async def async_step_mailbox(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -98,10 +107,13 @@ class MailboxOptions:
             flat = _flatten_sections(user_input)
             errors = _validate_notify(flat, require_method=True)
             if not errors:
-                if flat.get(CONF_SENSITIVITY_ENTITY):
-                    self._draft = flat
-                    return await self.async_step_mailbox_sensitivity()
-                return self.async_create_entry(data=_with_cleared(flat))
+                data = _with_cleared(flat)
+                # Die Entität wird nur hinterlegt; der Wert wird über den Menüpunkt „Empfindlichkeit
+                # einstellen“ gesetzt. Er bleibt erhalten, solange die Entität dieselbe ist.
+                if flat.get(CONF_SENSITIVITY_ENTITY) == self._current.get(CONF_SENSITIVITY_ENTITY):
+                    data[CONF_SENSITIVITY_VALUE] = self._current.get(CONF_SENSITIVITY_VALUE)
+                self._save(data)
+                return await self.async_step_mailbox_menu()
             defaults = flat
         return self.async_show_form(
             step_id="mailbox",
@@ -113,10 +125,12 @@ class MailboxOptions:
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Wert der Empfindlichkeit, passend zur gewählten Entität (Zahl oder Stufe)."""
-        entity_id = self._draft[CONF_SENSITIVITY_ENTITY]
+        entity_id = self._current.get(CONF_SENSITIVITY_ENTITY)
+        if not entity_id:
+            return await self.async_step_mailbox_menu()
         if user_input is not None:
-            data = {**self._draft, CONF_SENSITIVITY_VALUE: user_input[CONF_SENSITIVITY_VALUE]}
-            return self.async_create_entry(data=_with_cleared(data))
+            self._save({CONF_SENSITIVITY_VALUE: user_input[CONF_SENSITIVITY_VALUE]})
+            return await self.async_step_mailbox_menu()
         state = self.hass.states.get(entity_id)
         attrs = state.attributes if state else {}
         if entity_id.startswith("select."):

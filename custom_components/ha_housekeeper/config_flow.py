@@ -297,4 +297,4 @@ class HousekeeperOptionsFlow(MailboxOptions, DoorGuardOptions, DoorbellOptions, 
             return await self.async_step_tp_menu()
         if function_type == FUNCTION_ALARM:
             return await self.async_step_alarm_menu()
-        return await self.async_step_mailbox()
+        return await self.async_step_mailbox_menu()
