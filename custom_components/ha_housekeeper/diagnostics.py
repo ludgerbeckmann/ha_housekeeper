@@ -12,6 +12,7 @@ from .const import DOMAIN
 from .door_guard import DoorGuardController
 from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
+from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
@@ -116,6 +117,12 @@ async def async_get_config_entry_diagnostics(
             "running": controller.running,
             "last_run": controller.last_run,
             "next_run": controller.next_run.isoformat() if controller.next_run else None,
+        }
+    if isinstance(controller, IntegrationMonitorController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "faults": controller.faults,
+            "disabled": controller.disabled,
         }
     if isinstance(controller, AlarmClockController):
         nxt = controller.next_alarm

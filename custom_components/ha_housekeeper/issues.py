@@ -28,6 +28,7 @@ from .const import (
     CONF_CONTACT,
     CONF_FUNCTION_TYPE,
     CONF_LOCK,
+    CONF_MONITOR_RULES,
     CONF_MOBILE_TARGETS,
     CONF_PLAYER,
     CONF_POWER_ENTITY,
@@ -50,6 +51,7 @@ from .const import (
     FUNCTION_DOORBELL,
     FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
+    FUNCTION_MONITOR,
     FUNCTION_POOL,
     FUNCTION_TASK_PLANNER,
     FUNCTION_TITLES,
@@ -109,6 +111,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
             entities += _listed(task.get("triggers"), "entity_id")
     elif function == FUNCTION_ALARM:
         entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
+    elif function == FUNCTION_MONITOR:
+        entities += _listed(opt(CONF_MONITOR_RULES, []), "presence_entity")
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
     if function == FUNCTION_UPDATER:
         devices += _listed(opt(CONF_SCHEDULES, []), CONF_MOBILE_TARGETS)

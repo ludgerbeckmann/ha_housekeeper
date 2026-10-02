@@ -138,6 +138,13 @@
         "last": "Letzter Tag des Monats",
         "day": "Bestimmter Tag"
       }
+    },
+    "monitor_action": {
+      "options": {
+        "none": "Nur melden",
+        "reload": "Neu laden",
+        "disable": "Deaktivieren"
+      }
     }
   },
   "entity": {
@@ -159,6 +166,9 @@
       },
       "alarm_ringing": {
         "name": "Wecker klingelt"
+      },
+      "monitor_problem": {
+        "name": "Integrationsstörung"
       }
     },
     "sensor": {
@@ -200,6 +210,12 @@
       },
       "alarm_last": {
         "name": "Letzter Wecker"
+      },
+      "monitor_faulty": {
+        "name": "Integrationen mit Störung"
+      },
+      "monitor_disabled": {
+        "name": "Vom Monitor deaktiviert"
       }
     },
     "button": {
@@ -223,6 +239,12 @@
       },
       "send_sensitivity": {
         "name": "Empfindlichkeit senden"
+      },
+      "monitor_check_now": {
+        "name": "Jetzt prüfen"
+      },
+      "monitor_reenable": {
+        "name": "Deaktivierte aktivieren"
       }
     },
     "switch": {
@@ -252,6 +274,9 @@
       },
       "mailbox_active": {
         "name": "Briefkasten-Benachrichtigung aktiv"
+      },
+      "monitor_active": {
+        "name": "Monitor aktiv"
       }
     }
   },
@@ -1599,6 +1624,176 @@
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
         "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
       }
+    },
+    "integration_monitor": {
+      "initiate_flow": {
+        "user": "Integrationsmonitor hinzufügen"
+      },
+      "entry_type": "Integrationsmonitor",
+      "step": {
+        "new_integration_monitor": {
+          "title": "Integrationsmonitor",
+          "description": "Der Monitor überwacht alle Integrationen. Regeln für bestimmte Integrationen (neu laden, deaktivieren, wieder aktivieren) legst du anschließend über das Zahnrad (Neu konfigurieren) an.",
+          "sections": {
+            "general": {
+              "name": "Überwachung",
+              "description": "Wann eine Integration als gestört gilt und was gemeldet wird.",
+              "data": {
+                "name": "Name",
+                "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
+                "min_entities": "Mindestanzahl Entitäten",
+                "check_minutes": "Prüfintervall (Minuten)",
+                "notify_all": "Alle Störungen melden",
+                "excluded": "Von der Meldung ausgenommen"
+              },
+              "data_description": {
+                "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
+                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
+                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
+                "notify_all": "Meldet eine Störung jeder Integration (Fehlerstatus oder alle Entitäten nicht verfügbar) über die unten gewählten Wege. Aktionen gibt es nur über Regeln.",
+                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Monitor meldet.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "mon_menu": {
+          "title": "Integrationsmonitor",
+          "description": "Überwachung und Regeln des Integrationsmonitors.",
+          "menu_options": {
+            "mon_general": "Einstellungen",
+            "add_monitor_rule": "Regel hinzufügen",
+            "edit_monitor_rule": "Regel bearbeiten",
+            "delete_monitor_rule": "Regel löschen",
+            "rename": "Umbenennen"
+          }
+        },
+        "mon_general": {
+          "title": "Einstellungen",
+          "sections": {
+            "general": {
+              "name": "Überwachung",
+              "description": "Wann eine Integration als gestört gilt und was gemeldet wird.",
+              "data": {
+                "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
+                "min_entities": "Mindestanzahl Entitäten",
+                "check_minutes": "Prüfintervall (Minuten)",
+                "notify_all": "Alle Störungen melden",
+                "excluded": "Von der Meldung ausgenommen"
+              },
+              "data_description": {
+                "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
+                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
+                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
+                "notify_all": "Meldet eine Störung jeder Integration (Fehlerstatus oder alle Entitäten nicht verfügbar) über die unten gewählten Wege. Aktionen gibt es nur über Regeln.",
+                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit der Monitor meldet.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "edit_monitor_rule": {
+          "title": "Regel bearbeiten",
+          "data": {
+            "rule": "Regel"
+          }
+        },
+        "delete_monitor_rule": {
+          "title": "Regel löschen",
+          "data": {
+            "rule": "Regel"
+          }
+        },
+        "monitor_rule_edit": {
+          "title": "Regel",
+          "description": "Für ausgewählte Integrationen kannst du melden und zusätzlich neu laden oder deaktivieren. Eine deaktivierte Integration kann automatisch wieder aktiviert werden, sobald eine Anwesenheitsentität des Geräts (z. B. ein Ping-Sensor) „an“ meldet.",
+          "sections": {
+            "general": {
+              "name": "Regel",
+              "description": "Name und Schalter dieser Regel.",
+              "data": {
+                "name": "Name",
+                "enabled": "Aktiv"
+              }
+            },
+            "condition": {
+              "name": "Auslöser",
+              "description": "Welche Integrationen und welche Störungen.",
+              "data": {
+                "entries": "Integrationen",
+                "on_error": "Bei Fehlerstatus",
+                "on_unavailable": "Wenn alle Entitäten nicht verfügbar sind"
+              },
+              "data_description": {
+                "entries": "Nur ausdrücklich gewählte Integrationen werden von der Regel behandelt.",
+                "on_error": "Setup-Fehler, Wiederholungsversuch, Migrationsfehler oder Fehler beim Entladen."
+              }
+            },
+            "action": {
+              "name": "Aktion",
+              "description": "Was bei einer Störung passiert.",
+              "data": {
+                "action": "Aktion",
+                "notify": "Melden",
+                "presence_entity": "Anwesenheitsentität",
+                "reenable": "Automatisch wieder aktivieren"
+              },
+              "data_description": {
+                "action": "„Deaktivieren“ schaltet die Integration ab (Entitäten und Automationen, die sie nutzen, laufen dann ins Leere). Nur von dir selbst deaktivierte Integrationen werden nie angefasst.",
+                "notify": "Meldet diese Störung über die Wege der Einstellungen, auch wenn „Alle Störungen melden“ aus ist.",
+                "presence_entity": "Zeigt unabhängig von der Integration, ob das Gerät wieder da ist, z. B. ein Ping-Binärsensor, ein Router-Tracker oder eine Steckdose. Meldet sie „an“ oder „home“, wird aktiviert.",
+                "reenable": "Aktiviert die vom Monitor deaktivierte Integration wieder, sobald die Anwesenheitsentität „an“ oder „home“ meldet."
+              }
+            }
+          }
+        },
+        "rename": {
+          "title": "Umbenennen",
+          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
+          "data": {
+            "name": "Name"
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "no_integration": "Mindestens eine Integration muss gewählt sein.",
+        "no_condition": "Mindestens ein Auslöser muss gewählt sein.",
+        "nothing_to_do": "Die Regel braucht eine Aktion oder die Meldung.",
+        "no_presence": "Für das automatische Aktivieren wird eine Anwesenheitsentität benötigt.",
+        "reenable_needs_disable": "Automatisch aktivieren ist nur mit der Aktion „Deaktivieren“ sinnvoll."
+      },
+      "abort": {}
     }
   }
 }

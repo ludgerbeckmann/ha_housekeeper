@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) und `alarm_clock` („Wecker“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) und `integration_monitor` („Integrationsmonitor“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -194,6 +194,18 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren
   müssen am Gerät aufgeweckt werden). Der Button wird per `remove_unconfigured()` entfernt, wenn
   nichts eingestellt ist.
+- `integration_monitor.py`: Der Monitor prüft **alle** Config-Entries außer der eigenen Domain (`entry_status()`:
+  Fehlerstatus `ERROR_STATES` oder alle aktiven Entitäten der Registry `unavailable`, erst ab `min_entities`;
+  deaktivierte/ladende Einträge sind „nicht beurteilbar“ = `None`). Eine Störung gilt erst nach der Wartezeit
+  (`grace_minutes`, `_since` im Speicher) und wird als `faults` im `Store` bestätigt (`acted`/`notified` je
+  Störung, damit es je Störung nur eine Aktion und eine Meldung gibt; Entwarnung beim Wechsel auf `ok`).
+  Regeln in `options["monitor_rules"]` (Schlüssel `M_*`) gelten nur für ausdrücklich gewählte Integrationen;
+  Aktion `none`/`reload`/`disable` (Vorrang: disable). Deaktiviert wird per `async_set_disabled_by(USER)`, der
+  Monitor merkt sich seine Deaktivierungen in `disabled` (Store) und aktiviert **nur diese** wieder: über die
+  Anwesenheitsentität der Regel (`on`/`home`, Listener auf deren Zustand) oder den Button. Von Hand aktivierte
+  oder gelöschte Einträge werden vergessen. Kein `busy`/`ReloadWhenIdle` (der Zustand liegt im `Store`).
+  Menü `mon_menu` (Schritte `add/edit/delete_monitor_rule`, `monitor_rule_edit` mit den Abschnitten
+  `general`, `condition`, `action`); Benachrichtigung nur im Eintrag (nicht je Regel).
 - `issues.py`: Reparaturhinweise (Issue-Registry). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

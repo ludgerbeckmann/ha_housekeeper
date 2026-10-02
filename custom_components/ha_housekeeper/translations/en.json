@@ -138,6 +138,13 @@
         "last": "Last day of the month",
         "day": "Specific day"
       }
+    },
+    "monitor_action": {
+      "options": {
+        "none": "Report only",
+        "reload": "Reload",
+        "disable": "Disable"
+      }
     }
   },
   "entity": {
@@ -159,6 +166,9 @@
       },
       "alarm_ringing": {
         "name": "Alarm ringing"
+      },
+      "monitor_problem": {
+        "name": "Integration fault"
       }
     },
     "sensor": {
@@ -200,6 +210,12 @@
       },
       "alarm_last": {
         "name": "Last alarm"
+      },
+      "monitor_faulty": {
+        "name": "Integrations with a fault"
+      },
+      "monitor_disabled": {
+        "name": "Disabled by the monitor"
       }
     },
     "button": {
@@ -223,6 +239,12 @@
       },
       "send_sensitivity": {
         "name": "Send sensitivity"
+      },
+      "monitor_check_now": {
+        "name": "Check now"
+      },
+      "monitor_reenable": {
+        "name": "Re-enable disabled"
       }
     },
     "switch": {
@@ -252,6 +274,9 @@
       },
       "mailbox_active": {
         "name": "Mailbox notification active"
+      },
+      "monitor_active": {
+        "name": "Monitor active"
       }
     }
   },
@@ -1599,6 +1624,176 @@
         "pump_configured": "This pump is already configured for another pool.",
         "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
       }
+    },
+    "integration_monitor": {
+      "initiate_flow": {
+        "user": "Add integration monitor"
+      },
+      "entry_type": "Integration monitor",
+      "step": {
+        "new_integration_monitor": {
+          "title": "Integration monitor",
+          "description": "The monitor watches all integrations. You add rules for specific integrations (reload, disable, re-enable) afterwards via the gear icon (Reconfigure).",
+          "sections": {
+            "general": {
+              "name": "Monitoring",
+              "description": "When an integration counts as faulty and what is reported.",
+              "data": {
+                "name": "Name",
+                "grace_minutes": "Wait time before a fault (minutes)",
+                "min_entities": "Minimum number of entities",
+                "check_minutes": "Check interval (minutes)",
+                "notify_all": "Report all faults",
+                "excluded": "Excluded from reports"
+              },
+              "data_description": {
+                "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
+                "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
+                "check_minutes": "In addition to the check at startup (after two minutes).",
+                "notify_all": "Reports a fault of any integration (error state or all entities unavailable) via the ways selected below. Actions exist only through rules.",
+                "excluded": "These integrations are not reported generally. Rules apply regardless."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the monitor reports.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "mon_menu": {
+          "title": "Integration monitor",
+          "description": "Monitoring and rules of the integration monitor.",
+          "menu_options": {
+            "mon_general": "Settings",
+            "add_monitor_rule": "Add rule",
+            "edit_monitor_rule": "Edit rule",
+            "delete_monitor_rule": "Delete rule",
+            "rename": "Rename"
+          }
+        },
+        "mon_general": {
+          "title": "Settings",
+          "sections": {
+            "general": {
+              "name": "Monitoring",
+              "description": "When an integration counts as faulty and what is reported.",
+              "data": {
+                "grace_minutes": "Wait time before a fault (minutes)",
+                "min_entities": "Minimum number of entities",
+                "check_minutes": "Check interval (minutes)",
+                "notify_all": "Report all faults",
+                "excluded": "Excluded from reports"
+              },
+              "data_description": {
+                "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
+                "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
+                "check_minutes": "In addition to the check at startup (after two minutes).",
+                "notify_all": "Reports a fault of any integration (error state or all entities unavailable) via the ways selected below. Actions exist only through rules.",
+                "excluded": "These integrations are not reported generally. Rules apply regardless."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what the monitor reports.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "edit_monitor_rule": {
+          "title": "Edit rule",
+          "data": {
+            "rule": "Rule"
+          }
+        },
+        "delete_monitor_rule": {
+          "title": "Delete rule",
+          "data": {
+            "rule": "Rule"
+          }
+        },
+        "monitor_rule_edit": {
+          "title": "Rule",
+          "description": "For selected integrations you can report and additionally reload or disable. A disabled integration can be re-enabled automatically as soon as a presence entity of the device (e.g. a ping sensor) reports “on”.",
+          "sections": {
+            "general": {
+              "name": "Rule",
+              "description": "Name and switch of this rule.",
+              "data": {
+                "name": "Name",
+                "enabled": "Enabled"
+              }
+            },
+            "condition": {
+              "name": "Trigger",
+              "description": "Which integrations and which faults.",
+              "data": {
+                "entries": "Integrations",
+                "on_error": "On error state",
+                "on_unavailable": "When all entities are unavailable"
+              },
+              "data_description": {
+                "entries": "Only integrations selected here are handled by the rule.",
+                "on_error": "Setup error, retry, migration error or unload failure."
+              }
+            },
+            "action": {
+              "name": "Action",
+              "description": "What happens on a fault.",
+              "data": {
+                "action": "Action",
+                "notify": "Report",
+                "presence_entity": "Presence entity",
+                "reenable": "Re-enable automatically"
+              },
+              "data_description": {
+                "action": "“Disable” turns the integration off (entities and automations that use it then fail silently). Integrations you disabled yourself are never touched.",
+                "notify": "Reports this fault via the ways in the settings, even if “Report all faults” is off.",
+                "presence_entity": "Shows independently of the integration whether the device is back, e.g. a ping binary sensor, a router tracker or a smart plug. When it reports “on” or “home”, the integration is enabled.",
+                "reenable": "Enables the integration the monitor disabled as soon as the presence entity reports “on” or “home”."
+              }
+            }
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "no_targets": "Select at least one target for app push.",
+        "no_integration": "Select at least one integration.",
+        "no_condition": "Select at least one trigger.",
+        "nothing_to_do": "The rule needs an action or the report.",
+        "no_presence": "Automatic re-enabling needs a presence entity.",
+        "reenable_needs_disable": "Automatic re-enabling only makes sense with the action “Disable”."
+      },
+      "abort": {}
     }
   }
 }

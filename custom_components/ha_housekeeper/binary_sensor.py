@@ -15,6 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .alarm_clock import AlarmClockController
 from .door_guard import DoorGuardController
+from .integration_monitor import IntegrationMonitorController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
@@ -37,6 +38,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([DoorOpenTooLongSensor(controller)])
     elif isinstance(controller, AlarmClockController):
         async_add_entities([AlarmRingingSensor(controller)])
+    elif isinstance(controller, IntegrationMonitorController):
+        async_add_entities([IntegrationProblemSensor(controller)])
     elif isinstance(controller, PoolPumpController):
         entities: list[FunctionEntity] = [PumpShouldRunSensor(controller)]
         if controller.dry_run_configured:
@@ -186,3 +189,20 @@ class AlarmRingingSensor(FunctionEntity, BinarySensorEntity):
             "snoozed": ctrl.phase == "snoozed",
             "snooze_until": ctrl.snooze_until.isoformat() if ctrl.snooze_until else None,
         }
+
+
+class IntegrationProblemSensor(FunctionEntity, BinarySensorEntity):
+    """on = mindestens eine Integration hat eine bestätigte Störung."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_problem")
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self._controller.faulty_titles)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"integrations": self._controller.faulty_titles}

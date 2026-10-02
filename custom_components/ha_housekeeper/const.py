@@ -18,6 +18,7 @@ FUNCTION_KNX_SONOS = "knx_sonos"
 FUNCTION_UPDATER = "updater"
 FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
+FUNCTION_MONITOR = "integration_monitor"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -31,6 +32,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_UPDATER: ("Home Assistant Updater", "Home Assistant Updater"),
     FUNCTION_TASK_PLANNER: ("Aufgabenplaner", "Task planner"),
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
+    FUNCTION_MONITOR: ("Integrationsmonitor", "Integration monitor"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -83,6 +85,12 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.BUTTON,
     ],
     FUNCTION_POOL: [
+        Platform.BINARY_SENSOR,
+        Platform.BUTTON,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
+    FUNCTION_MONITOR: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
         Platform.SENSOR,
@@ -440,6 +448,35 @@ A_SNOOZE = "snooze_minutes"
 A_AUTO_STOP = "auto_stop_minutes"
 A_ONLY_IF_ON = "only_if_on"
 A_NOT_IF_ON = "skip_if_on"
+
+# --- Integrationsmonitor ---
+CONF_MONITOR_RULES = "monitor_rules"
+CONF_GRACE_MINUTES = "grace_minutes"
+CONF_CHECK_MINUTES = "check_minutes"
+CONF_MIN_ENTITIES = "min_entities"
+CONF_EXCLUDED = "excluded"
+CONF_NOTIFY_ALL = "notify_all"
+
+DEFAULT_GRACE_MINUTES = 5
+DEFAULT_CHECK_MINUTES = 1
+DEFAULT_MIN_ENTITIES = 2
+
+# Überwachungsregel (Aktion für ausgewählte Integrationen): Schlüssel und Werte
+M_ID = "id"
+M_NAME = "name"
+M_ENABLED = "enabled"
+M_ENTRIES = "entries"
+M_ON_ERROR = "on_error"
+M_ON_UNAVAILABLE = "on_unavailable"
+M_ACTION = "action"
+M_NOTIFY = "notify"
+M_PRESENCE = "presence_entity"
+M_REENABLE = "reenable"
+
+MON_ACTION_NONE = "none"
+MON_ACTION_RELOAD = "reload"
+MON_ACTION_DISABLE = "disable"
+MON_ACTIONS = [MON_ACTION_NONE, MON_ACTION_RELOAD, MON_ACTION_DISABLE]
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [
