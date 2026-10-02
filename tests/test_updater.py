@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
+import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
@@ -345,8 +346,10 @@ async def test_config_flow(hass: HomeAssistant) -> None:
 
 def sched_form(timing=None, actions=None, notifications=None):
     """Zeitplan-Formular mit den Abschnitten Zeitpunkt, Aktionen und Benachrichtigungen."""
+    timing = {"name": "Sonntag", "enabled": True, "time": "03:00:00", "weekdays": ["sun"],
+              **(timing or {})}
     return {
-        "timing": {"name": "Sonntag", "enabled": True, "time": "03:00:00", "weekdays": ["sun"], **(timing or {})},
+        "timing": {k: v for k, v in timing.items() if v is not None},   # None = Feld leer
         "actions": {"mode": "notify", "targets": [ADDON, DEVICE], "backup": False, **(actions or {})},
         "notifications": {"mobile_enabled": False, "tts_enabled": False,
                           "persistent_enabled": True, **(notifications or {})},
@@ -366,12 +369,21 @@ async def test_options_flow_schedules(hass: HomeAssistant) -> None:
     assert {str(k) for k in next(iter(schema.values())).schema.schema} == {
         "name", "enabled", "trigger", "time", "weekdays", "window_start", "window_end"}
 
+    # keine Vorgaben: weder Uhrzeit noch Wochentage sind vorbelegt
+    timing = next(iter(schema.values())).schema.schema
+    assert all(
+        k.default is vol.UNDEFINED and not k.description
+        for k in timing if str(k) in ("time", "weekdays")
+    )
+
     bad = await flow.async_configure(result["flow_id"], sched_form(actions={"targets": []}))
     assert bad["errors"] == {"base": "no_update_selected"}
     none = await flow.async_configure(bad["flow_id"], sched_form(timing={"weekdays": []}))
     assert none["errors"] == {"base": "no_weekday"}
+    notime = await flow.async_configure(none["flow_id"], sched_form(timing={"time": None}))
+    assert notime["errors"] == {"base": "no_time"}
     nomethod = await flow.async_configure(
-        none["flow_id"], sched_form(notifications={"persistent_enabled": False}))
+        notime["flow_id"], sched_form(notifications={"persistent_enabled": False}))
     assert nomethod["errors"] == {"base": "no_method"}
     notarget = await flow.async_configure(
         nomethod["flow_id"], sched_form(notifications={"mobile_enabled": True}))
@@ -724,3 +736,17 @@ async def test_options_flow_available_trigger(hass: HomeAssistant) -> None:
     (created,) = entry.options["schedules"]
     assert created["trigger"] == "on_available" and created["weekdays"] == []
     assert created["window_start"] == "22:00:00" and created["window_end"] == "05:00:00"
+
+
+async def test_available_trigger_needs_no_time_or_weekdays(hass: HomeAssistant) -> None:
+    entry, _, _ = await _setup(hass, [])
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
+    form = sched_form(timing={"trigger": "on_available", "time": None, "weekdays": []})
+    result = await flow.async_configure(result["flow_id"], form)
+    assert is_menu(result)
+    (created,) = entry.options["schedules"]
+    assert created["trigger"] == "on_available" and created["time"] is None
+    assert created["weekdays"] == []
+    assert upd.schedule_summary(hass, created).startswith("Sonntag: when available")
