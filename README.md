@@ -430,7 +430,7 @@ Dialog hat drei ausgeklappte Abschnitte. Ein Zeitplan hat:
 **Zeitpunkt**
 
 - Name, **Auslöser** und – je nach Auslöser – die Zeitangaben:
-  - *Zu einer Uhrzeit* (Standard): **Uhrzeit** und **Wochentage**
+  - *Zu einer Uhrzeit* (Standard): **Uhrzeit** und **Wochentage** (beide ohne Vorgabe, du wählst sie selbst)
   - *Sobald ein Update verfügbar wird*: Der Zeitplan läuft etwa eine Minute nach einer neuen
     Update-Meldung eines seiner Ziele (mehrere gleichzeitige Meldungen ergeben einen Lauf);
     Uhrzeit und Wochentage entfallen. Welche Updates ihn auslösen, bestimmen die gewählten

@@ -302,7 +302,7 @@ def schedule_summary(hass: HomeAssistant, schedule: dict[str, Any]) -> str:
         if start and end:
             when += f" {start}–{end}"
     else:
-        when = f"{str(schedule.get(U_TIME, ''))[:5]}{day_text}"
+        when = f"{str(schedule.get(U_TIME) or '')[:5]}{day_text}"
     return f"{schedule.get(U_NAME)}: {when}, {', '.join(parts)}, {mode_text}{off}"
 
 

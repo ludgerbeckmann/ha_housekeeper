@@ -1240,6 +1240,7 @@
         "no_contact": "This trigger needs a door contact in the settings.",
         "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
         "no_weekday": "Select at least one weekday.",
+        "no_time": "Please select a time.",
         "no_targets": "Select at least one target for app push.",
         "no_output": "The profile needs at least one media player or app push.",
         "no_tts": "Announcement needs a TTS service and a text.",

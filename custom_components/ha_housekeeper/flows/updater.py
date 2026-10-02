@@ -171,6 +171,8 @@ class UpdaterOptions:
             if not errors:
                 if not (flat.get(U_TARGETS) or flat.get(U_COMPONENTS)):
                     errors["base"] = "no_update_selected"
+                elif trigger == TRIGGER_TIME and not flat.get(U_TIME):
+                    errors["base"] = "no_time"
                 elif trigger == TRIGGER_TIME and not flat.get(U_WEEKDAYS):
                     errors["base"] = "no_weekday"
                 elif bool(flat.get(U_WINDOW_START)) != bool(flat.get(U_WINDOW_END)) or (
@@ -183,7 +185,7 @@ class UpdaterOptions:
                     U_NAME: flat[U_NAME],
                     U_ENABLED: flat.get(U_ENABLED, True),
                     U_TRIGGER: trigger,
-                    U_TIME: flat.get(U_TIME) or "03:00:00",
+                    U_TIME: flat.get(U_TIME) or None,
                     U_WEEKDAYS: flat.get(U_WEEKDAYS) or [],
                     U_WINDOW_START: flat.get(U_WINDOW_START) or None,
                     U_WINDOW_END: flat.get(U_WINDOW_END) or None,
@@ -209,10 +211,12 @@ class UpdaterOptions:
             vol.Required(U_TRIGGER, default=d.get(U_TRIGGER, TRIGGER_TIME)): _select(
                 TRIGGERS, "update_trigger", mode=selector.SelectSelectorMode.LIST
             ),
-            vol.Required(
-                U_TIME, default=d.get(U_TIME) or "03:00:00"
+            vol.Optional(
+                U_TIME, description=_suggest(U_TIME, d) if d.get(U_TIME) else {}
             ): selector.TimeSelector(),
-            vol.Optional(U_WEEKDAYS, default=d.get(U_WEEKDAYS) or ["sun"]): _select(
+            vol.Optional(
+                U_WEEKDAYS, description=_suggest(U_WEEKDAYS, d) if d.get(U_WEEKDAYS) else {}
+            ): _select(
                 WEEKDAYS,
                 "weekday",
                 multiple=True,

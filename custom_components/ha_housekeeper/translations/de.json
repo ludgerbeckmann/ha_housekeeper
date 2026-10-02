@@ -1240,6 +1240,7 @@
         "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
         "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
         "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
+        "no_time": "Bitte eine Uhrzeit wählen.",
         "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
         "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
         "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
