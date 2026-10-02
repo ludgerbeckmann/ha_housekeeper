@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, sectioned, make_entry, reconfigure
+from .helpers import is_menu, sectioned, make_entry, reconfigure, new_instance
 
 NOTIFY_FIELDS = {"mobile_enabled", "mobile_targets", "tts_enabled", "tts_entity",
                  "tts_player", "persistent_enabled"}
@@ -35,19 +35,13 @@ def _assert_sections(schema, general: set[str], notifications: set[str]) -> None
     ],
 )
 async def test_config_forms_have_sections(hass: HomeAssistant, function, general, notifications) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": f"hub_{function}"}
-    )
+    result = await new_instance(hass, function)
     assert result["step_id"] == f"new_{function}"
     _assert_sections(result["data_schema"].schema, general, notifications)
 
 
 async def test_doorbell_config_form_has_only_general_section(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_doorbell"}
-    )
+    result = await new_instance(hass, "doorbell")
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general"]
     assert _fields(next(iter(schema.values()))) == {"name", "trigger_entity", "debounce_seconds"}

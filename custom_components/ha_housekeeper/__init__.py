@@ -30,6 +30,8 @@ from .const import (
     FUNCTION_TASK_PLANNER,
     FUNCTION_UPDATER,
     FUNCTION_PLATFORMS,
+    instance_name,
+    instance_title,
     SERVICE_RUN_PUMP,
 )
 from .alarm_clock import AlarmClockController
@@ -94,13 +96,29 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+ALL_PLATFORMS = sorted({p for platforms in FUNCTION_PLATFORMS.values() for p in platforms})
+
+
 def _is_hub(entry: ConfigEntry) -> bool:
-    """Neues Format: Hub mit Untereinträgen. Ältere Einträge (eine Instanz je Eintrag) nicht mehr."""
-    return bool(entry.data.get(CONF_HUB))
+    """Aktuelles Format: ein Hub („Funktionen“) mit allen Instanzen als Untereinträge.
+
+    Ältere Einträge (eine Instanz je Eintrag, später ein Hub je Funktion mit `function_type`)
+    werden nicht mehr geladen."""
+    return bool(entry.data.get(CONF_HUB)) and CONF_FUNCTION_TYPE not in entry.data
+
+
+def _normalize_titles(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Titel der Untereinträge auf „Funktion: Name“ bringen (z. B. nach einem Umbenennen)."""
+    for subentry in list(entry.subentries.values()):
+        expected = instance_title(
+            hass, subentry.subentry_type, instance_name(subentry.title)
+        )
+        if subentry.title != expected:
+            hass.config_entries.async_update_subentry(entry, subentry, title=expected)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Hub einrichten: je Untereintrag ein Controller, dazu die Plattformen des Funktionstyps."""
+    """Hub einrichten: je Untereintrag ein Controller, dazu die Plattformen."""
     if not _is_hub(entry):
         ir.async_create_issue(
             hass,
@@ -116,19 +134,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     ir.async_delete_issue(hass, DOMAIN, f"legacy_{entry.entry_id}")
 
-    function_type = entry.data[CONF_FUNCTION_TYPE]
+    _normalize_titles(hass, entry)
     controllers = hass.data.setdefault(DOMAIN, {})
     adapters: list[SubentryEntry] = []
     for subentry in entry.subentries.values():
         adapter = SubentryEntry(entry, subentry)
-        controller = CONTROLLERS[function_type](hass, adapter)
+        controller = CONTROLLERS[subentry.subentry_type](hass, adapter)
         await controller.async_start()
         controllers[subentry.subentry_id] = controller
         adapters.append(adapter)
 
-    await hass.config_entries.async_forward_entry_setups(
-        entry, FUNCTION_PLATFORMS[function_type]
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, ALL_PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     async_setup_checks(hass, entry, adapters)
     return True
@@ -150,10 +166,7 @@ async def _async_reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Hub entladen."""
-    function_type = entry.data[CONF_FUNCTION_TYPE]
-    unloaded = await hass.config_entries.async_unload_platforms(
-        entry, FUNCTION_PLATFORMS[function_type]
-    )
+    unloaded = await hass.config_entries.async_unload_platforms(entry, ALL_PLATFORMS)
     if unloaded:
         # alle Controller dieses Hubs (auch die eines inzwischen entfernten Untereintrags)
         controllers = hass.data[DOMAIN]

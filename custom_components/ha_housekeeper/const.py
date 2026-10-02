@@ -33,6 +33,31 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
 }
 
+HUB_TITLE = ("Funktionen", "Functions")
+
+
+def hub_title(hass) -> str:
+    """Titel des einen Hubs („Funktionen“)."""
+    german, english = HUB_TITLE
+    return german if (hass.config.language or "").startswith("de") else english
+
+
+def instance_title(hass, function_type: str, name: str) -> str:
+    """Titel eines Untereintrags (Zeile mit dem Zahnrad): „Funktion: Name“."""
+    function = function_title(hass, function_type)
+    # die Vorgabe (Name = Funktionsname) bekommt keinen doppelten Präfix
+    return name if name == function else f"{function}: {name}"
+
+
+def instance_name(title: str) -> str:
+    """Name der Instanz (Gerätename): der Titel ohne den Präfix „Funktion: “."""
+    for names in FUNCTION_TITLES.values():
+        for prefix in names:
+            if title.startswith(f"{prefix}: "):
+                return title[len(prefix) + 2 :]
+    return title
+
+
 def function_title(hass, function_type: str) -> str:
     """Anzeigename der Funktion (Hub-Titel, Vorgabe für Instanznamen) in der Sprache von Home Assistant."""
     german, english = FUNCTION_TITLES[function_type]

@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 
 LOCK = "lock.front_door"
@@ -54,22 +54,17 @@ async def _advance(hass: HomeAssistant, **delta) -> None:
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "user"}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_door_guard"}
-    )
+    result = await new_instance(hass, "door_guard")
     assert result["step_id"] == "new_door_guard"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules")}
-    bad = await hass.config_entries.flow.async_configure(
+    bad = await hass.config_entries.subentries.async_configure(
         result["flow_id"], sectioned({k: v for k, v in data.items() if k != "contact"})
     )
     assert bad["errors"] == {"base": "alert_needs_contact"}
-    ok = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(data))
+    ok = await hass.config_entries.subentries.async_configure(result["flow_id"], sectioned(data))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "door_guard"
-    assert ok["subentries"][0]["data"]["rules"] == []
+
+    assert ok["data"]["rules"] == []
 
 
 async def test_state_rule_unlocks(hass: HomeAssistant) -> None:

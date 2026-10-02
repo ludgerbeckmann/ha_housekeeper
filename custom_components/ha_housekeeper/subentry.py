@@ -15,7 +15,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState, ConfigSubentry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 
-from .const import CONF_FUNCTION_TYPE, DOMAIN
+from .const import CONF_FUNCTION_TYPE, DOMAIN, FUNCTION_PLATFORMS, instance_name
 
 
 class SubentryEntry:
@@ -37,7 +37,8 @@ class SubentryEntry:
 
     @property
     def title(self) -> str:
-        return self._subentry.title
+        """Gerätename: der Titel des Untereintrags ohne den Präfix „Funktion: “."""
+        return instance_name(self._subentry.title)
 
     @property
     def data(self) -> dict[str, Any]:
@@ -56,10 +57,18 @@ class SubentryEntry:
         return self.hub.async_on_unload(func)
 
 
-def hub_controllers(hass: HomeAssistant, hub: ConfigEntry) -> list[Any]:
-    """Controller aller Untereinträge eines Hubs (soweit eingerichtet)."""
+def hub_controllers(hass: HomeAssistant, hub: ConfigEntry, platform: Any = None) -> list[Any]:
+    """Controller aller Untereinträge eines Hubs (soweit eingerichtet).
+
+    Mit `platform` nur die Controller, deren Funktionstyp diese Plattform nutzt."""
     controllers = hass.data.get(DOMAIN, {})
-    return [controllers[sid] for sid in hub.subentries if sid in controllers]
+    found = [controllers[sid] for sid in hub.subentries if sid in controllers]
+    if platform is None:
+        return found
+    return [
+        c for c in found
+        if platform in FUNCTION_PLATFORMS[hub.subentries[c.entry.entry_id].subentry_type]
+    ]
 
 
 def any_busy(hass: HomeAssistant, hub: ConfigEntry) -> bool:

@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.task_planner import (
     month_day_matches,
@@ -273,21 +273,18 @@ async def test_variables_available_in_actions(hass: HomeAssistant) -> None:
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_task_planner"}
-    )
+    result = await new_instance(hass, "task_planner")
     assert result["step_id"] == "new_task_planner"
-    bad = await hass.config_entries.flow.async_configure(
+    bad = await hass.config_entries.subentries.async_configure(
         result["flow_id"], sectioned({"name": "Planer", "mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False})
     )
     assert bad["errors"] == {"base": "no_targets"}
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         sectioned({"name": "Planer", "mobile_enabled": False, "tts_enabled": False, "persistent_enabled": True}),
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "task_planner" and ok["subentries"][0]["data"]["tasks"] == []
+    assert ok["data"]["tasks"] == []
 
 
 async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:

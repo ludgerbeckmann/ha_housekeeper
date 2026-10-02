@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure
+from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import (
     assign_players,
@@ -109,15 +109,12 @@ def test_assign_players_dedupes_first_profile_wins() -> None:
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_doorbell"}
-    )
+    result = await new_instance(hass, "doorbell")
     assert result["step_id"] == "new_doorbell"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "profiles")}
-    ok = await hass.config_entries.flow.async_configure(result["flow_id"], {"general": data})
+    ok = await hass.config_entries.subentries.async_configure(result["flow_id"], {"general": data})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "doorbell" and ok["subentries"][0]["data"]["profiles"] == []
+    assert ok["data"]["profiles"] == []
 
 
 # --- Klingeln -----------------------------------------------------------------------

@@ -13,7 +13,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.ha_housekeeper import alarm_clock as ac
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure
+from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, new_instance
 
 PLAYER = "media_player.bedroom"
 MEDIA = {"media_content_id": "media-source://media_source/local/wecker.mp3",
@@ -249,20 +249,18 @@ async def test_unknown_original_volume_is_not_reset(hass: HomeAssistant, freezer
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_alarm_clock"})
+    result = await new_instance(hass, "alarm_clock")
     assert result["step_id"] == "new_alarm_clock"
     schema = result["data_schema"].schema
     assert [str(k) for k in schema] == ["general", "notifications"]
     base = {"name": "Wecker", "mobile_enabled": True, "critical": True, "message": "Wecker"}
-    bad = await hass.config_entries.flow.async_configure(result["flow_id"], sectioned(base))
+    bad = await hass.config_entries.subentries.async_configure(result["flow_id"], sectioned(base))
     assert bad["errors"] == {"base": "no_targets"}
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"], sectioned({**base, "mobile_targets": ["mobile_app_phone"]}))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "alarm_clock" and ok["subentries"][0]["data"]["alarms"] == []
-    assert ok["subentries"][0]["data"]["critical"] is True
+    assert ok["data"]["alarms"] == []
+    assert ok["data"]["critical"] is True
 
 
 async def test_options_flow_add_edit_delete_alarm(hass: HomeAssistant) -> None:
