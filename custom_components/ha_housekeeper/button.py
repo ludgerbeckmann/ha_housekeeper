@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from .alarm_clock import AlarmClockController
 from .const import TASK_ID, TASK_NAME
 from .doorbell import DoorbellController
+from .integration_monitor import IntegrationMonitorController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
@@ -39,6 +40,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([DoorbellTestButton(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterCheckNowButton(controller)])
+    elif isinstance(controller, IntegrationMonitorController):
+        async_add_entities([MonitorCheckNowButton(controller), MonitorReenableButton(controller)])
     elif isinstance(controller, AlarmClockController):
         async_add_entities([AlarmStopButton(controller), AlarmSnoozeButton(controller)])
     elif isinstance(controller, TaskPlannerController):
@@ -162,3 +165,27 @@ class MailboxSensitivityButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_send_sensitivity()
+
+
+class MonitorCheckNowButton(FunctionEntity, ButtonEntity):
+    """Prüft sofort alle Integrationen (die Wartezeit bis zur Bestätigung gilt weiter)."""
+
+    _attr_icon = "mdi:magnify"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_check_now")
+
+    async def async_press(self) -> None:
+        await self._controller.async_check()
+
+
+class MonitorReenableButton(FunctionEntity, ButtonEntity):
+    """Aktiviert alle vom Monitor deaktivierten Integrationen wieder."""
+
+    _attr_icon = "mdi:puzzle-plus-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_reenable")
+
+    async def async_press(self) -> None:
+        await self._controller.async_reenable_all()

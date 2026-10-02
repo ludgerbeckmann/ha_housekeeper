@@ -26,6 +26,7 @@ from .subentry import hub_controllers
 from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
+from .integration_monitor import IntegrationMonitorController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
@@ -66,6 +67,10 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     elif isinstance(controller, TaskPlannerController):
         async_add_entities(
             [TaskLastRunSensor(controller), TaskNextRunSensor(controller)]
+        )
+    elif isinstance(controller, IntegrationMonitorController):
+        async_add_entities(
+            [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
         )
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
@@ -295,3 +300,37 @@ class AlarmLastSensor(FunctionEntity, SensorEntity):
             "alarm": self._controller.last_alarm,
             "skipped": self._controller.last_skipped,
         }
+
+
+class MonitorFaultySensor(FunctionEntity, SensorEntity):
+    """Anzahl der Integrationen mit bestätigter Störung (Namen als Attribut)."""
+
+    _attr_icon = "mdi:puzzle-remove-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_faulty")
+
+    @property
+    def native_value(self) -> int:
+        return len(self._controller.faulty_titles)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"integrations": self._controller.faulty_titles}
+
+
+class MonitorDisabledSensor(FunctionEntity, SensorEntity):
+    """Anzahl der vom Monitor deaktivierten Integrationen (Namen als Attribut)."""
+
+    _attr_icon = "mdi:puzzle-minus-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_disabled")
+
+    @property
+    def native_value(self) -> int:
+        return len(self._controller.disabled_titles)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"integrations": self._controller.disabled_titles}

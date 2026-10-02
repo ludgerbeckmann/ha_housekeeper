@@ -21,6 +21,7 @@ from .const import (
     CONF_COMMANDS,
     CONF_FUNCTION_TYPE,
     CONF_MAX_VOLUME,
+    CONF_MONITOR_RULES,
     CONF_NAME,
     CONF_PLAYER,
     CONF_PROFILES,
@@ -39,6 +40,7 @@ from .const import (
     FUNCTION_DOORBELL,
     FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
+    FUNCTION_MONITOR,
     FUNCTION_PLATFORMS,
     FUNCTION_POOL,
     FUNCTION_TASK_PLANNER,
@@ -55,6 +57,7 @@ from .flows.door_guard import DoorGuardOptions, _door_schema, _validate_door
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.knx import _SONOS_SELECTOR, KnxSonosOptions
 from .flows.mailbox import MailboxOptions, _mailbox_schema
+from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
 from .flows.planner import TaskPlannerOptions, _planner_schema, _validate_planner
 from .flows.pool import _PUMP_SELECTOR, PoolOptions
 from .flows.updater import UpdaterOptions, _updater_schema
@@ -73,6 +76,7 @@ _MENU_STEPS = {
     FUNCTION_UPDATER: "upd_menu",
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
+    FUNCTION_MONITOR: "mon_menu",
 }
 
 
@@ -244,6 +248,29 @@ class NewInstanceSteps:
             errors=errors,
         )
 
+    async def async_step_new_integration_monitor(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            flat = _flatten_sections(user_input)
+            errors = _validate_monitor(flat)
+            if not errors:
+                return await self._finish_new(
+                    flat[CONF_NAME],
+                    {
+                        CONF_MONITOR_RULES: [],
+                        **monitor_data(flat),
+                    },
+                )
+            defaults = flat
+        return self.async_show_form(
+            step_id="new_integration_monitor",
+            data_schema=_monitor_schema(self.hass, defaults, with_name=True),
+            errors=errors,
+        )
+
     async def async_step_new_task_planner(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -306,6 +333,7 @@ class HousekeeperSubentryFlow(
     UpdaterOptions,
     TaskPlannerOptions,
     AlarmOptions,
+    MonitorOptions,
     NewInstanceSteps,
     OptionsBase,
     ConfigSubentryFlow,

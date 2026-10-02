@@ -19,6 +19,7 @@ Wecker-Eintrag …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit oder sobald ein Update verfügbar wird |
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
+| Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
 ## Bedienung der Einstellungen
 
@@ -55,7 +56,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Anbindung hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker-Eintrag hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker-Eintrag hinzufügen“, „Integrationsmonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (vorbelegt mit dem Funktionsnamen).
@@ -627,6 +628,52 @@ beiden Aktionen).
 - `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`; beim
   letzten Wecker außerdem `skipped` mit dem zuletzt übersprungenen Wecker)
 - `button` **Wecker stoppen** und **Schlummern**
+
+## Integrationsmonitor
+
+Überwacht **alle** Integrationen (außer dieser) und kann für **ausgewählte** Integrationen handeln.
+Eine Integration gilt als **gestört**, wenn
+
+- ihr Eintrag einen **Fehlerstatus** hat (Setup-Fehler, Wiederholungsversuch, Migrationsfehler,
+  Fehler beim Entladen) oder
+- **alle** ihre aktiven Entitäten **nicht verfügbar** sind (erst ab einer einstellbaren
+  Mindestanzahl Entitäten, damit Integrationen mit nur einer Entität keinen Fehlalarm auslösen).
+
+Eine Störung zählt erst, wenn sie die **Wartezeit** (Standard 5 Minuten) ununterbrochen besteht; kurze
+Aussetzer lösen nichts aus. Geprüft wird beim Start (nach zwei Minuten) und dann im **Prüfintervall**
+(Standard 1 Minute). Von dir selbst deaktivierte Integrationen werden nie beurteilt oder angefasst.
+
+### Einstellungen
+
+- **Wartezeit**, **Mindestanzahl Entitäten**, **Prüfintervall**
+- **Alle Störungen melden** (Standard an) und eine Liste **ausgenommener** Integrationen
+- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung); je Störung eine
+  Meldung, bei Rückkehr eine Entwarnung
+
+### Regeln
+
+Eine Regel gilt für **eine oder mehrere ausdrücklich gewählte Integrationen** und hat:
+
+- Name und Schalter *Aktiv*
+- **Auslöser**: bei Fehlerstatus und/oder wenn alle Entitäten nicht verfügbar sind
+- **Aktion**: *Nur melden*, *Neu laden* oder *Deaktivieren* (einmal je Störung), dazu der Schalter
+  *Melden* (meldet auch, wenn „Alle Störungen melden“ aus ist)
+- optional eine **Anwesenheitsentität** und *Automatisch wieder aktivieren*: Eine vom Monitor
+  deaktivierte Integration wird wieder aktiviert, sobald die Anwesenheitsentität „an“ oder „home“
+  meldet. Das passt zu Geräten, die zeitweise fehlen (Klimaanlage, Drucker): Die Entität sollte
+  unabhängig von der Integration zeigen, ob das Gerät da ist (z. B. ein Ping-Sensor, ein
+  Router-Tracker oder eine Steckdose).
+
+Der Monitor aktiviert **nur Integrationen wieder, die er selbst deaktiviert hat**. Schaltest du eine
+solche Integration von Hand wieder ein, vergisst er sie.
+
+### Entitäten
+
+- `switch` **Monitor aktiv** (aus = keine Prüfung, keine Meldungen, keine Aktionen)
+- `binary_sensor` **Integrationsstörung** (an = mindestens eine Störung; Attribut: Integrationen)
+- `sensor` **Integrationen mit Störung** und **Vom Monitor deaktiviert** (Anzahl, Namen als Attribut)
+- `button` **Jetzt prüfen** und **Deaktivierte aktivieren** (aktiviert alle vom Monitor
+  deaktivierten Integrationen wieder)
 
 ## Reparaturhinweise
 

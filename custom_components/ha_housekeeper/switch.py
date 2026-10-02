@@ -16,6 +16,7 @@ from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
+from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
@@ -55,6 +56,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([TaskPlannerActiveSwitch(controller)])
     elif isinstance(controller, MailboxController):
         async_add_entities([MailboxActiveSwitch(controller)])
+    elif isinstance(controller, IntegrationMonitorController):
+        async_add_entities([MonitorActiveSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -225,6 +228,25 @@ class MailboxActiveSwitch(FunctionEntity, SwitchEntity):
 
     def __init__(self, controller) -> None:
         super().__init__(controller, "mailbox_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class MonitorActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Integrationen werden überwacht; off = Monitor pausiert (keine Meldungen, keine Aktionen)."""
+
+    _attr_icon = "mdi:puzzle-check-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_active")
 
     @property
     def is_on(self) -> bool:
