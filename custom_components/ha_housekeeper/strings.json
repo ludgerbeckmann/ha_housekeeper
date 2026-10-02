@@ -1,5 +1,11 @@
 {
   "config": {
+    "step": {
+      "user": {
+        "title": "Functions",
+        "description": "Creates the “Functions” hub. Add instances (mailbox, doorbell, pool, alarm clock …) afterwards with the “Add …” buttons."
+      }
+    },
     "abort": {
       "already_configured": "The “Functions” hub already exists. Add instances there with the “Add …” buttons.",
       "single_instance_allowed": "The “Functions” hub already exists. Add instances there with the “Add …” buttons."

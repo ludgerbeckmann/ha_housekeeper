@@ -1,5 +1,11 @@
 {
   "config": {
+    "step": {
+      "user": {
+        "title": "Funktionen",
+        "description": "Legt den Hub „Funktionen“ an. Instanzen (Briefkasten, Türklingel, Pool, Wecker …) fügst du danach über die Schaltflächen „… hinzufügen“ hinzu."
+      }
+    },
     "abort": {
       "already_configured": "Der Hub „Funktionen“ ist bereits angelegt. Instanzen fügst du dort über die Schaltflächen „… hinzufügen“ hinzu.",
       "single_instance_allowed": "Der Hub „Funktionen“ ist bereits angelegt. Instanzen fügst du dort über die Schaltflächen „… hinzufügen“ hinzu."
