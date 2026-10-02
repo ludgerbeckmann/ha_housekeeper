@@ -640,4 +640,4 @@ Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Co
 ## Entwicklung
 
 Tests: `pip install pytest-homeassistant-custom-component && pytest`
-(Python 3.13). CI: hassfest, HACS-Validierung und pytest.
+(Python 3.14). CI: hassfest, HACS-Validierung und pytest.

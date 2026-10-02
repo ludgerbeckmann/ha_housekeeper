@@ -227,7 +227,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (formatjs/hassfest) – Fullwidth-Klammern `｛x｝` verwenden.
 - `manifest.json`-Schlüssel nach `domain`/`name` alphabetisch; `hacs.json`
   nur erlaubte Schlüssel.
-- Nach Änderungen `pyflakes` + `pytest` (Python 3.13,
+- Nach Änderungen `pyflakes` + `pytest` (Python 3.14,
   `pytest-homeassistant-custom-component`) laufen lassen; `py_compile`
   erkennt fehlende Imports nicht.
 - Entity-IDs entstehen aus den englischen Namen (`strings.json`).
