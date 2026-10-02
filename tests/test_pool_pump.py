@@ -334,46 +334,42 @@ async def test_user_flow_and_duplicate(hass):
     from homeassistant.data_entry_flow import FlowResultType
 
     hass.states.async_set("switch.pump", "off")
+    hass.states.async_set("switch.pump2", "off")
+    # Hub „Funktionen“ anlegen (ohne Formular), dann den Pool als Untereintrag
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_pool_pump"}
-    )
-    assert result["step_id"] == "new_pool_pump"
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "Garten", "pump_entity": "switch.pump"}
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Pool control"                      # Hub heißt wie die Funktion (Sprache von HA)
-    assert result["data"] == {"function_type": "pool_pump", "hub": True}
-    (first,) = result["subentries"]
-    assert first["title"] == "Garten" and first["data"]["pump_entity"] == "switch.pump"
+    assert result["type"] is FlowResultType.CREATE_ENTRY and result["title"] == "Functions"
+    assert result["data"] == {"hub": True}
     await hass.async_block_till_done()
     (hub,) = hass.config_entries.async_entries(DOMAIN)
-    assert next(iter(hub.subentries.values())).title == "Garten"
 
-    # zweiter Hub desselben Typs: nicht möglich, weitere Pools kommen als Untereintrag
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_pool_pump"}
-    )
-    assert result["type"] is FlowResultType.ABORT and result["reason"] == "already_configured"
+    again = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    assert again["type"] is FlowResultType.ABORT           # nur ein Hub
 
-    # weiterer Pool als Untereintrag; dieselbe Pumpe wird abgelehnt
     sub = await hass.config_entries.subentries.async_init(
         (hub.entry_id, "pool_pump"), context={"source": "user"})
     assert sub["step_id"] == "new_pool_pump"
     sub = await hass.config_entries.subentries.async_configure(
+        sub["flow_id"], {"name": "Garten", "pump_entity": "switch.pump"})
+    assert sub["type"] is FlowResultType.CREATE_ENTRY
+    assert sub["title"] == "Pool control: Garten"           # Zeile mit dem Zahnrad: „Funktion: Name“
+    assert sub["data"]["pump_entity"] == "switch.pump"
+    await hass.async_block_till_done()
+
+    # dieselbe Pumpe wird abgelehnt, eine andere ist möglich
+    sub = await hass.config_entries.subentries.async_init(
+        (hub.entry_id, "pool_pump"), context={"source": "user"})
+    sub = await hass.config_entries.subentries.async_configure(
         sub["flow_id"], {"name": "Zweiter", "pump_entity": "switch.pump"})
     assert sub["type"] is FlowResultType.ABORT and sub["reason"] == "pump_configured"
-    hass.states.async_set("switch.pump2", "off")
     sub = await hass.config_entries.subentries.async_init(
         (hub.entry_id, "pool_pump"), context={"source": "user"})
     sub = await hass.config_entries.subentries.async_configure(
         sub["flow_id"], {"name": "Zweiter", "pump_entity": "switch.pump2"})
     assert sub["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
-    assert sorted(s.title for s in hub.subentries.values()) == ["Garten", "Zweiter"]
-    assert hass.states.get("switch.garten_schedule_active") is not None
+    assert sorted(s.title for s in hub.subentries.values()) == [
+        "Pool control: Garten", "Pool control: Zweiter"]
+    assert hass.states.get("switch.garten_schedule_active") is not None     # Gerät heißt nur „Garten“
     assert hass.states.get("switch.zweiter_schedule_active") is not None
 
 
@@ -382,7 +378,7 @@ async def test_options_windows_add_edit_delete(hass):
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
     assert result["step_id"] == "pool_menu"
-    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater"]
+    assert menu_options(result) == ["pool_general", "add_window", "dry_run", "heater", "rename"]
 
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_window"})
     bad = await flow.async_configure(

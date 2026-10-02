@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure
+from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PLAYER = "media_player.living_room"
@@ -56,26 +56,20 @@ async def _telegram(hass, destination, data, *, direction="Incoming", telegramty
 
 
 async def test_config_flow_needs_knx(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_knx_sonos"}
-    )
+    result = await new_instance(hass, "knx_sonos")
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "knx_missing"
 
 
 async def test_config_flow_creates_entry(hass: HomeAssistant) -> None:
     async_mock_service(hass, "knx", "event_register")
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_knx_sonos"}
-    )
+    result = await new_instance(hass, "knx_sonos")
     assert result["step_id"] == "new_knx_sonos"
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {"name": "Wohnzimmer", "player": PLAYER}
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["subentries"][0]["data"]["commands"] == [] and ok["subentries"][0]["data"]["status"] == []
-    assert ok["subentries"][0]["data"]["max_volume"] == 100
+    assert ok["data"]["commands"] == [] and ok["data"]["status"] == []
+    assert ok["data"]["max_volume"] == 100
 
 
 # --- Anmeldung bei der KNX-Integration ----------------------------------------------------

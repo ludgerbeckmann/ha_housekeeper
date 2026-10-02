@@ -4,9 +4,8 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
 Eine Custom Integration, die verschiedene Smart-Home-Anwendungsfälle
-bündelt. **Jede Funktion ist ein Hub** (Integrationseintrag, benannt wie die Funktion, z. B.
-„Türklingel“); die einzelnen **Instanzen** (eine Klingel, ein Pool, ein Wecker-Eintrag …) sind
-**Untereinträge** des Hubs mit eigenem Gerät.
+bündelt. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine Klingel, ein Pool, ein
+Wecker-Eintrag …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 
 ## Funktionen
 
@@ -52,17 +51,22 @@ Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Ho
 **Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
 kopieren und neu starten.
 
-Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*,
-im Menü die Funktion anklicken und die erste Instanz einrichten (der Name ist mit dem Funktionsnamen
-vorbelegt). Dabei entsteht der **Hub** der
-Funktion (je Funktionstyp einer). **Weitere Instanzen** (z. B. eine zweite Klingel oder ein
-zweiter Pool) fügst du im Hub über die Schaltfläche **„… hinzufügen“** hinzu; jede Instanz hat ihr
-Zahnrad (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder
-neuer.
+Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*.
+Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
+über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
+„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Anbindung hinzufügen“, „Updater hinzufügen“,
+„Aufgabenplaner hinzufügen“, „Wecker-Eintrag hinzufügen“**. Jede Instanz hat ihr Zahnrad
+(*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
-**Update von einer älteren Version:** Bisher war jede Instanz ein eigener Eintrag. Diese
-Einträge werden nicht mehr geladen; es erscheint ein Reparaturhinweis. Lösche den alten Eintrag
-und lege die Funktion neu an.
+**Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (vorbelegt mit dem Funktionsnamen).
+In der Liste erscheint die Instanz als **„Funktion: Name“** (z. B. „Wecker: Zimmer Hannah“; so stehen
+gleiche Funktionen beieinander), das **Gerät** heißt nur „Name“. Im Menü hinter dem Zahnrad gibt es
+den Punkt **Umbenennen**; der Präfix bleibt dabei automatisch erhalten, auch eine Umbenennung über
+Home Assistant selbst wird beim nächsten Neuladen korrigiert.
+
+**Update von einer älteren Version:** Bisher war jede Instanz (oder später jede Funktion) ein
+eigener Eintrag. Diese Einträge werden nicht mehr geladen; es erscheint ein Reparaturhinweis. Lösche
+den alten Eintrag, lege den Hub „Funktionen“ an und füge die Instanzen neu hinzu.
 
 ## Benachrichtigung Briefkasten
 

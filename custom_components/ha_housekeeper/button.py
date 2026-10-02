@@ -6,6 +6,7 @@ from functools import partial
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -25,7 +26,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Entitäten je Untereintrag (eigenes Gerät) des Hubs."""
-    for controller in hub_controllers(hass, entry):
+    for controller in hub_controllers(hass, entry, Platform.BUTTON):
         _add_entities(
             hass,
             controller,

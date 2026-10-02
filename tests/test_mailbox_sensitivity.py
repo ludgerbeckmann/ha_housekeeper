@@ -8,7 +8,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure
+from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 
 from .helpers import sectioned
@@ -40,9 +40,7 @@ def _flat(**over):
 
 
 async def test_field_only_in_settings(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_mailbox"})
+    result = await new_instance(hass, "mailbox")
     general = next(v for k, v in result["data_schema"].schema.items() if str(k) == "general")
     assert "sensitivity_entity" not in {str(k) for k in general.schema.schema}
 
@@ -78,7 +76,7 @@ async def test_entity_is_stored_without_asking_for_a_value(hass: HomeAssistant) 
     flow, result = await _open_settings(hass, entry)
     result = await flow.async_configure(result["flow_id"], _flat(sensitivity_entity=NUMBER))
     # kein Wertedialog direkt danach: zurück ins Menü, Punkt „Empfindlichkeit einstellen“ ist da
-    assert is_menu(result) and menu_options(result) == ["mailbox", "mailbox_sensitivity"]
+    assert is_menu(result) and menu_options(result) == ["mailbox", "mailbox_sensitivity", "rename"]
     assert entry.options["sensitivity_entity"] == NUMBER
     assert entry.options["sensitivity_value"] is None
     await hass.async_block_till_done()
@@ -90,7 +88,7 @@ async def test_number_value_set_later_from_the_menu(hass: HomeAssistant) -> None
     entry = await _setup(hass, sensitivity_entity=NUMBER)
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    assert menu_options(result) == ["mailbox", "mailbox_sensitivity"]
+    assert menu_options(result) == ["mailbox", "mailbox_sensitivity", "rename"]
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "mailbox_sensitivity"})
     assert result["type"] is FlowResultType.FORM and result["step_id"] == "mailbox_sensitivity"
     assert result["description_placeholders"] == {"entity": NUMBER}

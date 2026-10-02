@@ -41,7 +41,7 @@ from homeassistant.config_entries import ConfigSubentryDataWithId  # noqa: E402
 from homeassistant.util import ulid as ulid_util  # noqa: E402
 from pytest_homeassistant_custom_component.common import MockConfigEntry  # noqa: E402
 
-from custom_components.ha_housekeeper.const import DOMAIN, FUNCTION_TITLES  # noqa: E402
+from custom_components.ha_housekeeper.const import DOMAIN  # noqa: E402
 
 
 class FunctionEntry:
@@ -93,9 +93,9 @@ def make_entry(domain=DOMAIN, title="Mock", data=None, options=None, unique_id=N
     subentry_id = ulid_util.ulid_now()
     hub = MockConfigEntry(
         domain=DOMAIN,
-        title=FUNCTION_TITLES[function_type][0],
-        data={"function_type": function_type, "hub": True},
-        unique_id=f"hub:{function_type}",
+        title="Funktionen",
+        data={"hub": True},
+        unique_id="hub",
         subentries_data=[
             ConfigSubentryDataWithId(
                 data=merged, subentry_type=function_type, title=title,
@@ -108,15 +108,28 @@ def make_entry(domain=DOMAIN, title="Mock", data=None, options=None, unique_id=N
 async def reconfigure(hass, entry: FunctionEntry):
     """Konfigurieren-Menü einer Instanz öffnen."""
     return await hass.config_entries.subentries.async_init(
-        (entry.hub_id, entry.hub.data["function_type"]),
+        (entry.hub_id, entry.subentry.subentry_type),
         context={"source": "reconfigure", "subentry_id": entry.entry_id},
     )
 
 
-async def add_instance(hass, entry: FunctionEntry):
-    """Formular „Instanz hinzufügen“ eines Hubs öffnen."""
+async def add_instance(hass, entry: FunctionEntry, function_type: str | None = None):
+    """Formular „Instanz hinzufügen“ des Hubs öffnen (Typ der Instanz, sonst der angegebene)."""
     return await hass.config_entries.subentries.async_init(
-        (entry.hub_id, entry.hub.data["function_type"]), context={"source": "user"}
+        (entry.hub_id, function_type or entry.subentry.subentry_type), context={"source": "user"}
+    )
+
+
+async def new_instance(hass, function_type: str):
+    """Hub über den Config-Flow anlegen (falls nötig) und das Anlege-Formular des Typs öffnen."""
+    hubs = hass.config_entries.async_entries(DOMAIN)
+    if not hubs:
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+        assert result["type"].value == "create_entry"
+        await hass.async_block_till_done()
+        hubs = hass.config_entries.async_entries(DOMAIN)
+    return await hass.config_entries.subentries.async_init(
+        (hubs[0].entry_id, function_type), context={"source": "user"}
     )
 
 

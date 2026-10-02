@@ -7,7 +7,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure
+from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DEFAULT_REPEAT_MESSAGE, DOMAIN
 
 SENSOR = "binary_sensor.briefkasten_vibration"
@@ -48,34 +48,25 @@ async def _setup(hass: HomeAssistant, **over):
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "user"}
-    )
-    assert result["type"] is FlowResultType.MENU and result["step_id"] == "user"
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_mailbox"}
-    )
+    result = await new_instance(hass, "mailbox")
     assert result["step_id"] == "new_mailbox"
-    bad = await hass.config_entries.flow.async_configure(
+    bad = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         _sections({**DATA, "mobile_enabled": False, "persistent_enabled": False}),
     )
     assert bad["errors"] == {"base": "no_method"}
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"], _sections(DATA)
     )
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "mailbox"
+
     # gespeichert wird flach, unabhängig von den Abschnitten des Formulars
-    assert ok["subentries"][0]["data"]["vibration_sensor"] == SENSOR and ok["subentries"][0]["data"]["message"] == "Post!"
-    assert "general" not in ok["subentries"][0]["data"] and "notifications" not in ok["subentries"][0]["data"]
+    assert ok["data"]["vibration_sensor"] == SENSOR and ok["data"]["message"] == "Post!"
+    assert "general" not in ok["data"] and "notifications" not in ok["data"]
 
 
 async def test_form_has_two_expanded_sections(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_mailbox"}
-    )
+    result = await new_instance(hass, "mailbox")
     schema = result["data_schema"].schema
     assert [str(key) for key in schema] == ["general", "notifications"]
     for sect in schema.values():
@@ -91,7 +82,7 @@ async def test_options_flow_sections_and_clearing(hass: HomeAssistant) -> None:
     entry = await _setup(hass)
     result = await reconfigure(hass, entry)
     assert is_menu(result) and result["step_id"] == "mailbox_menu"
-    assert menu_options(result) == ["mailbox"]       # ohne Entität kein Empfindlichkeits-Punkt
+    assert menu_options(result) == ["mailbox", "rename"]       # ohne Entität kein Empfindlichkeits-Punkt
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {"next_step_id": "mailbox"})
     assert result["step_id"] == "mailbox"
@@ -191,13 +182,10 @@ async def test_push_targets_in_flow_schema(hass: HomeAssistant) -> None:
         domain="mobile_app", data={"device_name": "iPhone Ludger", "webhook_id": "a"}
     ).add_to_hass(hass)
     async_mock_service(hass, "notify", "mobile_app_iphone_ludger")
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_mailbox"}
-    )
+    result = await new_instance(hass, "mailbox")
     assert result["step_id"] == "new_mailbox"
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         _sections({**DATA, "mobile_targets": ["mobile_app_iphone_ludger"]}),
     )
-    assert ok["subentries"][0]["data"]["mobile_targets"] == ["mobile_app_iphone_ludger"]
+    assert ok["data"]["mobile_targets"] == ["mobile_app_iphone_ludger"]

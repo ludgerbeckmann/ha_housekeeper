@@ -1,239 +1,8 @@
 {
   "config": {
-    "step": {
-      "user": {
-        "title": "Add function",
-        "description": "For which function do you want to create a hub? You set up the first instance right away. If the function already has a hub, add further instances there with the “Add …” button.",
-        "menu_options": {
-          "hub_mailbox": "Mailbox notification",
-          "hub_door_guard": "Door guard",
-          "hub_doorbell": "Doorbell",
-          "hub_pool_pump": "Pool control",
-          "hub_knx_sonos": "KNX/Sonos-Connector",
-          "hub_updater": "Home Assistant Updater",
-          "hub_task_planner": "Task planner",
-          "hub_alarm_clock": "Alarm clock"
-        }
-      },
-      "new_mailbox": {
-        "title": "Mailbox notification",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Sensor, lockout time and automatic reset.",
-            "data": {
-              "name": "Name",
-              "vibration_sensor": "Vibration sensor",
-              "debounce_seconds": "Debounce time",
-              "auto_reset_hours": "Reset automatically after (0 = off)",
-              "sensitivity_entity": "Sensitivity entity (optional)"
-            },
-            "data_description": {
-              "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-              "debounce_seconds": "Further vibrations within this time are ignored.",
-              "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what text you are told about mail.",
-            "data": {
-              "mobile_action": "Show \"Mailbox emptied\" action in the push notification",
-              "message": "Message text",
-              "repeat_message": "Text on repeated trigger",
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_action": "Adds a button (iOS and Android) to the notification that marks the mailbox as emptied.",
-              "repeat_message": "Sent when the sensor triggers again while mail is still present (with the \"emptied\" action).",
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "new_door_guard": {
-        "title": "Door guard",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Lock, door contact and behaviour of the door guard.",
-            "data": {
-              "name": "Name",
-              "lock": "Lock",
-              "contact": "Door contact (optional)",
-              "block_action": "If the door is open when locking",
-              "retry_minutes": "Retry locking for (minutes)",
-              "open_alert_minutes": "Warn when door is open after (minutes, 0 = off)",
-              "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
-              "verify_seconds": "Verify lock after (seconds, 0 = off)",
-              "manual_override": "When the lock is operated manually",
-              "manual_pause_minutes": "Pause automation for (minutes)"
-            },
-            "data_description": {
-              "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
-              "block_action": "Only notify, or lock automatically once the door is closed.",
-              "retry_minutes": "Only applies to \"Lock after closing\".",
-              "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-              "manual_pause_minutes": "Only applies to \"Pause automation\"."
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what the door guard reports.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "new_doorbell": {
-        "title": "Doorbell",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Trigger and debounce time.",
-            "data": {
-              "name": "Name",
-              "trigger_entity": "Trigger (sensor or event)",
-              "debounce_seconds": "Lockout time"
-            },
-            "data_description": {
-              "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-              "debounce_seconds": "Further rings within this time are ignored."
-            }
-          }
-        }
-      },
-      "new_pool_pump": {
-        "title": "Add pool",
-        "description": "Set up a pool and select the switch that controls the pump.",
-        "data": {
-          "name": "Name",
-          "pump_entity": "Pump (switch)"
-        }
-      },
-      "new_knx_sonos": {
-        "title": "KNX/Sonos-Connector",
-        "data": {
-          "name": "Name",
-          "player": "Sonos speaker"
-        },
-        "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
-      },
-      "new_updater": {
-        "title": "Home Assistant Updater",
-        "data": {
-          "name": "Name",
-          "timeout_minutes": "Time limit per update (minutes)"
-        },
-        "data_description": {
-          "timeout_minutes": "After this time an update counts as failed and the run continues."
-        },
-        "description": "This instance holds several schedules; you add them afterwards via the gear icon (Reconfigure). Notifications are set per schedule."
-      },
-      "new_task_planner": {
-        "title": "Task planner",
-        "description": "This instance holds several tasks; you add them afterwards via the gear icon (Reconfigure). Notifications go to the channels selected here.",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name of the task planner.",
-            "data": {
-              "name": "Name"
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "tts_enabled": "Enable voice announcement",
-              "tts_entity": "TTS service",
-              "tts_player": "Speaker (media_player)",
-              "persistent_enabled": "Persistent notification in Home Assistant"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-            }
-          }
-        }
-      },
-      "new_alarm_clock": {
-        "title": "Alarm clock",
-        "description": "This instance holds several alarms; you add them afterwards via the gear icon (Reconfigure). The push notification with \"Stop\" and \"Snooze\" goes to the devices selected here.",
-        "sections": {
-          "general": {
-            "name": "General",
-            "description": "Name of the instance.",
-            "data": {
-              "name": "Name"
-            }
-          },
-          "notifications": {
-            "name": "Notifications",
-            "description": "Push notification (critical) with the actions \"Stop\" and \"Snooze\".",
-            "data": {
-              "mobile_enabled": "Enable app push",
-              "mobile_targets": "Push targets (companion app devices)",
-              "critical": "Send as critical notification",
-              "message": "Message text"
-            },
-            "data_description": {
-              "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device.",
-              "critical": "Breaks through Do Not Disturb and silent mode (iOS: critical alert, Android: alarm channel). Critical alerts must be allowed in the companion app.",
-              "message": "The notification contains the actions \"Stop\" and \"Snooze\"."
-            }
-          }
-        }
-      }
-    },
-    "error": {
-      "no_method": "At least one notification method with a target must be enabled.",
-      "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
-      "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
-      "no_contact": "This trigger needs a door contact in the settings.",
-      "door_closed_needs_lock": "This trigger only makes sense for \"Lock\".",
-      "no_weekday": "Select at least one weekday.",
-      "no_targets": "Select at least one target for app push.",
-      "no_output": "The profile needs at least one media player or app push.",
-      "no_tts": "Announcement needs a TTS service and a text.",
-      "no_ringtone": "Select an audio file for the ringtone.",
-      "no_temperature": "Select a temperature sensor for the heater.",
-      "off_ge_on": "The switch-off threshold must be below the switch-on threshold.",
-      "too_many_windows": "Maximum number of time windows reached.",
-      "start_equals_end": "Start and end must differ.",
-      "min_ge_max": "The lower limit must be below the upper limit.",
-      "profile_in_use": "The profile is still used by commands or status feedback. Delete or change them first.",
-      "last_profile": "The last profile cannot be deleted.",
-      "invalid_address": "Invalid group address.",
-      "dimming_mismatch": "Relative dimming (3.007) and the action \"Dim volume\" belong together.",
-      "mute_set_needs_switch": "\"Mute (value)\" needs the data type switching (1.001).",
-      "no_update_selected": "Select at least one update.",
-      "invalid_window": "The window needs a start and an end, and they must differ.",
-      "no_actions": "Define at least one action.",
-      "invalid_datetime": "Invalid date.",
-      "in_past": "The time is in the past.",
-      "for_needs_state": "A minimum duration needs a target state.",
-      "no_threshold": "Set at least \"Above\" or \"Below\".",
-      "no_media": "Select an audio file."
-    },
     "abort": {
-      "already_configured": "There is already a hub for this function. Add further instances there with the “Add …” button.",
-      "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+      "already_configured": "The “Functions” hub already exists. Add instances there with the “Add …” buttons.",
+      "single_instance_allowed": "The “Functions” hub already exists. Add instances there with the “Add …” buttons."
     }
   },
   "selector": {
@@ -507,7 +276,7 @@
     },
     "legacy_entry": {
       "title": "Old format: {entry}",
-      "description": "The entry \"{entry}\" comes from an older version in which every instance was its own entry and is no longer loaded. Delete it and set the function up again; there is now one hub per function and instances are subentries."
+      "description": "The entry \"{entry}\" comes from an older version (one instance or one function per entry) and is no longer loaded. Delete it, then create the “Functions” hub and add the instances with the “Add …” buttons."
     }
   },
   "config_subentries": {
@@ -603,7 +372,8 @@
           "description": "Settings of the mailbox. The sensitivity is only set here, after an entity has been stored for it.",
           "menu_options": {
             "mailbox": "Settings",
-            "mailbox_sensitivity": "Set sensitivity"
+            "mailbox_sensitivity": "Set sensitivity",
+            "rename": "Rename"
           }
         },
         "mailbox_sensitivity": {
@@ -611,6 +381,13 @@
           "description": "Value for {entity}. It is not sent automatically: wake the sensor on the device, then press the \"Send sensitivity\" button.",
           "data": {
             "sensitivity_value": "Sensitivity"
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
           }
         }
       },
@@ -705,7 +482,8 @@
             "general": "Settings",
             "add_rule": "Add rule",
             "edit_rule": "Edit rule",
-            "delete_rule": "Delete rule"
+            "delete_rule": "Delete rule",
+            "rename": "Rename"
           }
         },
         "general": {
@@ -796,6 +574,13 @@
           "data_description": {
             "delay_seconds": "How long the door has to stay closed."
           }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
         }
       },
       "error": {
@@ -864,7 +649,8 @@
             "bell_general": "Settings",
             "add_profile": "Add profile",
             "edit_profile": "Edit profile",
-            "delete_profile": "Delete profile"
+            "delete_profile": "Delete profile",
+            "rename": "Rename"
           }
         },
         "bell_general": {
@@ -946,6 +732,13 @@
               }
             }
           }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
         }
       },
       "error": {
@@ -1006,7 +799,8 @@
             "edit_window": "Edit time window",
             "delete_window": "Delete time window",
             "dry_run": "Dry-run detection",
-            "heater": "Pool heater"
+            "heater": "Pool heater",
+            "rename": "Rename"
           }
         },
         "pool_general": {
@@ -1085,6 +879,13 @@
             "heater_entity": "Leave empty to not control a heater.",
             "heater_off_below": "Must be below the switch-on threshold (hysteresis)."
           }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
         }
       },
       "error": {
@@ -1148,7 +949,8 @@
             "delete_command": "Delete command",
             "add_status": "Add status feedback",
             "edit_status": "Edit status feedback",
-            "delete_status": "Delete status feedback"
+            "delete_status": "Delete status feedback",
+            "rename": "Rename"
           }
         },
         "speaker_edit": {
@@ -1243,6 +1045,13 @@
             "source": "Playing, paused and muted are sent as 1 bit (1.001), volume as percent (5.001) and title, artist, album and source as text (16.001, 14 characters).",
             "idle_text": "Text sources only."
           }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
         }
       },
       "error": {
@@ -1304,7 +1113,8 @@
             "upd_general": "Settings",
             "add_schedule": "Add schedule",
             "edit_schedule": "Edit schedule",
-            "delete_schedule": "Delete schedule"
+            "delete_schedule": "Delete schedule",
+            "rename": "Rename"
           }
         },
         "upd_general": {
@@ -1382,6 +1192,13 @@
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
             }
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
           }
         }
       },
@@ -1461,7 +1278,8 @@
             "tp_general": "Settings",
             "add_task": "Add task",
             "edit_task": "Edit task",
-            "delete_task": "Delete task"
+            "delete_task": "Delete task",
+            "rename": "Rename"
           }
         },
         "tp_general": {
@@ -1588,6 +1406,13 @@
             "above": "Fires when the value rises above this value.",
             "below": "Fires when the value falls below this value. Both set = range."
           }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
+          }
         }
       },
       "error": {
@@ -1666,7 +1491,8 @@
             "alarm_general": "Settings",
             "add_alarm": "Add alarm",
             "edit_alarm": "Edit alarm",
-            "delete_alarm": "Delete alarm"
+            "delete_alarm": "Delete alarm",
+            "rename": "Rename"
           }
         },
         "alarm_general": {
@@ -1723,6 +1549,13 @@
             "skip_if_on": "Do not ring as soon as one of the selected binary sensors is on (OR), e.g. a holiday sensor or a “day off” sensor. An unavailable sensor never blocks it.",
             "snooze_minutes": "The alarm rings again after this time.",
             "auto_stop_minutes": "The alarm ends after this time if nobody reacts (per ring, also after snoozing)."
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name"
           }
         }
       },

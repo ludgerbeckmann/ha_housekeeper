@@ -134,6 +134,7 @@ class DoorGuardOptions:
         options = ["general", "add_rule"]
         if self._rules():
             options += ["edit_rule", "delete_rule"]
+        options.append("rename")
         return await self._menu("menu", options, user_input)
 
     async def async_step_general(

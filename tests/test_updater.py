@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure
+from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -333,16 +333,14 @@ async def test_sensors(hass: HomeAssistant) -> None:
 
 
 async def test_config_flow(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "hub_updater"})
+    result = await new_instance(hass, "updater")
     assert result["step_id"] == "new_updater"
     assert {str(k) for k in result["data_schema"].schema} == {"name", "timeout_minutes"}
-    ok = await hass.config_entries.flow.async_configure(
+    ok = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {"name": "Updater", "timeout_minutes": 30})
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["function_type"] == "updater" and ok["subentries"][0]["data"]["schedules"] == []
-    assert "mobile_enabled" not in ok["subentries"][0]["data"]               # Benachrichtigung je Zeitplan
+    assert ok["data"]["schedules"] == []
+    assert "mobile_enabled" not in ok["data"]               # Benachrichtigung je Zeitplan
 
 
 def sched_form(timing=None, actions=None, notifications=None):

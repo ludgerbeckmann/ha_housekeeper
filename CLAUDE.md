@@ -2,9 +2,9 @@
 
 Home-Assistant Custom Integration `ha_housekeeper` (Anzeigename
 „Home Assistant Hausmeister“; die Domain und der Repo-Name bleiben `ha_housekeeper`, sonst gehen bestehende
-Einträge verloren): mehrere Funktionen, jede als **Hub** (ein Config-Entry je Funktionstyp, `data` =
-`function_type` + `hub: True`, Titel = Funktionsname), die Instanzen sind **Untereinträge** (Config-Subentries,
-Typ = `function_type`, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
+Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data` = `{"hub": True}`, `unique_id` `hub`,
+Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
+(Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
 portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) und `alarm_clock` („Wecker“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
@@ -23,32 +23,37 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 ## Architektur
 
 - **Hub und Untereinträge:** `async_setup_entry` (`__init__.py`) richtet für **jeden Untereintrag** einen
-  Controller ein (`hass.data[DOMAIN][<subentry_id>]`, flach) und leitet die Plattformen des Typs weiter. Controller,
-  `Store`, Entitäten und Reparaturhinweise arbeiten mit `SubentryEntry` (`subentry.py`), einem Adapter, der einen
-  Untereintrag wie einen Config-Entry aussehen lässt (`entry_id` = Untereintrags-ID, `title`, `data` = Daten des
-  Untereintrags, `options` = `{}`; `hub_entry_id`). Plattformen: `async_setup_entry` ruft je Controller
-  `_add_entities(...)` mit `config_subentry_id=` auf (eigenes Gerät je Instanz). Änderungen an einem Untereintrag
-  laden den **Hub** neu (`_async_reload`, verschoben, solange **irgendein** Controller des Hubs `busy` ist; das
-  Flag `reload_requested` steht dann an allen Controllern). Ältere Einträge (ohne `hub`-Marker) laden nicht, es
-  gibt den Reparaturhinweis `legacy_entry`. `unload` stoppt alle Controller mit `entry.hub_entry_id`.
+  Controller ein (`CONTROLLERS[subentry.subentry_type]`, `hass.data[DOMAIN][<subentry_id>]`, flach) und leitet **alle**
+  Plattformen (`ALL_PLATFORMS`) weiter. Controller, `Store`, Entitäten und Reparaturhinweise arbeiten mit
+  `SubentryEntry` (`subentry.py`), einem Adapter, der einen Untereintrag wie einen Config-Entry aussehen lässt
+  (`entry_id` = Untereintrags-ID, `title` = **Name der Instanz** ohne Präfix, `data` = Daten des Untereintrags,
+  `options` = `{}`; `hub_entry_id`). Plattformen: `async_setup_entry` ruft je Controller `_add_entities(...)` mit
+  `config_subentry_id=` auf, aber nur für Controller, deren Typ die Plattform nutzt
+  (`hub_controllers(hass, hub, Platform.X)`). Änderungen an einem Untereintrag laden den **Hub** neu (`_async_reload`,
+  verschoben, solange **irgendein** Controller des Hubs `busy` ist; das Flag `reload_requested` steht dann an allen
+  Controllern). **Titel** der Untereinträge: „Funktion: Name“ (`instance_title()`, `instance_name()` in `const.py`; ist
+  der Name gleich dem Funktionsnamen, entfällt der Präfix); `_normalize_titles()` korrigiert beim Laden. Ältere Einträge
+  (ohne `hub`-Marker oder mit `function_type`) laden nicht, es gibt den Reparaturhinweis `legacy_entry`. `unload` stoppt
+  alle Controller mit `entry.hub_entry_id`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
   `updater.py`, `planner.py`, `alarm.py`) mit Formularen, Prüfungen und einer Options-Klasse
-  (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `NewInstanceSteps` (Anlege-Formulare
-  `async_step_new_<typ>`), `HousekeeperConfigFlow` (Schritt `user` = **natives Menü** mit allen Funktionen, jeder Eintrag `hub_<typ>` prüft
-  die `unique_id` `hub:<typ>` (je Typ nur ein Hub, sonst Abbruch) und startet `new_<typ>` → Hub mit **erstem Untereintrag**;
-  die Vorgabe des Instanznamens ist `function_title()` = Funktionsname) und `HousekeeperSubentryFlow` (Schritt `user` = Instanz hinzufügen,
-  `reconfigure` = das Menü des Typs, `_MENU_STEPS`); er setzt alle Options-Klassen zusammen, `_current`/`_save`
-  lesen und schreiben die Daten des Untereintrags (`async_update_subentry`). Pumpen dürfen nur einmal vorkommen
-  (`unique_id` des Untereintrags). Neue Funktion = neues Modul in `flows/` plus Einträge in `config_flow.py`.
+  (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
+  (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
+  (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
+  `async_step_new_<typ>`, Titel „Funktion: Name“), `reconfigure` = das Menü des Typs (`_MENU_STEPS`), jedes Menü hat den
+  Punkt `rename` (`async_step_rename`, nur der Name, der Präfix wird ergänzt); `_current`/`_save` lesen und schreiben
+  die Daten des Untereintrags (`async_update_subentry`). Pumpen dürfen nur einmal vorkommen (`unique_id` des
+  Untereintrags). Neue Funktion = neues Modul in `flows/` plus Einträge in `config_flow.py`.
   Übersetzungen der Einstellungsschritte stehen je Typ unter `config_subentries.<typ>` (`step`, `error`, `abort`,
-  `initiate_flow.user`, `entry_type`), die Anlege-Schritte des Hubs unter `config.step.new_<typ>`.
+  `initiate_flow.user`, `entry_type`). Die Beschriftung des Hub-Buttons („Dienst hinzufügen“) hängt am
+  `integration_type` im Manifest und ist nicht frei wählbar.
 
 - `const.py`: `FUNCTION_PLATFORMS` ist die Registry Funktionstyp → Plattformen.
   **Neue Funktion:** Typ-Konstante + Registry-Eintrag, Anlege-Schritt
-  `async_step_new_<typ>` (Menüeintrag `hub_<typ>` entsteht automatisch), Controller-Klasse, Plattformdateien, Übersetzungen
-  (`selector.function_type.options.<typ>`, `config_subentries.<typ>`, `FUNCTION_TITLES`), Controller-Registry in `__init__.py`.
+  `async_step_new_<typ>`, Menü-Eintrag in `_MENU_STEPS`, Controller-Klasse, Plattformdateien, Übersetzungen
+  (`config_subentries.<typ>`, `FUNCTION_TITLES`), Controller-Registry in `__init__.py`.
 - `mailbox.py` / `door_guard.py`: je ein Controller pro Funktion (Logik, Zustand
   in `Store`). Registry Typ → Controller in `__init__.py` (`CONTROLLERS`).
   Entitäten (`binary_sensor.py`, `sensor.py`, `button.py`, `switch.py`, Basis
