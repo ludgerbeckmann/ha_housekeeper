@@ -59,7 +59,10 @@ Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur eine
 „Aufgabenplaner hinzufügen“, „Wecker-Eintrag hinzufügen“, „Integrationsmonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
-**Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (vorbelegt mit dem Funktionsnamen).
+**Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
+z. B. „Türwächter“). Die Feldbeschriftung zeigt den Präfix („Name (erscheint als „Türwächter: Name“)“); ein
+vorangestellter Funktionsname wird automatisch entfernt („Türwächter Garagentür“ wird zu „Türwächter:
+Garagentür“).
 In der Liste erscheint die Instanz als **„Funktion: Name“** (z. B. „Wecker: Zimmer Hannah“; so stehen
 gleiche Funktionen beieinander), das **Gerät** heißt nur „Name“. Im Menü hinter dem Zahnrad gibt es
 den Punkt **Umbenennen**; der Präfix bleibt dabei automatisch erhalten, auch eine Umbenennung über

@@ -46,7 +46,7 @@ from .const import (
     FUNCTION_TASK_PLANNER,
     FUNCTION_UPDATER,
     CONF_HUB,
-    function_title,
+    clean_instance_name,
     hub_title,
     instance_name,
     instance_title,
@@ -105,7 +105,7 @@ class NewInstanceSteps:
             errors = _validate_notify(flat, require_method=True)
             if not errors:
                 return await self._finish_new(
-                    flat[CONF_NAME],
+                    flat.get(CONF_NAME),
                     {**flat},
                 )
             defaults = flat
@@ -125,7 +125,7 @@ class NewInstanceSteps:
             errors = _validate_door(user_input)
             if not errors:
                 return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                         CONF_RULES: [],
                         **user_input,
@@ -148,7 +148,7 @@ class NewInstanceSteps:
             errors = _validate_bell(user_input)
             if not errors:
                 return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                         CONF_PROFILES: [],
                         **user_input,
@@ -168,7 +168,7 @@ class NewInstanceSteps:
             unique_id = f"{FUNCTION_POOL}:{user_input[CONF_PUMP_ENTITY]}"
             self._abort_if_pump_configured(unique_id)
             return await self._finish_new(
-                user_input[CONF_NAME],
+                user_input.get(CONF_NAME),
                 {CONF_PUMP_ENTITY: user_input[CONF_PUMP_ENTITY]},
                 unique_id,
             )
@@ -176,7 +176,7 @@ class NewInstanceSteps:
             step_id="new_pool_pump",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_NAME, default=function_title(self.hass, FUNCTION_POOL)): str,
+                    vol.Optional(CONF_NAME): str,
                     vol.Required(CONF_PUMP_ENTITY): _PUMP_SELECTOR,
                 }
             ),
@@ -189,7 +189,7 @@ class NewInstanceSteps:
             return self.async_abort(reason="knx_missing")
         if user_input is not None:
             return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                     CONF_PLAYER: user_input[CONF_PLAYER],
                     CONF_MAX_VOLUME: DEFAULT_MAX_VOLUME,
@@ -203,7 +203,7 @@ class NewInstanceSteps:
             step_id="new_knx_sonos",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_NAME, default=function_title(self.hass, FUNCTION_KNX_SONOS)): str,
+                    vol.Optional(CONF_NAME): str,
                     vol.Required(CONF_PLAYER): _SONOS_SELECTOR,
                 }
             ),
@@ -214,7 +214,7 @@ class NewInstanceSteps:
     ) -> ConfigFlowResult:
         if user_input is not None:
             return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                     CONF_SCHEDULES: [],
                     **user_input,
@@ -235,7 +235,7 @@ class NewInstanceSteps:
             errors = _validate_alarm_settings(user_input)
             if not errors:
                 return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                         CONF_ALARMS: [],
                         **user_input,
@@ -258,7 +258,7 @@ class NewInstanceSteps:
             errors = _validate_monitor(flat)
             if not errors:
                 return await self._finish_new(
-                    flat[CONF_NAME],
+                    flat.get(CONF_NAME),
                     {
                         CONF_MONITOR_RULES: [],
                         **monitor_data(flat),
@@ -281,7 +281,7 @@ class NewInstanceSteps:
             errors = _validate_planner(user_input)
             if not errors:
                 return await self._finish_new(
-                    user_input[CONF_NAME],
+                    user_input.get(CONF_NAME),
                     {
                         CONF_TASKS: [],
                         **user_input,
@@ -376,7 +376,9 @@ class HousekeeperSubentryFlow(
         self, title: str, data: dict[str, Any], unique_id: str | None = None
     ) -> SubentryFlowResult:
         return self.async_create_entry(
-            title=instance_title(self.hass, self.function_type, title),
+            title=instance_title(
+                self.hass, self.function_type, clean_instance_name(self.function_type, title)
+            ),
             data=data,
             unique_id=unique_id,
         )
@@ -394,7 +396,11 @@ class HousekeeperSubentryFlow(
             self.hass.config_entries.async_update_subentry(
                 self._get_entry(),
                 subentry,
-                title=instance_title(self.hass, self.function_type, user_input[CONF_NAME].strip()),
+                title=instance_title(
+                    self.hass,
+                    self.function_type,
+                    clean_instance_name(self.function_type, user_input[CONF_NAME]),
+                ),
             )
             return await getattr(self, f"async_step_{_MENU_STEPS[self.function_type]}")()
         return self.async_show_form(

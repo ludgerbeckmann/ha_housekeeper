@@ -32,7 +32,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`hub_controllers(hass, hub, Platform.X)`). Änderungen an einem Untereintrag laden den **Hub** neu (`_async_reload`,
   verschoben, solange **irgendein** Controller des Hubs `busy` ist; das Flag `reload_requested` steht dann an allen
   Controllern). **Titel** der Untereinträge: „Funktion: Name“ (`instance_title()`, `instance_name()` in `const.py`; ist
-  der Name gleich dem Funktionsnamen, entfällt der Präfix); `_normalize_titles()` korrigiert beim Laden. Ältere Einträge
+  der Name gleich dem Funktionsnamen, entfällt der Präfix); `_normalize_titles()` korrigiert beim Laden. Das Namensfeld beim Anlegen ist **leer und optional** (leer = Funktionsname); `clean_instance_name()` entfernt einen vorangestellten Funktionsnamen (nur mit Trenner danach) beim Anlegen und Umbenennen, `_normalize_titles()` bereinigt bestehende Titel bewusst nicht. Ältere Einträge
   (ohne `hub`-Marker oder mit `function_type`) laden nicht, es gibt den Reparaturhinweis `legacy_entry`. `unload` stoppt
   alle Controller mit `entry.hub_entry_id`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,

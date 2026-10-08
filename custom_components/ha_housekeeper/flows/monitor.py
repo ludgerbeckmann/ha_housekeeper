@@ -27,7 +27,6 @@ from ..const import (
     DEFAULT_GRACE_MINUTES,
     DEFAULT_MIN_ENTITIES,
     DOMAIN,
-    FUNCTION_MONITOR,
     M_ACTION,
     M_ENABLED,
     M_ENTRIES,
@@ -41,7 +40,6 @@ from ..const import (
     MON_ACTION_DISABLE,
     MON_ACTION_NONE,
     MON_ACTIONS,
-    function_title,
 )
 from .common import (
     SECTION_GENERAL,
@@ -86,10 +84,7 @@ def _monitor_schema(
     general: dict[Any, Any] = {}
     if with_name:
         general[
-            vol.Required(
-                CONF_NAME,
-                default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_MONITOR)),
-            )
+            vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))
         ] = str
     general.update(
         {

@@ -47,8 +47,28 @@ def hub_title(hass) -> str:
 def instance_title(hass, function_type: str, name: str) -> str:
     """Titel eines Untereintrags (Zeile mit dem Zahnrad): „Funktion: Name“."""
     function = function_title(hass, function_type)
-    # die Vorgabe (Name = Funktionsname) bekommt keinen doppelten Präfix
-    return name if name == function else f"{function}: {name}"
+    # ohne Namen (oder mit dem Funktionsnamen) gibt es keinen doppelten Präfix
+    return function if not name or name == function else f"{function}: {name}"
+
+
+_NAME_SEPARATORS = " :-–—_"
+
+
+def clean_instance_name(function_type: str, name: str | None) -> str:
+    """Namen der Instanz ohne den Funktionsnamen am Anfang (vermeidet „Funktion: Funktion Name“).
+
+    „Türwächter Garagentür“ wird zu „Garagentür“; „Türwächterei“ bleibt unverändert (nach dem
+    Funktionsnamen muss ein Trenner folgen). Bleibt nichts übrig, ist das Ergebnis leer."""
+    name = (name or "").strip()
+    while True:
+        for prefix in FUNCTION_TITLES[function_type]:
+            if name.casefold().startswith(prefix.casefold()):
+                rest = name[len(prefix) :]
+                if not rest or rest[0] in _NAME_SEPARATORS:
+                    name = rest.strip(_NAME_SEPARATORS)
+                    break
+        else:
+            return name
 
 
 def instance_name(title: str) -> str:

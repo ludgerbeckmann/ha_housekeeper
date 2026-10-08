@@ -16,8 +16,6 @@ from ..const import (
     CONF_MOBILE_ENABLED,
     CONF_MOBILE_TARGETS,
     CONF_NAME,
-    FUNCTION_TASK_PLANNER,
-    function_title,
     WEEKDAYS,
 )
 from ..const import (
@@ -72,7 +70,7 @@ def _planner_schema(
     fields: dict[Any, Any] = {}
     if with_name:
         fields[
-            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_TASK_PLANNER)))
+            vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))
         ] = str
     return _sections_schema(
         fields,
