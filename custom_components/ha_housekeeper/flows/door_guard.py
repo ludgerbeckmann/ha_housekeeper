@@ -20,8 +20,6 @@ from ..const import (
     CONF_MANUAL_OVERRIDE,
     CONF_MANUAL_PAUSE_MINUTES,
     CONF_NAME,
-    FUNCTION_DOOR_GUARD,
-    function_title,
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
     CONF_RETRY_MINUTES,
@@ -70,7 +68,7 @@ def _door_schema(
 ) -> vol.Schema:
     fields: dict[Any, Any] = {}
     if with_name:
-        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_DOOR_GUARD)))] = str
+        fields[vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))] = str
     fields[
         vol.Required(CONF_LOCK, description=_suggest(CONF_LOCK, defaults))
     ] = selector.EntitySelector(selector.EntitySelectorConfig(domain="lock"))

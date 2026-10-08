@@ -1,5 +1,7 @@
 """Ein Hub je Funktion, Instanzen als Untereinträge mit eigenem Gerät."""
 
+import pytest
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentryData
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -9,7 +11,7 @@ from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
 from .helpers import add_instance, is_menu, make_entry
-from custom_components.ha_housekeeper.const import DOMAIN
+from custom_components.ha_housekeeper.const import DOMAIN, clean_instance_name
 
 BELL = {"function_type": "doorbell", "name": "Haustür", "trigger_entity": "binary_sensor.bell",
         "debounce_seconds": 0, "profiles": []}
@@ -165,6 +167,20 @@ async def test_rename_keeps_the_function_prefix(hass: HomeAssistant) -> None:
     assert "Terrasse" in {d.name for d in devices}           # Gerät: nur der Name
 
 
+async def test_rename_removes_a_duplicated_function_name(hass: HomeAssistant) -> None:
+    hass.states.async_set("binary_sensor.front", "off")
+    hass.states.async_set("binary_sensor.garden", "off")
+    hub = _hub_with_two_bells()
+    await _setup(hass, hub)
+    garden_id = next(s.subentry_id for s in hub.subentries.values() if "Garten" in s.title)
+    flow = hass.config_entries.subentries
+    result = await flow.async_init(
+        (hub.entry_id, "doorbell"), context={"source": "reconfigure", "subentry_id": garden_id})
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "rename"})
+    await flow.async_configure(result["flow_id"], {"name": "Doorbell: Doorbell Terrasse"})
+    assert hub.subentries[garden_id].title == "Doorbell: Terrasse"
+
+
 async def test_native_rename_is_corrected_on_reload(hass: HomeAssistant) -> None:
     hass.states.async_set("binary_sensor.front", "off")
     hass.states.async_set("binary_sensor.garden", "off")
@@ -226,7 +242,7 @@ async def test_all_functions_are_subentry_types(hass: HomeAssistant) -> None:
         "updater", "task_planner", "alarm_clock", "integration_monitor"}
 
 
-async def test_default_name_is_the_function_name(hass: HomeAssistant) -> None:
+async def _new_updater(hass, data):
     hub = _hub()
     hub.add_to_hass(hass)
     assert await hass.config_entries.async_setup(hub.entry_id)
@@ -234,11 +250,42 @@ async def test_default_name_is_the_function_name(hass: HomeAssistant) -> None:
     result = await hass.config_entries.subentries.async_init(
         (hub.entry_id, "updater"), context={"source": "user"})
     assert result["step_id"] == "new_updater"
-    name = next(k for k in result["data_schema"].schema if str(k) == "name")
-    assert name.default() == "Home Assistant Updater"
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"name": "Home Assistant Updater", "timeout_minutes": 30})
-    assert result["title"] == "Home Assistant Updater"        # keine doppelte Vorsilbe
+    return result, await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"timeout_minutes": 30, **data})
+
+
+async def test_name_is_empty_and_optional(hass: HomeAssistant) -> None:
+    form, result = await _new_updater(hass, {})
+    name = next(k for k in form["data_schema"].schema if str(k) == "name")
+    assert name.default is vol.UNDEFINED and not name.description    # keine Vorgabe
+    assert result["title"] == "Home Assistant Updater"               # leer = Funktionsname
+
+
+async def test_name_gets_the_function_prefix(hass: HomeAssistant) -> None:
+    _, result = await _new_updater(hass, {"name": "Keller"})
+    assert result["title"] == "Home Assistant Updater: Keller"
+
+
+@pytest.mark.parametrize("typed,expected", [
+    ("Home Assistant Updater Keller", "Home Assistant Updater: Keller"),
+    ("home assistant updater - Keller", "Home Assistant Updater: Keller"),
+    ("Home Assistant Updater", "Home Assistant Updater"),
+    ("Home Assistant Updaterei", "Home Assistant Updater: Home Assistant Updaterei"),
+])
+async def test_duplicated_function_name_is_removed(hass: HomeAssistant, typed, expected) -> None:
+    _, result = await _new_updater(hass, {"name": typed})
+    assert result["title"] == expected
+
+
+def test_clean_instance_name() -> None:
+    assert clean_instance_name("door_guard", "Türwächter Garagentür") == "Garagentür"
+    assert clean_instance_name("door_guard", "Türwächter: Haustür") == "Haustür"
+    assert clean_instance_name("door_guard", "Door guard Haustür") == "Haustür"
+    assert clean_instance_name("door_guard", "Türwächterei") == "Türwächterei"
+    assert clean_instance_name("door_guard", "Türwächter") == ""
+    assert clean_instance_name("door_guard", "  Garage ") == "Garage"
+    assert clean_instance_name("door_guard", None) == ""
+    assert clean_instance_name("knx_sonos", "KNX/Sonos-Connector Büro") == "Büro"
 
 
 async def test_busy_sibling_defers_the_reload_of_the_whole_hub(hass: HomeAssistant) -> None:

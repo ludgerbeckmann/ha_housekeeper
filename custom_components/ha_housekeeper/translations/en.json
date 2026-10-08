@@ -324,7 +324,7 @@
               "name": "General",
               "description": "Sensor, lockout time and automatic reset.",
               "data": {
-                "name": "Name",
+                "name": "Name (shown as “Mailbox notification: Name”)",
                 "vibration_sensor": "Vibration sensor",
                 "debounce_seconds": "Debounce time",
                 "auto_reset_hours": "Reset automatically after (0 = off)",
@@ -333,7 +333,8 @@
               "data_description": {
                 "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
                 "debounce_seconds": "Further vibrations within this time are ignored.",
-                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
+                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first).",
+                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
             "notifications": {
@@ -418,7 +419,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Mailbox notification: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Mailbox notification: Office”. A leading function name is removed."
           }
         }
       },
@@ -470,7 +474,7 @@
               "name": "General",
               "description": "Lock, door contact and behaviour of the door guard.",
               "data": {
-                "name": "Name",
+                "name": "Name (shown as “Door guard: Name”)",
                 "lock": "Lock",
                 "contact": "Door contact (optional)",
                 "block_action": "If the door is open when locking",
@@ -486,7 +490,8 @@
                 "block_action": "Only notify, or lock automatically once the door is closed.",
                 "retry_minutes": "Only applies to \"Lock after closing\".",
                 "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-                "manual_pause_minutes": "Only applies to \"Pause automation\"."
+                "manual_pause_minutes": "Only applies to \"Pause automation\".",
+                "name": "Optional. Empty = “Door guard”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
             "notifications": {
@@ -610,7 +615,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Door guard: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Door guard: Office”. A leading function name is removed."
           }
         }
       },
@@ -662,13 +670,14 @@
               "name": "General",
               "description": "Trigger and debounce time.",
               "data": {
-                "name": "Name",
+                "name": "Name (shown as “Doorbell: Name”)",
                 "trigger_entity": "Trigger (sensor or event)",
                 "debounce_seconds": "Lockout time"
               },
               "data_description": {
                 "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-                "debounce_seconds": "Further rings within this time are ignored."
+                "debounce_seconds": "Further rings within this time are ignored.",
+                "name": "Optional. Empty = “Doorbell”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             }
           }
@@ -768,7 +777,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Doorbell: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Doorbell: Office”. A leading function name is removed."
           }
         }
       },
@@ -817,8 +829,11 @@
           "title": "Add pool",
           "description": "Set up a pool and select the switch that controls the pump.",
           "data": {
-            "name": "Name",
+            "name": "Name (shown as “Pool control: Name”)",
             "pump_entity": "Pump (switch)"
+          },
+          "data_description": {
+            "name": "Optional. Empty = “Pool control”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
           }
         },
         "pool_menu": {
@@ -915,7 +930,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Pool control: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Pool control: Office”. A leading function name is removed."
           }
         }
       },
@@ -963,10 +981,13 @@
         "new_knx_sonos": {
           "title": "KNX/Sonos-Connector",
           "data": {
-            "name": "Name",
+            "name": "Name (shown as “KNX/Sonos connector: Name”)",
             "player": "Sonos speaker"
           },
-          "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure."
+          "description": "Builds on the KNX integration of Home Assistant. The speaker becomes the first profile; further speakers, commands and status feedback follow afterwards under Configure.",
+          "data_description": {
+            "name": "Optional. Empty = “KNX/Sonos connector”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+          }
         },
         "knx_menu": {
           "title": "KNX/Sonos-Connector",
@@ -1081,7 +1102,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “KNX/Sonos connector: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “KNX/Sonos connector: Office”. A leading function name is removed."
           }
         }
       },
@@ -1129,11 +1153,12 @@
         "new_updater": {
           "title": "Home Assistant Updater",
           "data": {
-            "name": "Name",
+            "name": "Name (shown as “Home Assistant Updater: Name”)",
             "timeout_minutes": "Time limit per update (minutes)"
           },
           "data_description": {
-            "timeout_minutes": "After this time an update counts as failed and the run continues."
+            "timeout_minutes": "After this time an update counts as failed and the run continues.",
+            "name": "Optional. Empty = “Home Assistant Updater”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
           },
           "description": "This instance holds several schedules; you add them afterwards via the gear icon (Reconfigure). Notifications are set per schedule."
         },
@@ -1229,7 +1254,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Home Assistant Updater: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Home Assistant Updater: Office”. A leading function name is removed."
           }
         }
       },
@@ -1283,7 +1311,10 @@
               "name": "General",
               "description": "Name of the task planner.",
               "data": {
-                "name": "Name"
+                "name": "Name (shown as “Task planner: Name”)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Task planner”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
             "notifications": {
@@ -1443,7 +1474,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Task planner: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Task planner: Office”. A leading function name is removed."
           }
         }
       },
@@ -1496,7 +1530,10 @@
               "name": "General",
               "description": "Name of the instance.",
               "data": {
-                "name": "Name"
+                "name": "Name (shown as “Alarm clock: Name”)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Alarm clock”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
             "notifications": {
@@ -1587,7 +1624,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Alarm clock: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Alarm clock: Office”. A leading function name is removed."
           }
         }
       },
@@ -1640,7 +1680,7 @@
               "name": "Monitoring",
               "description": "When an integration counts as faulty and what is reported.",
               "data": {
-                "name": "Name",
+                "name": "Name (shown as “Integration monitor: Name”)",
                 "grace_minutes": "Wait time before a fault (minutes)",
                 "min_entities": "Minimum number of entities",
                 "check_minutes": "Check interval (minutes)",
@@ -1652,7 +1692,8 @@
                 "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
                 "check_minutes": "In addition to the check at startup (after two minutes).",
                 "notify_all": "Reports a fault of any integration (error state or all entities unavailable) via the ways selected below. Actions exist only through rules.",
-                "excluded": "These integrations are not reported generally. Rules apply regardless."
+                "excluded": "These integrations are not reported generally. Rules apply regardless.",
+                "name": "Optional. Empty = “Integration monitor”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
             "notifications": {
@@ -1780,7 +1821,10 @@
           "title": "Rename",
           "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
           "data": {
-            "name": "Name"
+            "name": "Name (shown as “Integration monitor: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Integration monitor: Office”. A leading function name is removed."
           }
         }
       },

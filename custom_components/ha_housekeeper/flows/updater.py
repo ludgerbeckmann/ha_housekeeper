@@ -16,8 +16,6 @@ from ..const import (
     CONF_MOBILE_ENABLED,
     CONF_MOBILE_TARGETS,
     CONF_NAME,
-    FUNCTION_UPDATER,
-    function_title,
     CONF_SCHEDULES,
     CONF_TIMEOUT_MINUTES,
     DEFAULT_TIMEOUT_MINUTES,
@@ -59,7 +57,7 @@ def _updater_schema(
     """Eintrag: Name (nur beim Anlegen) und Zeitlimit; Benachrichtigungen je Zeitplan."""
     fields: dict[Any, Any] = {}
     if with_name:
-        fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, function_title(hass, FUNCTION_UPDATER)))] = str
+        fields[vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))] = str
     fields[
         vol.Required(
             CONF_TIMEOUT_MINUTES,

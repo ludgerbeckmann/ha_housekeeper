@@ -324,7 +324,7 @@
               "name": "Allgemein",
               "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
               "data": {
-                "name": "Name",
+                "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)",
                 "vibration_sensor": "Vibrationssensor",
                 "debounce_seconds": "Entprellzeit",
                 "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
@@ -333,7 +333,8 @@
               "data_description": {
                 "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
                 "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
+                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken).",
+                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
             "notifications": {
@@ -418,7 +419,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Benachrichtigung Briefkasten: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -470,7 +474,7 @@
               "name": "Allgemein",
               "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
               "data": {
-                "name": "Name",
+                "name": "Name (erscheint als „Türwächter: Name“)",
                 "lock": "Schloss",
                 "contact": "Türkontakt (optional)",
                 "block_action": "Wenn beim Abschließen die Tür offen ist",
@@ -486,7 +490,8 @@
                 "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
                 "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
                 "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
+                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
             "notifications": {
@@ -610,7 +615,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Türwächter: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Türwächter: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -662,13 +670,14 @@
               "name": "Allgemein",
               "description": "Auslöser und Entprellzeit.",
               "data": {
-                "name": "Name",
+                "name": "Name (erscheint als „Türklingel: Name“)",
                 "trigger_entity": "Auslöser (Sensor oder Ereignis)",
                 "debounce_seconds": "Sperrzeit"
               },
               "data_description": {
                 "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
-                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
+                "name": "Optional. Leer = „Türklingel“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             }
           }
@@ -768,7 +777,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Türklingel: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Türklingel: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -817,8 +829,11 @@
           "title": "Pool hinzufügen",
           "description": "Einen Pool anlegen und den Schalter der Pumpe wählen.",
           "data": {
-            "name": "Name",
+            "name": "Name (erscheint als „Poolsteuerung: Name“)",
             "pump_entity": "Pumpe (Schalter)"
+          },
+          "data_description": {
+            "name": "Optional. Leer = „Poolsteuerung“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
           }
         },
         "pool_menu": {
@@ -915,7 +930,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Poolsteuerung: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Poolsteuerung: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -963,10 +981,13 @@
         "new_knx_sonos": {
           "title": "KNX/Sonos-Connector",
           "data": {
-            "name": "Name",
+            "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)",
             "player": "Sonos-Lautsprecher"
           },
-          "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren."
+          "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren.",
+          "data_description": {
+            "name": "Optional. Leer = „KNX/Sonos-Connector“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+          }
         },
         "knx_menu": {
           "title": "KNX/Sonos-Connector",
@@ -1081,7 +1102,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „KNX/Sonos-Connector: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -1129,11 +1153,12 @@
         "new_updater": {
           "title": "Home Assistant Updater",
           "data": {
-            "name": "Name",
+            "name": "Name (erscheint als „Home Assistant Updater: Name“)",
             "timeout_minutes": "Zeitlimit pro Update (Minuten)"
           },
           "data_description": {
-            "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
+            "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter.",
+            "name": "Optional. Leer = „Home Assistant Updater“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
           },
           "description": "Diese Instanz enthält mehrere Zeitpläne; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen stellst du je Zeitplan ein."
         },
@@ -1229,7 +1254,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Home Assistant Updater: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Home Assistant Updater: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -1283,7 +1311,10 @@
               "name": "Allgemein",
               "description": "Name des Aufgabenplaners.",
               "data": {
-                "name": "Name"
+                "name": "Name (erscheint als „Aufgabenplaner: Name“)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Aufgabenplaner“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
             "notifications": {
@@ -1443,7 +1474,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Aufgabenplaner: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Aufgabenplaner: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -1496,7 +1530,10 @@
               "name": "Allgemein",
               "description": "Name der Instanz.",
               "data": {
-                "name": "Name"
+                "name": "Name (erscheint als „Wecker: Name“)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Wecker“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
             "notifications": {
@@ -1587,7 +1624,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Wecker: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Wecker: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -1640,7 +1680,7 @@
               "name": "Überwachung",
               "description": "Wann eine Integration als gestört gilt und was gemeldet wird.",
               "data": {
-                "name": "Name",
+                "name": "Name (erscheint als „Integrationsmonitor: Name“)",
                 "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
                 "min_entities": "Mindestanzahl Entitäten",
                 "check_minutes": "Prüfintervall (Minuten)",
@@ -1652,7 +1692,8 @@
                 "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
                 "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
                 "notify_all": "Meldet eine Störung jeder Integration (Fehlerstatus oder alle Entitäten nicht verfügbar) über die unten gewählten Wege. Aktionen gibt es nur über Regeln.",
-                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon."
+                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon.",
+                "name": "Optional. Leer = „Integrationsmonitor“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
             "notifications": {
@@ -1780,7 +1821,10 @@
           "title": "Umbenennen",
           "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
           "data": {
-            "name": "Name"
+            "name": "Name (erscheint als „Integrationsmonitor: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Integrationsmonitor: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
