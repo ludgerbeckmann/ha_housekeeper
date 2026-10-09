@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/ludgerbeckmann/ha_housekeeper/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.27.2"
+  "version": "0.27.3"
 }

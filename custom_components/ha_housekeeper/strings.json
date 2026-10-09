@@ -974,9 +974,9 @@
     },
     "knx_sonos": {
       "initiate_flow": {
-        "user": "Add KNX/Sonos connection"
+        "user": "Add KNX/Sonos connector"
       },
-      "entry_type": "KNX/Sonos connection",
+      "entry_type": "KNX/Sonos connector",
       "step": {
         "new_knx_sonos": {
           "title": "KNX/Sonos-Connector",
@@ -1518,7 +1518,7 @@
     },
     "alarm_clock": {
       "initiate_flow": {
-        "user": "Add alarm entry"
+        "user": "Add alarm clock"
       },
       "entry_type": "Alarm clock",
       "step": {

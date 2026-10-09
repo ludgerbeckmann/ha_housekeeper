@@ -5,7 +5,7 @@
 
 Eine Custom Integration, die verschiedene Smart-Home-Anwendungsfälle
 bündelt. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine Klingel, ein Pool, ein
-Wecker-Eintrag …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
+Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 
 ## Funktionen
 
@@ -55,8 +55,8 @@ kopieren und neu starten.
 Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*.
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
-„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Anbindung hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker-Eintrag hinzufügen“, „Integrationsmonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
