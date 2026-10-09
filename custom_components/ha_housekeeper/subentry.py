@@ -1,7 +1,7 @@
 """Untereinträge: Adapter für die Controller und Hilfen für den Hub.
 
 Ein **Hub** (Config-Entry) gehört zu genau einem Funktionstyp (z. B. „Türklingel“). Jede Instanz
-(eine Klingel, ein Pool, ein Wecker-Eintrag …) ist ein **Untereintrag** mit eigenem Gerät. Die
+(eine Klingel, ein Pool, ein Wecker …) ist ein **Untereintrag** mit eigenem Gerät. Die
 Controller, die Entitäten, der Store und die Reparaturhinweise arbeiten weiter mit einem
 „Eintrag“ (`entry_id`, `title`, `data`, `options`): Dafür gibt es `SubentryEntry`, der einen
 Untereintrag wie einen Config-Entry aussehen lässt. Seine `entry_id` ist die ID des Untereintrags.
