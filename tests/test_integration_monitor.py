@@ -17,7 +17,8 @@ from custom_components.ha_housekeeper.const import DOMAIN
 
 BASE = {
     "function_type": "integration_monitor", "name": "Monitor",
-    "grace_minutes": 5, "min_entities": 2, "check_minutes": 1, "notify_all": True,
+    "grace_minutes": 5, "min_entities": 2, "check_minutes": 1, "notify_errors": True,
+    "notify_unavailable": True, "summary_minutes": 0,
     "excluded": [], "mobile_enabled": True, "mobile_targets": ["mobile_app_phone"],
     "tts_enabled": False, "persistent_enabled": False, "monitor_rules": [],
 }
@@ -115,8 +116,9 @@ async def test_waits_for_grace_time_then_reports_once(hass: HomeAssistant) -> No
     assert len(messages(push)) == 1                       # nur einmal je Störung
     broken.mock_state(hass, ConfigEntryState.LOADED)
     await ctrl.async_check()
-    assert ctrl.faults == {} and len(messages(push)) == 2   # Entwarnung
-    assert "working again" in messages(push)[1] or "läuft wieder" in messages(push)[1]
+    # Entwarnung: die Sammelmeldung verschwindet (Löschaufruf), es kommt keine neue Meldung
+    assert ctrl.faults == {} and ctrl.summary["sent"] == []
+    assert len(messages(push)) == 1 and push[-1].data["message"] == "clear_notification"
 
 
 async def test_unavailable_entities_are_a_fault(hass: HomeAssistant) -> None:
@@ -128,7 +130,7 @@ async def test_unavailable_entities_are_a_fault(hass: HomeAssistant) -> None:
     assert len(push) == 1
 
 
-async def test_excluded_and_notify_all_off_are_silent(hass: HomeAssistant) -> None:
+async def test_excluded_and_switches_off_are_silent(hass: HomeAssistant) -> None:
     broken = foreign(hass, state=ConfigEntryState.SETUP_ERROR)
     _, ctrl, push = await _setup(hass, excluded=[broken.entry_id])
     await check(ctrl)
@@ -159,7 +161,7 @@ async def test_rule_reloads_the_integration(hass: HomeAssistant, monkeypatch) ->
     reload = AsyncMock()
     monkeypatch.setattr(hass.config_entries, "async_reload", reload)
     _, ctrl, push = await _setup(
-        hass, notify_all=False, monitor_rules=[rule([broken.entry_id], action="reload")])
+        hass, notify_errors=False, notify_unavailable=False, monitor_rules=[rule([broken.entry_id], action="reload")])
     await check(ctrl)
     reload.assert_awaited_once_with(broken.entry_id)
     assert len(push) == 1                                 # die Regel meldet selbst
@@ -173,10 +175,10 @@ async def test_rule_only_applies_to_selected_integrations(hass: HomeAssistant, m
     reload = AsyncMock()
     monkeypatch.setattr(hass.config_entries, "async_reload", reload)
     _, ctrl, push = await _setup(
-        hass, notify_all=False, monitor_rules=[rule([chosen.entry_id], action="reload")])
+        hass, notify_errors=False, notify_unavailable=False, monitor_rules=[rule([chosen.entry_id], action="reload")])
     await check(ctrl)
     reload.assert_awaited_once_with(chosen.entry_id)
-    assert other.entry_id in ctrl.faults and ctrl.faults[other.entry_id]["notified"] is False
+    assert other.entry_id in ctrl.faults and ctrl.faults[other.entry_id]["reported"] is False
 
 
 async def test_rule_condition_must_match(hass: HomeAssistant, monkeypatch) -> None:
@@ -229,7 +231,8 @@ async def test_rule_disables_and_presence_reenables(hass: HomeAssistant) -> None
     await hass.async_block_till_done()
     assert printer.disabled_by is None
     assert ctrl.disabled == {} and ctrl.faults == {}
-    assert any("aktiviert" in m or "enabled" in m for m in messages(push))
+    assert ctrl.summary["sent"] == []                          # wieder in Ordnung: Meldung entfernt
+    assert any("deaktiviert" in m or "disabled" in m for m in messages(push))
 
 
 async def test_without_reenable_stays_disabled(hass: HomeAssistant) -> None:
@@ -314,12 +317,14 @@ async def test_create_instance_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         sectioned({"name": "Integration monitor", "grace_minutes": 5, "min_entities": 2,
-                   "check_minutes": 1, "notify_all": True, "excluded": [],
+                   "check_minutes": 1, "notify_errors": True, "notify_unavailable": False,
+                   "summary_minutes": 10, "excluded": [],
                    "mobile_enabled": False, "persistent_enabled": True,
                    "tts_enabled": False}))
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Integration monitor"
-    assert result["data"]["monitor_rules"] == [] and result["data"]["notify_all"] is True
+    assert result["data"]["monitor_rules"] == [] and result["data"]["notify_errors"] is True
+    assert result["data"]["notify_unavailable"] is False and result["data"]["notify_all"] is None
 
 
 async def test_create_needs_a_method_when_reporting_all(hass: HomeAssistant) -> None:
@@ -327,7 +332,8 @@ async def test_create_needs_a_method_when_reporting_all(hass: HomeAssistant) -> 
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         sectioned({"name": "M", "grace_minutes": 5, "min_entities": 2, "check_minutes": 1,
-                   "notify_all": True, "excluded": [], "mobile_enabled": False,
+                   "notify_errors": True, "notify_unavailable": False, "summary_minutes": 10,
+                   "excluded": [], "mobile_enabled": False,
                    "persistent_enabled": False, "tts_enabled": False}))
     assert result["type"] is FlowResultType.FORM and result["errors"] == {"base": "no_method"}
 
@@ -385,7 +391,8 @@ async def test_rule_validation(hass: HomeAssistant, over, error) -> None:
 async def test_rule_notify_needs_a_method(hass: HomeAssistant) -> None:
     printer = foreign(hass)
     entry, _, _ = await _setup(
-        hass, notify_all=False, mobile_enabled=False, persistent_enabled=False)
+        hass, notify_errors=False, notify_unavailable=False, mobile_enabled=False,
+        persistent_enabled=False)
     result = await _rule_form(hass, entry)
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], rule_input([printer.entry_id]))
@@ -414,7 +421,103 @@ async def test_general_settings_clear_optional_fields(hass: HomeAssistant) -> No
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         sectioned({"grace_minutes": 10, "min_entities": 1, "check_minutes": 2,
-                   "notify_all": True, "excluded": [], "mobile_enabled": False,
+                   "notify_errors": True, "notify_unavailable": False, "summary_minutes": 10,
+                   "excluded": [], "mobile_enabled": False,
                    "persistent_enabled": True, "tts_enabled": False}))
     assert is_menu(result)
     assert entry.options["grace_minutes"] == 10 and entry.options["mobile_targets"] is None
+
+
+# --- Sammelmeldung ------------------------------------------------------------------------------------
+
+
+async def test_one_summary_lists_all_faults_with_integration_names(hass: HomeAssistant) -> None:
+    sun = foreign(hass, "Standort Haus", ConfigEntryState.LOADED, "sun")
+    add_entities(hass, sun, ["unavailable"] * 3)
+    foreign(hass, "Drucker", ConfigEntryState.SETUP_ERROR, "printer_x")
+    _, ctrl, push = await _setup(hass)
+    await check(ctrl)
+    (message,) = messages(push)                               # eine Meldung für beide Störungen
+    assert message.splitlines()[0] in ("Gestörte Integrationen (2):", "Faulty integrations (2):")
+    assert "Sun: Standort Haus" in message                    # Integrationsname + Eintrag
+    assert "3" in message and ("Entitäten" in message or "entities" in message)
+    assert "Drucker" in message and "setup_error" in message
+    assert "seit" in message or "since" in message
+
+
+async def test_summary_updates_when_the_list_changes(hass: HomeAssistant) -> None:
+    first = foreign(hass, "Erste", ConfigEntryState.SETUP_ERROR, "a_x")
+    _, ctrl, push = await _setup(hass)
+    await check(ctrl)
+    foreign(hass, "Zweite", ConfigEntryState.SETUP_ERROR, "b_x")
+    await check(ctrl)
+    assert len(messages(push)) == 2 and "Zweite" in messages(push)[1] and "Erste" in messages(push)[1]
+    first.mock_state(hass, ConfigEntryState.LOADED)
+    await ctrl.async_check()
+    assert len(messages(push)) == 3 and "Erste" not in messages(push)[2]
+
+
+async def test_summary_is_bundled_by_the_delay(hass: HomeAssistant) -> None:
+    foreign(hass, state=ConfigEntryState.SETUP_ERROR)
+    _, ctrl, push = await _setup(hass, summary_minutes=10)
+    await check(ctrl)
+    assert messages(push) == [] and ctrl.summary["pending"]       # wartet auf die Bündelungszeit
+    ctrl.summary["pending"] = (dt_util.utcnow() - timedelta(minutes=11)).isoformat()
+    await ctrl.async_check()
+    assert len(messages(push)) == 1 and ctrl.summary["pending"] is None
+
+
+async def test_unavailable_is_not_reported_by_default_but_by_a_rule(hass: HomeAssistant) -> None:
+    lamp = foreign(hass, "Lampe", ConfigEntryState.LOADED, "hue_x")
+    add_entities(hass, lamp, ["unavailable", "unavailable"])
+    hub = foreign(hass, "Zigbee2MQTT", ConfigEntryState.LOADED, "mqtt_x")
+    add_entities(hass, hub, ["unavailable", "unavailable"])
+    foreign(hass, "Kaputt", ConfigEntryState.SETUP_ERROR, "broken_x")
+    _, ctrl, push = await _setup(
+        hass, notify_unavailable=False, monitor_rules=[rule([hub.entry_id], action="none")])
+    await check(ctrl)
+    (message,) = messages(push)
+    assert "Zigbee2MQTT" in message and "Kaputt" in message and "Lampe" not in message
+    assert ctrl.faults[lamp.entry_id]["reported"] is False
+
+
+async def test_older_single_switch_still_applies(hass: HomeAssistant) -> None:
+    foreign(hass, state=ConfigEntryState.SETUP_ERROR)
+    _, ctrl, push = await _setup(hass, notify_errors=None, notify_unavailable=None, notify_all=False)
+    await check(ctrl)
+    assert messages(push) == []
+    _, ctrl2, push2 = await _setup(hass, notify_errors=None, notify_unavailable=None, notify_all=True)
+    await check(ctrl2)
+    assert len(messages(push2)) == 1
+
+
+async def test_tts_speaks_only_the_count(hass: HomeAssistant) -> None:
+    speak = async_mock_service(hass, "tts", "speak")
+    foreign(hass, "A", ConfigEntryState.SETUP_ERROR, "a_x")
+    foreign(hass, "B", ConfigEntryState.SETUP_ERROR, "b_x")
+    _, ctrl, _ = await _setup(
+        hass, mobile_enabled=False, tts_enabled=True, tts_entity="tts.cloud",
+        tts_player="media_player.kitchen")
+    await check(ctrl)
+    (call,) = speak
+    assert call.data["message"] in ("2 Integrationen gestört.", "2 integrations faulty.")
+
+
+async def test_old_single_notifications_are_cleared_after_the_update(
+    hass: HomeAssistant, hass_storage
+) -> None:
+    from custom_components.ha_housekeeper.integration_monitor import STORE_VERSION
+    async_mock_service(hass, "notify", "mobile_app_phone")
+    dismiss = async_mock_service(hass, "persistent_notification", "dismiss")
+    entry = make_entry(domain=DOMAIN, title="Monitor", data={**BASE, "persistent_enabled": True})
+    hass_storage[f"{DOMAIN}.{entry.entry_id}"] = {
+        "version": STORE_VERSION, "key": f"{DOMAIN}.{entry.entry_id}",
+        "data": {"enabled": True, "disabled": {},
+                 "faults": {"abc": {"kind": "error", "acted": True, "notified": True}}}}
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.hub_id)
+    await hass.async_block_till_done()
+    ids = {c.data["notification_id"] for c in dismiss}
+    assert any(i.endswith("_abc") for i in ids) and any(i.endswith("_abc_ok") for i in ids)
+    ctrl = hass.data[DOMAIN][entry.entry_id]
+    assert ctrl.faults["abc"]["reported"] is True            # `notified` zu `reported` übernommen

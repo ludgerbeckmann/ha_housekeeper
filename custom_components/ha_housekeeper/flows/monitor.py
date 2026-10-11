@@ -21,11 +21,15 @@ from ..const import (
     CONF_MONITOR_RULES,
     CONF_NAME,
     CONF_NOTIFY_ALL,
+    CONF_NOTIFY_ERRORS,
+    CONF_NOTIFY_UNAVAILABLE,
+    CONF_SUMMARY_MINUTES,
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,
     DEFAULT_CHECK_MINUTES,
     DEFAULT_GRACE_MINUTES,
     DEFAULT_MIN_ENTITIES,
+    DEFAULT_SUMMARY_MINUTES,
     DOMAIN,
     M_ACTION,
     M_ENABLED,
@@ -101,8 +105,20 @@ def _monitor_schema(
                 default=defaults.get(CONF_CHECK_MINUTES, DEFAULT_CHECK_MINUTES),
             ): _number(1, 60, "min"),
             vol.Required(
-                CONF_NOTIFY_ALL, default=defaults.get(CONF_NOTIFY_ALL, True)
+                CONF_NOTIFY_ERRORS,
+                default=defaults.get(CONF_NOTIFY_ERRORS, defaults.get(CONF_NOTIFY_ALL, True)),
             ): bool,
+            vol.Required(
+                CONF_NOTIFY_UNAVAILABLE,
+                # neue Instanz: aus (Einzelgeräte sind oft aus); ältere Einstellung: wie bisher
+                default=defaults.get(
+                    CONF_NOTIFY_UNAVAILABLE, defaults.get(CONF_NOTIFY_ALL, not with_name)
+                ),
+            ): bool,
+            vol.Required(
+                CONF_SUMMARY_MINUTES,
+                default=defaults.get(CONF_SUMMARY_MINUTES, DEFAULT_SUMMARY_MINUTES),
+            ): _number(0, 240, "min"),
             vol.Optional(
                 CONF_EXCLUDED, default=defaults.get(CONF_EXCLUDED) or []
             ): _entry_selector(hass),
@@ -114,12 +130,15 @@ def _monitor_schema(
 
 
 def _validate_monitor(flat: dict[str, Any]) -> dict[str, str]:
-    return _validate_notify(flat, require_method=bool(flat.get(CONF_NOTIFY_ALL)))
+    reporting = flat.get(CONF_NOTIFY_ERRORS) or flat.get(CONF_NOTIFY_UNAVAILABLE)
+    return _validate_notify(flat, require_method=bool(reporting))
 
 
 def monitor_data(flat: dict[str, Any]) -> dict[str, Any]:
-    """Eingaben speichern; geleerte Benachrichtigungsfelder werden explizit auf None gesetzt."""
-    return {**{key: None for key in _NOTIFY_CLEARABLE}, **flat}
+    """Eingaben speichern; geleerte Benachrichtigungsfelder werden explizit auf None gesetzt.
+
+    Der ältere Schalter „Alle Störungen melden“ entfällt (die beiden neuen ersetzen ihn)."""
+    return {**{key: None for key in (*_NOTIFY_CLEARABLE, CONF_NOTIFY_ALL)}, **flat}
 
 
 def rule_summary(hass: HomeAssistant, rule: dict[str, Any]) -> str:

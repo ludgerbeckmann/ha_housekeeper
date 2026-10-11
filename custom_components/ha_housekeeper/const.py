@@ -483,11 +483,15 @@ CONF_GRACE_MINUTES = "grace_minutes"
 CONF_CHECK_MINUTES = "check_minutes"
 CONF_MIN_ENTITIES = "min_entities"
 CONF_EXCLUDED = "excluded"
-CONF_NOTIFY_ALL = "notify_all"
+CONF_NOTIFY_ALL = "notify_all"  # älter: ersetzt durch die beiden Schalter darunter
+CONF_NOTIFY_ERRORS = "notify_errors"
+CONF_NOTIFY_UNAVAILABLE = "notify_unavailable"
+CONF_SUMMARY_MINUTES = "summary_minutes"
 
 DEFAULT_GRACE_MINUTES = 5
 DEFAULT_CHECK_MINUTES = 1
 DEFAULT_MIN_ENTITIES = 2
+DEFAULT_SUMMARY_MINUTES = 10
 
 # Überwachungsregel (Aktion für ausgewählte Integrationen): Schlüssel und Werte
 M_ID = "id"

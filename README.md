@@ -650,9 +650,21 @@ Aussetzer lösen nichts aus. Geprüft wird beim Start (nach zwei Minuten) und da
 ### Einstellungen
 
 - **Wartezeit**, **Mindestanzahl Entitäten**, **Prüfintervall**
-- **Alle Störungen melden** (Standard an) und eine Liste **ausgenommener** Integrationen
-- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung); je Störung eine
-  Meldung, bei Rückkehr eine Entwarnung
+- **Fehlerstatus melden** (Standard an) und **„Alle Entitäten nicht verfügbar“ melden** (Standard aus für neue
+  Instanzen), dazu eine Liste **ausgenommener** Integrationen
+- **Meldungen bündeln** (Standard 10 Minuten, 0 = sofort)
+- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung)
+
+**Sammelmeldung:** Alle Störungen stehen in **einer** Meldung, je Zeile die **Integration**, der Eintrag, die
+Art der Störung (bei „nicht verfügbar“ mit Anzahl der Entitäten), seit wann und eine ausgeführte Aktion, z. B.
+„• Shelly: shellypmminig3-… – alle 8 Entitäten nicht verfügbar (seit 12:30)“. Sie wird nach der Bündelungszeit
+gesendet bzw. aktualisiert (der Push ersetzt den vorigen, es stapeln sich keine) und verschwindet, wenn keine
+Störung mehr besteht. Die Sprachausgabe nennt nur die Anzahl. Einzelne „läuft wieder“-Meldungen gibt es nicht.
+
+**Empfehlung:** „Alle Entitäten nicht verfügbar“ ist bei **Einzelgeräten** (Lampen, Steckdosen, Shelly, IKEA,
+Batteriegeräte, Drucker, Klimaanlage) oft normal, z. B. bei ausgeschaltetem Wandschalter. Lass die globale
+Meldung dafür aus und lege stattdessen eine **Regel mit „Melden“** für Brücken und Dienste an, bei denen ein
+Ausfall zählt (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.).
 
 ### Regeln
 
@@ -661,7 +673,7 @@ Eine Regel gilt für **eine oder mehrere ausdrücklich gewählte Integrationen**
 - Name und Schalter *Aktiv*
 - **Auslöser**: bei Fehlerstatus und/oder wenn alle Entitäten nicht verfügbar sind
 - **Aktion**: *Nur melden*, *Neu laden* oder *Deaktivieren* (einmal je Störung), dazu der Schalter
-  *Melden* (meldet auch, wenn „Alle Störungen melden“ aus ist)
+  *Melden* (nimmt die Störung auch dann in die Sammelmeldung auf, wenn die globalen Schalter aus sind)
 - optional eine **Anwesenheitsentität** und *Automatisch wieder aktivieren*: Eine vom Monitor
   deaktivierte Integration wird wieder aktiviert, sobald die Anwesenheitsentität „an“ oder „home“
   meldet. Das passt zu Geräten, die zeitweise fehlen (Klimaanlage, Drucker): Die Entität sollte
