@@ -65,7 +65,8 @@ def test_sums_and_averages() -> None:
     days = {iso(0): 1.0, iso(1): 2.0, iso(3): 4.0, iso(10): 100.0}
     assert llm.cost_today(days, today()) == 1.0
     assert llm.sum_days(days, today() - timedelta(days=3), today()) == 7.0
-    assert llm.average_daily(days, today()) == pytest.approx(1.0)          # (1+2+4)/7
+    # Durchschnitt der letzten 7 abgeschlossenen Tage (ohne heute): (2+4)/7
+    assert llm.average_daily(days, today()) == pytest.approx(6 / 7)
 
 
 def test_remaining_in_balance_mode() -> None:
@@ -158,7 +159,7 @@ async def test_refresh_computes_values(hass: HomeAssistant, monkeypatch) -> None
     fake_costs(monkeypatch, {iso(1): 4.0, iso(0): 5.0})
     await ctrl.async_refresh()
     assert ctrl.remaining == pytest.approx(47.0)
-    assert ctrl.days_left == pytest.approx(47.0 / (9.0 / 7))
+    assert ctrl.days_left == pytest.approx(47.0 / (4.0 / 7))
     assert push == []
 
 
@@ -288,7 +289,7 @@ async def test_entities(hass: HomeAssistant, monkeypatch) -> None:
     registry = er.async_get(hass)
     ids = {e.translation_key: e.entity_id for e in registry.entities.values() if e.platform == DOMAIN}
     assert set(ids) == {"llm_active", "llm_warning", "llm_remaining", "llm_cost_today",
-                        "llm_cost_month", "llm_days_left", "llm_refresh"}
+                        "llm_cost_month", "llm_forecast", "llm_days_left", "llm_refresh"}
     assert float(hass.states.get(ids["llm_cost_today"]).state) == 7.0
     assert hass.states.get(ids["llm_cost_today"]).attributes["unit_of_measurement"] == "USD"
     assert hass.states.get(ids["llm_cost_today"]).attributes["state_class"] == "measurement"
@@ -408,3 +409,225 @@ async def test_settings_new_key_is_checked(hass: HomeAssistant, monkeypatch) -> 
 async def test_diagnostics_redact_the_key() -> None:
     from custom_components.ha_housekeeper.diagnostics import TO_REDACT
     assert "api_key" in TO_REDACT
+
+
+# --- Prognose ---------------------------------------------------------------------------------------
+
+
+def test_forecast_month() -> None:
+    day = date(2026, 10, 11)                                  # Oktober hat 31 Tage: 20 Tage nach heute
+    days = {(day - timedelta(days=i)).isoformat(): 7.0 for i in range(1, 8)}   # 7 $/Tag, 7 Tage
+    days[day.isoformat()] = 2.0
+    days[date(2026, 10, 1).isoformat()] = 7.0
+    month = llm.cost_month(days, day)
+    # bisher + Rest von heute (7 - 2) + 20 Tage zu 7 $
+    assert llm.forecast_month(days, day) == pytest.approx(month + 5.0 + 20 * 7.0)
+    # heute schon über dem Durchschnitt: kein Abzug
+    days[day.isoformat()] = 12.0
+    assert llm.forecast_month(days, day) == pytest.approx(llm.cost_month(days, day) + 20 * 7.0)
+    assert llm.forecast_month({}, day) == 0.0
+
+
+async def test_forecast_warning_before_the_limit_is_hit(hass: HomeAssistant, monkeypatch) -> None:
+    # 10 $/Tag in den letzten Tagen, heute noch nichts: Prognose über dem Limit, Kosten noch darunter
+    days = {iso(i): 10.0 for i in range(1, 8)}
+    days[iso(0)] = 0.0
+    fake_costs(monkeypatch, days)
+    limit = llm.cost_month(days, today()) + 5.0
+    _, ctrl, push = await _setup(hass, low_balance=None, monthly_limit=limit)
+    await ctrl.async_refresh()
+    await ctrl.async_refresh()
+    assert len(messages(push)) == 1
+    assert "Prognose" in messages(push)[0] or "forecast" in messages(push)[0]
+    assert ctrl.active_alerts == ["forecast"]
+
+
+async def test_forecast_warning_can_be_switched_off(hass: HomeAssistant, monkeypatch) -> None:
+    days = {iso(i): 10.0 for i in range(1, 8)}
+    fake_costs(monkeypatch, days)
+    _, ctrl, push = await _setup(hass, low_balance=None, monthly_limit=0.5 + 0.0,
+                                 forecast_warning=False)
+    await ctrl.async_refresh()
+    assert not any("Prognose" in m or "forecast" in m for m in messages(push))
+    assert "forecast" not in ctrl.active_alerts
+
+
+async def test_forecast_uses_the_budget_in_budget_mode(hass: HomeAssistant, monkeypatch) -> None:
+    days = {iso(i): 10.0 for i in range(1, 8)}
+    days[iso(0)] = 0.0
+    fake_costs(monkeypatch, days)
+    _, ctrl, push = await _setup(
+        hass, mode="budget", amount=ctrl_budget(days), baseline_time=None, low_balance=None)
+    await ctrl.async_refresh()
+    assert ctrl.active_alerts == ["forecast"] and len(messages(push)) == 1
+
+
+def ctrl_budget(days) -> float:
+    """Budget knapp über den bisherigen Monatskosten, aber unter der Prognose."""
+    return llm.cost_month(days, today()) + 1.0
+
+
+async def test_forecast_sensor(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 4.0})
+    _, ctrl, _ = await _setup(hass)
+    await ctrl.async_refresh()
+    await hass.async_block_till_done()
+    entity = next(e.entity_id for e in er.async_get(hass).entities.values()
+                  if e.translation_key == "llm_forecast")
+    assert float(hass.states.get(entity).state) == pytest.approx(ctrl.forecast, abs=1e-3)
+
+
+# --- Tokens und Anfragen -----------------------------------------------------------------------------
+
+
+def test_parse_anthropic_usage() -> None:
+    page = {"data": [{"starting_at": "2026-10-01T00:00:00Z", "results": [{
+        "uncached_input_tokens": 1500, "cache_read_input_tokens": 200, "output_tokens": 500,
+        "cache_creation": {"ephemeral_1h_input_tokens": 100, "ephemeral_5m_input_tokens": 50}}]}]}
+    _, days = prov.parse_anthropic_usage(page)
+    assert days == {"2026-10-01": {"input": 1850, "output": 500, "cached": 200, "requests": None}}
+
+
+def test_parse_openai_usage() -> None:
+    start = int(datetime(2026, 10, 1, tzinfo=UTC).timestamp())
+    page = {"data": [{"start_time": start, "results": [
+        {"input_tokens": 1000, "output_tokens": 200, "input_cached_tokens": 300, "num_model_requests": 5},
+        {"input_tokens": 10, "output_tokens": 20, "input_cached_tokens": 0, "num_model_requests": 1}]}]}
+    _, days = prov.parse_openai_usage(page)
+    assert days == {"2026-10-01": {"input": 1010, "output": 220, "cached": 300, "requests": 6}}
+
+
+async def test_fetch_usage_anthropic(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    bucket = lambda day, out: {"starting_at": f"{day}T00:00:00Z", "results": [  # noqa: E731
+        {"uncached_input_tokens": 10, "output_tokens": out}]}
+    aioclient_mock.get(f"{prov.ANTHROPIC_USAGE_URL}?page=p2",
+                       json={"data": [bucket("2026-10-02", 7)], "has_more": False})
+    aioclient_mock.get(prov.ANTHROPIC_USAGE_URL, json={
+        "data": [bucket("2026-10-01", 5)], "has_more": True, "next_page": "p2"})
+    days = await prov.async_fetch_usage(
+        async_get_clientsession(hass), "anthropic", "k", date(2026, 10, 1))
+    assert days["2026-10-01"]["output"] == 5 and days["2026-10-02"]["output"] == 7
+    assert "bucket_width=1d" in str(aioclient_mock.mock_calls[0][1])
+
+
+async def test_fetch_usage_openai(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    start = int(datetime(2026, 10, 1, tzinfo=UTC).timestamp())
+    aioclient_mock.get(prov.OPENAI_USAGE_URL, json={"data": [{"start_time": start, "results": [
+        {"input_tokens": 9, "output_tokens": 1, "input_cached_tokens": 0, "num_model_requests": 2}]}],
+        "has_more": False})
+    days = await prov.async_fetch_usage(async_get_clientsession(hass), "openai", "k", date(2026, 10, 1))
+    assert days == {"2026-10-01": {"input": 9, "output": 1, "cached": 0, "requests": 2}}
+
+
+def fake_usage(monkeypatch, usage=None, error=None):
+    mock = AsyncMock(side_effect=error, return_value=dict(usage or {}))
+    monkeypatch.setattr(prov, "async_fetch_usage", mock)
+    return mock
+
+
+def usage_row(i=5, o=3, c=1, r=2):
+    return {"input": i, "output": o, "cached": c, "requests": r}
+
+
+async def test_usage_is_not_queried_by_default(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    usage = fake_usage(monkeypatch, {iso(0): usage_row()})
+    _, ctrl, _ = await _setup(hass)
+    await ctrl.async_refresh()
+    usage.assert_not_awaited()
+    ids = {e.translation_key for e in er.async_get(hass).entities.values() if e.platform == DOMAIN}
+    assert not {"llm_tokens_today", "llm_tokens_month", "llm_requests_today"} & ids
+
+
+async def test_usage_sensors_for_openai(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    month_first = today().replace(day=1).isoformat()
+    fake_usage(monkeypatch, {iso(0): usage_row(10, 5, 2, 3), month_first: usage_row(100, 50, 20, 7)})
+    _, ctrl, _ = await _setup(hass, provider="openai", track_usage=True)
+    await ctrl.async_refresh()
+    await hass.async_block_till_done()
+    ids = {e.translation_key: e.entity_id for e in er.async_get(hass).entities.values()
+           if e.platform == DOMAIN}
+    for key in ("llm_tokens_today", "llm_tokens_month", "llm_requests_today", "llm_requests_month"):
+        assert key in ids
+    assert hass.states.get(ids["llm_tokens_today"]).state == "15"
+    attrs = hass.states.get(ids["llm_tokens_today"]).attributes
+    assert (attrs["input"], attrs["output"], attrs["cached_input"]) == (10, 5, 2)
+    assert hass.states.get(ids["llm_requests_today"]).state == "3"
+    if month_first != iso(0):
+        assert hass.states.get(ids["llm_tokens_month"]).state == "165"
+        assert hass.states.get(ids["llm_requests_month"]).state == "10"
+
+
+async def test_anthropic_has_tokens_but_no_requests(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    fake_usage(monkeypatch, {iso(0): usage_row(4, 1, 0, None)})
+    _, ctrl, _ = await _setup(hass, track_usage=True)
+    await ctrl.async_refresh()
+    ids = {e.translation_key for e in er.async_get(hass).entities.values() if e.platform == DOMAIN}
+    assert {"llm_tokens_today", "llm_tokens_month"} <= ids
+    assert not {"llm_requests_today", "llm_requests_month"} & ids
+
+
+async def test_usage_error_does_not_break_the_costs(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    fake_usage(monkeypatch, error=prov.ProviderError("HTTP 500"))
+    _, ctrl, push = await _setup(hass, track_usage=True)
+    await ctrl.async_refresh()
+    assert ctrl.cost_today == 1.0 and ctrl.error is None and ctrl.active_alerts == []
+    assert ctrl.usage == {}
+
+
+async def test_usage_entities_are_removed_when_switched_off(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    fake_usage(monkeypatch, {iso(0): usage_row()})
+    entry, ctrl, _ = await _setup(hass, track_usage=True)
+    await ctrl.async_refresh()
+    registry = er.async_get(hass)
+    assert any(e.translation_key == "llm_tokens_today" for e in registry.entities.values())
+    hass.config_entries.async_update_subentry(
+        entry.hub, entry.subentry, data={**entry.subentry.data, "track_usage": False})
+    await hass.async_block_till_done()
+    assert not any(e.translation_key == "llm_tokens_today" for e in registry.entities.values())
+
+
+# --- Reparaturhinweis bei abgelehntem Key ------------------------------------------------------------
+
+
+async def test_auth_failure_creates_a_repair_issue_that_clears(hass: HomeAssistant, monkeypatch) -> None:
+    from homeassistant.helpers import issue_registry as ir
+    from custom_components.ha_housekeeper.issues import async_check_entry
+    fake_costs(monkeypatch, error=prov.ProviderAuthError("HTTP 401"))
+    entry, ctrl, _ = await _setup(hass)
+    await ctrl.async_refresh()
+    issue_id = f"{entry.entry_id}_llm_auth"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.translation_key == "llm_auth_failed"
+    # die stündliche Prüfung der Referenzen darf den Hinweis nicht löschen
+    await async_check_entry(hass, entry.sub)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
+    fake_costs(monkeypatch, {iso(0): 1.0})
+    await ctrl.async_refresh()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_other_errors_create_no_issue(hass: HomeAssistant, monkeypatch) -> None:
+    from homeassistant.helpers import issue_registry as ir
+    fake_costs(monkeypatch, error=prov.ProviderError("HTTP 500"))
+    entry, ctrl, _ = await _setup(hass)
+    for _ in range(3):
+        await ctrl.async_refresh()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, f"{entry.entry_id}_llm_auth") is None
+
+
+# --- Dialoge: neue Felder ----------------------------------------------------------------------------------
+
+
+async def test_new_instance_stores_the_new_options(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {})
+    result = await new_instance(hass, "llm_usage")
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], new_form(track_usage=True, forecast_warning=False, monthly_limit=30))
+    assert result["data"]["track_usage"] is True and result["data"]["forecast_warning"] is False

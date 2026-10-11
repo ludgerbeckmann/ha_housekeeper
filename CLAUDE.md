@@ -213,13 +213,18 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Guthaben**: `remaining_balance()` rechnet im Modus `balance` Betrag minus Kosten seit `baseline_time` (der
   Abgleichstag zählt nur über den beim ersten Abruf gemerkten `snapshot`), im Modus `budget` Betrag minus Kosten
   des Monats. Die Tageskosten liegen im `Store` (`days`, `days_from`); später werden nur die letzten
-  `RECHECK_DAYS` Tage neu geladen. Warnungen (`alerts` im `Store`): `low` (mit Entwarnung), `daily`/`monthly`
-  (Datum bzw. Monat der letzten Meldung = einmal je Zeitraum), `error` (nach `FAILURES_BEFORE_ALERT`, Key-Fehler
-  sofort). Die Sensoren sind `state_class: measurement` ohne Geräteklasse (Verlauf über die Recorder-Statistiken).
+  `RECHECK_DAYS` Tage neu geladen. `average_daily()` = Durchschnitt der letzten 7 **abgeschlossenen** Tage
+  (Reichweite und `forecast_month()`: Kosten bisher + Rest von heute + übrige Monatstage). Optional
+  (`track_usage`) werden Tokens/Anfragen über `usage_report/messages` (Anthropic, keine Anfragenzahl) bzw.
+  `usage/completions` (OpenAI) geholt (`async_fetch_usage`, nur der laufende Monat, Fehler stören die Kosten
+  nicht); die Sensoren entstehen nur dann (sonst `remove_unconfigured()`), Anfragen-Sensoren nur bei OpenAI. Warnungen (`alerts` im `Store`): `low` (mit Entwarnung), `daily`/`monthly`/`forecast`
+  (Datum bzw. Monat der letzten Meldung = einmal je Zeitraum; `forecast` gegen das Monatslimit bzw. das Budget, nur
+  solange es noch nicht überschritten ist), `error` (nach `FAILURES_BEFORE_ALERT`, Key-Fehler
+  sofort, dann zusätzlich der Reparaturhinweis `<id>_llm_auth`, den der Controller selbst anlegt und löscht). Die Sensoren sind `state_class: measurement` ohne Geräteklasse (Verlauf über die Recorder-Statistiken).
   Der Modus lässt sich nach dem Anlegen nicht ändern; Betrag im Guthaben-Modus nur über `llm_calibrate`.
   Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key`), `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
-- `issues.py`: Reparaturhinweise (Issue-Registry). `collect_references(entry)` sammelt je Funktion alle
+- `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.
   Prüfung 300 s nach dem Start, stündlich und entprellt (`EVENT_DELAY_SECONDS`) nach Entity-/Geräte-

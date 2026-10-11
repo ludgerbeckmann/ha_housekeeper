@@ -16,6 +16,7 @@ from .. import llm_providers
 from ..const import (
     CONF_API_KEY,
     CONF_DAILY_LIMIT,
+    CONF_FORECAST_WARNING,
     CONF_LLM_AMOUNT,
     CONF_LLM_BASELINE,
     CONF_LLM_MODE,
@@ -25,6 +26,7 @@ from ..const import (
     CONF_NAME,
     CONF_POLL_MINUTES,
     CONF_PROVIDER,
+    CONF_TRACK_USAGE,
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,
     DEFAULT_POLL_MINUTES,
@@ -77,6 +79,9 @@ def _limit_fields(defaults: dict[str, Any]) -> dict[Any, Any]:
         vol.Optional(
             CONF_MONTHLY_LIMIT, description=_suggest(CONF_MONTHLY_LIMIT, defaults)
         ): _amount(),
+        vol.Required(
+            CONF_FORECAST_WARNING, default=defaults.get(CONF_FORECAST_WARNING, True)
+        ): bool,
     }
 
 
@@ -85,6 +90,9 @@ def _poll_field(defaults: dict[str, Any]) -> dict[Any, Any]:
         vol.Required(
             CONF_POLL_MINUTES, default=defaults.get(CONF_POLL_MINUTES, DEFAULT_POLL_MINUTES)
         ): _number(5, 1440, "min"),
+        vol.Required(
+            CONF_TRACK_USAGE, default=defaults.get(CONF_TRACK_USAGE, False)
+        ): bool,
     }
 
 

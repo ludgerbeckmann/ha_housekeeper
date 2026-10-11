@@ -23,7 +23,7 @@ from .alarm_clock import AlarmClockController
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
-from .entity import FunctionEntity
+from .entity import FunctionEntity, remove_unconfigured
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 from .integration_monitor import IntegrationMonitorController
@@ -74,14 +74,23 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
         )
     elif isinstance(controller, LlmUsageController):
-        async_add_entities(
-            [
-                LlmRemainingSensor(controller),
-                LlmCostTodaySensor(controller),
-                LlmCostMonthSensor(controller),
-                LlmDaysLeftSensor(controller),
-            ]
-        )
+        entities: list[FunctionEntity] = [
+            LlmRemainingSensor(controller),
+            LlmCostTodaySensor(controller),
+            LlmCostMonthSensor(controller),
+            LlmForecastSensor(controller),
+            LlmDaysLeftSensor(controller),
+        ]
+        if controller.track_usage:
+            entities += [LlmTokensTodaySensor(controller), LlmTokensMonthSensor(controller)]
+            if controller.has_requests:
+                entities += [LlmRequestsTodaySensor(controller), LlmRequestsMonthSensor(controller)]
+        # nicht (mehr) gewünschte Sensoren aus der Registry entfernen
+        wanted = {e._attr_translation_key for e in entities}  # noqa: SLF001
+        for key in ("llm_tokens_today", "llm_tokens_month", "llm_requests_today", "llm_requests_month"):
+            if key not in wanted:
+                remove_unconfigured(hass, "sensor", controller, key)
+        async_add_entities(entities)
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
 
@@ -419,3 +428,87 @@ class LlmDaysLeftSensor(_LlmSensor):
     def native_value(self) -> float | None:
         value = self._controller.days_left
         return None if value is None else round(value, 1)
+
+
+class LlmForecastSensor(_LlmSensor):
+    """Erwartete Kosten bis Monatsende (bisherige Kosten plus Durchschnitt der letzten 7 Tage)."""
+
+    _attr_icon = "mdi:chart-line"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_forecast")
+
+    @property
+    def native_value(self) -> float | None:
+        return round(self._controller.forecast, 4) if self._controller.last_update else None
+
+
+class _LlmUsageSensor(FunctionEntity, SensorEntity):
+    """Basis der Token- und Anfragen-Sensoren (Zählwerte ohne Einheit)."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def _usage(self) -> dict[str, Any]:
+        raise NotImplementedError
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        usage = self._usage()
+        return {"input": usage["input"], "output": usage["output"], "cached_input": usage["cached"]}
+
+    @property
+    def available(self) -> bool:
+        return bool(self._controller.usage)
+
+
+class LlmTokensTodaySensor(_LlmUsageSensor):
+    """Tokens heute (Eingabe und Ausgabe, UTC-Tag)."""
+
+    _attr_icon = "mdi:counter"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_tokens_today")
+
+    def _usage(self) -> dict[str, Any]:
+        return self._controller.usage_today
+
+    @property
+    def native_value(self) -> int:
+        usage = self._usage()
+        return usage["input"] + usage["output"]
+
+
+class LlmTokensMonthSensor(LlmTokensTodaySensor):
+    """Tokens im laufenden Monat (UTC)."""
+
+    def __init__(self, controller) -> None:
+        _LlmUsageSensor.__init__(self, controller, "llm_tokens_month")
+
+    def _usage(self) -> dict[str, Any]:
+        return self._controller.usage_month
+
+
+class LlmRequestsTodaySensor(_LlmUsageSensor):
+    """Anfragen heute (nur OpenAI)."""
+
+    _attr_icon = "mdi:swap-horizontal"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_requests_today")
+
+    def _usage(self) -> dict[str, Any]:
+        return self._controller.usage_today
+
+    @property
+    def native_value(self) -> int | None:
+        return self._usage()["requests"]
+
+
+class LlmRequestsMonthSensor(LlmRequestsTodaySensor):
+    """Anfragen im laufenden Monat (nur OpenAI)."""
+
+    def __init__(self, controller) -> None:
+        _LlmUsageSensor.__init__(self, controller, "llm_requests_month")
+
+    def _usage(self) -> dict[str, Any]:
+        return self._controller.usage_month

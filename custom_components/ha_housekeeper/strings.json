@@ -243,6 +243,21 @@
       },
       "llm_days_left": {
         "name": "Days left"
+      },
+      "llm_forecast": {
+        "name": "Forecast end of month"
+      },
+      "llm_tokens_today": {
+        "name": "Tokens today"
+      },
+      "llm_tokens_month": {
+        "name": "Tokens this month"
+      },
+      "llm_requests_today": {
+        "name": "Requests today"
+      },
+      "llm_requests_month": {
+        "name": "Requests this month"
       }
     },
     "button": {
@@ -341,6 +356,10 @@
     "legacy_entry": {
       "title": "Old format: {entry}",
       "description": "The entry \"{entry}\" comes from an older version (one instance or one function per entry) and is no longer loaded. Delete it, then create the “Functions” hub and add the instances with the “Add …” buttons."
+    },
+    "llm_auth_failed": {
+      "title": "Access denied: {entry}",
+      "description": "The provider rejected the key of the function \"{entry}\" (LLM usage): invalid, revoked or without admin rights. Enter a valid admin key in the settings of the function. This notice disappears by itself as soon as the query works again."
     }
   },
   "config_subentries": {
@@ -1895,7 +1914,9 @@
                 "poll_minutes": "Query interval (minutes)",
                 "low_balance": "Warn when the balance falls below …",
                 "daily_limit": "Daily limit (cost per day)",
-                "monthly_limit": "Monthly limit (cost per month)"
+                "monthly_limit": "Monthly limit (cost per month)",
+                "track_usage": "Query tokens and requests",
+                "forecast_warning": "Warn when the forecast exceeds the limit"
               },
               "data_description": {
                 "name": "Optional. Empty = “LLM usage”. Enter only the name of the instance, e.g. “Anthropic”; the function name is prepended automatically.",
@@ -1905,7 +1926,9 @@
                 "poll_minutes": "How often the costs are queried. The providers' reports are delayed by a few hours.",
                 "low_balance": "Empty = no warning. Applies to the remaining balance or budget; pointless with automatic top-up.",
                 "daily_limit": "Empty = no warning. Warns once a day when the cost of the day (UTC) exceeds the limit.",
-                "monthly_limit": "Empty = no warning. Warns once a month when the cost of the month (UTC) exceeds the limit."
+                "monthly_limit": "Empty = no warning. Warns once a month when the cost of the month (UTC) exceeds the limit.",
+                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval.",
+                "forecast_warning": "Warns once a month when the forecast of the monthly cost exceeds the monthly limit (or the budget in monthly budget mode) before it is actually exceeded."
               }
             },
             "notifications": {
@@ -1946,7 +1969,9 @@
                 "poll_minutes": "Query interval (minutes)",
                 "low_balance": "Warn when the balance falls below …",
                 "daily_limit": "Daily limit (cost per day)",
-                "monthly_limit": "Monthly limit (cost per month)"
+                "monthly_limit": "Monthly limit (cost per month)",
+                "track_usage": "Query tokens and requests",
+                "forecast_warning": "Warn when the forecast exceeds the limit"
               },
               "data_description": {
                 "api_key": "Leave empty to keep the current key.",
@@ -1954,7 +1979,9 @@
                 "poll_minutes": "How often the costs are queried.",
                 "low_balance": "Empty = no warning.",
                 "daily_limit": "Empty = no warning.",
-                "monthly_limit": "Empty = no warning."
+                "monthly_limit": "Empty = no warning.",
+                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval.",
+                "forecast_warning": "Warns once a month when the forecast of the monthly cost exceeds the monthly limit (or the budget in monthly budget mode) before it is actually exceeded."
               }
             },
             "notifications": {

@@ -243,6 +243,21 @@
       },
       "llm_days_left": {
         "name": "Reichweite"
+      },
+      "llm_forecast": {
+        "name": "Prognose Monatsende"
+      },
+      "llm_tokens_today": {
+        "name": "Tokens heute"
+      },
+      "llm_tokens_month": {
+        "name": "Tokens im Monat"
+      },
+      "llm_requests_today": {
+        "name": "Anfragen heute"
+      },
+      "llm_requests_month": {
+        "name": "Anfragen im Monat"
       }
     },
     "button": {
@@ -341,6 +356,10 @@
     "legacy_entry": {
       "title": "Älteres Format: {entry}",
       "description": "Der Eintrag „{entry}“ stammt aus einer älteren Version (eine Instanz oder eine Funktion je Eintrag) und wird nicht mehr geladen. Lösche ihn; danach legst du den Hub „Funktionen“ an und fügst die Instanzen über die Schaltflächen „… hinzufügen“ hinzu."
+    },
+    "llm_auth_failed": {
+      "title": "Zugang abgelehnt: {entry}",
+      "description": "Der Anbieter hat den Key der Funktion „{entry}“ (LLM-Verbrauch) abgelehnt (ungültig, widerrufen oder ohne Admin-Rechte). Trage in den Einstellungen der Funktion einen gültigen Admin-Key ein. Dieser Hinweis verschwindet von selbst, sobald die Abfrage wieder funktioniert."
     }
   },
   "config_subentries": {
@@ -1895,7 +1914,9 @@
                 "poll_minutes": "Abfrageintervall (Minuten)",
                 "low_balance": "Warnen, wenn das Guthaben unter … fällt",
                 "daily_limit": "Tageslimit (Kosten pro Tag)",
-                "monthly_limit": "Monatslimit (Kosten pro Monat)"
+                "monthly_limit": "Monatslimit (Kosten pro Monat)",
+                "track_usage": "Tokens und Anfragen abfragen",
+                "forecast_warning": "Warnen, wenn die Prognose das Limit übersteigt"
               },
               "data_description": {
                 "name": "Optional. Leer = „LLM-Verbrauch“. Gib nur den Namen der Instanz ein, z. B. „Anthropic“; der Funktionsname wird automatisch vorangestellt.",
@@ -1905,7 +1926,9 @@
                 "poll_minutes": "Wie oft die Kosten abgefragt werden. Die Berichte der Anbieter kommen mit einigen Stunden Verzögerung.",
                 "low_balance": "Leer = keine Warnung. Gilt für das Restguthaben bzw. Restbudget; entfällt sinnvollerweise bei automatischem Aufladen.",
                 "daily_limit": "Leer = keine Warnung. Warnt einmal pro Tag, wenn die Kosten des Tages (UTC) das Limit überschreiten.",
-                "monthly_limit": "Leer = keine Warnung. Warnt einmal pro Monat, wenn die Kosten des Monats (UTC) das Limit überschreiten."
+                "monthly_limit": "Leer = keine Warnung. Warnt einmal pro Monat, wenn die Kosten des Monats (UTC) das Limit überschreiten.",
+                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall.",
+                "forecast_warning": "Warnt einmal pro Monat, wenn die Prognose der Monatskosten das Monatslimit (bzw. im Modus Monatsbudget das Budget) übersteigt, bevor es tatsächlich überschritten ist."
               }
             },
             "notifications": {
@@ -1946,7 +1969,9 @@
                 "poll_minutes": "Abfrageintervall (Minuten)",
                 "low_balance": "Warnen, wenn das Guthaben unter … fällt",
                 "daily_limit": "Tageslimit (Kosten pro Tag)",
-                "monthly_limit": "Monatslimit (Kosten pro Monat)"
+                "monthly_limit": "Monatslimit (Kosten pro Monat)",
+                "track_usage": "Tokens und Anfragen abfragen",
+                "forecast_warning": "Warnen, wenn die Prognose das Limit übersteigt"
               },
               "data_description": {
                 "api_key": "Leer lassen, um den bisherigen Key zu behalten.",
@@ -1954,7 +1979,9 @@
                 "poll_minutes": "Wie oft die Kosten abgefragt werden.",
                 "low_balance": "Leer = keine Warnung.",
                 "daily_limit": "Leer = keine Warnung.",
-                "monthly_limit": "Leer = keine Warnung."
+                "monthly_limit": "Leer = keine Warnung.",
+                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall.",
+                "forecast_warning": "Warnt einmal pro Monat, wenn die Prognose der Monatskosten das Monatslimit (bzw. im Modus Monatsbudget das Budget) übersteigt, bevor es tatsächlich überschritten ist."
               }
             },
             "notifications": {
