@@ -162,9 +162,10 @@ async def async_check_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[str
             wanted[_issue_id(entry, "device", reference)] = (DEVICE_MISSING, reference)
 
     registry = ir.async_get(hass)
-    prefix = f"{entry.entry_id}_"
+    # nur die eigenen Hinweise abgleichen; andere (z. B. `<id>_llm_auth`) gehören dem Controller
+    prefixes = (f"{entry.entry_id}_entity_", f"{entry.entry_id}_device_")
     for domain, issue_id in list(registry.issues):
-        if domain == DOMAIN and issue_id.startswith(prefix) and issue_id not in wanted:
+        if domain == DOMAIN and issue_id.startswith(prefixes) and issue_id not in wanted:
             ir.async_delete_issue(hass, DOMAIN, issue_id)
     for issue_id, (key, reference) in wanted.items():
         ir.async_create_issue(

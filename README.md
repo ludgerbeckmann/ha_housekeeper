@@ -709,18 +709,25 @@ Tages-/Monatslimit arbeiten.
   *Guthaben abgleichen* bzw. das Monatsbudget in den Einstellungen)
 - **Abfrageintervall** (Standard 60 Minuten)
 - **Warnungen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit**
-  für die Kosten
+  für die Kosten; dazu **Warnen, wenn die Prognose das Limit übersteigt** (Standard an)
+- **Tokens und Anfragen abfragen** (Standard aus; eine weitere Abfrage je Intervall)
 - die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung)
 
 Jede Warnung kommt **einmal je Überschreitung** (Tageslimit einmal pro Tag, Monatslimit einmal pro
 Monat); die Guthabenwarnung meldet eine Entwarnung, sobald das Guthaben wieder über der Grenze liegt.
-Schlägt die Abfrage dreimal in Folge fehl (ungültiger Key sofort), kommt eine Meldung.
+Die **Prognose** warnt einmal pro Monat, wenn die erwarteten Monatskosten das Monatslimit (im Modus
+Monatsbudget das Budget) übersteigen, bevor es tatsächlich überschritten ist.
+Schlägt die Abfrage dreimal in Folge fehl, kommt eine Meldung. Wird der Key abgelehnt, kommt sie sofort und
+zusätzlich erscheint ein **Reparaturhinweis** (verschwindet, sobald die Abfrage wieder funktioniert).
 
 ### Entitäten
 
-- `sensor` **Restguthaben**, **Kosten heute**, **Kosten im Monat** (in der Währung des Anbieters,
-  derzeit USD) und **Reichweite** (Tage, bei den Durchschnittskosten der letzten 7 Tage). Den
-  **Verlauf** liefern die Langzeitstatistiken des Recorders (Verlaufs- und Statistikdiagramm).
+- `sensor` **Restguthaben**, **Kosten heute**, **Kosten im Monat**, **Prognose Monatsende** (in der Währung
+  des Anbieters, derzeit USD) und **Reichweite** (Tage). Prognose und Reichweite rechnen mit den
+  Durchschnittskosten der letzten 7 abgeschlossenen Tage. Den **Verlauf** liefern die Langzeitstatistiken
+  des Recorders (Verlaufs- und Statistikdiagramm).
+- `sensor` **Tokens heute/im Monat** (Eingabe + Ausgabe; Eingabe, Ausgabe und Cache als Attribute) und, nur bei
+  OpenAI, **Anfragen heute/im Monat** – nur mit der Einstellung *Tokens und Anfragen abfragen*
 - `binary_sensor` **LLM-Warnung** (an = Warnung aktiv; Attribute: Warnungen, Fehler)
 - `switch` **LLM-Abfrage aktiv** und `button` **Jetzt abfragen**
 

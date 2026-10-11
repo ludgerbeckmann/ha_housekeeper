@@ -516,6 +516,8 @@ CONF_POLL_MINUTES = "poll_minutes"
 CONF_LOW_BALANCE = "low_balance"
 CONF_DAILY_LIMIT = "daily_limit"
 CONF_MONTHLY_LIMIT = "monthly_limit"
+CONF_FORECAST_WARNING = "forecast_warning"
+CONF_TRACK_USAGE = "track_usage"
 
 PROVIDER_ANTHROPIC = "anthropic"
 PROVIDER_OPENAI = "openai"

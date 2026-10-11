@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 from datetime import date, datetime, timedelta
 import logging
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.storage import Store
@@ -18,6 +20,7 @@ from . import llm_providers
 from .const import (
     CONF_API_KEY,
     CONF_DAILY_LIMIT,
+    CONF_FORECAST_WARNING,
     CONF_LLM_AMOUNT,
     CONF_LLM_BASELINE,
     CONF_LLM_MODE,
@@ -25,9 +28,11 @@ from .const import (
     CONF_MONTHLY_LIMIT,
     CONF_POLL_MINUTES,
     CONF_PROVIDER,
+    CONF_TRACK_USAGE,
     DEFAULT_POLL_MINUTES,
     DOMAIN,
     LLM_MODE_BALANCE,
+    LLM_MODE_BUDGET,
     signal_update,
 )
 from .llm_providers import ProviderAuthError, ProviderError
@@ -50,6 +55,7 @@ _TEXT = {
         "monthly": "„{title}“: Monatslimit überschritten, {value} {currency} in diesem Monat (Limit {limit} {currency}).",
         "error": "„{title}“: Abfrage fehlgeschlagen ({error}).",
         "error_ok": "„{title}“: Die Abfrage funktioniert wieder.",
+        "forecast": "„{title}“: Prognose {value} {currency} bis Monatsende, über dem Limit von {limit} {currency}.",
     },
     "en": {
         "low": "Balance of \"{title}\" is low: {value} {currency} left (threshold {limit} {currency}).",
@@ -58,6 +64,7 @@ _TEXT = {
         "monthly": "\"{title}\": monthly limit exceeded, {value} {currency} this month (limit {limit} {currency}).",
         "error": "\"{title}\": query failed ({error}).",
         "error_ok": "\"{title}\": the query works again.",
+        "forecast": "\"{title}\": forecast {value} {currency} by the end of the month, above the limit of {limit} {currency}.",
     },
 }
 
@@ -88,8 +95,32 @@ def cost_month(days: dict[str, float], today: date) -> float:
 
 
 def average_daily(days: dict[str, float], today: date) -> float:
-    """Durchschnittliche Tageskosten der letzten Tage (einschließlich heute)."""
-    return sum_days(days, today - timedelta(days=AVERAGE_DAYS - 1), today) / AVERAGE_DAYS
+    """Durchschnittliche Tageskosten der letzten 7 abgeschlossenen Tage (ohne heute)."""
+    return sum_days(days, today - timedelta(days=AVERAGE_DAYS), today - timedelta(days=1)) / AVERAGE_DAYS
+
+
+def forecast_month(days: dict[str, float], today: date) -> float:
+    """Erwartete Kosten bis Monatsende: bisherige Kosten, der Rest von heute und die übrigen Tage
+    des Monats, jeweils mit dem Durchschnitt der letzten abgeschlossenen Tage."""
+    average = average_daily(days, today)
+    days_after_today = calendar.monthrange(today.year, today.month)[1] - today.day
+    rest_today = max(average - cost_today(days, today), 0.0)
+    return cost_month(days, today) + rest_today + average * days_after_today
+
+
+def sum_usage(usage: dict[str, dict[str, Any]], start: date, end: date) -> dict[str, Any]:
+    """Tokens (und Anfragen) von `start` bis `end` (beide eingeschlossen)."""
+    total: dict[str, Any] = {"input": 0, "output": 0, "cached": 0, "requests": None}
+    day = start
+    while day <= end:
+        item = usage.get(day.isoformat())
+        if item:
+            for key in ("input", "output", "cached"):
+                total[key] += item.get(key) or 0
+            if item.get("requests") is not None:
+                total["requests"] = (total["requests"] or 0) + item["requests"]
+        day += timedelta(days=1)
+    return total
 
 
 def remaining_balance(
@@ -135,6 +166,7 @@ class LlmUsageController:
         self.currency = "USD"
         self.days: dict[str, float] = {}
         self.days_from: str | None = None
+        self.usage: dict[str, dict[str, Any]] = {}
         self.snapshot: dict[str, Any] | None = None
         self.alerts: dict[str, Any] = {}
         self.failures = 0
@@ -157,6 +189,27 @@ class LlmUsageController:
         return Notifier(
             self.hass, self._get, f"{DOMAIN}_{self.entry.entry_id}", lambda: self.entry.title
         )
+
+    @property
+    def track_usage(self) -> bool:
+        return bool(self._opt(CONF_TRACK_USAGE, False))
+
+    @property
+    def has_requests(self) -> bool:
+        """Nur OpenAI liefert die Anzahl der Anfragen."""
+        return self._opt(CONF_PROVIDER) == "openai"
+
+    @property
+    def usage_today(self) -> dict[str, Any]:
+        return sum_usage(self.usage, self._today, self._today)
+
+    @property
+    def usage_month(self) -> dict[str, Any]:
+        return sum_usage(self.usage, month_start(self._today), self._today)
+
+    @property
+    def forecast(self) -> float:
+        return forecast_month(self.days, self._today)
 
     @property
     def mode(self) -> str:
@@ -217,6 +270,8 @@ class LlmUsageController:
             found.append("daily")
         if self.alerts.get("monthly") == today.strftime("%Y-%m"):
             found.append("monthly")
+        if self.alerts.get("forecast") == today.strftime("%Y-%m"):
+            found.append("forecast")
         if self.alerts.get("error"):
             found.append("error")
         return found
@@ -229,6 +284,7 @@ class LlmUsageController:
         self.currency = stored.get("currency", "USD")
         self.days = dict(stored.get("days") or {})
         self.days_from = stored.get("days_from")
+        self.usage = dict(stored.get("usage") or {})
         self.snapshot = stored.get("snapshot")
         self.alerts = dict(stored.get("alerts") or {})
         self.failures = int(stored.get("failures", 0))
@@ -263,6 +319,7 @@ class LlmUsageController:
                 "currency": self.currency,
                 "days": self.days,
                 "days_from": self.days_from,
+                "usage": self.usage,
                 "snapshot": self.snapshot,
                 "alerts": self.alerts,
                 "failures": self.failures,
@@ -280,7 +337,7 @@ class LlmUsageController:
 
     def _needed_from(self, today: date) -> date:
         """Ältester Tag, dessen Kosten für die Werte gebraucht werden."""
-        needed = min(month_start(today), today - timedelta(days=AVERAGE_DAYS - 1))
+        needed = min(month_start(today), today - timedelta(days=AVERAGE_DAYS))
         baseline = self._baseline
         if self.mode == LLM_MODE_BALANCE and baseline:
             needed = min(needed, baseline.date())
@@ -331,6 +388,11 @@ class LlmUsageController:
                     "time": baseline.isoformat(),
                     "day_cost": self.days.get(baseline.date().isoformat(), 0.0),
                 }
+        if self.track_usage:
+            await self._async_refresh_usage(today)
+        else:
+            self.usage = {}
+        ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
         was_failing = bool(self.alerts.get("error"))
         self.failures = 0
         self.error = None
@@ -342,10 +404,40 @@ class LlmUsageController:
         await self._async_check_alerts(today)
         await self._async_save()
 
+    async def _async_refresh_usage(self, today: date) -> None:
+        """Tokens und Anfragen des Monats abfragen; ein Fehler hier stört die Kosten nicht."""
+        try:
+            fetched = await llm_providers.async_fetch_usage(
+                async_get_clientsession(self.hass),
+                self._opt(CONF_PROVIDER),
+                self._opt(CONF_API_KEY, ""),
+                month_start(today),
+            )
+        except ProviderError as err:
+            _LOGGER.warning("%s: Abfrage der Tokens fehlgeschlagen: %s", self.entry.title, err)
+            return
+        self.usage.update(fetched)
+        cutoff = month_start(today).isoformat()
+        self.usage = {d: v for d, v in self.usage.items() if d >= cutoff}
+
+    @property
+    def _issue_id(self) -> str:
+        return f"{self.entry.entry_id}_llm_auth"
+
     async def _async_failed(self, error: str, immediate: bool = False) -> None:
         self.failures += 1
         self.error = error
         _LOGGER.warning("%s: Abfrage fehlgeschlagen: %s", self.entry.title, error)
+        if immediate:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.ERROR,
+                translation_key="llm_auth_failed",
+                translation_placeholders={"entry": self.entry.title},
+            )
         if (immediate or self.failures >= FAILURES_BEFORE_ALERT) and not self.alerts.get("error"):
             self.alerts["error"] = True
             await self._notifier().async_send(
@@ -399,6 +491,27 @@ class LlmUsageController:
 
         monthly = self._opt(CONF_MONTHLY_LIMIT)
         month = today.strftime("%Y-%m")
+        # Prognose: gegen das Monatslimit, im Modus Monatsbudget sonst gegen das Budget
+        forecast_limit = monthly
+        if forecast_limit is None and self.mode == LLM_MODE_BUDGET:
+            forecast_limit = self.amount
+        if (
+            self._opt(CONF_FORECAST_WARNING, True)
+            and forecast_limit is not None
+            and self.alerts.get("forecast") != month
+            and self.cost_month <= float(forecast_limit)  # schon überschritten: Monatslimit meldet
+            and self.forecast > float(forecast_limit)
+        ):
+            self.alerts["forecast"] = month
+            await notifier.async_send(
+                text["forecast"].format(
+                    title=title,
+                    value=f"{self.forecast:.2f}",
+                    limit=f"{float(forecast_limit):.2f}",
+                    currency=cur,
+                ),
+                kind="forecast",
+            )
         if monthly is not None and self.cost_month > float(monthly):
             if self.alerts.get("monthly") != month:
                 self.alerts["monthly"] = month
