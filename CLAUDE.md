@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) und `integration_monitor` („Integrationsmonitor“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“) und `llm_usage` („LLM-Verbrauch“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -206,6 +206,19 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   oder gelöschte Einträge werden vergessen. Kein `busy`/`ReloadWhenIdle` (der Zustand liegt im `Store`).
   Menü `mon_menu` (Schritte `add/edit/delete_monitor_rule`, `monitor_rule_edit` mit den Abschnitten
   `general`, `condition`, `action`); Benachrichtigung nur im Eintrag (nicht je Regel).
+- `llm_usage.py` / `llm_providers.py`: Je Instanz ein Anbieterkonto (`anthropic`, `openai`). `llm_providers.py`
+  fragt per aiohttp die **Kosten je Tag (UTC)** ab (`async_fetch_costs()`, Anthropic `/v1/organizations/cost_report`
+  mit `x-api-key` (Admin-Key), `amount` in **Cent** als Dezimalstring; OpenAI `/v1/organization/costs`, `amount.value`),
+  mit Seitenwechsel (`next_page`, höchstens `MAX_PAGES`); 401/403 = `ProviderAuthError`. Beide liefern **kein
+  Guthaben**: `remaining_balance()` rechnet im Modus `balance` Betrag minus Kosten seit `baseline_time` (der
+  Abgleichstag zählt nur über den beim ersten Abruf gemerkten `snapshot`), im Modus `budget` Betrag minus Kosten
+  des Monats. Die Tageskosten liegen im `Store` (`days`, `days_from`); später werden nur die letzten
+  `RECHECK_DAYS` Tage neu geladen. Warnungen (`alerts` im `Store`): `low` (mit Entwarnung), `daily`/`monthly`
+  (Datum bzw. Monat der letzten Meldung = einmal je Zeitraum), `error` (nach `FAILURES_BEFORE_ALERT`, Key-Fehler
+  sofort). Die Sensoren sind `state_class: measurement` ohne Geräteklasse (Verlauf über die Recorder-Statistiken).
+  Der Modus lässt sich nach dem Anlegen nicht ändern; Betrag im Guthaben-Modus nur über `llm_calibrate`.
+  Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key`), `api_key` steht in
+  `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
 - `issues.py`: Reparaturhinweise (Issue-Registry). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

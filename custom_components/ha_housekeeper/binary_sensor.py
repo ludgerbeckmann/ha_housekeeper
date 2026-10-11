@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .alarm_clock import AlarmClockController
 from .door_guard import DoorGuardController
 from .integration_monitor import IntegrationMonitorController
+from .llm_usage import LlmUsageController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
@@ -40,6 +41,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([AlarmRingingSensor(controller)])
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities([IntegrationProblemSensor(controller)])
+    elif isinstance(controller, LlmUsageController):
+        async_add_entities([LlmWarningSensor(controller)])
     elif isinstance(controller, PoolPumpController):
         entities: list[FunctionEntity] = [PumpShouldRunSensor(controller)]
         if controller.dry_run_configured:
@@ -206,3 +209,20 @@ class IntegrationProblemSensor(FunctionEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {"integrations": self._controller.faulty_titles}
+
+
+class LlmWarningSensor(FunctionEntity, BinarySensorEntity):
+    """on = mindestens eine Warnung (Guthaben niedrig, Limit überschritten, Abfrage fehlgeschlagen)."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_warning")
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self._controller.active_alerts)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"alerts": self._controller.active_alerts, "error": self._controller.error}

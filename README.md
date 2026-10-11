@@ -19,6 +19,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit oder sobald ein Update verfügbar wird |
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
+| LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
 | Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
 ## Bedienung der Einstellungen
@@ -56,7 +57,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
@@ -677,6 +678,51 @@ solche Integration von Hand wieder ein, vergisst er sie.
 - `sensor` **Integrationen mit Störung** und **Vom Monitor deaktiviert** (Anzahl, Namen als Attribut)
 - `button` **Jetzt prüfen** und **Deaktivierte aktivieren** (aktiviert alle vom Monitor
   deaktivierten Integrationen wieder)
+
+## LLM-Verbrauch
+
+Überwacht die **Kosten** eines LLM-API-Kontos (**Anthropic**, **OpenAI**), berechnet daraus ein
+**Restguthaben** bzw. **Restbudget** und warnt bei niedrigem Guthaben oder hohem Verbrauch. Je Konto
+eine Instanz. Google Gemini ist nicht dabei: Für einen normalen API-Key gibt es keine Kostenabfrage.
+
+**Voraussetzung:** ein **Admin-Key** der Organisation (Anthropic: `sk-ant-admin…`, OpenAI: Admin-Key).
+Ein privates Konto ohne Organisation hat diese Abfrage nicht. Der Admin-Key kann auch Mitglieder und
+Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
+Speicher von Home Assistant (die Diagnose schwärzt ihn). Beim Anlegen und beim Ändern wird der Key mit
+einer Abfrage geprüft.
+
+**Wie das Guthaben entsteht:** Die Anbieter liefern nur die **Kosten je Tag** (UTC, mit einigen Stunden
+Verzögerung), kein Guthaben. Zwei Modi:
+
+- **Guthaben (mit Abgleich):** Du trägst das aktuelle Guthaben aus der Konsole des Anbieters ein, im Menü
+  *Guthaben abgleichen* auch nach jedem Aufladen. Restguthaben = Betrag − Kosten seit dem Abgleich.
+- **Monatsbudget:** Restbudget = Betrag − Kosten im laufenden Monat (UTC), am Monatsersten beginnt es neu.
+
+Das Restguthaben ist ein Schätzwert (Steuern, Gratis-Guthaben und Rundungen können abweichen); mit dem
+Abgleich holst du es auf den echten Stand zurück. **Bei automatischem Aufladen** stimmt der Modus
+„Guthaben“ nicht (die Aufladungen sind in den Kosten nicht sichtbar): dann *Monatsbudget* wählen und mit
+Tages-/Monatslimit arbeiten.
+
+### Einstellungen
+
+- **Anbieter**, **Admin-Key**, **Modus** und **Betrag** (nur beim Anlegen wählbar; später Betrag über
+  *Guthaben abgleichen* bzw. das Monatsbudget in den Einstellungen)
+- **Abfrageintervall** (Standard 60 Minuten)
+- **Warnungen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit**
+  für die Kosten
+- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung)
+
+Jede Warnung kommt **einmal je Überschreitung** (Tageslimit einmal pro Tag, Monatslimit einmal pro
+Monat); die Guthabenwarnung meldet eine Entwarnung, sobald das Guthaben wieder über der Grenze liegt.
+Schlägt die Abfrage dreimal in Folge fehl (ungültiger Key sofort), kommt eine Meldung.
+
+### Entitäten
+
+- `sensor` **Restguthaben**, **Kosten heute**, **Kosten im Monat** (in der Währung des Anbieters,
+  derzeit USD) und **Reichweite** (Tage, bei den Durchschnittskosten der letzten 7 Tage). Den
+  **Verlauf** liefern die Langzeitstatistiken des Recorders (Verlaufs- und Statistikdiagramm).
+- `binary_sensor` **LLM-Warnung** (an = Warnung aktiv; Attribute: Warnungen, Fehler)
+- `switch` **LLM-Abfrage aktiv** und `button` **Jetzt abfragen**
 
 ## Reparaturhinweise
 

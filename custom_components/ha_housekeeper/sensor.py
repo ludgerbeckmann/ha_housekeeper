@@ -27,6 +27,7 @@ from .entity import FunctionEntity
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 from .integration_monitor import IntegrationMonitorController
+from .llm_usage import LlmUsageController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
@@ -71,6 +72,15 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities(
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
+        )
+    elif isinstance(controller, LlmUsageController):
+        async_add_entities(
+            [
+                LlmRemainingSensor(controller),
+                LlmCostTodaySensor(controller),
+                LlmCostMonthSensor(controller),
+                LlmDaysLeftSensor(controller),
+            ]
         )
     else:
         async_add_entities([MailboxLastDeliverySensor(controller)])
@@ -334,3 +344,78 @@ class MonitorDisabledSensor(FunctionEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"integrations": self._controller.disabled_titles}
+
+
+class _LlmSensor(FunctionEntity, SensorEntity):
+    """Basis der LLM-Sensoren: Messwert mit Währung, der Verlauf kommt aus den Recorder-Statistiken."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        return self._controller.currency
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self._controller.last_update
+        return {"last_update": last.isoformat() if last else None}
+
+
+class LlmRemainingSensor(_LlmSensor):
+    """Restguthaben (Guthaben-Modus) bzw. Restbudget (Monatsbudget)."""
+
+    _attr_icon = "mdi:cash-clock"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_remaining")
+
+    @property
+    def native_value(self) -> float | None:
+        value = self._controller.remaining
+        return None if value is None else round(value, 4)
+
+
+class LlmCostTodaySensor(_LlmSensor):
+    """Kosten heute (UTC-Tag des Anbieters)."""
+
+    _attr_icon = "mdi:cash-fast"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_cost_today")
+
+    @property
+    def native_value(self) -> float | None:
+        return round(self._controller.cost_today, 4) if self._controller.last_update else None
+
+
+class LlmCostMonthSensor(_LlmSensor):
+    """Kosten im laufenden Monat (UTC)."""
+
+    _attr_icon = "mdi:cash-multiple"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_cost_month")
+
+    @property
+    def native_value(self) -> float | None:
+        return round(self._controller.cost_month, 4) if self._controller.last_update else None
+
+
+class LlmDaysLeftSensor(_LlmSensor):
+    """Reichweite des Restguthabens in Tagen (bei den Durchschnittskosten der letzten 7 Tage)."""
+
+    _attr_icon = "mdi:calendar-clock"
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_days_left")
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        return UnitOfTime.DAYS
+
+    @property
+    def native_value(self) -> float | None:
+        value = self._controller.days_left
+        return None if value is None else round(value, 1)

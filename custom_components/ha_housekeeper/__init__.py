@@ -25,6 +25,7 @@ from .const import (
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_KNX_SONOS,
+    FUNCTION_LLM,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
     FUNCTION_POOL,
@@ -41,6 +42,7 @@ from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
+from .llm_usage import LlmUsageController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 from .subentry import SubentryEntry, any_busy, hub_controllers
@@ -62,6 +64,7 @@ CONTROLLERS = {
     FUNCTION_TASK_PLANNER: TaskPlannerController,
     FUNCTION_ALARM: AlarmClockController,
     FUNCTION_MONITOR: IntegrationMonitorController,
+    FUNCTION_LLM: LlmUsageController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(

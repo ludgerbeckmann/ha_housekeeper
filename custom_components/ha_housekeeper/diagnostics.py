@@ -14,12 +14,13 @@ from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
+from .llm_usage import LlmUsageController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
 
-TO_REDACT: set[str] = set()
+TO_REDACT: set[str] = {"api_key"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -117,6 +118,16 @@ async def async_get_config_entry_diagnostics(
             "running": controller.running,
             "last_run": controller.last_run,
             "next_run": controller.next_run.isoformat() if controller.next_run else None,
+        }
+    if isinstance(controller, LlmUsageController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "currency": controller.currency,
+            "remaining": controller.remaining,
+            "cost_today": controller.cost_today,
+            "cost_month": controller.cost_month,
+            "alerts": controller.active_alerts,
+            "error": controller.error,
         }
     if isinstance(controller, IntegrationMonitorController):
         result["state"] = {
