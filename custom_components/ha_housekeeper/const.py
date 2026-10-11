@@ -19,6 +19,7 @@ FUNCTION_UPDATER = "updater"
 FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
 FUNCTION_MONITOR = "integration_monitor"
+FUNCTION_LLM = "llm_usage"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -33,6 +34,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_TASK_PLANNER: ("Aufgabenplaner", "Task planner"),
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
     FUNCTION_MONITOR: ("Integrationsmonitor", "Integration monitor"),
+    FUNCTION_LLM: ("LLM-Verbrauch", "LLM usage"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -111,6 +113,12 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.SWITCH,
     ],
     FUNCTION_MONITOR: [
+        Platform.BINARY_SENSOR,
+        Platform.BUTTON,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
+    FUNCTION_LLM: [
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
         Platform.SENSOR,
@@ -497,6 +505,27 @@ MON_ACTION_NONE = "none"
 MON_ACTION_RELOAD = "reload"
 MON_ACTION_DISABLE = "disable"
 MON_ACTIONS = [MON_ACTION_NONE, MON_ACTION_RELOAD, MON_ACTION_DISABLE]
+
+# --- LLM-Verbrauch ---
+CONF_PROVIDER = "provider"
+CONF_API_KEY = "api_key"
+CONF_LLM_MODE = "mode"
+CONF_LLM_AMOUNT = "amount"
+CONF_LLM_BASELINE = "baseline_time"
+CONF_POLL_MINUTES = "poll_minutes"
+CONF_LOW_BALANCE = "low_balance"
+CONF_DAILY_LIMIT = "daily_limit"
+CONF_MONTHLY_LIMIT = "monthly_limit"
+
+PROVIDER_ANTHROPIC = "anthropic"
+PROVIDER_OPENAI = "openai"
+PROVIDERS = [PROVIDER_ANTHROPIC, PROVIDER_OPENAI]
+
+LLM_MODE_BALANCE = "balance"  # Guthaben mit Abgleich: Betrag minus Kosten seit dem Abgleich
+LLM_MODE_BUDGET = "budget"  # Monatsbudget: Betrag minus Kosten im laufenden Monat
+LLM_MODES = [LLM_MODE_BALANCE, LLM_MODE_BUDGET]
+
+DEFAULT_POLL_MINUTES = 60
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [

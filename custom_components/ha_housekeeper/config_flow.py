@@ -39,6 +39,7 @@ from .const import (
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_KNX_SONOS,
+    FUNCTION_LLM,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
     FUNCTION_PLATFORMS,
@@ -56,6 +57,7 @@ from .flows.common import OptionsBase, _flatten_sections, _validate_notify
 from .flows.door_guard import DoorGuardOptions, _door_schema, _validate_door
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.knx import _SONOS_SELECTOR, KnxSonosOptions
+from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
 from .flows.mailbox import MailboxOptions, _mailbox_schema
 from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
 from .flows.planner import TaskPlannerOptions, _planner_schema, _validate_planner
@@ -77,6 +79,7 @@ _MENU_STEPS = {
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
     FUNCTION_MONITOR: "mon_menu",
+    FUNCTION_LLM: "llm_menu",
 }
 
 
@@ -271,6 +274,23 @@ class NewInstanceSteps:
             errors=errors,
         )
 
+    async def async_step_new_llm_usage(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            flat = _flatten_sections(user_input)
+            errors = await async_validate_new(self.hass, flat)
+            if not errors:
+                return await self._finish_new(flat.get(CONF_NAME), new_instance_data(flat))
+            defaults = flat
+        return self.async_show_form(
+            step_id="new_llm_usage",
+            data_schema=_llm_new_schema(self.hass, defaults),
+            errors=errors,
+        )
+
     async def async_step_new_task_planner(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -334,6 +354,7 @@ class HousekeeperSubentryFlow(
     TaskPlannerOptions,
     AlarmOptions,
     MonitorOptions,
+    LlmOptions,
     NewInstanceSteps,
     OptionsBase,
     ConfigSubentryFlow,

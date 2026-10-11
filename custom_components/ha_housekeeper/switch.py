@@ -17,6 +17,7 @@ from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .integration_monitor import IntegrationMonitorController
+from .llm_usage import LlmUsageController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
@@ -58,6 +59,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([MailboxActiveSwitch(controller)])
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities([MonitorActiveSwitch(controller)])
+    elif isinstance(controller, LlmUsageController):
+        async_add_entities([LlmActiveSwitch(controller)])
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -254,6 +257,26 @@ class MonitorActiveSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)
+
+
+class LlmActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = Kosten werden abgefragt und überwacht; off = pausiert (keine Abfrage, keine Warnungen)."""
+
+    _attr_icon = "mdi:robot-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+        await self._controller.async_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_enabled(False)

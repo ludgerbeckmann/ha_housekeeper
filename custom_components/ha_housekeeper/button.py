@@ -16,6 +16,7 @@ from .alarm_clock import AlarmClockController
 from .const import TASK_ID, TASK_NAME
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
+from .llm_usage import LlmUsageController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .pool_pump import PoolPumpController
@@ -40,6 +41,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([DoorbellTestButton(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterCheckNowButton(controller)])
+    elif isinstance(controller, LlmUsageController):
+        async_add_entities([LlmRefreshButton(controller)])
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities([MonitorCheckNowButton(controller), MonitorReenableButton(controller)])
     elif isinstance(controller, AlarmClockController):
@@ -189,3 +192,15 @@ class MonitorReenableButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_reenable_all()
+
+
+class LlmRefreshButton(FunctionEntity, ButtonEntity):
+    """Fragt die Kosten sofort ab."""
+
+    _attr_icon = "mdi:refresh"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "llm_refresh")
+
+    async def async_press(self) -> None:
+        await self._controller.async_refresh()

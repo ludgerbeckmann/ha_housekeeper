@@ -145,6 +145,18 @@
         "reload": "Neu laden",
         "disable": "Deaktivieren"
       }
+    },
+    "llm_provider": {
+      "options": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI"
+      }
+    },
+    "llm_mode": {
+      "options": {
+        "balance": "Guthaben (mit Abgleich)",
+        "budget": "Monatsbudget"
+      }
     }
   },
   "entity": {
@@ -169,6 +181,9 @@
       },
       "monitor_problem": {
         "name": "Integrationsstörung"
+      },
+      "llm_warning": {
+        "name": "LLM-Warnung"
       }
     },
     "sensor": {
@@ -216,6 +231,18 @@
       },
       "monitor_disabled": {
         "name": "Vom Monitor deaktiviert"
+      },
+      "llm_remaining": {
+        "name": "Restguthaben"
+      },
+      "llm_cost_today": {
+        "name": "Kosten heute"
+      },
+      "llm_cost_month": {
+        "name": "Kosten im Monat"
+      },
+      "llm_days_left": {
+        "name": "Reichweite"
       }
     },
     "button": {
@@ -245,6 +272,9 @@
       },
       "monitor_reenable": {
         "name": "Deaktivierte aktivieren"
+      },
+      "llm_refresh": {
+        "name": "Jetzt abfragen"
       }
     },
     "switch": {
@@ -277,6 +307,9 @@
       },
       "monitor_active": {
         "name": "Monitor aktiv"
+      },
+      "llm_active": {
+        "name": "LLM-Abfrage aktiv"
       }
     }
   },
@@ -1837,6 +1870,132 @@
         "nothing_to_do": "Die Regel braucht eine Aktion oder die Meldung.",
         "no_presence": "Für das automatische Aktivieren wird eine Anwesenheitsentität benötigt.",
         "reenable_needs_disable": "Automatisch aktivieren ist nur mit der Aktion „Deaktivieren“ sinnvoll."
+      },
+      "abort": {}
+    },
+    "llm_usage": {
+      "initiate_flow": {
+        "user": "LLM-Verbrauch hinzufügen"
+      },
+      "entry_type": "LLM-Verbrauch",
+      "step": {
+        "new_llm_usage": {
+          "title": "LLM-Verbrauch",
+          "description": "Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic oder OpenAI). Achtung: Dafür wird ein **Admin-Key** der Organisation gebraucht. Der kann auch Mitglieder und Schlüssel verwalten, bewahre ihn sorgfältig auf. Der Key liegt wie alle Zugangsdaten unverschlüsselt im Speicher von Home Assistant. Ein privates Konto ohne Organisation hat diese Abfrage nicht. Die Anbieter liefern nur die Kosten je Tag, das Restguthaben wird daraus berechnet (UTC-Tage, Berichte mit einigen Stunden Verzögerung).",
+          "sections": {
+            "general": {
+              "name": "Konto und Grenzen",
+              "description": "Zugang, Betrag und Warngrenzen.",
+              "data": {
+                "name": "Name (erscheint als „LLM-Verbrauch: Name“)",
+                "provider": "Anbieter",
+                "api_key": "Admin-Key",
+                "mode": "Modus",
+                "amount": "Betrag",
+                "poll_minutes": "Abfrageintervall (Minuten)",
+                "low_balance": "Warnen, wenn das Guthaben unter … fällt",
+                "daily_limit": "Tageslimit (Kosten pro Tag)",
+                "monthly_limit": "Monatslimit (Kosten pro Monat)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „LLM-Verbrauch“. Gib nur den Namen der Instanz ein, z. B. „Anthropic“; der Funktionsname wird automatisch vorangestellt.",
+                "api_key": "Admin-Key der Organisation (Anthropic: sk-ant-admin…, OpenAI: Admin-Key). Er wird nur zum Abfragen der Kosten benutzt.",
+                "mode": "„Guthaben“: du trägst das aktuelle Guthaben aus der Konsole ein (und nach jedem Aufladen erneut über „Guthaben abgleichen“), das Restguthaben ist der Betrag minus die Kosten seitdem. „Monatsbudget“: das Restbudget ist der Betrag minus die Kosten im laufenden Monat. Bei automatischem Aufladen den Modus „Monatsbudget“ wählen, sonst stimmt das Restguthaben nicht.",
+                "amount": "Guthaben-Modus: dein aktuelles Guthaben laut Konsole des Anbieters. Monatsbudget: der Betrag, den du pro Monat ausgeben willst. In der Währung des Anbieters (derzeit USD).",
+                "poll_minutes": "Wie oft die Kosten abgefragt werden. Die Berichte der Anbieter kommen mit einigen Stunden Verzögerung.",
+                "low_balance": "Leer = keine Warnung. Gilt für das Restguthaben bzw. Restbudget; entfällt sinnvollerweise bei automatischem Aufladen.",
+                "daily_limit": "Leer = keine Warnung. Warnt einmal pro Tag, wenn die Kosten des Tages (UTC) das Limit überschreiten.",
+                "monthly_limit": "Leer = keine Warnung. Warnt einmal pro Monat, wenn die Kosten des Monats (UTC) das Limit überschreiten."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit gewarnt wird.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "llm_menu": {
+          "title": "LLM-Verbrauch",
+          "description": "Einstellungen und Abgleich des LLM-Verbrauchs.",
+          "menu_options": {
+            "llm_general": "Einstellungen",
+            "llm_calibrate": "Guthaben abgleichen",
+            "rename": "Umbenennen"
+          }
+        },
+        "llm_general": {
+          "title": "Einstellungen",
+          "sections": {
+            "general": {
+              "name": "Konto und Grenzen",
+              "description": "Zugang, Betrag und Warngrenzen.",
+              "data": {
+                "api_key": "Neuer Admin-Key",
+                "amount": "Monatsbudget",
+                "poll_minutes": "Abfrageintervall (Minuten)",
+                "low_balance": "Warnen, wenn das Guthaben unter … fällt",
+                "daily_limit": "Tageslimit (Kosten pro Tag)",
+                "monthly_limit": "Monatslimit (Kosten pro Monat)"
+              },
+              "data_description": {
+                "api_key": "Leer lassen, um den bisherigen Key zu behalten.",
+                "amount": "Der Betrag, den du pro Monat ausgeben willst.",
+                "poll_minutes": "Wie oft die Kosten abgefragt werden.",
+                "low_balance": "Leer = keine Warnung.",
+                "daily_limit": "Leer = keine Warnung.",
+                "monthly_limit": "Leer = keine Warnung."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit gewarnt wird.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "llm_calibrate": {
+          "title": "Guthaben abgleichen",
+          "description": "Trage das aktuelle Guthaben ein, das die Konsole des Anbieters zeigt (und nach jedem Aufladen erneut). Ab jetzt wird das Restguthaben aus diesem Betrag minus den Kosten seitdem berechnet.",
+          "data": {
+            "amount": "Aktuelles Guthaben"
+          }
+        },
+        "rename": {
+          "title": "Umbenennen",
+          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
+          "data": {
+            "name": "Name (erscheint als „LLM-Verbrauch: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Anthropic“; der Titel lautet dann „LLM-Verbrauch: Anthropic“. Ein vorangestellter Funktionsname wird entfernt."
+          }
+        }
+      },
+      "error": {
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "invalid_auth": "Der Key wurde abgelehnt. Für Anthropic und OpenAI wird ein Admin-Key der Organisation benötigt.",
+        "cannot_connect": "Die Abfrage ist fehlgeschlagen. Bitte Verbindung und Key prüfen."
       },
       "abort": {}
     }

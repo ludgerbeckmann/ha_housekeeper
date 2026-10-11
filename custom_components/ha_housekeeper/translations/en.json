@@ -145,6 +145,18 @@
         "reload": "Reload",
         "disable": "Disable"
       }
+    },
+    "llm_provider": {
+      "options": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI"
+      }
+    },
+    "llm_mode": {
+      "options": {
+        "balance": "Balance (with calibration)",
+        "budget": "Monthly budget"
+      }
     }
   },
   "entity": {
@@ -169,6 +181,9 @@
       },
       "monitor_problem": {
         "name": "Integration fault"
+      },
+      "llm_warning": {
+        "name": "LLM warning"
       }
     },
     "sensor": {
@@ -216,6 +231,18 @@
       },
       "monitor_disabled": {
         "name": "Disabled by the monitor"
+      },
+      "llm_remaining": {
+        "name": "Remaining balance"
+      },
+      "llm_cost_today": {
+        "name": "Cost today"
+      },
+      "llm_cost_month": {
+        "name": "Cost this month"
+      },
+      "llm_days_left": {
+        "name": "Days left"
       }
     },
     "button": {
@@ -245,6 +272,9 @@
       },
       "monitor_reenable": {
         "name": "Re-enable disabled"
+      },
+      "llm_refresh": {
+        "name": "Query now"
       }
     },
     "switch": {
@@ -277,6 +307,9 @@
       },
       "monitor_active": {
         "name": "Monitor active"
+      },
+      "llm_active": {
+        "name": "LLM query active"
       }
     }
   },
@@ -1837,6 +1870,132 @@
         "nothing_to_do": "The rule needs an action or the report.",
         "no_presence": "Automatic re-enabling needs a presence entity.",
         "reenable_needs_disable": "Automatic re-enabling only makes sense with the action “Disable”."
+      },
+      "abort": {}
+    },
+    "llm_usage": {
+      "initiate_flow": {
+        "user": "Add LLM usage"
+      },
+      "entry_type": "LLM usage",
+      "step": {
+        "new_llm_usage": {
+          "title": "LLM usage",
+          "description": "Monitors the costs and remaining balance of an LLM API account (Anthropic or OpenAI). Note: this needs an **admin key** of the organization. It can also manage members and keys, so keep it safe. Like all credentials the key is stored unencrypted in Home Assistant's storage. A personal account without an organization has no such query. The providers only report costs per day; the remaining balance is calculated from them (UTC days, reports delayed by a few hours).",
+          "sections": {
+            "general": {
+              "name": "Account and limits",
+              "description": "Access, amount and warning limits.",
+              "data": {
+                "name": "Name (shown as “LLM usage: Name”)",
+                "provider": "Provider",
+                "api_key": "Admin key",
+                "mode": "Mode",
+                "amount": "Amount",
+                "poll_minutes": "Query interval (minutes)",
+                "low_balance": "Warn when the balance falls below …",
+                "daily_limit": "Daily limit (cost per day)",
+                "monthly_limit": "Monthly limit (cost per month)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “LLM usage”. Enter only the name of the instance, e.g. “Anthropic”; the function name is prepended automatically.",
+                "api_key": "Admin key of the organization (Anthropic: sk-ant-admin…, OpenAI: admin key). It is only used to query the costs.",
+                "mode": "“Balance”: you enter the current balance from the console (and again after every top-up via “Calibrate balance”); the remaining balance is the amount minus the costs since then. “Monthly budget”: the remaining budget is the amount minus the costs of the current month. With automatic top-up choose “Monthly budget”, otherwise the remaining balance is wrong.",
+                "amount": "Balance mode: your current balance according to the provider's console. Monthly budget: the amount you want to spend per month. In the provider's currency (currently USD).",
+                "poll_minutes": "How often the costs are queried. The providers' reports are delayed by a few hours.",
+                "low_balance": "Empty = no warning. Applies to the remaining balance or budget; pointless with automatic top-up.",
+                "daily_limit": "Empty = no warning. Warns once a day when the cost of the day (UTC) exceeds the limit.",
+                "monthly_limit": "Empty = no warning. Warns once a month when the cost of the month (UTC) exceeds the limit."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what warnings are sent.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "llm_menu": {
+          "title": "LLM usage",
+          "description": "Settings and calibration of the LLM usage.",
+          "menu_options": {
+            "llm_general": "Settings",
+            "llm_calibrate": "Calibrate balance",
+            "rename": "Rename"
+          }
+        },
+        "llm_general": {
+          "title": "Settings",
+          "sections": {
+            "general": {
+              "name": "Account and limits",
+              "description": "Access, amount and warning limits.",
+              "data": {
+                "api_key": "New admin key",
+                "amount": "Monthly budget",
+                "poll_minutes": "Query interval (minutes)",
+                "low_balance": "Warn when the balance falls below …",
+                "daily_limit": "Daily limit (cost per day)",
+                "monthly_limit": "Monthly limit (cost per month)"
+              },
+              "data_description": {
+                "api_key": "Leave empty to keep the current key.",
+                "amount": "The amount you want to spend per month.",
+                "poll_minutes": "How often the costs are queried.",
+                "low_balance": "Empty = no warning.",
+                "daily_limit": "Empty = no warning.",
+                "monthly_limit": "Empty = no warning."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and with what warnings are sent.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "llm_calibrate": {
+          "title": "Calibrate balance",
+          "description": "Enter the current balance shown by the provider's console (and again after every top-up). From now on the remaining balance is calculated from this amount minus the costs since then.",
+          "data": {
+            "amount": "Current balance"
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name (shown as “LLM usage: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Anthropic”; the title then reads “LLM usage: Anthropic”. A leading function name is removed."
+          }
+        }
+      },
+      "error": {
+        "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
+        "invalid_auth": "The key was rejected. Anthropic and OpenAI need an admin key of the organization.",
+        "cannot_connect": "The query failed. Please check the connection and the key."
       },
       "abort": {}
     }
