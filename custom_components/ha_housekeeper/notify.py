@@ -143,6 +143,7 @@ class Notifier:
         kind: str = "",
         actions: list[dict[str, str]] | None = None,
         extra: dict[str, Any] | None = None,
+        spoken: str | None = None,
     ) -> None:
         title = self._title()
 
@@ -166,7 +167,7 @@ class Notifier:
                     {
                         "entity_id": tts_entity,
                         "media_player_entity_id": player,
-                        "message": message,
+                        "message": spoken or message,
                     },
                 )
 

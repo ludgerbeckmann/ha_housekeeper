@@ -1736,15 +1736,19 @@
                 "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
                 "min_entities": "Mindestanzahl Entitäten",
                 "check_minutes": "Prüfintervall (Minuten)",
-                "notify_all": "Alle Störungen melden",
+                "notify_errors": "Fehlerstatus melden",
+                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
+                "summary_minutes": "Meldungen bündeln (Minuten)",
                 "excluded": "Von der Meldung ausgenommen"
               },
               "data_description": {
                 "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
                 "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
                 "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
-                "notify_all": "Meldet eine Störung jeder Integration (Fehlerstatus oder alle Entitäten nicht verfügbar) über die unten gewählten Wege. Aktionen gibt es nur über Regeln.",
-                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon.",
+                "notify_errors": "Meldet Integrationen, die nicht laufen (Setup-Fehler, Wiederholungsversuch, Migrationsfehler). Das ist fast immer relevant.",
+                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, z. B. bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und stattdessen eine Regel mit „Melden“ für Brücken und Dienste anlegen (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router, Sonos, Wetter u. ä.).",
+                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet bzw. aktualisiert wird, damit bei einem Netzausfall nicht viele Pushs kommen. 0 = sofort. Verschwindet die letzte Störung, wird die Meldung entfernt.",
+                "excluded": "Diese Integrationen kommen nicht in die Sammelmeldung. Regeln gelten unabhängig davon.",
                 "name": "Optional. Leer = „Integrationsmonitor“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
@@ -1786,15 +1790,19 @@
                 "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
                 "min_entities": "Mindestanzahl Entitäten",
                 "check_minutes": "Prüfintervall (Minuten)",
-                "notify_all": "Alle Störungen melden",
+                "notify_errors": "Fehlerstatus melden",
+                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
+                "summary_minutes": "Meldungen bündeln (Minuten)",
                 "excluded": "Von der Meldung ausgenommen"
               },
               "data_description": {
                 "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
                 "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
                 "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
-                "notify_all": "Meldet eine Störung jeder Integration (Fehlerstatus oder alle Entitäten nicht verfügbar) über die unten gewählten Wege. Aktionen gibt es nur über Regeln.",
-                "excluded": "Diese Integrationen werden nicht allgemein gemeldet. Regeln gelten unabhängig davon."
+                "notify_errors": "Meldet Integrationen, die nicht laufen (Setup-Fehler, Wiederholungsversuch, Migrationsfehler). Das ist fast immer relevant.",
+                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, z. B. bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und stattdessen eine Regel mit „Melden“ für Brücken und Dienste anlegen (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router, Sonos, Wetter u. ä.).",
+                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet bzw. aktualisiert wird, damit bei einem Netzausfall nicht viele Pushs kommen. 0 = sofort. Verschwindet die letzte Störung, wird die Meldung entfernt.",
+                "excluded": "Diese Integrationen kommen nicht in die Sammelmeldung. Regeln gelten unabhängig davon."
               }
             },
             "notifications": {

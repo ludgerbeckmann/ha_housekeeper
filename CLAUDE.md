@@ -198,7 +198,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Fehlerstatus `ERROR_STATES` oder alle aktiven Entitäten der Registry `unavailable`, erst ab `min_entities`;
   deaktivierte/ladende Einträge sind „nicht beurteilbar“ = `None`). Eine Störung gilt erst nach der Wartezeit
   (`grace_minutes`, `_since` im Speicher) und wird als `faults` im `Store` bestätigt (`acted`/`notified` je
-  Störung, damit es je Störung nur eine Aktion und eine Meldung gibt; Entwarnung beim Wechsel auf `ok`).
+  Störung: `acted` = Aktion einmal ausgeführt, `reported` = steht in der Sammelmeldung, `result` = Ergebnis der Aktion).
+  **Sammelmeldung** (`_async_flush_summary()`): eine Meldung mit fester Kennung `summary` für alle gemeldeten Störungen
+  (Zeile = Integrationsname aus dem Manifest + Eintragstitel, Art, Entitätenzahl, seit, Aktion); gesendet nach
+  `summary_minutes` (`summary.pending`), geändert nur bei geänderter Liste (`summary.sent`), bei leerer Liste sofort
+  entfernt; TTS spricht nur die Anzahl (`Notifier.async_send(spoken=…)`). Gemeldet wird je Art nach `notify_errors`/
+  `notify_unavailable` (fehlen beide: der ältere `notify_all`, Standard an), Ausnahmenliste, oder eine Regel mit
+  `notify`. Beim Update von den Einzelmeldungen werden die alten Meldungen je Integration einmal entfernt.
   Regeln in `options["monitor_rules"]` (Schlüssel `M_*`) gelten nur für ausdrücklich gewählte Integrationen;
   Aktion `none`/`reload`/`disable` (Vorrang: disable). Deaktiviert wird per `async_set_disabled_by(USER)`, der
   Monitor merkt sich seine Deaktivierungen in `disabled` (Store) und aktiviert **nur diese** wieder: über die

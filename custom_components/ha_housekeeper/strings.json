@@ -1736,15 +1736,19 @@
                 "grace_minutes": "Wait time before a fault (minutes)",
                 "min_entities": "Minimum number of entities",
                 "check_minutes": "Check interval (minutes)",
-                "notify_all": "Report all faults",
+                "notify_errors": "Report error state",
+                "notify_unavailable": "Report “all entities unavailable”",
+                "summary_minutes": "Bundle reports (minutes)",
                 "excluded": "Excluded from reports"
               },
               "data_description": {
                 "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
                 "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
                 "check_minutes": "In addition to the check at startup (after two minutes).",
-                "notify_all": "Reports a fault of any integration (error state or all entities unavailable) via the ways selected below. Actions exist only through rules.",
-                "excluded": "These integrations are not reported generally. Rules apply regardless.",
+                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
+                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and create a rule with “Report” for bridges and services instead (MQTT, Zigbee2MQTT, ZHA, KNX, Hue bridge, router, Sonos, weather etc.).",
+                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
+                "excluded": "These integrations do not appear in the summary. Rules apply regardless.",
                 "name": "Optional. Empty = “Integration monitor”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
@@ -1786,15 +1790,19 @@
                 "grace_minutes": "Wait time before a fault (minutes)",
                 "min_entities": "Minimum number of entities",
                 "check_minutes": "Check interval (minutes)",
-                "notify_all": "Report all faults",
+                "notify_errors": "Report error state",
+                "notify_unavailable": "Report “all entities unavailable”",
+                "summary_minutes": "Bundle reports (minutes)",
                 "excluded": "Excluded from reports"
               },
               "data_description": {
                 "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
                 "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
                 "check_minutes": "In addition to the check at startup (after two minutes).",
-                "notify_all": "Reports a fault of any integration (error state or all entities unavailable) via the ways selected below. Actions exist only through rules.",
-                "excluded": "These integrations are not reported generally. Rules apply regardless."
+                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
+                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and create a rule with “Report” for bridges and services instead (MQTT, Zigbee2MQTT, ZHA, KNX, Hue bridge, router, Sonos, weather etc.).",
+                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
+                "excluded": "These integrations do not appear in the summary. Rules apply regardless."
               }
             },
             "notifications": {
