@@ -359,7 +359,7 @@
     },
     "llm_auth_failed": {
       "title": "Zugang abgelehnt: {entry}",
-      "description": "Der Anbieter hat den Key der Funktion „{entry}“ (LLM-Verbrauch) abgelehnt (ungültig, widerrufen oder ohne Admin-Rechte). Trage in den Einstellungen der Funktion einen gültigen Admin-Key ein. Dieser Hinweis verschwindet von selbst, sobald die Abfrage wieder funktioniert."
+      "description": "Der Anbieter hat den Key der Funktion „{entry}“ (LLM-Verbrauch) abgelehnt: ungültig, widerrufen, abgelaufen oder kein Admin-Key (ein normaler API-Key reicht nicht). Anthropic: Console → Settings → Admin keys; OpenAI: Organisations-Einstellungen → Admin keys. Trage in den Einstellungen der Funktion einen gültigen Admin-Key ein. Dieser Hinweis verschwindet von selbst, sobald die Abfrage wieder funktioniert."
     }
   },
   "config_subentries": {
@@ -1908,7 +1908,7 @@
       "step": {
         "new_llm_usage": {
           "title": "LLM-Verbrauch",
-          "description": "Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic oder OpenAI). Achtung: Dafür wird ein **Admin-Key** der Organisation gebraucht. Der kann auch Mitglieder und Schlüssel verwalten, bewahre ihn sorgfältig auf. Der Key liegt wie alle Zugangsdaten unverschlüsselt im Speicher von Home Assistant. Ein privates Konto ohne Organisation hat diese Abfrage nicht. Die Anbieter liefern nur die Kosten je Tag, das Restguthaben wird daraus berechnet (UTC-Tage, Berichte mit einigen Stunden Verzögerung).",
+          "description": "Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic oder OpenAI). Dafür wird ein **Admin-Key** der Organisation gebraucht; ein normaler API-Key funktioniert nicht.\n\n**Anthropic:** Claude Console → Settings → Admin keys → Create key (nur Organisations-Admins; ein privater Zugang ohne Organisation hat das nicht, dann zuerst unter Settings → Organization eine Organisation einrichten).\n\n**OpenAI:** platform.openai.com → Organisations-Einstellungen → Admin keys → Create new admin key (nur Organisations-Owner) und das Recht für Nutzung und Kosten auswählen.\n\nDer Admin-Key kann auch Mitglieder und Schlüssel verwalten, bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten unverschlüsselt im Speicher von Home Assistant. Die Anbieter liefern nur die Kosten je Tag, das Restguthaben wird daraus berechnet (UTC-Tage, Berichte mit einigen Stunden Verzögerung).",
           "sections": {
             "general": {
               "name": "Konto und Grenzen",
@@ -1928,7 +1928,7 @@
               },
               "data_description": {
                 "name": "Optional. Leer = „LLM-Verbrauch“. Gib nur den Namen der Instanz ein, z. B. „Anthropic“; der Funktionsname wird automatisch vorangestellt.",
-                "api_key": "Admin-Key der Organisation (Anthropic: sk-ant-admin…, OpenAI: Admin-Key). Er wird nur zum Abfragen der Kosten benutzt.",
+                "api_key": "Admin-Key der Organisation (Anthropic: sk-ant-admin01-…, OpenAI: Admin-Key mit Recht für Nutzung und Kosten). Er wird nur zum Abfragen der Kosten benutzt.",
                 "mode": "„Guthaben“: du trägst das aktuelle Guthaben aus der Konsole ein (und nach jedem Aufladen erneut über „Guthaben abgleichen“), das Restguthaben ist der Betrag minus die Kosten seitdem. „Monatsbudget“: das Restbudget ist der Betrag minus die Kosten im laufenden Monat. Bei automatischem Aufladen den Modus „Monatsbudget“ wählen, sonst stimmt das Restguthaben nicht.",
                 "amount": "Guthaben-Modus: dein aktuelles Guthaben laut Konsole des Anbieters. Monatsbudget: der Betrag, den du pro Monat ausgeben willst. In der Währung des Anbieters (derzeit USD).",
                 "poll_minutes": "Wie oft die Kosten abgefragt werden. Die Berichte der Anbieter kommen mit einigen Stunden Verzögerung.",
@@ -2029,7 +2029,7 @@
       },
       "error": {
         "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
-        "invalid_auth": "Der Key wurde abgelehnt. Für Anthropic und OpenAI wird ein Admin-Key der Organisation benötigt.",
+        "invalid_auth": "Der Key wurde abgelehnt. Es wird ein Admin-Key der Organisation benötigt, kein normaler API-Key. Anthropic: Console → Settings → Admin keys (Organisation nötig). OpenAI: Organisations-Einstellungen → Admin keys (nur Owner), mit Recht für Nutzung und Kosten.",
         "cannot_connect": "Die Abfrage ist fehlgeschlagen. Bitte Verbindung und Key prüfen."
       },
       "abort": {}
