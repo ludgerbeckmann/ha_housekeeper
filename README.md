@@ -697,9 +697,20 @@ solche Integration von Hand wieder ein, vergisst er sie.
 **Restguthaben** bzw. **Restbudget** und warnt bei niedrigem Guthaben oder hohem Verbrauch. Je Konto
 eine Instanz. Google Gemini ist nicht dabei: Für einen normalen API-Key gibt es keine Kostenabfrage.
 
-**Voraussetzung:** ein **Admin-Key** der Organisation (Anthropic: `sk-ant-admin…`, OpenAI: Admin-Key).
-Ein privates Konto ohne Organisation hat diese Abfrage nicht. Der Admin-Key kann auch Mitglieder und
-Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
+**Voraussetzung:** ein **Admin-Key** der Organisation (Anthropic: `sk-ant-admin01-…`, OpenAI: Admin-Key).
+Ein normaler API-Key funktioniert nicht. So kommst du an den Key:
+
+- **Anthropic:** Claude Console (`platform.claude.com`) → *Settings → Admin keys* → *Create key*. Das dürfen
+  nur Organisations-**Admins**. Ein privater Zugang ohne Organisation hat den Menüpunkt nicht; richte dann
+  zuerst unter *Settings → Organization* eine Organisation ein. Ein Abo bei claude.ai (Pro/Max/Team) ist
+  etwas anderes. Laut Anthropic-Dokumentation akzeptiert die Kosten-Abfrage auch einen persönlichen oder
+  Service-Account-Key, der nicht an einen Workspace gebunden ist; das ist hier nicht getestet (beim Anlegen
+  wird der Key mit einer Abfrage geprüft).
+- **OpenAI:** `platform.openai.com` → Organisations-Einstellungen → *Admin keys* → *Create new admin key*. Das
+  dürfen nur Organisations-**Owner**. Beim Anlegen das Recht für **Nutzung und Kosten** auswählen
+  (Admin-Keys gelten nur für die Verwaltungs-Schnittstellen).
+
+Der Admin-Key kann auch Mitglieder und Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
 Speicher von Home Assistant (die Diagnose schwärzt ihn). Beim Anlegen und beim Ändern wird der Key mit
 einer Abfrage geprüft.
 

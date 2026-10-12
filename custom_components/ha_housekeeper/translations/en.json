@@ -359,7 +359,7 @@
     },
     "llm_auth_failed": {
       "title": "Access denied: {entry}",
-      "description": "The provider rejected the key of the function \"{entry}\" (LLM usage): invalid, revoked or without admin rights. Enter a valid admin key in the settings of the function. This notice disappears by itself as soon as the query works again."
+      "description": "The provider rejected the key of the function \"{entry}\" (LLM usage): invalid, revoked, expired or not an admin key (a normal API key is not enough). Anthropic: Console → Settings → Admin keys; OpenAI: organization settings → Admin keys. Enter a valid admin key in the settings of the function. This notice disappears by itself as soon as the query works again."
     }
   },
   "config_subentries": {
@@ -1908,7 +1908,7 @@
       "step": {
         "new_llm_usage": {
           "title": "LLM usage",
-          "description": "Monitors the costs and remaining balance of an LLM API account (Anthropic or OpenAI). Note: this needs an **admin key** of the organization. It can also manage members and keys, so keep it safe. Like all credentials the key is stored unencrypted in Home Assistant's storage. A personal account without an organization has no such query. The providers only report costs per day; the remaining balance is calculated from them (UTC days, reports delayed by a few hours).",
+          "description": "Monitors the costs and remaining balance of an LLM API account (Anthropic or OpenAI). This needs an **admin key** of the organization; a normal API key does not work.\n\n**Anthropic:** Claude Console → Settings → Admin keys → Create key (organization admins only; a personal account without an organization does not have it, set up an organization under Settings → Organization first).\n\n**OpenAI:** platform.openai.com → organization settings → Admin keys → Create new admin key (organization owners only) and select the permission for usage and costs.\n\nThe admin key can also manage members and keys, so keep it safe. Like all credentials it is stored unencrypted in Home Assistant's storage. The providers only report costs per day; the remaining balance is calculated from them (UTC days, reports delayed by a few hours).",
           "sections": {
             "general": {
               "name": "Account and limits",
@@ -1928,7 +1928,7 @@
               },
               "data_description": {
                 "name": "Optional. Empty = “LLM usage”. Enter only the name of the instance, e.g. “Anthropic”; the function name is prepended automatically.",
-                "api_key": "Admin key of the organization (Anthropic: sk-ant-admin…, OpenAI: admin key). It is only used to query the costs.",
+                "api_key": "Admin key of the organization (Anthropic: sk-ant-admin01-…, OpenAI: admin key with the permission for usage and costs). It is only used to query the costs.",
                 "mode": "“Balance”: you enter the current balance from the console (and again after every top-up via “Calibrate balance”); the remaining balance is the amount minus the costs since then. “Monthly budget”: the remaining budget is the amount minus the costs of the current month. With automatic top-up choose “Monthly budget”, otherwise the remaining balance is wrong.",
                 "amount": "Balance mode: your current balance according to the provider's console. Monthly budget: the amount you want to spend per month. In the provider's currency (currently USD).",
                 "poll_minutes": "How often the costs are queried. The providers' reports are delayed by a few hours.",
@@ -2029,7 +2029,7 @@
       },
       "error": {
         "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
-        "invalid_auth": "The key was rejected. Anthropic and OpenAI need an admin key of the organization.",
+        "invalid_auth": "The key was rejected. An admin key of the organization is needed, not a normal API key. Anthropic: Console → Settings → Admin keys (organization needed). OpenAI: organization settings → Admin keys (owners only), with the permission for usage and costs.",
         "cannot_connect": "The query failed. Please check the connection and the key."
       },
       "abort": {}
