@@ -39,12 +39,13 @@ dieses Vorgangs.
 
 ## Einzelne Elemente ein- und ausschalten
 
-Wecker, Aufgaben, Updater-Zeitpläne, Türklingel-Profile, Türwächter-Regeln und
-KNX/Sonos-Lautsprecher-Profile haben im Dialog ein Feld **Aktiv**. Ein ausgeschaltetes Element
+Wecker, Aufgaben, Updater-Zeitpläne, Türklingel-Profile, Türwächter-Regeln (und ältere
+KNX/Sonos-Lautsprecher-Profile) haben im Dialog ein Feld **Aktiv**. Ein ausgeschaltetes Element
 wird ignoriert (Standard: an, bestehende Elemente bleiben aktiv) und in den Listen mit „aus“
 markiert. Bei einem ausgeschalteten Updater-Zeitplan zählen auch seine Updates und
 Benachrichtigungswege nicht für „Verfügbare Updates“ und „Jetzt prüfen“; ein ausgeschaltetes
-KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus.
+älteres KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus (beim KNX/Sonos-Connector
+schaltet man sonst den Eintrag mit „Connector aktiv“ aus).
 
 ## Installation
 
@@ -356,70 +357,46 @@ Automationen und Dashboards an die neuen Entity-IDs und die Aktion
 
 ## KNX/Sonos-Connector
 
-Verbindet KNX-Gruppenadressen mit einem oder mehreren Sonos-Lautsprechern, in beide Richtungen.
+Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
 Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
 (Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
 eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
-sonst bricht das Hinzufügen ab. Mehrere Lautsprecher werden als **Profile** in einem Eintrag
-verwaltet.
+sonst bricht das Hinzufügen ab. **Jeder Lautsprecher ist ein eigener Eintrag** („KNX/Sonos-Connector
+hinzufügen“), mit eigenem Gerät, Schalter und Sensor.
 
-### Lautsprecher-Profile
+### Konfigurationsseite
 
-Unter *Konfigurieren* legst du die Profile an (hinzufügen, bearbeiten, löschen). Ein Profil hat:
+Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten. Jede
+Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es zählen nur eingehende
+**Schreibtelegramme**. Das Layout orientiert sich am Blueprint
+[KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935).
 
-- **Name** und **Sonos-Lautsprecher**
-- **Maximale Lautstärke** (begrenzt jede per KNX gesetzte Lautstärke)
-- **Schrittweite** für Lauter/Leiser und Dimmen
-- die Option **Bei Pause stoppen statt pausieren** (z. B. für Radiostreams, die sich nicht
-  pausieren lassen)
-
-Jeder **Befehl** und jede **Rückmeldung** gehört zu einem Profil (Auswahl im Dialog, sobald es
-mehrere Profile gibt) und hat **eigene Gruppenadressen**. Der Lautsprecher, den du beim
-Hinzufügen wählst, wird das erste Profil „Standard“; bestehende Einträge laufen unverändert
-weiter, alle bisherigen Befehle und Rückmeldungen gehören dann zu diesem Profil. Ohne
-Profilangabe gilt immer das erste Profil. Ein Profil lässt sich nur löschen, wenn kein Befehl
-und keine Rückmeldung es mehr nutzt, und das letzte Profil bleibt erhalten. Eine Gruppierung
-der Lautsprecher über Sonos gehört nicht dazu.
-
-### Befehle (KNX → Sonos)
-
-Ein Befehl besteht aus Name, **Gruppenadresse** (3-Ebenen, 2-Ebenen oder frei),
-**Datentyp** und **Aktion**. Es zählen nur eingehende **Schreibtelegramme**.
-
-| Datentyp | Bedingung |
+| Abschnitt | Felder |
 |---|---|
-| Schalten, 1 Bit (1.001) | auslösen bei Wert 1, Wert 0 oder jedem Wert |
-| Prozent, 1 Byte (5.001) | immer |
-| Szene (17.001) | bei der gewählten Szenennummer (1–64) |
-| Relatives Dimmen (3.007) | bei jedem Schritt außer Stopp |
+| **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
+| **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
+| **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
+| **Szenen** | Szenenadresse (17.001, Szenennummer 1–8); je **Szene 1–8** (eingeklappt): Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
+| **Rückmeldungen** | Spielt, Pausiert, Stumm (je 1 Bit), Lautstärke (5.001), Titel, Interpret, Album, Quelle (Text, auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
 
-Aktionen: Wiedergabe, Pause, Wiedergabe/Pause umschalten, Stopp, nächster/vorheriger
-Titel, **Lautstärke setzen** (aus dem Prozentwert oder fest), **Lauter**, **Leiser**,
-**Lautstärke dimmen** (Richtung aus dem Dimm-Telegramm, nur mit 3.007), Stumm, Stumm
-aus, Stumm umschalten, **Stumm (Wert)** (1 = stumm, 0 = aus, nur mit 1.001) und
-**Sonos-Favorit abspielen** (Auswahl aus den Favoriten des Lautsprechers; gespeichert
-wird der Titel, bei einem umbenannten Favoriten muss der Befehl angepasst werden).
+Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** (GroupValueRead) auf der
+Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
+(3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit
+wird als Name gespeichert; bei einem umbenannten Favoriten muss er angepasst werden.
 
-### Rückmeldungen (Sonos → KNX)
+### Ältere Einträge
 
-Eine Rückmeldung hat Name, **Quelle** und Gruppenadresse. Der Wert wird bei jeder
-Änderung gesendet, und **Leseanfragen** (GroupValueRead) auf der Adresse werden mit
-dem aktuellen Wert beantwortet.
-
-| Quelle | Datentyp |
-|---|---|
-| Wiedergabe, Pause, Stumm | 1 Bit (1.001) |
-| Lautstärke | Prozent (5.001) |
-| Titel, Interpret, Album, Quelle/Favorit | Text (16.001, auf 14 Zeichen gekürzt) |
-
-Bei Textquellen wird der **Text, wenn nichts wiedergegeben wird** (Standard leer)
-gesendet, solange der Lautsprecher nicht spielt.
+Bestehende Einträge laufen unverändert weiter, auch mit mehreren Lautsprecher-Profilen und den früheren
+Listen für Befehle und Rückmeldungen. Die neue Seite zeigt dann die Werte des ersten Profils; **beim
+Speichern werden weitere Profile verworfen** (ein Hinweis steht auf der Seite), lege sie als eigene Einträge
+an. Die älteren Befehle und Rückmeldungen bleiben aktiv, bis du im eingeklappten Abschnitt „Ältere Einträge“
+das Löschen wählst (er erscheint nur, wenn es welche gibt).
 
 ### Entitäten
 
 - `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
   Einschalten werden die Rückmeldungen neu gesendet)
-- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Profil, Name, Adresse, Aktion, Wert)
+- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name des Felds, Adresse, Aktion, Wert)
 
 ### Hinweise
 
@@ -432,9 +409,8 @@ gesendet, solange der Lautsprecher nicht spielt.
   Neuladen über die Oberfläche kann es bis zu 5 Minuten dauern, bis Befehle wieder
   ankommen.
 - Relatives Dimmen löst pro Telegramm **einen Schritt** aus (kein weiches Hoch- oder
-  Runterfahren über eine Zeit). Anregungen stammen u. a. aus dem Blueprint
-  [KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935),
-  ohne dessen Music-Assistant-, Squeezebox- und Denon-Erweiterungen.
+  Runterfahren über eine Zeit). Aus dem Blueprint nicht übernommen: Ein/Aus des Players sowie die
+  Erweiterungen für Music Assistant, Squeezebox und Denon.
 
 ## Home Assistant Updater
 

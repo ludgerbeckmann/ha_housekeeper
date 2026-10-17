@@ -218,31 +218,6 @@ async def test_knx_disabled_profile_is_inert(hass: HomeAssistant) -> None:
     assert [(c.data["address"], c.data["payload"]) for c in send] == [("5/0/1", 30)]
 
 
-async def test_knx_speaker_flow_stores_enabled_and_marks_picker(hass: HomeAssistant) -> None:
-    hass.config.language = "en"
-    async_mock_service(hass, "knx", "event_register")
-    hass.states.async_set("media_player.a", "paused", {})
-    entry = make_entry(domain=DOMAIN, title="Sonos", data={
-        "function_type": "knx_sonos", "player": "media_player.a", "max_volume": 100,
-        "volume_step": 5, "stop_instead_of_pause": False, "commands": [], "status": []})
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.hub_id)
-    await hass.async_block_till_done()
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
-    result = await flow.async_configure(result["flow_id"], {"item": "default"})
-    assert "enabled" in {str(k) for k in result["data_schema"].schema}
-    result = await flow.async_configure(result["flow_id"], {
-        "name": "Standard", "enabled": False, "player": "media_player.a", "max_volume": 100,
-        "volume_step": 5, "stop_instead_of_pause": False})
-    assert entry.options["speakers"][0]["enabled"] is False
-    await hass.async_block_till_done()
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
-    labels = [o["label"] for o in next(iter(result["data_schema"].schema.values())).config["options"]]
-    assert labels == ["Standard (media_player.a) (off)"]
-
-
 # --- Briefkasten ------------------------------------------------------------------------------------------------
 
 

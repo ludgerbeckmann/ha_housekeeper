@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) und `ir_remote` („IR-Fernbedienung“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) und `ir_remote` („IR-Fernbedienung“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -111,18 +111,23 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (Text wird vorher auf 14 Zeichen gekürzt, sonst lehnt xknx ab). Adressen werden per
   `knx.event_register` angemeldet (gilt nur zur Laufzeit, daher beim Start, nach
   `event_knx_reloaded` und alle 5 Minuten neu). Lesetelegramme auf Rückmeldeadressen
-  werden mit `response: true` beantwortet. Befehle und Rückmeldungen liegen als Listen
-  in `options["commands"]`/`options["status"]` (Schlüssel `K_*`). `mute_set` hat keine
-  Bedingung (folgt dem Wert). Der Übersetzungsschlüssel des Schalters ist
-  `connector_active` (nicht `active`, der gehört zur Türklingel). **Mehrere Lautsprecher =
-  Profile** in `options["speakers"]` (Schlüssel `id`, `name`, `player`, `max_volume`,
-  `volume_step`, `stop_instead_of_pause`); Befehle/Rückmeldungen tragen `K_PROFILE` und haben
-  eigene Adressen. `speaker_profiles()` bildet für ältere Einträge (nur `player` und Co. im
-  Eintrag) ein Profil „Standard“ (id `default`); `profile_for()` löst ein Profil auf, ohne
-  Angabe gilt das erste. Lautstärkegrenze, Schritt und „stoppen statt pausieren“ kommen aus
-  dem Profil, der Controller beobachtet alle Player. Löschen eines Profils ist blockiert,
-  solange Befehle/Rückmeldungen es nutzen. Menüeinträge: `add/edit/delete_speaker`
-  (nicht `*_profile`, das gehört zur Türklingel).
+  werden mit `response: true` beantwortet. Der Übersetzungsschlüssel des Schalters ist
+  `connector_active` (nicht `active`, der gehört zur Türklingel). **Ein Eintrag = ein Lautsprecher.**
+  Die Einstellungen sind **feste Felder auf einer Seite** (`async_step_knx_settings`, kein Menü; `_MENU_STEPS` zeigt
+  direkt darauf, Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`, der Name steht als Feld im
+  Abschnitt `speaker`) mit den Abschnitten `speaker`, `playback`, `volume`, `scenes`, `scene_1…8` (eingeklappt),
+  `status` (nach dem Blueprint „KNX Media Player“): Schlüssel `addr_*`, `scene_<n>_favorite/volume/address`,
+  `status_*`, `idle_text`, `player`/`max_volume`/`volume_step`/`stop_instead_of_pause`. Gruppenadressen sind optional,
+  geleerte Felder stehen als `None` in den Daten (`_CLEARABLE`). `settings_commands()`/`settings_status()` bilden
+  daraus beim Start dieselben Befehls- und Rückmeldungslisten wie früher (Schlüssel `K_*`; z. B. Play/Pause = `play` bei
+  1 und `pause` bei 0, Szene = Favorit plus Lautstärke auf 17.001 und auf der eigenen 1-Bit-Adresse mit „0 = Pause“),
+  die Dekodierung bleibt unverändert; ältere Listen `commands`/`status` laufen daneben weiter. **Ältere Einträge:** mehrere
+  Lautsprecher = Profile in `speakers` (Schlüssel `id`, `name`, `player`, `max_volume`, `volume_step`,
+  `stop_instead_of_pause`, `enabled`; Befehle tragen `K_PROFILE`), `speaker_profiles()` bildet für Einträge mit nur
+  `player` und Co. ein Profil „Standard“, `profile_for()` löst auf (ohne Angabe das erste). Die Seite zeigt die Werte des
+  ersten Profils und setzt beim Speichern `speakers` auf `None` (weitere Profile gehen verloren, Hinweis in der
+  Beschreibung); alte Listen werden nur mit dem Schalter `clear_legacy` (Abschnitt `legacy`, nur wenn welche da sind)
+  gelöscht. Es gibt keine Menüeinträge `add/edit/delete_*` mehr für KNX.
 - `updater.py`: Zeitpläne in `options["schedules"]` (Schlüssel `U_*`), je Zeitplan eigene
   Zielliste (`update`-Entitäten), Modus (melden/installieren) und Sicherung. Installiert
   wird über `update.install` **nacheinander**; Supervisor, Core und OS (Entity-IDs in

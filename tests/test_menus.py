@@ -17,8 +17,6 @@ ENTRIES = {
     "doorbell": {"function_type": "doorbell", "name": "Klingel", "trigger_entity": "binary_sensor.k",
                  "profiles": [], "mobile_enabled": False},
     "pool_pump": {"function_type": "pool_pump", "name": "Pool", "pump_entity": "switch.p"},
-    "knx_sonos": {"function_type": "knx_sonos", "name": "KNX", "player": "media_player.s",
-                  "commands": [], "status": []},
     "updater": {"function_type": "updater", "name": "Updater", "schedules": [],
                 "persistent_enabled": True},
     "alarm_clock": {"function_type": "alarm_clock", "name": "Wecker", "alarms": [],
@@ -72,7 +70,7 @@ def test_translations_cover_all_menu_options() -> None:
             for step_id, step in sub["step"].items()
         }
         menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
-        assert set(menus) == {"menu", "bell_menu", "pool_menu", "knx_menu", "upd_menu", "tp_menu",
+        assert set(menus) == {"menu", "bell_menu", "pool_menu", "upd_menu", "tp_menu",
                               "task_triggers", "alarm_menu", "mailbox_menu", "mon_menu", "llm_menu", "ir_menu"}, name
         assert not any("done" in labels for labels in menus.values()), name
         # jeder Eintrag, den ein Menü anbieten kann, hat in seinem Menü eine Beschriftung
@@ -81,8 +79,7 @@ def test_translations_cover_all_menu_options() -> None:
             path.read_text(encoding="utf-8") for path in (COMPONENT / "flows").glob("*.py")
         )
         for option in ("general", "add_rule", "edit_rule", "delete_rule", "bell_general", "add_profile",
-                       "pool_general", "add_window", "dry_run", "heater", "add_speaker", "edit_speaker",
-                       "delete_speaker", "add_command", "add_status", "upd_general", "add_schedule",
+                       "pool_general", "add_window", "dry_run", "heater", "upd_general", "add_schedule",
                        "tp_general", "add_task", "add_trigger", "delete_trigger", "task_save",
                        "alarm_general", "add_alarm", "edit_alarm", "delete_alarm", "mailbox",
                        "mailbox_sensitivity"):
