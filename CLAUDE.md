@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“) und `llm_usage` („LLM-Verbrauch“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) und `ir_remote` („IR-Fernbedienung“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -236,6 +236,20 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Der Modus lässt sich nach dem Anlegen nicht ändern; Betrag im Guthaben-Modus nur über `llm_calibrate`.
   Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key` liefert Fehlerschlüssel und Ursache; die Ursache steht als `{detail}` in den Fehlertexten und im Log; `_get()` meldet HTTP-Status plus `error.message` des Anbieters), Leerraum um den Key wird entfernt, `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
+- `ir_remote.py`: Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht
+  änderbar) und Befehle in `ir_commands` (Schlüssel `IC_*`: `id`, `name` = Anzeige, `code` = Name beim Sender aus
+  `command_code()`, `type` ir/rf, `enabled`, `remotes` = Sender, an denen angelernt). Die Codes liegen im Speicher
+  des Senders (Broadlink: `.storage/broadlink_remote_<unique_id>_codes`, `{gerät: {befehl: code}}`); Anlernen/Senden/
+  Löschen über die Aktionen `remote.learn_command`/`send_command`/`delete_command` (Modulfunktionen `async_learn`,
+  `async_send`, `async_delete`, auch vom Dialog genutzt). Codes sind **je Sender** getrennt (nicht kopierbar): Anlernen
+  läuft je Sender als eigener Fortschrittsdialog (`ir_learn`, `async_show_progress` mit `progress_task`, Ergebnis in
+  `self._learn`, Teilerfolge werden gespeichert), Senden geht gleichzeitig an alle Sender, die den Befehl kennen;
+  ausgeschaltet/nicht verfügbar = Fehler je Sender (`outcome()` ok/partial/failed, Meldung `error`, bei Erfolg
+  geräumt). „Vorhandene Befehle übernehmen“ liest die interne Broadlink-Datei (`async_stored_codes`), Handeingabe
+  (`custom_value`) bleibt als Rückfall. Je aktivem Befehl ein Button (`<id>_ir_<befehl-id>`, veraltete werden wie beim
+  Aufgabenplaner entfernt), optional Schalter `ir_power` (Befehle `ir_on_command`/`ir_off_command`, `assumed_state`,
+  Zustand im `Store`, per `remove_unconfigured()` entfernt), Sensor `ir_last_sent`; Entity-Aktion `send_ir_command`
+  (Button-Plattform, optional `num_repeats`). Löschen eines vom Schalter genutzten Befehls ist blockiert.
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

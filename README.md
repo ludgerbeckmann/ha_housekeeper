@@ -20,6 +20,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 | LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
+| IR-Fernbedienung | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
 | Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
 ## Bedienung der Einstellungen
@@ -57,7 +58,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
@@ -784,6 +785,44 @@ Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Co
 - Zeitpunkt: 5 Minuten nach dem Start, danach stündlich sowie kurz nach dem Löschen oder Umbenennen einer Entität bzw. dem Entfernen eines Geräts.
 - Nicht verfügbare oder deaktivierte Entitäten gelten als vorhanden.
 - Die Hinweise sind nicht automatisch behebbar; sie verschwinden von selbst, sobald die Referenz wieder stimmt (Einstellungen angepasst) oder der Eintrag gelöscht wird.
+
+## IR-Fernbedienung
+
+Sendet Infrarot- (oder Funk-)Befehle über einen oder mehrere **Sender** (`remote`-Entitäten, z. B. Broadlink
+RM4 mini) und ersetzt damit Lern- und Sende-Skripte. Die Codes bleiben im Speicher des Senders (bei Broadlink
+unter dem **Gerätenamen**, z. B. `candle`); die Funktion lernt sie an, übernimmt vorhandene und sendet sie.
+
+### Einrichtung
+
+Beim Anlegen: Name, **Sender** (mehrere möglich, gesendet wird an alle gleichzeitig), **Gerätename beim
+Sender** (bei vorhandenen Skripten der Wert von `device`, lässt sich später nicht ändern), Wiederholungen und
+Pause sowie die Benachrichtigung bei Sendefehlern.
+
+### Befehle (Menü)
+
+- **Befehl anlernen:** Name (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`, `light_plus`), Art (Infrarot/Funk)
+  und die Sender. Je Sender erscheint ein Fortschrittsdialog: Taste der Original-Fernbedienung auf den Sender
+  richten und drücken (Zeitlimit etwa 30 Sekunden). Schlägt es an einem Sender fehl, bleiben die erfolgreichen
+  gespeichert und die Ursache wird angezeigt.
+- **Vorhandene Befehle übernehmen:** Liest bei Broadlink-Sendern die dort schon gespeicherten Befehle des Geräts und
+  bietet sie zum Ankreuzen an; weitere Namen kannst du eintippen (dann gilt der Befehl an allen Sendern als
+  angelernt). Danach können die alten Lern- und Sende-Skripte gelöscht werden. Die Funktion liest dafür eine
+  interne Datei der Broadlink-Integration; bei anderen Sendern oder geändertem Format entfällt die Liste, die
+  Handeingabe bleibt.
+- **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
+  gespeichert und lassen sich nicht kopieren), **Befehl testen**, **bearbeiten** (Anzeigename, aktiv) und
+  **löschen** (auf Wunsch auch der Code beim Sender).
+- **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
+  Sprachassistenten (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
+
+### Entitäten und Aktion
+
+- `button` je aktivem Befehl (Name = Befehlsname); gesendet wird nur an Sender, an denen der Befehl angelernt ist.
+- `switch` **Schalter** (nur mit gesetzten An-/Aus-Befehlen), `sensor` **Zuletzt gesendet** (Attribute: Befehl, Ergebnis
+  `ok`/`partial`/`failed`, Fehler je Sender).
+- Aktion `ha_housekeeper.send_ir_command` mit einer Befehlstaste als Ziel und optional abweichenden Wiederholungen.
+- Ein ausgeschalteter oder nicht verfügbarer Sender zählt als Fehler und wird gemeldet (die Meldung verschwindet,
+  sobald wieder alles gesendet wird). Gelöschte `remote`-Entitäten erzeugen einen Reparaturhinweis.
 
 ## Entwicklung
 

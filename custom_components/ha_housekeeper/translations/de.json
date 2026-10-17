@@ -171,6 +171,12 @@
         "someone_home": "Nur wenn jemand zu Hause ist",
         "all_away": "Nur wenn alle weg sind"
       }
+    },
+    "ir_type": {
+      "options": {
+        "ir": "Infrarot",
+        "rf": "Funk (RF)"
+      }
     }
   },
   "entity": {
@@ -272,6 +278,9 @@
       },
       "llm_requests_month": {
         "name": "Anfragen im Monat"
+      },
+      "ir_last_sent": {
+        "name": "Zuletzt gesendet"
       }
     },
     "button": {
@@ -339,6 +348,9 @@
       },
       "llm_active": {
         "name": "LLM-Abfrage aktiv"
+      },
+      "ir_power": {
+        "name": "Schalter"
       }
     }
   },
@@ -354,6 +366,16 @@
         "entry_id": {
           "name": "Poolpumpe (Config-Entry-ID)",
           "description": "Optional. Ohne Angabe sind alle Poolpumpen betroffen."
+        }
+      }
+    },
+    "send_ir_command": {
+      "name": "IR-Befehl senden",
+      "description": "Sendet den Befehl der gewählten Taste, optional mit abweichender Zahl an Wiederholungen.",
+      "fields": {
+        "num_repeats": {
+          "name": "Wiederholungen",
+          "description": "Optional. Ohne Angabe gilt die Einstellung der Fernbedienung."
         }
       }
     }
@@ -2076,6 +2098,187 @@
         "cannot_connect": "Die Abfrage ist fehlgeschlagen: {detail}. Bitte Verbindung und Key prüfen (Details stehen auch im Protokoll)."
       },
       "abort": {}
+    },
+    "ir_remote": {
+      "initiate_flow": {
+        "user": "IR-Fernbedienung hinzufügen"
+      },
+      "entry_type": "IR-Fernbedienung",
+      "step": {
+        "new_ir_remote": {
+          "title": "IR-Fernbedienung",
+          "description": "Sendet angelernte Infrarot-Befehle über einen oder mehrere Sender (z. B. Broadlink RM4 mini). Die Codes bleiben im Speicher des Senders; hier werden sie angelernt, übernommen und als Tasten bereitgestellt.",
+          "sections": {
+            "general": {
+              "name": "Sender und Wiederholungen",
+              "description": "Sender, Gerätename und Sendeeinstellungen.",
+              "data": {
+                "name": "Name (erscheint als „IR-Fernbedienung: Name“)",
+                "remotes": "Sender (remote-Entitäten)",
+                "ir_device": "Gerätename beim Sender",
+                "num_repeats": "Wiederholungen",
+                "delay_secs": "Pause zwischen Wiederholungen (Sekunden)"
+              },
+              "data_description": {
+                "remotes": "Alle gewählten Sender senden gleichzeitig. Beim Anlernen wird jeder Sender einzeln angelernt.",
+                "ir_device": "Name, unter dem die Befehle beim Sender gespeichert werden, z. B. candle. Bei vorhandenen Skripten der Wert von device. Lässt sich später nicht ändern."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit Probleme beim Senden gemeldet werden.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "ir_menu": {
+          "title": "IR-Fernbedienung",
+          "description": "Befehle der Fernbedienung (angelernte Sender / alle Sender):\n{commands}",
+          "menu_options": {
+            "ir_general": "Einstellungen",
+            "add_ir_command": "Befehl anlernen",
+            "import_ir_commands": "Vorhandene Befehle übernehmen",
+            "learn_ir_command": "Befehl an Sendern (neu) anlernen",
+            "test_ir_command": "Befehl testen",
+            "edit_ir_command": "Befehl bearbeiten",
+            "delete_ir_command": "Befehl löschen",
+            "ir_switch": "Schalter (An/Aus)",
+            "rename": "Umbenennen"
+          }
+        },
+        "ir_general": {
+          "title": "IR-Fernbedienung",
+          "sections": {
+            "general": {
+              "name": "Sender und Wiederholungen",
+              "description": "Sender, Gerätename und Sendeeinstellungen.",
+              "data": {
+                "remotes": "Sender (remote-Entitäten)",
+                "num_repeats": "Wiederholungen",
+                "delay_secs": "Pause zwischen Wiederholungen (Sekunden)"
+              },
+              "data_description": {
+                "remotes": "Alle gewählten Sender senden gleichzeitig. Beim Anlernen wird jeder Sender einzeln angelernt."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit Probleme beim Senden gemeldet werden.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "add_ir_command": {
+          "title": "Befehl anlernen",
+          "description": "Nach „Weiter“ wird der Befehl nacheinander an den gewählten Sendern angelernt: Taste der Original-Fernbedienung auf den Sender richten und drücken.",
+          "data": {
+            "name": "Name des Befehls",
+            "type": "Art",
+            "learn_on": "Anlernen an"
+          },
+          "data_description": {
+            "name": "z. B. Power On, Timer 2h oder Light +. Daraus entsteht der Befehlsname beim Sender (power_on, timer_2h, light_plus)."
+          }
+        },
+        "learn_ir_command": {
+          "title": "Befehl (neu) anlernen",
+          "description": "Lernt den Befehl an den gewählten Sendern an (ein vorhandener Code wird ersetzt).",
+          "data": {
+            "command": "Befehl",
+            "learn_on": "Anlernen an"
+          }
+        },
+        "ir_learn_done": {
+          "title": "Anlernen",
+          "description": "Befehl „{command}“: Anlernen nicht überall erfolgreich. Die erfolgreichen Sender sind gespeichert."
+        },
+        "import_ir_commands": {
+          "title": "Vorhandene Befehle übernehmen",
+          "description": "Befehle des Geräts „{device}“, die beim Sender schon angelernt sind: {found} gefunden. Du kannst weitere Namen eintippen (z. B. aus alten Skripten). Danach brauchen die Lern- und Sende-Skripte nicht mehr.",
+          "data": {
+            "codes": "Befehle"
+          }
+        },
+        "test_ir_command": {
+          "title": "Befehl testen",
+          "data": {
+            "command": "Befehl"
+          }
+        },
+        "edit_ir_command": {
+          "title": "Befehl bearbeiten",
+          "data": {
+            "command": "Befehl"
+          }
+        },
+        "ir_command_edit": {
+          "title": "Befehl bearbeiten",
+          "description": "Befehlsname beim Sender: {code}",
+          "data": {
+            "name": "Name",
+            "enabled": "Aktiv"
+          }
+        },
+        "delete_ir_command": {
+          "title": "Befehl löschen",
+          "data": {
+            "command": "Befehl",
+            "delete_codes": "Code auch beim Sender löschen"
+          }
+        },
+        "ir_switch": {
+          "title": "Schalter (An/Aus)",
+          "description": "Optional: ein Schalter aus zwei Befehlen, z. B. für Sprachassistenten. Der Zustand ist nur angenommen, weil die Geräte nichts zurückmelden.",
+          "data": {
+            "ir_on_command": "Befehl „An“",
+            "ir_off_command": "Befehl „Aus“"
+          }
+        },
+        "rename": {
+          "title": "Umbenennen",
+          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
+          "data": {
+            "name": "Name (erscheint als „Aufgabenplaner: Name“)"
+          },
+          "data_description": {
+            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Aufgabenplaner: Büro“. Ein vorangestellter Funktionsname wird entfernt."
+          }
+        }
+      },
+      "error": {
+        "no_remotes": "Mindestens ein Sender wird benötigt.",
+        "no_device": "Der Gerätename darf nicht leer sein.",
+        "command_exists": "Diesen Befehl gibt es schon.",
+        "learn_failed": "Anlernen fehlgeschlagen: {detail}",
+        "send_failed": "Senden fehlgeschlagen: {detail}",
+        "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
+        "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
+        "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein."
+      },
+      "abort": {},
+      "progress": {
+        "learn": "Befehl „{command}“ für „{remote}“ anlernen: Die Taste der Original-Fernbedienung jetzt auf den Sender richten und drücken (Zeitlimit etwa 30 Sekunden)."
+      }
     }
   }
 }

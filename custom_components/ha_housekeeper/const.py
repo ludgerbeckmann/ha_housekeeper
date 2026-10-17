@@ -20,6 +20,7 @@ FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
 FUNCTION_MONITOR = "integration_monitor"
 FUNCTION_LLM = "llm_usage"
+FUNCTION_IR = "ir_remote"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -35,6 +36,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
     FUNCTION_MONITOR: ("Integrationsmonitor", "Integration monitor"),
     FUNCTION_LLM: ("LLM-Verbrauch", "LLM usage"),
+    FUNCTION_IR: ("IR-Fernbedienung", "IR remote"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -124,6 +126,7 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.SENSOR,
         Platform.SWITCH,
     ],
+    FUNCTION_IR: [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -551,6 +554,27 @@ LLM_MODES = [LLM_MODE_BALANCE, LLM_MODE_BUDGET]
 DEFAULT_POLL_MINUTES = 60
 
 # Felder, die im Formular geleert werden können
+# --- IR-Fernbedienung ---
+CONF_REMOTES = "remotes"          # `remote`-Entitäten (Sender), z. B. Broadlink RM4 mini
+CONF_IR_DEVICE = "ir_device"      # Gerätename, unter dem die Codes beim Sender gespeichert sind
+CONF_IR_COMMANDS = "ir_commands"
+CONF_IR_REPEATS = "num_repeats"
+CONF_IR_DELAY = "delay_secs"
+CONF_IR_ON = "ir_on_command"      # Befehl-ID für den Schalter „an“
+CONF_IR_OFF = "ir_off_command"    # Befehl-ID für den Schalter „aus“
+IC_ID = "id"
+IC_NAME = "name"
+IC_CODE = "code"                  # Befehlsname beim Sender (`power_on`)
+IC_TYPE = "type"
+IC_ENABLED = "enabled"
+IC_REMOTES = "remotes"            # Sender, an denen der Befehl angelernt ist
+IR_TYPE_IR = "ir"
+IR_TYPE_RF = "rf"
+IR_TYPES = [IR_TYPE_IR, IR_TYPE_RF]
+DEFAULT_IR_REPEATS = 1
+DEFAULT_IR_DELAY = 0.5
+SERVICE_SEND_IR = "send_ir_command"
+
 OPTIONAL_KEYS = [
     CONF_PRESENCE,
     CONF_MOBILE_TARGETS,

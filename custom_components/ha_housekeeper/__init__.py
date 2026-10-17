@@ -24,6 +24,7 @@ from .const import (
     FUNCTION_ALARM,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_IR,
     FUNCTION_KNX_SONOS,
     FUNCTION_LLM,
     FUNCTION_MAILBOX,
@@ -41,6 +42,7 @@ from .issues import async_remove_issues_with_prefix, async_setup_checks
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
+from .ir_remote import IrRemoteController
 from .knx_sonos import KnxSonosController
 from .llm_usage import LlmUsageController
 from .mailbox import MailboxController
@@ -65,6 +67,7 @@ CONTROLLERS = {
     FUNCTION_ALARM: AlarmClockController,
     FUNCTION_MONITOR: IntegrationMonitorController,
     FUNCTION_LLM: LlmUsageController,
+    FUNCTION_IR: IrRemoteController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(

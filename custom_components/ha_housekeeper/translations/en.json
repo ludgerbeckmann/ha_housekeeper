@@ -171,6 +171,12 @@
         "someone_home": "Only if someone is home",
         "all_away": "Only if everyone is away"
       }
+    },
+    "ir_type": {
+      "options": {
+        "ir": "Infrared",
+        "rf": "Radio (RF)"
+      }
     }
   },
   "entity": {
@@ -272,6 +278,9 @@
       },
       "llm_requests_month": {
         "name": "Requests this month"
+      },
+      "ir_last_sent": {
+        "name": "Last sent"
       }
     },
     "button": {
@@ -339,6 +348,9 @@
       },
       "llm_active": {
         "name": "LLM query active"
+      },
+      "ir_power": {
+        "name": "Switch"
       }
     }
   },
@@ -354,6 +366,16 @@
         "entry_id": {
           "name": "Pool pump (config entry ID)",
           "description": "Optional. Without it, all pool pumps are affected."
+        }
+      }
+    },
+    "send_ir_command": {
+      "name": "Send IR command",
+      "description": "Sends the command of the selected button, optionally with a different number of repeats.",
+      "fields": {
+        "num_repeats": {
+          "name": "Repeats",
+          "description": "Optional. Without it the setting of the remote applies."
         }
       }
     }
@@ -2076,6 +2098,187 @@
         "cannot_connect": "The query failed: {detail}. Please check the connection and the key (details are also in the log)."
       },
       "abort": {}
+    },
+    "ir_remote": {
+      "initiate_flow": {
+        "user": "Add IR remote"
+      },
+      "entry_type": "IR remote",
+      "step": {
+        "new_ir_remote": {
+          "title": "IR remote",
+          "description": "Sends learned infrared commands through one or more senders (e.g. Broadlink RM4 mini). The codes stay in the sender's storage; here they are learned, imported and offered as buttons.",
+          "sections": {
+            "general": {
+              "name": "Senders and repeats",
+              "description": "Senders, device name and sending settings.",
+              "data": {
+                "name": "Name (shown as “IR remote: Name”)",
+                "remotes": "Senders (remote entities)",
+                "ir_device": "Device name on the sender",
+                "num_repeats": "Repeats",
+                "delay_secs": "Delay between repeats (seconds)"
+              },
+              "data_description": {
+                "remotes": "All selected senders send at the same time. When learning, each sender is learned separately.",
+                "ir_device": "Name under which the commands are stored on the sender, e.g. candle. For existing scripts the value of device. Cannot be changed later."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and where problems with sending are reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "ir_menu": {
+          "title": "IR remote",
+          "description": "Commands of the remote (senders learned / all senders):\n{commands}",
+          "menu_options": {
+            "ir_general": "Settings",
+            "add_ir_command": "Learn command",
+            "import_ir_commands": "Import existing commands",
+            "learn_ir_command": "Learn command on senders (again)",
+            "test_ir_command": "Test command",
+            "edit_ir_command": "Edit command",
+            "delete_ir_command": "Delete command",
+            "ir_switch": "Switch (on/off)",
+            "rename": "Rename"
+          }
+        },
+        "ir_general": {
+          "title": "IR remote",
+          "sections": {
+            "general": {
+              "name": "Senders and repeats",
+              "description": "Senders, device name and sending settings.",
+              "data": {
+                "remotes": "Senders (remote entities)",
+                "num_repeats": "Repeats",
+                "delay_secs": "Delay between repeats (seconds)"
+              },
+              "data_description": {
+                "remotes": "All selected senders send at the same time. When learning, each sender is learned separately."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and where problems with sending are reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "add_ir_command": {
+          "title": "Learn command",
+          "description": "After “Next” the command is learned on the selected senders one after another: point the original remote at the sender and press the button.",
+          "data": {
+            "name": "Command name",
+            "type": "Type",
+            "learn_on": "Learn on"
+          },
+          "data_description": {
+            "name": "e.g. Power On, Timer 2h or Light +. This becomes the command name on the sender (power_on, timer_2h, light_plus)."
+          }
+        },
+        "learn_ir_command": {
+          "title": "Learn command (again)",
+          "description": "Learns the command on the selected senders (an existing code is replaced).",
+          "data": {
+            "command": "Command",
+            "learn_on": "Learn on"
+          }
+        },
+        "ir_learn_done": {
+          "title": "Learning",
+          "description": "Command “{command}”: learning was not successful everywhere. The successful senders are saved."
+        },
+        "import_ir_commands": {
+          "title": "Import existing commands",
+          "description": "Commands of the device “{device}” that are already learned on the sender: {found} found. You can type more names (e.g. from old scripts). Afterwards the learn and send scripts are no longer needed.",
+          "data": {
+            "codes": "Commands"
+          }
+        },
+        "test_ir_command": {
+          "title": "Test command",
+          "data": {
+            "command": "Command"
+          }
+        },
+        "edit_ir_command": {
+          "title": "Edit command",
+          "data": {
+            "command": "Command"
+          }
+        },
+        "ir_command_edit": {
+          "title": "Edit command",
+          "description": "Command name on the sender: {code}",
+          "data": {
+            "name": "Name",
+            "enabled": "Enabled"
+          }
+        },
+        "delete_ir_command": {
+          "title": "Delete command",
+          "data": {
+            "command": "Command",
+            "delete_codes": "Also delete the code on the sender"
+          }
+        },
+        "ir_switch": {
+          "title": "Switch (on/off)",
+          "description": "Optional: a switch made of two commands, e.g. for voice assistants. The state is only assumed because the devices report nothing back.",
+          "data": {
+            "ir_on_command": "“On” command",
+            "ir_off_command": "“Off” command"
+          }
+        },
+        "rename": {
+          "title": "Rename",
+          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
+          "data": {
+            "name": "Name (shown as “Task planner: Name”)"
+          },
+          "data_description": {
+            "name": "Only the name, e.g. “Office”; the title then reads “Task planner: Office”. A leading function name is removed."
+          }
+        }
+      },
+      "error": {
+        "no_remotes": "At least one sender is required.",
+        "no_device": "The device name must not be empty.",
+        "command_exists": "This command already exists.",
+        "learn_failed": "Learning failed: {detail}",
+        "send_failed": "Sending failed: {detail}",
+        "command_in_use": "The command is used by the switch. Change the switch first.",
+        "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
+        "switch_same": "“On” and “off” must be different commands."
+      },
+      "abort": {},
+      "progress": {
+        "learn": "Learning command “{command}” for “{remote}”: point the original remote at the sender now and press the button (timeout about 30 seconds)."
+      }
     }
   }
 }

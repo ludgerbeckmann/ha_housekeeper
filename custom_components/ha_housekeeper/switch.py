@@ -17,6 +17,7 @@ from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
 from .integration_monitor import IntegrationMonitorController
+from .ir_remote import IrRemoteController
 from .llm_usage import LlmUsageController
 from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
@@ -61,6 +62,11 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([MonitorActiveSwitch(controller)])
     elif isinstance(controller, LlmUsageController):
         async_add_entities([LlmActiveSwitch(controller)])
+    elif isinstance(controller, IrRemoteController):
+        if controller.power_configured:
+            async_add_entities([IrPowerSwitch(controller)])
+        else:
+            remove_unconfigured(hass, "switch", controller, "ir_power")
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -280,3 +286,23 @@ class LlmActiveSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_enabled(False)
+
+
+class IrPowerSwitch(FunctionEntity, SwitchEntity):
+    """Schalter aus den Befehlen „an“ und „aus“; der Zustand ist nur angenommen (keine Rückmeldung)."""
+
+    _attr_icon = "mdi:power"
+    _attr_assumed_state = True
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "ir_power")
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._controller.assumed_on
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_power(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_power(False)
