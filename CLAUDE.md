@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) und `ir_remote` („IR-Fernbedienung“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) und `consumption_guard` („Verbrauchswächter“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -255,6 +255,18 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Aufgabenplaner entfernt), optional Schalter `ir_power` (Befehle `ir_on_command`/`ir_off_command`, `assumed_state`,
   Zustand im `Store`, per `remove_unconfigured()` entfernt), Sensor `ir_last_sent`; Entity-Aktion `send_ir_command`
   (Button-Plattform, optional `num_repeats`). Löschen eines vom Schalter genutzten Befehls ist blockiert.
+- `consumption_guard.py`: Je Instanz ein Sensor (`consumption_sensor`) mit Durchfluss/Leistung. Eine **Konfigurationsseite**
+  (`cg_settings`, kein Menü, Name als Feld; Abschnitte `general`, `notifications`; Speichern = `async_update_subentry` +
+  Abbruch `reconfigure_successful`) mit `threshold`, `duration_minutes` (Standard 15), `repeat_minutes` (0 = nie), optionalem
+  Zeitfenster `window_from`/`window_to` (`in_window()`, über Mitternacht). „Läuft“ = Wert **größer** als die Schwelle
+  (`is_running()`, `None` bei fehlend/unavailable/unknown/keine Zahl). `_async_evaluate()` läuft bei jeder Zustandsänderung und
+  minütlich (`CHECK_INTERVAL`): außerhalb des Fensters oder bei Wert ≤ Schwelle wird alles zurückgesetzt (Warnung weg, Push
+  entfernt, `since` leer); unklarer Sensor setzt nur `since` zurück, eine bestehende Warnung bleibt; sonst startet `since`
+  und nach `duration` kommt **eine** Meldung (`kind="warning"`), mit Wiederholung nach `repeat`. `async_acknowledge()` (Button)
+  löscht die Warnung und unterdrückt weitere Meldungen (`_acknowledged`), bis der Verbrauch einmal ≤ Schwelle war. Der Zustand
+  (`since`, Warnung) liegt nur im Speicher; im `Store` steht nur `enabled` (Schalter `consumption_active`). Entitäten:
+  `binary_sensor` `consumption_warning`, `sensor` `consumption_since`, `button` `consumption_acknowledge`. In Tests mit
+  `freezer` arbeiten und `hass.config.async_set_time_zone(...)` setzen, wenn das Zeitfenster geprüft wird.
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

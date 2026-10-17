@@ -20,6 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .alarm_clock import AlarmClockController
+from .consumption_guard import ConsumptionGuardController
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
@@ -74,6 +75,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities(
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
         )
+    elif isinstance(controller, ConsumptionGuardController):
+        async_add_entities([ConsumptionSinceSensor(controller)])
     elif isinstance(controller, IrRemoteController):
         async_add_entities([IrLastSentSensor(controller)])
     elif isinstance(controller, LlmUsageController):
@@ -535,3 +538,17 @@ class IrLastSentSensor(FunctionEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         last = self._controller.last_sent or {}
         return {k: last.get(k) for k in ("command", "result", "errors")}
+
+
+class ConsumptionSinceSensor(FunctionEntity, SensorEntity):
+    """Seit wann der Wert über der Schwelle liegt (leer, wenn nicht)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:water-alert"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "consumption_since")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.since

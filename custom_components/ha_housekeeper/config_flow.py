@@ -28,6 +28,7 @@ from .const import (
     CONF_TASKS,
     DOMAIN,
     FUNCTION_ALARM,
+    FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_IR,
@@ -48,6 +49,12 @@ from .const import (
 from .flows.alarm import AlarmOptions, _alarm_settings_schema, _validate_alarm_settings
 from .flows.common import OptionsBase, _flatten_sections, _validate_notify
 from .flows.door_guard import DoorGuardOptions, _door_schema, _validate_door
+from .flows.consumption import (
+    ConsumptionGuardOptions,
+    _cg_schema,
+    _validate_cg,
+    new_instance_data as new_cg_data,
+)
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.ir import IrOptions, _ir_schema, _validate_ir, new_instance_data as new_ir_data
 from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
@@ -75,6 +82,7 @@ _MENU_STEPS = {
     FUNCTION_MONITOR: "mon_menu",
     FUNCTION_LLM: "llm_menu",
     FUNCTION_IR: "ir_menu",
+    FUNCTION_CONSUMPTION: "cg_settings",
 }
 
 
@@ -299,6 +307,23 @@ class NewInstanceSteps:
             errors=errors,
         )
 
+    async def async_step_new_consumption_guard(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            flat = _flatten_sections(user_input)
+            errors = _validate_cg(flat)
+            if not errors:
+                return await self._finish_new(flat.get(CONF_NAME), new_cg_data(flat))
+            defaults = flat
+        return self.async_show_form(
+            step_id="new_consumption_guard",
+            data_schema=_cg_schema(self.hass, defaults),
+            errors=errors,
+        )
+
     async def async_step_new_task_planner(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -364,6 +389,7 @@ class HousekeeperSubentryFlow(
     MonitorOptions,
     LlmOptions,
     IrOptions,
+    ConsumptionGuardOptions,
     NewInstanceSteps,
     OptionsBase,
     ConfigSubentryFlow,

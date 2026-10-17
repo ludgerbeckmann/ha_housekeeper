@@ -20,6 +20,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 | LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
+| Verbrauchswächter | Meldet, wenn ein Durchfluss oder eine Leistung (z. B. Wasser, Strom) länger als eine eingestellte Zeit am Stück über einer Schwelle liegt |
 | IR-Fernbedienung | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
 | Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
@@ -59,7 +60,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
@@ -799,6 +800,42 @@ Pause sowie die Benachrichtigung bei Sendefehlern.
 - Aktion `ha_housekeeper.send_ir_command` mit einer Befehlstaste als Ziel und optional abweichenden Wiederholungen.
 - Ein ausgeschalteter oder nicht verfügbarer Sender zählt als Fehler und wird gemeldet (die Meldung verschwindet,
   sobald wieder alles gesendet wird). Gelöschte `remote`-Entitäten erzeugen einen Reparaturhinweis.
+
+## Verbrauchswächter
+
+Meldet, wenn ein **Durchfluss** oder eine **Leistung** zu lange am Stück anliegt, zum Beispiel Wasser, das länger
+als 15 Minuten läuft (hängende Toilettenspülung, offener Hahn). Eine Instanz überwacht einen Sensor; eine zweite
+Regel (z. B. nachts schon nach 2 Minuten) legst du als weitere Instanz an. Es wird nichts geschaltet, nur gemeldet.
+
+### Konfigurationsseite
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
+
+- **Sensor** mit Zahlenwert (Durchfluss in l/min, Leistung in W). Zählerstände (Summen) sind nicht geeignet.
+- **Schwelle** in der Einheit des Sensors; „läuft“ heißt Wert **größer** als die Schwelle.
+- **Dauer** in Minuten (Standard 15): so lange muss der Wert am Stück über der Schwelle liegen.
+- **Meldung wiederholen alle … Minuten** (0 = nie).
+- **Zeitfenster** (optional, von/bis, auch über Mitternacht): nur dann wird überwacht.
+- **Benachrichtigungen:** App-Push, Sprachausgabe, persistente Meldung (mindestens ein Weg).
+
+### Verhalten
+
+- Fällt der Wert vor Ablauf der Dauer auf die Schwelle oder darunter, beginnt die Dauer neu.
+- Nach der Dauer gibt es **eine** Meldung (mit Sensor, Schwelle und aktuellem Wert). Fällt der Wert danach wieder
+  unter die Schwelle, endet die Warnung von selbst und die Push-Meldung wird entfernt.
+- Ist der Sensor nicht verfügbar oder unbekannt, wird die Dauer zurückgesetzt (keine Fehlalarme); eine
+  bestehende Warnung bleibt bestehen.
+- Außerhalb des Zeitfensters zählt nichts; läuft der Verbrauch beim Fensterbeginn noch, beginnt die Dauer neu,
+  am Fensterende endet eine Warnung. Beim Neustart von Home Assistant beginnt die Dauer von vorn.
+- Die Prüfung läuft bei jeder Wertänderung und einmal pro Minute; gemeldet wird also bis zu eine Minute nach Ablauf.
+
+### Entitäten
+
+- `binary_sensor` **Verbrauchswarnung** (an = Warnung aktiv; Attribute: Sensor, Schwelle, seit)
+- `sensor` **Läuft seit** (Zeitstempel, leer wenn nichts über der Schwelle liegt)
+- `button` **Warnung quittieren** (schaltet die Warnung ab und unterdrückt die Wiederholung, bis der Verbrauch einmal
+  unter die Schwelle gefallen ist)
+- `switch` **Wächter aktiv** (aus = keine Überwachung; beim Einschalten beginnt die Dauer neu)
 
 ## Entwicklung
 

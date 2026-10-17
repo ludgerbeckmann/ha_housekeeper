@@ -158,6 +158,9 @@
       },
       "llm_warning": {
         "name": "LLM-Warnung"
+      },
+      "consumption_warning": {
+        "name": "Verbrauchswarnung"
       }
     },
     "sensor": {
@@ -235,6 +238,9 @@
       },
       "ir_last_sent": {
         "name": "Zuletzt gesendet"
+      },
+      "consumption_since": {
+        "name": "Läuft seit"
       }
     },
     "button": {
@@ -267,6 +273,9 @@
       },
       "llm_refresh": {
         "name": "Jetzt abfragen"
+      },
+      "consumption_acknowledge": {
+        "name": "Warnung quittieren"
       }
     },
     "switch": {
@@ -305,6 +314,9 @@
       },
       "ir_power": {
         "name": "Schalter"
+      },
+      "consumption_active": {
+        "name": "Wächter aktiv"
       }
     }
   },
@@ -2440,6 +2452,102 @@
       "abort": {},
       "progress": {
         "learn": "Befehl „{command}“ für „{remote}“ anlernen: Die Taste der Original-Fernbedienung jetzt auf den Sender richten und drücken (Zeitlimit etwa 30 Sekunden)."
+      }
+    },
+    "consumption_guard": {
+      "initiate_flow": {
+        "user": "Verbrauchswächter hinzufügen"
+      },
+      "entry_type": "Verbrauchswächter",
+      "step": {
+        "new_consumption_guard": {
+          "title": "Verbrauchswächter",
+          "description": "Meldet, wenn z. B. Wasser oder Strom zu lange am Stück läuft (etwa eine hängende Toilettenspülung). Eine weitere Regel legst du als weiteren Eintrag an.",
+          "sections": {
+            "general": {
+              "name": "Überwachung",
+              "description": "Meldet, wenn der Wert des Sensors länger als die eingestellte Zeit am Stück über der Schwelle liegt.",
+              "data": {
+                "name": "Name (erscheint als „Verbrauchswächter: Name“)",
+                "consumption_sensor": "Sensor (Durchfluss oder Leistung)",
+                "threshold": "Schwelle",
+                "duration_minutes": "Dauer (Minuten)",
+                "repeat_minutes": "Meldung wiederholen alle (Minuten, 0 = nie)",
+                "window_from": "Zeitfenster von (optional)",
+                "window_to": "Zeitfenster bis (optional)"
+              },
+              "data_description": {
+                "consumption_sensor": "Sensor mit Zahlenwert, z. B. Wasserdurchfluss in l/min oder Leistung in W. Zählerstände (Summen) sind nicht geeignet.",
+                "threshold": "In der Einheit des Sensors. „Läuft“ heißt: Wert größer als die Schwelle.",
+                "duration_minutes": "So lange muss der Wert am Stück über der Schwelle liegen, bevor gemeldet wird.",
+                "window_from": "Nur innerhalb des Zeitfensters wird überwacht (auch über Mitternacht). Beide Felder leer = immer."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit die Warnung gemeldet wird.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        },
+        "cg_settings": {
+          "title": "Verbrauchswächter",
+          "description": "Meldet, wenn z. B. Wasser oder Strom zu lange am Stück läuft (etwa eine hängende Toilettenspülung). Eine weitere Regel legst du als weiteren Eintrag an.",
+          "sections": {
+            "general": {
+              "name": "Überwachung",
+              "description": "Meldet, wenn der Wert des Sensors länger als die eingestellte Zeit am Stück über der Schwelle liegt.",
+              "data": {
+                "name": "Name (erscheint als „Verbrauchswächter: Name“)",
+                "consumption_sensor": "Sensor (Durchfluss oder Leistung)",
+                "threshold": "Schwelle",
+                "duration_minutes": "Dauer (Minuten)",
+                "repeat_minutes": "Meldung wiederholen alle (Minuten, 0 = nie)",
+                "window_from": "Zeitfenster von (optional)",
+                "window_to": "Zeitfenster bis (optional)"
+              },
+              "data_description": {
+                "consumption_sensor": "Sensor mit Zahlenwert, z. B. Wasserdurchfluss in l/min oder Leistung in W. Zählerstände (Summen) sind nicht geeignet.",
+                "threshold": "In der Einheit des Sensors. „Läuft“ heißt: Wert größer als die Schwelle.",
+                "duration_minutes": "So lange muss der Wert am Stück über der Schwelle liegen, bevor gemeldet wird.",
+                "window_from": "Nur innerhalb des Zeitfensters wird überwacht (auch über Mitternacht). Beide Felder leer = immer."
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit die Warnung gemeldet wird.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
+        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
+        "window_incomplete": "Für das Zeitfenster werden „von“ und „bis“ benötigt (oder beide leer lassen)."
+      },
+      "abort": {
+        "reconfigure_successful": "Gespeichert."
       }
     }
   }

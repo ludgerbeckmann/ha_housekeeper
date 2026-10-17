@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers import entity_registry as er
 
 from .alarm_clock import AlarmClockController
+from .consumption_guard import ConsumptionGuardController
 from .const import CONF_IR_REPEATS, IC_ID, IC_NAME, SERVICE_SEND_IR, TASK_ID, TASK_NAME
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
@@ -60,6 +61,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([UpdaterCheckNowButton(controller)])
     elif isinstance(controller, LlmUsageController):
         async_add_entities([LlmRefreshButton(controller)])
+    elif isinstance(controller, ConsumptionGuardController):
+        async_add_entities([ConsumptionAcknowledgeButton(controller)])
     elif isinstance(controller, IrRemoteController):
         entry = controller.entry
         prefix = f"{entry.entry_id}_ir_"
@@ -252,3 +255,15 @@ class IrCommandButton(FunctionEntity, ButtonEntity):
     async def async_send_ir(self, repeats: int | None) -> None:
         if await self._controller.async_send(self._command_id, repeats) == "failed":
             raise ServiceValidationError(f"{self._attr_name}: Senden fehlgeschlagen")
+
+
+class ConsumptionAcknowledgeButton(FunctionEntity, ButtonEntity):
+    """Quittiert die Warnung (keine Wiederholung, bis der Verbrauch wieder unter die Schwelle fällt)."""
+
+    _attr_icon = "mdi:check-circle-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "consumption_acknowledge")
+
+    async def async_press(self) -> None:
+        await self._controller.async_acknowledge()

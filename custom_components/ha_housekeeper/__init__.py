@@ -22,6 +22,7 @@ from .const import (
     CONF_HUB,
     DOMAIN,
     FUNCTION_ALARM,
+    FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_IR,
@@ -39,6 +40,7 @@ from .const import (
 )
 from .alarm_clock import AlarmClockController
 from .issues import async_remove_issues_with_prefix, async_setup_checks
+from .consumption_guard import ConsumptionGuardController
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
@@ -68,6 +70,7 @@ CONTROLLERS = {
     FUNCTION_MONITOR: IntegrationMonitorController,
     FUNCTION_LLM: LlmUsageController,
     FUNCTION_IR: IrRemoteController,
+    FUNCTION_CONSUMPTION: ConsumptionGuardController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(
