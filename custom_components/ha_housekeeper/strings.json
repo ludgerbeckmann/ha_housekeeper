@@ -355,7 +355,7 @@
   "config_subentries": {
     "mailbox": {
       "initiate_flow": {
-        "user": "Add mailbox"
+        "user": "Mailbox"
       },
       "entry_type": "Mailbox",
       "step": {
@@ -505,7 +505,7 @@
     },
     "door_guard": {
       "initiate_flow": {
-        "user": "Add door guard"
+        "user": "Door guard"
       },
       "entry_type": "Door guard",
       "step": {
@@ -723,7 +723,7 @@
     },
     "doorbell": {
       "initiate_flow": {
-        "user": "Add doorbell"
+        "user": "Doorbell"
       },
       "entry_type": "Doorbell",
       "step": {
@@ -885,7 +885,7 @@
     },
     "pool_pump": {
       "initiate_flow": {
-        "user": "Add pool"
+        "user": "Pool"
       },
       "entry_type": "Pool",
       "step": {
@@ -1038,7 +1038,7 @@
     },
     "knx_sonos": {
       "initiate_flow": {
-        "user": "Add KNX/Sonos connector"
+        "user": "KNX/Sonos connector"
       },
       "entry_type": "KNX/Sonos connector",
       "step": {
@@ -1370,7 +1370,7 @@
     },
     "updater": {
       "initiate_flow": {
-        "user": "Add updater"
+        "user": "Updater"
       },
       "entry_type": "Updater",
       "step": {
@@ -1523,7 +1523,7 @@
     },
     "task_planner": {
       "initiate_flow": {
-        "user": "Add task planner"
+        "user": "Task planner"
       },
       "entry_type": "Task planner",
       "step": {
@@ -1742,7 +1742,7 @@
     },
     "alarm_clock": {
       "initiate_flow": {
-        "user": "Add alarm clock"
+        "user": "Alarm clock"
       },
       "entry_type": "Alarm clock",
       "step": {
@@ -1892,7 +1892,7 @@
     },
     "integration_monitor": {
       "initiate_flow": {
-        "user": "Add integration monitor"
+        "user": "Integration monitor"
       },
       "entry_type": "Integration monitor",
       "step": {
@@ -2074,7 +2074,7 @@
     },
     "llm_usage": {
       "initiate_flow": {
-        "user": "Add LLM usage"
+        "user": "LLM usage"
       },
       "entry_type": "LLM usage",
       "step": {
@@ -2208,7 +2208,7 @@
     },
     "ir_remote": {
       "initiate_flow": {
-        "user": "Add IR remote"
+        "user": "IR remote"
       },
       "entry_type": "IR remote",
       "step": {
@@ -2389,7 +2389,7 @@
     },
     "consumption_guard": {
       "initiate_flow": {
-        "user": "Add consumption guard"
+        "user": "Consumption guard"
       },
       "entry_type": "Consumption guard",
       "step": {
@@ -2485,7 +2485,7 @@
     },
     "energy_monitor": {
       "initiate_flow": {
-        "user": "Add energy monitor"
+        "user": "Energy monitor"
       },
       "entry_type": "Energy monitor",
       "step": {
