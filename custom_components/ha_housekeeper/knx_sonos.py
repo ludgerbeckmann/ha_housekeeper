@@ -37,11 +37,29 @@ from .const import (
     ACT_VOLUME_DOWN,
     ACT_VOLUME_SET,
     ACT_VOLUME_UP,
+    CONF_ADDR_MUTE,
+    CONF_ADDR_NEXT_PREV,
+    CONF_ADDR_PLAY_PAUSE,
+    CONF_ADDR_SCENE,
+    CONF_ADDR_STOP,
+    CONF_ADDR_TOGGLE,
+    CONF_ADDR_VOLUME,
+    CONF_ADDR_VOLUME_DIM,
+    CONF_ADDR_VOLUME_STEP,
     CONF_COMMANDS,
+    CONF_IDLE_TEXT,
     CONF_MAX_VOLUME,
     CONF_PLAYER,
     CONF_SPEAKERS,
     CONF_STATUS,
+    CONF_STATUS_ALBUM,
+    CONF_STATUS_ARTIST,
+    CONF_STATUS_MUTED,
+    CONF_STATUS_PAUSED,
+    CONF_STATUS_PLAYING,
+    CONF_STATUS_SOURCE,
+    CONF_STATUS_TITLE,
+    CONF_STATUS_VOLUME,
     CONF_STOP_INSTEAD,
     CONF_VOLUME_STEP,
     DEFAULT_MAX_VOLUME,
@@ -66,6 +84,7 @@ from .const import (
     S_ENABLED,
     K_VOLUME,
     K_WHEN,
+    SCENE_COUNT,
     SRC_ALBUM,
     SRC_ARTIST,
     SRC_MUTED,
@@ -78,6 +97,7 @@ from .const import (
     WHEN_ANY,
     WHEN_OFF,
     WHEN_ON,
+    scene_key,
     signal_update,
 )
 from .knx_codec import (
@@ -201,6 +221,97 @@ def profile_for(
     return next((p for p in profiles if p.get(K_ID) == wanted), profiles[0] if profiles else None)
 
 
+# Feste Felder -> Befehle: (Feld, Datentyp, [(Aktion, Bedingung)])
+_FIELD_COMMANDS: list[tuple[str, str, list[tuple[str, str | None]]]] = [
+    (CONF_ADDR_PLAY_PAUSE, DPT_SWITCH, [(ACT_PLAY, WHEN_ON), (ACT_PAUSE, WHEN_OFF)]),
+    (CONF_ADDR_NEXT_PREV, DPT_SWITCH, [(ACT_NEXT, WHEN_ON), (ACT_PREVIOUS, WHEN_OFF)]),
+    (CONF_ADDR_STOP, DPT_SWITCH, [(ACT_STOP, WHEN_ON)]),
+    (CONF_ADDR_TOGGLE, DPT_SWITCH, [(ACT_PLAY_PAUSE, WHEN_ON)]),
+    (CONF_ADDR_VOLUME, DPT_PERCENT, [(ACT_VOLUME_SET, None)]),
+    (CONF_ADDR_VOLUME_STEP, DPT_SWITCH, [(ACT_VOLUME_UP, WHEN_ON), (ACT_VOLUME_DOWN, WHEN_OFF)]),
+    (CONF_ADDR_VOLUME_DIM, DPT_DIMMING, [(ACT_VOLUME_DIM, None)]),
+    (CONF_ADDR_MUTE, DPT_SWITCH, [(ACT_MUTE_SET, None)]),
+]
+
+# Feste Felder -> Rückmeldungen
+_FIELD_STATUS = [
+    (CONF_STATUS_PLAYING, SRC_PLAYING),
+    (CONF_STATUS_PAUSED, SRC_PAUSED),
+    (CONF_STATUS_VOLUME, SRC_VOLUME),
+    (CONF_STATUS_MUTED, SRC_MUTED),
+    (CONF_STATUS_TITLE, SRC_TITLE),
+    (CONF_STATUS_ARTIST, SRC_ARTIST),
+    (CONF_STATUS_ALBUM, SRC_ALBUM),
+    (CONF_STATUS_SOURCE, SRC_SOURCE),
+]
+
+
+def settings_commands(get: Any) -> list[dict[str, Any]]:
+    """Befehle aus den festen Feldern der Konfigurationsseite (ohne Profil: erster Lautsprecher).
+
+    Jede Adresse ergibt einen oder zwei Befehle (z. B. Play/Pause: 1 = Wiedergabe, 0 = Pause).
+    Eine Szene mit Favorit und/oder Lautstärke ergibt Befehle auf der Szenenadresse (17.001)
+    und, falls gesetzt, auf der eigenen 1-Bit-Adresse, dort mit „0 = Pause“."""
+    commands: list[dict[str, Any]] = []
+    for field, dpt, actions in _FIELD_COMMANDS:
+        if not get(field):
+            continue
+        for action, when in actions:
+            command = {
+                K_ID: f"{field}:{action}",
+                K_NAME: field,
+                K_ADDRESS: get(field),
+                K_DPT: dpt,
+                K_ACTION: action,
+            }
+            if when:
+                command[K_WHEN] = when
+            commands.append(command)
+    for number in range(1, SCENE_COUNT + 1):
+        favorite = get(scene_key(number, "favorite"))
+        volume = get(scene_key(number, "volume"))
+        bit_address = get(scene_key(number, "address"))
+        triggers = []
+        if get(CONF_ADDR_SCENE):
+            triggers.append((get(CONF_ADDR_SCENE), DPT_SCENE))
+        if bit_address:
+            triggers.append((bit_address, DPT_SWITCH))
+        for address, dpt in triggers:
+            base: dict[str, Any] = {K_ADDRESS: address, K_DPT: dpt}
+            if dpt == DPT_SCENE:
+                base[K_SCENE] = number
+            else:
+                base[K_WHEN] = WHEN_ON
+            if favorite:
+                commands.append(
+                    {**base, K_ID: f"scene_{number}:{dpt}:fav", K_NAME: f"scene_{number}",
+                     K_ACTION: ACT_FAVORITE, K_FAVORITE: favorite}
+                )
+            if volume is not None:
+                commands.append(
+                    {**base, K_ID: f"scene_{number}:{dpt}:vol", K_NAME: f"scene_{number}",
+                     K_ACTION: ACT_VOLUME_SET, K_VOLUME: float(volume)}
+                )
+        if bit_address:
+            commands.append(
+                {K_ID: f"scene_{number}:off", K_NAME: f"scene_{number}", K_ADDRESS: bit_address,
+                 K_DPT: DPT_SWITCH, K_ACTION: ACT_PAUSE, K_WHEN: WHEN_OFF}
+            )
+    return commands
+
+
+def settings_status(get: Any) -> list[dict[str, Any]]:
+    """Rückmeldungen aus den festen Feldern der Konfigurationsseite."""
+    statuses = []
+    for field, source in _FIELD_STATUS:
+        if get(field):
+            status = {K_ID: field, K_NAME: field, K_SOURCE: source, K_ADDRESS: get(field)}
+            if source in TEXT_SOURCES:
+                status[K_IDLE_TEXT] = get(CONF_IDLE_TEXT) or ""
+            statuses.append(status)
+    return statuses
+
+
 def command_summary(
     hass: HomeAssistant, command: dict[str, Any], profile_name: str | None = None
 ) -> str:
@@ -296,10 +407,11 @@ class KnxSonosController:
         self.enabled = bool(stored.get("enabled", True))
         self.last_command = stored.get("last_command")
 
-        for command in self._opt(CONF_COMMANDS, []) or []:
+        # ältere Listen (nicht mehr bearbeitbar) und die festen Felder der Konfigurationsseite
+        for command in [*(self._opt(CONF_COMMANDS, []) or []), *settings_commands(self._get)]:
             if ga := normalize_ga(command.get(K_ADDRESS)):
                 self._commands_by_ga.setdefault(ga, []).append(command)
-        for status in self._opt(CONF_STATUS, []) or []:
+        for status in [*(self._opt(CONF_STATUS, []) or []), *settings_status(self._get)]:
             if ga := normalize_ga(status.get(K_ADDRESS)):
                 self._status_by_ga.setdefault(ga, []).append(status)
 

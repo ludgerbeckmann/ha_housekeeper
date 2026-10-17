@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
+from .helpers import is_menu, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 
 PLAYER = "media_player.living_room"
@@ -60,16 +60,139 @@ async def test_config_flow_needs_knx(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "knx_missing"
 
 
+def page(**fields):
+    """Eingaben der Konfigurationsseite: flache Felder auf die Abschnitte verteilen."""
+    sections = {name: {} for name in
+                ("speaker", "playback", "volume", "scenes", *(f"scene_{n}" for n in range(1, 9)), "status")}
+    for key, value in fields.items():
+        if key in ("name", "player", "max_volume", "volume_step", "stop_instead_of_pause"):
+            sections["speaker"][key] = value
+        elif key.startswith("scene_"):
+            sections[f"scene_{key.split('_')[1]}"][key] = value
+        elif key in ("addr_play_pause", "addr_next_prev", "addr_stop", "addr_toggle"):
+            sections["playback"][key] = value
+        elif key in ("addr_volume", "addr_volume_step", "addr_volume_dim", "addr_mute"):
+            sections["volume"][key] = value
+        elif key == "addr_scene":
+            sections["scenes"][key] = value
+        elif key == "clear_legacy":
+            sections.setdefault("legacy", {})[key] = value
+        else:
+            sections["status"][key] = value
+    sections["speaker"].setdefault("max_volume", 100)
+    sections["speaker"].setdefault("volume_step", 5)
+    sections["speaker"].setdefault("stop_instead_of_pause", False)
+    sections["speaker"].setdefault("player", PLAYER)
+    return sections
+
+
 async def test_config_flow_creates_entry(hass: HomeAssistant) -> None:
     async_mock_service(hass, "knx", "event_register")
     result = await new_instance(hass, "knx_sonos")
     assert result["step_id"] == "new_knx_sonos"
-    ok = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"name": "Wohnzimmer", "player": PLAYER}
-    )
+    flow = hass.config_entries.subentries
+    bad = await flow.async_configure(
+        result["flow_id"], page(name="Wohnzimmer", addr_play_pause="x/y", scene_2_address="bad"))
+    assert bad["errors"] == {"base": "invalid_address"}
+    assert "Play/Pause" in bad["description_placeholders"]["detail"]
+    assert "Scene 2" in bad["description_placeholders"]["detail"]
+    lonely = await flow.async_configure(result["flow_id"], page(scene_3_favorite="Jazz"))
+    assert lonely["errors"] == {"base": "scene_no_trigger"}
+    ok = await flow.async_configure(
+        result["flow_id"], page(name="Wohnzimmer", addr_play_pause="1/0/1", addr_scene="1/0/9",
+                                scene_3_favorite="Jazz", scene_3_volume=30, status_title="5/0/4",
+                                idle_text="Pause"))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-    assert ok["data"]["commands"] == [] and ok["data"]["status"] == []
-    assert ok["data"]["max_volume"] == 100
+    data = ok["data"]
+    assert data["player"] == PLAYER and data["max_volume"] == 100 and data["addr_play_pause"] == "1/0/1"
+    assert data["scene_3_favorite"] == "Jazz" and data["scene_3_volume"] == 30
+    assert "addr_stop" not in data and "name" not in data
+
+
+# --- Konfigurationsseite: Befehle und Rückmeldungen aus festen Feldern ------------------------------------------
+
+
+def test_settings_commands_and_status() -> None:
+    from custom_components.ha_housekeeper.knx_sonos import settings_commands, settings_status
+
+    values = {"addr_play_pause": "1/0/1", "addr_volume_dim": "1/0/2", "addr_scene": "2/0/1",
+              "scene_2_favorite": "Radio", "scene_2_volume": 20, "scene_2_address": "2/1/2",
+              "status_title": "5/0/4", "status_playing": "5/0/1", "idle_text": "Pause"}
+    get = lambda key, default=None: values.get(key, default)  # noqa: E731
+    commands = settings_commands(get)
+    by = {(c["address"], c["action"], c.get("when"), c.get("scene")) for c in commands}
+    assert ("1/0/1", "play", "on", None) in by and ("1/0/1", "pause", "off", None) in by
+    assert ("1/0/2", "volume_dim", None, None) in by
+    assert ("2/0/1", "favorite", None, 2) in by and ("2/0/1", "volume_set", None, 2) in by
+    assert ("2/1/2", "favorite", "on", None) in by and ("2/1/2", "pause", "off", None) in by
+    statuses = {s["address"]: s for s in settings_status(get)}
+    assert statuses["5/0/4"]["idle_text"] == "Pause" and "idle_text" not in statuses["5/0/1"]
+    assert settings_commands(lambda key, default=None: default) == []
+
+
+async def test_fields_drive_the_player(hass: HomeAssistant) -> None:
+    _, m = await _setup(
+        hass, addr_play_pause="1/0/1", addr_next_prev="1/0/2", addr_volume="1/0/3",
+        addr_volume_step="1/0/4", addr_mute="1/0/5", addr_scene="2/0/1", scene_1_favorite="Jazz",
+        scene_1_volume=25, scene_2_address="2/1/2", scene_2_favorite="Radio")
+    await _telegram(hass, "1/0/1", 1)
+    await _telegram(hass, "1/0/1", 0)
+    assert len(m["media_play"]) == 1 and len(m["media_pause"]) == 1
+    await _telegram(hass, "1/0/2", 1)
+    await _telegram(hass, "1/0/2", 0)
+    assert len(m["media_next_track"]) == len(m["media_previous_track"]) == 1
+    await _telegram(hass, "1/0/3", (128,))
+    assert m["volume_set"][-1].data["volume_level"] == 0.5
+    await _telegram(hass, "1/0/4", 1)       # 30 % + 5 %
+    assert m["volume_set"][-1].data["volume_level"] == 0.35
+    await _telegram(hass, "1/0/5", 1)
+    assert m["volume_mute"][-1].data["is_volume_muted"] is True
+    await _telegram(hass, "2/0/1", (0,))    # Szene 1: Favorit, dann Lautstärke
+    assert [c.data["source"] for c in m["select_source"]] == ["Jazz"]
+    assert m["volume_set"][-1].data["volume_level"] == 0.25
+    await _telegram(hass, "2/1/2", 1)       # Szene 2 über die 1-Bit-Adresse
+    assert [c.data["source"] for c in m["select_source"]] == ["Jazz", "Radio"]
+    pauses = len(m["media_pause"])
+    await _telegram(hass, "2/1/2", 0)       # 0 = Pause
+    assert len(m["media_pause"]) == pauses + 1
+
+
+async def test_fields_send_status(hass: HomeAssistant) -> None:
+    _, m = await _setup(hass, status_playing="5/0/1", status_title="5/0/4", idle_text="Pause")
+    assert _sent(m) == {"5/0/1": (False, "1.001", False), "5/0/4": ("Pause", "16.001", False)}
+
+
+async def test_settings_page_saves_and_renames(hass: HomeAssistant) -> None:
+    entry, _ = await _setup(hass, addr_play_pause="1/0/1", addr_stop="1/0/2")
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    assert result["step_id"] == "knx_settings" and not is_menu(result)
+    assert "legacy" not in {str(k) for k in result["data_schema"].schema}     # keine alten Listen
+    # Bestehende Adressen sind vorbelegt; Stopp wird geleert, Name gesetzt
+    done = await flow.async_configure(
+        result["flow_id"], page(name="Küche", addr_play_pause="1/0/1", max_volume=70))
+    assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
+    assert entry.options["addr_stop"] is None and entry.options["addr_play_pause"] == "1/0/1"
+    assert entry.options["max_volume"] == 70
+    assert entry.title.endswith("Küche")
+
+
+async def test_settings_page_legacy_entries(hass: HomeAssistant) -> None:
+    legacy_cmd = cmd("1", "1/0/1", "switch", "play")
+    entry, _ = await _setup(
+        hass, commands=[legacy_cmd],
+        speakers=[{"id": "a", "name": "A", "player": PLAYER, "max_volume": 80, "volume_step": 7,
+                   "stop_instead_of_pause": True},
+                  {"id": "b", "name": "B", "player": "media_player.b"}])
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    schema = {str(k): v for k, v in result["data_schema"].schema.items()}
+    assert "legacy" in schema                                    # Schalter zum Löschen der alten Listen
+    assert "weitere" in result["description_placeholders"]["legacy"] or "more" in result["description_placeholders"]["legacy"]
+    await flow.async_configure(result["flow_id"], page(max_volume=80, volume_step=7,
+                                                       stop_instead_of_pause=True, clear_legacy=True))
+    assert entry.options["speakers"] is None and entry.options["commands"] is None
+    assert entry.options["volume_step"] == 7 and entry.options["stop_instead_of_pause"] is True
 
 
 # --- Anmeldung bei der KNX-Integration ----------------------------------------------------
@@ -317,85 +440,3 @@ async def test_status_not_sent_without_knx_service(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     assert send == []                           # KNX ist (noch) nicht bereit
-
-
-# --- Options-Flow ----------------------------------------------------------------------------
-
-
-async def test_options_flow_commands_and_status(hass: HomeAssistant) -> None:
-    entry, _ = await _setup(hass)
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    assert result["step_id"] == "knx_menu"
-    assert "edit_command" not in menu_options(result) and "edit_status" not in menu_options(result)
-
-    # Lautsprecher-Profil bearbeiten (ältere Einträge: Profil „Standard“ aus dem Eintrag)
-    assert "delete_speaker" not in menu_options(result)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_speaker"})
-    result = await flow.async_configure(result["flow_id"], {"item": "default"})
-    assert result["step_id"] == "speaker_edit"
-    result = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Wohnzimmer", "player": PLAYER, "max_volume": 70, "volume_step": 10,
-         "stop_instead_of_pause": True})
-    (speaker,) = entry.options["speakers"]
-    assert speaker["id"] == "default" and speaker["name"] == "Wohnzimmer"
-    assert speaker["max_volume"] == 70 and speaker["stop_instead_of_pause"] is True
-
-    # Befehl mit Favorit (zwei Schritte)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
-    bad = await flow.async_configure(
-        result["flow_id"], {"name": "Jazz", "address": "x/y", "dpt": "switch", "action": "favorite"})
-    assert bad["errors"] == {"base": "invalid_address"}
-    mismatch = await flow.async_configure(
-        bad["flow_id"], {"name": "Jazz", "address": "1/0/1", "dpt": "dimming", "action": "play"})
-    assert mismatch["errors"] == {"base": "dimming_mismatch"}
-    mute = await flow.async_configure(
-        mismatch["flow_id"], {"name": "Jazz", "address": "1/0/1", "dpt": "percent", "action": "mute_set"})
-    assert mute["errors"] == {"base": "mute_set_needs_switch"}
-    result = await flow.async_configure(
-        mute["flow_id"], {"name": "Jazz", "address": "1/0/1", "dpt": "switch", "action": "favorite"})
-    assert result["step_id"] == "command_params"
-    result = await flow.async_configure(result["flow_id"], {"when": "on", "favorite": "Jazz"})
-    assert is_menu(result)
-    (command,) = entry.options["commands"]
-    assert command["favorite"] == "Jazz" and command["when"] == "on" and "scene" not in command
-
-    # Befehl ohne Zusatzangaben wird sofort gespeichert (Dimmen)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_command"})
-    result = await flow.async_configure(
-        result["flow_id"], {"name": "Dim", "address": "1/0/2", "dpt": "dimming", "action": "volume_dim"})
-    assert is_menu(result) and len(entry.options["commands"]) == 2
-
-    # Bearbeiten: auf Szene umstellen, alte Schlüssel verschwinden
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_command"})
-    result = await flow.async_configure(result["flow_id"], {"item": command["id"]})
-    result = await flow.async_configure(
-        result["flow_id"], {"name": "Jazz", "address": "1/0/1", "dpt": "scene", "action": "favorite"})
-    result = await flow.async_configure(result["flow_id"], {"scene": 5, "favorite": "Radio"})
-    edited = next(c for c in entry.options["commands"] if c["id"] == command["id"])
-    assert edited["scene"] == 5 and edited["favorite"] == "Radio" and "when" not in edited
-
-    # Löschen
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_command"})
-    result = await flow.async_configure(result["flow_id"], {"item": command["id"]})
-    assert [c["name"] for c in entry.options["commands"]] == ["Dim"]
-
-    # Rückmeldung: hinzufügen, bearbeiten, löschen
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_status"})
-    bad = await flow.async_configure(
-        result["flow_id"], {"name": "Titel", "source": "title", "address": "nope", "idle_text": ""})
-    assert bad["errors"] == {"base": "invalid_address"}
-    result = await flow.async_configure(
-        bad["flow_id"], {"name": "Titel", "source": "title", "address": "5/0/4", "idle_text": "Pause"})
-    (status,) = entry.options["status"]
-    assert status["idle_text"] == "Pause"
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_status"})
-    result = await flow.async_configure(result["flow_id"], {"item": status["id"]})
-    result = await flow.async_configure(
-        result["flow_id"], {"name": "Laut", "source": "volume", "address": "5/0/5", "idle_text": "x"})
-    (edited_status,) = entry.options["status"]
-    assert edited_status["source"] == "volume" and "idle_text" not in edited_status
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_status"})
-    result = await flow.async_configure(result["flow_id"], {"item": status["id"]})
-    assert entry.options["status"] == []

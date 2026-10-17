@@ -306,6 +306,34 @@ DEFAULT_SPEAKER_ID = "default"
 DEFAULT_SPEAKER_NAME = "Standard"
 DEFAULT_VOLUME_STEP = 5
 
+# Feste Felder der Konfigurationsseite (Gruppenadressen, alle optional)
+CONF_ADDR_PLAY_PAUSE = "addr_play_pause"      # 1 Bit: 1 = Wiedergabe, 0 = Pause
+CONF_ADDR_NEXT_PREV = "addr_next_prev"        # 1 Bit: 1 = nächster, 0 = vorheriger Titel
+CONF_ADDR_STOP = "addr_stop"                  # 1 Bit: 1 = Stopp
+CONF_ADDR_TOGGLE = "addr_toggle"              # 1 Bit: 1 = Wiedergabe/Pause umschalten
+CONF_ADDR_VOLUME = "addr_volume"              # 5.001: Lautstärke absolut
+CONF_ADDR_VOLUME_STEP = "addr_volume_step"    # 1 Bit: 1 = lauter, 0 = leiser (ein Schritt)
+CONF_ADDR_VOLUME_DIM = "addr_volume_dim"      # 3.007: relatives Dimmen
+CONF_ADDR_MUTE = "addr_mute"                  # 1 Bit: folgt dem Wert
+CONF_ADDR_SCENE = "addr_scene"                # 17.001: Szenennummer
+SCENE_COUNT = 8
+CONF_STATUS_PLAYING = "status_playing"
+CONF_STATUS_PAUSED = "status_paused"
+CONF_STATUS_VOLUME = "status_volume"
+CONF_STATUS_MUTED = "status_muted"
+CONF_STATUS_TITLE = "status_title"
+CONF_STATUS_ARTIST = "status_artist"
+CONF_STATUS_ALBUM = "status_album"
+CONF_STATUS_SOURCE = "status_source"
+CONF_IDLE_TEXT = "idle_text"                  # Text der Textrückmeldungen, wenn nichts läuft
+CONF_CLEAR_LEGACY = "clear_legacy"            # nur im Formular: alte Listen entfernen
+
+
+def scene_key(number: int, field: str) -> str:
+    """Schlüssel eines Szenenfelds: `scene_3_favorite`, `scene_3_volume`, `scene_3_address`."""
+    return f"scene_{number}_{field}"
+
+
 # Befehl (KNX -> Sonos) und Rückmeldung (Sonos -> KNX): Schlüssel
 K_ID = "id"
 K_NAME = "name"

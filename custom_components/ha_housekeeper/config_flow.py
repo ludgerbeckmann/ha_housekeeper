@@ -18,22 +18,14 @@ from homeassistant.data_entry_flow import AbortFlow
 
 from .const import (
     CONF_ALARMS,
-    CONF_COMMANDS,
     CONF_FUNCTION_TYPE,
-    CONF_MAX_VOLUME,
     CONF_MONITOR_RULES,
     CONF_NAME,
-    CONF_PLAYER,
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
     CONF_RULES,
     CONF_SCHEDULES,
-    CONF_STATUS,
-    CONF_STOP_INSTEAD,
     CONF_TASKS,
-    CONF_VOLUME_STEP,
-    DEFAULT_MAX_VOLUME,
-    DEFAULT_VOLUME_STEP,
     DOMAIN,
     FUNCTION_ALARM,
     FUNCTION_DOOR_GUARD,
@@ -58,7 +50,7 @@ from .flows.common import OptionsBase, _flatten_sections, _validate_notify
 from .flows.door_guard import DoorGuardOptions, _door_schema, _validate_door
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.ir import IrOptions, _ir_schema, _validate_ir, new_instance_data as new_ir_data
-from .flows.knx import _SONOS_SELECTOR, KnxSonosOptions
+from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
 from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
 from .flows.mailbox import MailboxOptions, _mailbox_schema
 from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
@@ -76,7 +68,7 @@ _MENU_STEPS = {
     FUNCTION_DOOR_GUARD: "menu",
     FUNCTION_DOORBELL: "bell_menu",
     FUNCTION_POOL: "pool_menu",
-    FUNCTION_KNX_SONOS: "knx_menu",
+    FUNCTION_KNX_SONOS: "knx_settings",
     FUNCTION_UPDATER: "upd_menu",
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
@@ -193,26 +185,20 @@ class NewInstanceSteps:
     ) -> ConfigFlowResult:
         if not self.hass.services.has_service("knx", "event_register"):
             return self.async_abort(reason="knx_missing")
+        errors: dict[str, str] = {}
+        detail = ""
+        defaults: dict[str, Any] = {}
         if user_input is not None:
-            return await self._finish_new(
-                    user_input.get(CONF_NAME),
-                    {
-                    CONF_PLAYER: user_input[CONF_PLAYER],
-                    CONF_MAX_VOLUME: DEFAULT_MAX_VOLUME,
-                    CONF_VOLUME_STEP: DEFAULT_VOLUME_STEP,
-                    CONF_STOP_INSTEAD: False,
-                    CONF_COMMANDS: [],
-                    CONF_STATUS: [],
-                },
-                )
+            flat = _flatten_sections(user_input)
+            errors, detail = _validate_knx(self.hass.config.language or "", flat)
+            if not errors:
+                return await self._finish_new(flat.get(CONF_NAME), new_knx_data(flat))
+            defaults = flat
         return self.async_show_form(
             step_id="new_knx_sonos",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_NAME): str,
-                    vol.Required(CONF_PLAYER): _SONOS_SELECTOR,
-                }
-            ),
+            data_schema=_knx_schema(defaults, [], with_legacy=False),
+            errors=errors,
+            description_placeholders={"detail": detail, "legacy": ""},
         )
 
     async def async_step_new_updater(

@@ -55,52 +55,6 @@
         "ringtone": "Klingelton"
       }
     },
-    "knx_dpt": {
-      "options": {
-        "switch": "Schalten, 1 Bit (1.001)",
-        "percent": "Prozent, 1 Byte (5.001)",
-        "scene": "Szene (17.001)",
-        "dimming": "Relatives Dimmen (3.007)"
-      }
-    },
-    "knx_when": {
-      "options": {
-        "on": "Wert 1 (ein)",
-        "off": "Wert 0 (aus)",
-        "any": "Jeden Wert"
-      }
-    },
-    "knx_action": {
-      "options": {
-        "play": "Wiedergabe",
-        "pause": "Pause",
-        "play_pause": "Wiedergabe/Pause umschalten",
-        "stop": "Stopp",
-        "next": "Nächster Titel",
-        "previous": "Vorheriger Titel",
-        "volume_set": "Lautstärke setzen",
-        "volume_up": "Lauter",
-        "volume_down": "Leiser",
-        "volume_dim": "Lautstärke dimmen",
-        "mute": "Stumm",
-        "unmute": "Stumm aus",
-        "mute_toggle": "Stumm umschalten",
-        "mute_set": "Stumm (Wert)",
-        "favorite": "Sonos-Favorit abspielen"
-      }
-    },
-    "knx_source": {
-      "options": {
-        "playing": "Wiedergabe (1 Bit)",
-        "paused": "Pause (1 Bit)",
-        "volume": "Lautstärke (Prozent)",
-        "muted": "Stumm (1 Bit)",
-        "title": "Titel (Text)",
-        "artist": "Interpret (Text)",
-        "album": "Album (Text)",
-        "source": "Quelle/Favorit (Text)"
-      }
-    },
     "update_component": {
       "options": {
         "core": "Home Assistant Core",
@@ -1097,168 +1051,376 @@
       "step": {
         "new_knx_sonos": {
           "title": "KNX/Sonos-Connector",
-          "data": {
-            "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)",
-            "player": "Sonos-Lautsprecher"
-          },
-          "description": "Setzt auf der KNX-Integration von Home Assistant auf. Der Lautsprecher wird das erste Profil; weitere Lautsprecher, Befehle und Rückmeldungen folgen danach unter Konfigurieren.",
-          "data_description": {
-            "name": "Optional. Leer = „KNX/Sonos-Connector“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+          "description": "Ein Sonos-Lautsprecher mit allen Einstellungen auf einer Seite. Leere Gruppenadressen werden nicht verwendet; weitere Lautsprecher legst du als eigene Einträge an.",
+          "sections": {
+            "speaker": {
+              "name": "Lautsprecher",
+              "description": "Der Sonos-Lautsprecher dieses Eintrags und seine Grenzen.",
+              "data": {
+                "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)",
+                "player": "Sonos-Lautsprecher",
+                "max_volume": "Lautstärkegrenze",
+                "volume_step": "Lautstärkeschritt",
+                "stop_instead_of_pause": "Stoppen statt Pause"
+              },
+              "data_description": {
+                "max_volume": "Höchste Lautstärke, die über KNX eingestellt werden kann.",
+                "volume_step": "Schritt für „Lauter/Leiser“ und relatives Dimmen.",
+                "stop_instead_of_pause": "Bei „Pause“ wird die Wiedergabe gestoppt (z. B. für Radiosender)."
+              }
+            },
+            "playback": {
+              "name": "Wiedergabe",
+              "description": "Gruppenadressen für die Steuerung. Leere Felder werden nicht verwendet.",
+              "data": {
+                "addr_play_pause": "Play/Pause (1 Bit)",
+                "addr_next_prev": "Nächster/Vorheriger Titel (1 Bit)",
+                "addr_stop": "Stopp (1 Bit)",
+                "addr_toggle": "Play/Pause umschalten (1 Bit)"
+              },
+              "data_description": {
+                "addr_play_pause": "1 = Wiedergabe, 0 = Pause.",
+                "addr_next_prev": "1 = nächster, 0 = vorheriger Titel.",
+                "addr_stop": "1 = Stopp.",
+                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten."
+              }
+            },
+            "volume": {
+              "name": "Lautstärke",
+              "description": "Gruppenadressen für die Lautstärke.",
+              "data": {
+                "addr_volume": "Lautstärke absolut (5.001)",
+                "addr_volume_step": "Lauter/Leiser (1 Bit)",
+                "addr_volume_dim": "Relatives Dimmen (3.007)",
+                "addr_mute": "Stumm (1 Bit)"
+              },
+              "data_description": {
+                "addr_volume": "0–100 %, begrenzt durch die Lautstärkegrenze.",
+                "addr_volume_step": "1 = einen Schritt lauter, 0 = einen Schritt leiser.",
+                "addr_volume_dim": "Pro Telegramm ein Schritt, Schrittcode 0 = Stopp.",
+                "addr_mute": "1 = stumm, 0 = Stumm aus."
+              }
+            },
+            "scenes": {
+              "name": "Szenen",
+              "description": "Die Szenen 1 bis 8 stehen in den folgenden Abschnitten.",
+              "data": {
+                "addr_scene": "Szenenadresse (17.001)"
+              },
+              "data_description": {
+                "addr_scene": "Die Szenennummer 1 bis 8 startet die Szene mit dieser Nummer."
+              }
+            },
+            "scene_1": {
+              "name": "Szene 1",
+              "description": "Wird bei Szenennummer 1 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_1_favorite": "Favorit (Sonos-Quelle)",
+                "scene_1_volume": "Lautstärke",
+                "scene_1_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_1_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_2": {
+              "name": "Szene 2",
+              "description": "Wird bei Szenennummer 2 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_2_favorite": "Favorit (Sonos-Quelle)",
+                "scene_2_volume": "Lautstärke",
+                "scene_2_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_2_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_3": {
+              "name": "Szene 3",
+              "description": "Wird bei Szenennummer 3 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_3_favorite": "Favorit (Sonos-Quelle)",
+                "scene_3_volume": "Lautstärke",
+                "scene_3_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_3_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_4": {
+              "name": "Szene 4",
+              "description": "Wird bei Szenennummer 4 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_4_favorite": "Favorit (Sonos-Quelle)",
+                "scene_4_volume": "Lautstärke",
+                "scene_4_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_4_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_5": {
+              "name": "Szene 5",
+              "description": "Wird bei Szenennummer 5 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_5_favorite": "Favorit (Sonos-Quelle)",
+                "scene_5_volume": "Lautstärke",
+                "scene_5_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_5_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_6": {
+              "name": "Szene 6",
+              "description": "Wird bei Szenennummer 6 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_6_favorite": "Favorit (Sonos-Quelle)",
+                "scene_6_volume": "Lautstärke",
+                "scene_6_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_6_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_7": {
+              "name": "Szene 7",
+              "description": "Wird bei Szenennummer 7 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_7_favorite": "Favorit (Sonos-Quelle)",
+                "scene_7_volume": "Lautstärke",
+                "scene_7_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_7_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_8": {
+              "name": "Szene 8",
+              "description": "Wird bei Szenennummer 8 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_8_favorite": "Favorit (Sonos-Quelle)",
+                "scene_8_volume": "Lautstärke",
+                "scene_8_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_8_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "status": {
+              "name": "Rückmeldungen",
+              "description": "Gruppenadressen, an die der Zustand des Lautsprechers gesendet wird (auch als Antwort auf Lesetelegramme).",
+              "data": {
+                "status_playing": "Spielt (1 Bit)",
+                "status_paused": "Pausiert (1 Bit)",
+                "status_volume": "Lautstärke (5.001)",
+                "status_muted": "Stumm (1 Bit)",
+                "status_title": "Titel (Text)",
+                "status_artist": "Interpret (Text)",
+                "status_album": "Album (Text)",
+                "status_source": "Quelle (Text)",
+                "idle_text": "Text, wenn nichts läuft"
+              },
+              "data_description": {
+                "idle_text": "Wird statt Titel, Interpret, Album und Quelle gesendet, wenn nichts spielt (höchstens 14 Zeichen)."
+              }
+            }
           }
         },
-        "knx_menu": {
+        "knx_settings": {
           "title": "KNX/Sonos-Connector",
-          "description": "Lautsprecher-Profile sowie Befehle (KNX an Sonos) und Rückmeldungen (Sonos an KNX) je Profil.",
-          "menu_options": {
-            "add_speaker": "Lautsprecher-Profil hinzufügen",
-            "edit_speaker": "Lautsprecher-Profil bearbeiten",
-            "delete_speaker": "Lautsprecher-Profil löschen",
-            "add_command": "Befehl hinzufügen",
-            "edit_command": "Befehl bearbeiten",
-            "delete_command": "Befehl löschen",
-            "add_status": "Rückmeldung hinzufügen",
-            "edit_status": "Rückmeldung bearbeiten",
-            "delete_status": "Rückmeldung löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "speaker_edit": {
-          "title": "Lautsprecher-Profil",
-          "description": "Ein Profil verbindet einen Sonos-Lautsprecher mit seinen Einstellungen. Befehle und Rückmeldungen gehören je zu einem Profil und haben eigene Gruppenadressen.",
-          "data": {
-            "name": "Name",
-            "enabled": "Aktiv",
-            "player": "Sonos-Lautsprecher",
-            "max_volume": "Maximale Lautstärke",
-            "volume_step": "Schrittweite Lauter/Leiser",
-            "stop_instead_of_pause": "Bei Pause stoppen statt pausieren (z. B. für Radiostreams)"
-          },
-          "data_description": {
-            "max_volume": "Begrenzt jede per KNX gesetzte Lautstärke nach oben.",
-            "volume_step": "Gilt für Lauter, Leiser und relatives Dimmen."
-          }
-        },
-        "edit_speaker": {
-          "title": "Lautsprecher-Profil bearbeiten",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "delete_speaker": {
-          "title": "Lautsprecher-Profil löschen",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "edit_command": {
-          "title": "Befehl bearbeiten",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "delete_command": {
-          "title": "Befehl löschen",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "edit_status": {
-          "title": "Rückmeldung bearbeiten",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "delete_status": {
-          "title": "Rückmeldung löschen",
-          "data": {
-            "item": "Eintrag"
-          }
-        },
-        "command_basic": {
-          "title": "Befehl (KNX an Sonos)",
-          "description": "Wird ausgeführt, wenn ein Schreibtelegramm auf der Gruppenadresse eintrifft.",
-          "data": {
-            "name": "Name",
-            "address": "Gruppenadresse (z. B. 1/2/3)",
-            "dpt": "Datentyp",
-            "action": "Aktion",
-            "profile": "Lautsprecher-Profil"
-          },
-          "data_description": {
-            "dpt": "Relatives Dimmen (3.007) gehört zur Aktion „Lautstärke dimmen“, „Stumm (Wert)“ braucht Schalten (1.001)."
-          }
-        },
-        "command_params": {
-          "title": "Angaben zum Befehl",
-          "data": {
-            "when": "Auslösen bei",
-            "scene": "Szenennummer (1–64)",
-            "volume": "Lautstärke",
-            "favorite": "Sonos-Favorit"
-          },
-          "data_description": {
-            "favorite": "Titel des Favoriten, wie er in der Sonos-App steht."
-          }
-        },
-        "status_edit": {
-          "title": "Rückmeldung (Sonos an KNX)",
-          "description": "Der Wert wird bei jeder Änderung gesendet; Leseanfragen auf der Adresse werden beantwortet.",
-          "data": {
-            "name": "Name",
-            "source": "Quelle",
-            "address": "Gruppenadresse (z. B. 1/2/3)",
-            "idle_text": "Text, wenn nichts wiedergegeben wird",
-            "profile": "Lautsprecher-Profil"
-          },
-          "data_description": {
-            "source": "Wiedergabe, Pause und Stumm werden als 1 Bit (1.001), die Lautstärke als Prozent (5.001) und Titel, Interpret, Album und Quelle als Text (16.001, 14 Zeichen) gesendet.",
-            "idle_text": "Nur für Textquellen."
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „KNX/Sonos-Connector: Büro“. Ein vorangestellter Funktionsname wird entfernt."
+          "description": "Alle Einstellungen dieses Lautsprechers. Leere Gruppenadressen werden nicht verwendet.\n\n{legacy}",
+          "sections": {
+            "speaker": {
+              "name": "Lautsprecher",
+              "description": "Der Sonos-Lautsprecher dieses Eintrags und seine Grenzen.",
+              "data": {
+                "name": "Name (erscheint als „KNX/Sonos-Connector: Name“)",
+                "player": "Sonos-Lautsprecher",
+                "max_volume": "Lautstärkegrenze",
+                "volume_step": "Lautstärkeschritt",
+                "stop_instead_of_pause": "Stoppen statt Pause"
+              },
+              "data_description": {
+                "max_volume": "Höchste Lautstärke, die über KNX eingestellt werden kann.",
+                "volume_step": "Schritt für „Lauter/Leiser“ und relatives Dimmen.",
+                "stop_instead_of_pause": "Bei „Pause“ wird die Wiedergabe gestoppt (z. B. für Radiosender)."
+              }
+            },
+            "playback": {
+              "name": "Wiedergabe",
+              "description": "Gruppenadressen für die Steuerung. Leere Felder werden nicht verwendet.",
+              "data": {
+                "addr_play_pause": "Play/Pause (1 Bit)",
+                "addr_next_prev": "Nächster/Vorheriger Titel (1 Bit)",
+                "addr_stop": "Stopp (1 Bit)",
+                "addr_toggle": "Play/Pause umschalten (1 Bit)"
+              },
+              "data_description": {
+                "addr_play_pause": "1 = Wiedergabe, 0 = Pause.",
+                "addr_next_prev": "1 = nächster, 0 = vorheriger Titel.",
+                "addr_stop": "1 = Stopp.",
+                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten."
+              }
+            },
+            "volume": {
+              "name": "Lautstärke",
+              "description": "Gruppenadressen für die Lautstärke.",
+              "data": {
+                "addr_volume": "Lautstärke absolut (5.001)",
+                "addr_volume_step": "Lauter/Leiser (1 Bit)",
+                "addr_volume_dim": "Relatives Dimmen (3.007)",
+                "addr_mute": "Stumm (1 Bit)"
+              },
+              "data_description": {
+                "addr_volume": "0–100 %, begrenzt durch die Lautstärkegrenze.",
+                "addr_volume_step": "1 = einen Schritt lauter, 0 = einen Schritt leiser.",
+                "addr_volume_dim": "Pro Telegramm ein Schritt, Schrittcode 0 = Stopp.",
+                "addr_mute": "1 = stumm, 0 = Stumm aus."
+              }
+            },
+            "scenes": {
+              "name": "Szenen",
+              "description": "Die Szenen 1 bis 8 stehen in den folgenden Abschnitten.",
+              "data": {
+                "addr_scene": "Szenenadresse (17.001)"
+              },
+              "data_description": {
+                "addr_scene": "Die Szenennummer 1 bis 8 startet die Szene mit dieser Nummer."
+              }
+            },
+            "scene_1": {
+              "name": "Szene 1",
+              "description": "Wird bei Szenennummer 1 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_1_favorite": "Favorit (Sonos-Quelle)",
+                "scene_1_volume": "Lautstärke",
+                "scene_1_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_1_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_2": {
+              "name": "Szene 2",
+              "description": "Wird bei Szenennummer 2 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_2_favorite": "Favorit (Sonos-Quelle)",
+                "scene_2_volume": "Lautstärke",
+                "scene_2_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_2_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_3": {
+              "name": "Szene 3",
+              "description": "Wird bei Szenennummer 3 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_3_favorite": "Favorit (Sonos-Quelle)",
+                "scene_3_volume": "Lautstärke",
+                "scene_3_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_3_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_4": {
+              "name": "Szene 4",
+              "description": "Wird bei Szenennummer 4 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_4_favorite": "Favorit (Sonos-Quelle)",
+                "scene_4_volume": "Lautstärke",
+                "scene_4_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_4_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_5": {
+              "name": "Szene 5",
+              "description": "Wird bei Szenennummer 5 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_5_favorite": "Favorit (Sonos-Quelle)",
+                "scene_5_volume": "Lautstärke",
+                "scene_5_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_5_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_6": {
+              "name": "Szene 6",
+              "description": "Wird bei Szenennummer 6 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_6_favorite": "Favorit (Sonos-Quelle)",
+                "scene_6_volume": "Lautstärke",
+                "scene_6_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_6_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_7": {
+              "name": "Szene 7",
+              "description": "Wird bei Szenennummer 7 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_7_favorite": "Favorit (Sonos-Quelle)",
+                "scene_7_volume": "Lautstärke",
+                "scene_7_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_7_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "scene_8": {
+              "name": "Szene 8",
+              "description": "Wird bei Szenennummer 8 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
+              "data": {
+                "scene_8_favorite": "Favorit (Sonos-Quelle)",
+                "scene_8_volume": "Lautstärke",
+                "scene_8_address": "1-Bit-Adresse"
+              },
+              "data_description": {
+                "scene_8_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
+              }
+            },
+            "status": {
+              "name": "Rückmeldungen",
+              "description": "Gruppenadressen, an die der Zustand des Lautsprechers gesendet wird (auch als Antwort auf Lesetelegramme).",
+              "data": {
+                "status_playing": "Spielt (1 Bit)",
+                "status_paused": "Pausiert (1 Bit)",
+                "status_volume": "Lautstärke (5.001)",
+                "status_muted": "Stumm (1 Bit)",
+                "status_title": "Titel (Text)",
+                "status_artist": "Interpret (Text)",
+                "status_album": "Album (Text)",
+                "status_source": "Quelle (Text)",
+                "idle_text": "Text, wenn nichts läuft"
+              },
+              "data_description": {
+                "idle_text": "Wird statt Titel, Interpret, Album und Quelle gesendet, wenn nichts spielt (höchstens 14 Zeichen)."
+              }
+            },
+            "legacy": {
+              "name": "Ältere Einträge",
+              "description": "Befehle und Rückmeldungen aus der früheren Listen-Konfiguration.",
+              "data": {
+                "clear_legacy": "Alte Befehle und Rückmeldungen löschen"
+              }
+            }
           }
         }
       },
       "error": {
-        "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
-        "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
-        "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
-        "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
-        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
-        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
-        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
-        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
-        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
-        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
-        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
-        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
-        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
-        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
-        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
-        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
-        "invalid_address": "Ungültige Gruppenadresse.",
-        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
-        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
-        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
-        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
-        "no_actions": "Mindestens eine Aktion muss definiert sein.",
-        "invalid_datetime": "Ungültiges Datum.",
-        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
-        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
-        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "invalid_address": "Ungültige Gruppenadresse in: {detail}. Erlaubt ist z. B. 1/2/3.",
+        "scene_no_trigger": "Szenen ohne Auslöser: {detail}. Trage die Szenenadresse oder eine 1-Bit-Adresse der Szene ein."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
-        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten.",
+        "reconfigure_successful": "Gespeichert."
       }
     },
     "updater": {
