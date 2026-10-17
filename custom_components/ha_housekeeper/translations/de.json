@@ -34,7 +34,8 @@
       "options": {
         "state": "Zustand einer Entität",
         "time": "Uhrzeit",
-        "door_closed": "Tür geschlossen seit"
+        "door_closed": "Tür geschlossen seit",
+        "presence": "Anwesenheit"
       }
     },
     "weekday": {
@@ -156,6 +157,19 @@
       "options": {
         "balance": "Guthaben (mit Abgleich)",
         "budget": "Monatsbudget"
+      }
+    },
+    "presence_mode": {
+      "options": {
+        "all_away": "Alle sind weg",
+        "any_home": "Jemand kommt nach Hause"
+      }
+    },
+    "presence_condition": {
+      "options": {
+        "ignore": "Egal",
+        "someone_home": "Nur wenn jemand zu Hause ist",
+        "all_away": "Nur wenn alle weg sind"
       }
     }
   },
@@ -535,7 +549,8 @@
                 "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
                 "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
                 "manual_override": "Bei manueller Bedienung des Schlosses",
-                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)",
+                "presence_entities": "Personen für die Anwesenheit (optional)"
               },
               "data_description": {
                 "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
@@ -543,7 +558,8 @@
                 "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
                 "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
                 "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
-                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
+                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen."
               }
             },
             "notifications": {
@@ -589,14 +605,16 @@
                 "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
                 "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
                 "manual_override": "Bei manueller Bedienung des Schlosses",
-                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)",
+                "presence_entities": "Personen für die Anwesenheit (optional)"
               },
               "data_description": {
                 "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
                 "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
                 "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
                 "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
+                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen."
               }
             },
             "notifications": {
@@ -672,6 +690,30 @@
           "data_description": {
             "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Türwächter: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
+        },
+        "rule_presence": {
+          "title": "Auslöser: Anwesenheit",
+          "data": {
+            "presence_mode": "Auslösen, wenn",
+            "for_minutes": "Wartezeit (Minuten)"
+          },
+          "data_description": {
+            "presence_mode": "„Alle sind weg“ löst aus, wenn alle Personen dieser Tür weg sind; „Jemand kommt nach Hause“, sobald mindestens eine ankommt.",
+            "for_minutes": "Die Bedingung muss so lange gelten; kommt jemand zurück, wird abgebrochen. 0 = sofort."
+          }
+        },
+        "rule_conditions": {
+          "title": "Bedingungen (optional)",
+          "data": {
+            "presence": "Anwesenheit",
+            "only_if_on": "Nur wenn an",
+            "skip_if_on": "Nicht wenn an"
+          },
+          "data_description": {
+            "presence": "Gilt für die bei dieser Tür hinterlegten Personen. Bei unklarem Standort wird nichts geschaltet.",
+            "only_if_on": "Alle gewählten Entitäten müssen an sein (z. B. ein Werktagssensor). Personen und Tracker zählen zu Hause als an, Zonen mit Personen darin.",
+            "skip_if_on": "Ist eine der gewählten Entitäten an, wird die Regel übersprungen (z. B. ein Ferien-Sensor). Bei unklarem Zustand: Aufschließen entfällt, Abschließen läuft."
+          }
         }
       },
       "error": {
@@ -702,7 +744,8 @@
         "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "no_media": "Wähle eine Audiodatei.",
+        "no_presence_entities": "Wähle zuerst in den Einstellungen dieser Tür Personen für die Anwesenheit."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",

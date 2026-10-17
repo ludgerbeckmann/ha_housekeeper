@@ -28,6 +28,7 @@ from .const import (
     CONF_MANUAL_PAUSE_MINUTES,
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
+    CONF_PRESENCE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
     CONF_VERIFY_SECONDS,
@@ -38,12 +39,20 @@ from .const import (
     DEFAULT_VERIFY_SECONDS,
     DOMAIN,
     MANUAL_PAUSE,
+    PC_ALL_AWAY,
+    PC_IGNORE,
+    PC_SOMEONE_HOME,
+    PM_ALL_AWAY,
     R_ACTION,
     R_ENABLED,
     R_DELAY,
     R_ENTITY,
     R_FOR_MINUTES,
     R_ID,
+    R_ONLY_IF_ON,
+    R_PRESENCE,
+    R_PRESENCE_MODE,
+    R_SKIP_IF_ON,
     R_TIME,
     R_TO_STATE,
     R_TRIGGER,
@@ -51,6 +60,7 @@ from .const import (
     RULE_LOCK,
     RULE_UNLOCK,
     TRIGGER_DOOR_CLOSED,
+    TRIGGER_PRESENCE,
     TRIGGER_STATE,
     TRIGGER_TIME,
     WEEKDAYS,
@@ -82,6 +92,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "off": "aus",
         "min": "min",
         "door_closed": "Tür geschlossen seit",
+        PM_ALL_AWAY: "Anwesenheit: alle weg",
+        "any_home": "Anwesenheit: jemand kommt",
     },
     "en": {
         "blocked": "{name} is open and was not locked.",
@@ -98,6 +110,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "off": "off",
         "min": "min",
         "door_closed": "Door closed for",
+        PM_ALL_AWAY: "Presence: everyone away",
+        "any_home": "Presence: someone arrives",
     },
 }
 
@@ -119,6 +133,10 @@ def rule_summary(hass: HomeAssistant, rule: dict[str, Any]) -> str:
         text = f"{rule.get(R_ENTITY)} → {rule.get(R_TO_STATE)}"
         if (minutes := int(rule.get(R_FOR_MINUTES) or 0)) > 0:
             text += f" {lang['for']} {minutes} {lang['min']}"
+    elif trigger == TRIGGER_PRESENCE:
+        text = lang[rule.get(R_PRESENCE_MODE) or PM_ALL_AWAY]
+        if (minutes := float(rule.get(R_FOR_MINUTES) or 0)) > 0:
+            text += f" {lang['for']} {minutes:g} {lang['min']}"
     elif trigger == TRIGGER_TIME:
         text = str(rule.get(R_TIME, ""))[:5]
         days = rule.get(R_WEEKDAYS) or WEEKDAYS
@@ -128,6 +146,73 @@ def rule_summary(hass: HomeAssistant, rule: dict[str, Any]) -> str:
         text = f"{lang['door_closed']} {int(rule.get(R_DELAY) or 0)} s"
     off = "" if rule.get(R_ENABLED, True) else f" ({lang['off']})"
     return f"{head}: {text}{off}"
+
+
+def entity_on(state: Any) -> bool | None:
+    """Ist die Entität „an“? `None` = unklar (fehlt, nicht verfügbar oder unbekannt).
+
+    Person und Gerätetracker sind an, wenn sie zu Hause sind; eine Zone, wenn mindestens eine
+    Person darin ist; alle anderen (Binärsensor, Hilfsschalter, Kalender, Zeitplan) bei `on`."""
+    if state is None or state.state in _IGNORED_STATES:
+        return None
+    domain = state.entity_id.split(".", 1)[0]
+    if domain in ("person", "device_tracker"):
+        return state.state == "home"
+    if domain == "zone":
+        try:
+            return float(state.state) > 0
+        except ValueError:
+            return None
+    return state.state == STATE_ON
+
+
+def presence_met(mode: str, home: list[bool | None]) -> bool:
+    """Trifft der Anwesenheitsauslöser zu? `home` je Person: zu Hause, weg oder unklar (`None`).
+
+    „Alle weg“ verlangt, dass jede Person eindeutig weg ist; „jemand kommt“, dass mindestens
+    eine eindeutig zu Hause ist. Unklare Personen lösen nie aus."""
+    if not home:
+        return False
+    if mode == PM_ALL_AWAY:
+        return all(h is False for h in home)
+    return any(h is True for h in home)
+
+
+def evaluate_conditions(
+    rule: dict[str, Any],
+    action: str,
+    home: list[bool | None],
+    on: dict[str, bool | None],
+) -> str | None:
+    """Bedingungen einer Regel prüfen: `None` = erfüllt, sonst der Grund für das Überspringen.
+
+    Anwesenheit (`home` je Person der Tür): „jemand zu Hause“ braucht eine eindeutig anwesende
+    Person, „alle weg“ nur eindeutig abwesende; bei unklarem Standort wird nichts geschaltet.
+    „Nur wenn an“: alle müssen an sein; „nicht wenn an“: ist eine an, wird übersprungen. Bei einer
+    unklaren Entität gilt die sichere Seite: Aufschließen wird nicht ausgeführt, Abschließen
+    schon (sie zählt dort als erfüllt bzw. blockiert nicht)."""
+    presence = rule.get(R_PRESENCE) or PC_IGNORE
+    if presence != PC_IGNORE:
+        if not home:
+            return "presence:none"
+        if presence == PC_SOMEONE_HOME:
+            if not any(h is True for h in home):
+                return "presence:unclear" if any(h is None for h in home) else "presence:away"
+        elif presence == PC_ALL_AWAY:
+            if any(h is True for h in home):
+                return "presence:home"
+            if any(h is None for h in home):
+                return "presence:unclear"
+    safe_to_run = action == RULE_LOCK  # Abschließen im Zweifel ja, Aufschließen nein
+    for entity_id in rule.get(R_ONLY_IF_ON) or []:
+        value = on.get(entity_id)
+        if value is False or (value is None and not safe_to_run):
+            return f"only_if:{entity_id}"
+    for entity_id in rule.get(R_SKIP_IF_ON) or []:
+        value = on.get(entity_id)
+        if value is True or (value is None and not safe_to_run):
+            return f"skip_if:{entity_id}"
+    return None
 
 
 class DoorGuardController:
@@ -153,6 +238,7 @@ class DoorGuardController:
         self._blocked_active = False
         self._own_target: str | None = None
         self._own_until = 0.0
+        self._presence_was: dict[str, bool] = {}
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -173,6 +259,28 @@ class DoorGuardController:
             return None
         state = self.hass.states.get(contact)
         return state.state if state else STATE_UNAVAILABLE
+
+    def _presence_ids(self) -> list[str]:
+        return list(self._opt(CONF_PRESENCE) or [])
+
+    def _home_states(self) -> list[bool | None]:
+        """Anwesenheit je Person der Tür: zu Hause, weg oder unklar."""
+        return [entity_on(self.hass.states.get(e)) for e in self._presence_ids()]
+
+    def _paused(self) -> bool:
+        return bool(self.paused_until and dt_util.utcnow() < self.paused_until)
+
+    async def _async_run_rule(self, rule: dict[str, Any], reason: str) -> None:
+        """Regelaktion ausführen, wenn die Bedingungen der Regel erfüllt sind."""
+        if self.automation_enabled and not self._paused():
+            ids = [*(rule.get(R_ONLY_IF_ON) or []), *(rule.get(R_SKIP_IF_ON) or [])]
+            on = {e: entity_on(self.hass.states.get(e)) for e in ids}
+            why = evaluate_conditions(rule, rule[R_ACTION], self._home_states(), on)
+            if why is not None:
+                _LOGGER.debug("%s: Regel %s übersprungen (%s)", self._name, rule.get(R_ID), why)
+                await self._record(rule[R_ACTION], f"{reason} ({why})", "skipped")
+                return
+        await self.async_run_action(rule[R_ACTION], reason)
 
     def _notify_dispatch(self) -> None:
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
@@ -265,6 +373,18 @@ class DoorGuardController:
             self._unsubs.append(
                 async_track_state_change_event(self.hass, [rule[R_ENTITY]], _on_state)
             )
+        elif trigger == TRIGGER_PRESENCE and self._presence_ids():
+            mode = rule.get(R_PRESENCE_MODE) or PM_ALL_AWAY
+            self._presence_was[rule_id] = presence_met(mode, self._home_states())
+
+            async def _on_presence(event: Event, rule=rule, rule_id=rule_id) -> None:
+                await self._on_rule_presence(rule, rule_id)
+
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, self._presence_ids(), _on_presence
+                )
+            )
         elif trigger == TRIGGER_TIME:
             at = dt_util.parse_time(str(rule.get(R_TIME, "")))
             if at is None:
@@ -274,7 +394,7 @@ class DoorGuardController:
             async def _on_time(now: datetime, rule=rule) -> None:
                 days = rule.get(R_WEEKDAYS) or WEEKDAYS
                 if WEEKDAYS[dt_util.as_local(now).weekday()] in days:
-                    await self.async_run_action(rule[R_ACTION], f"time:{rule[R_TIME]}")
+                    await self._async_run_rule(rule, f"time:{rule[R_TIME]}")
 
             self._unsubs.append(
                 async_track_time_change(
@@ -300,11 +420,35 @@ class DoorGuardController:
         if minutes > 0:
 
             async def _later() -> None:
-                await self.async_run_action(rule[R_ACTION], reason)
+                await self._async_run_rule(rule, reason)
 
             self._set_timer(key, minutes * 60, _later)
         else:
-            await self.async_run_action(rule[R_ACTION], reason)
+            await self._async_run_rule(rule, reason)
+
+    async def _on_rule_presence(self, rule: dict[str, Any], rule_id: str) -> None:
+        """Anwesenheit hat sich geändert: beim Zutreffen (nach der Wartezeit) auslösen."""
+        mode = rule.get(R_PRESENCE_MODE) or PM_ALL_AWAY
+        key = f"presence_{rule_id}"
+        met = presence_met(mode, self._home_states())
+        was = self._presence_was.get(rule_id, False)
+        self._presence_was[rule_id] = met
+        if not met:
+            self._cancel_timer(key)
+            return
+        if was:
+            return
+        reason = f"presence:{mode}"
+        minutes = float(rule.get(R_FOR_MINUTES) or 0)
+        if minutes > 0:
+
+            async def _later() -> None:
+                if presence_met(mode, self._home_states()):
+                    await self._async_run_rule(rule, reason)
+
+            self._set_timer(key, minutes * 60, _later)
+        else:
+            await self._async_run_rule(rule, reason)
 
     # --- Ausführung ------------------------------------------------------------
 
@@ -493,7 +637,7 @@ class DoorGuardController:
 
     def _schedule_door_closed(self, rule: dict[str, Any]) -> None:
         async def _later() -> None:
-            await self.async_run_action(rule[R_ACTION], "door_closed")
+            await self._async_run_rule(rule, "door_closed")
 
         self._set_timer(
             f"closed_{rule.get(R_ID)}", float(rule.get(R_DELAY) or 0), _later

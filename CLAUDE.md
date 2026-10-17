@@ -66,7 +66,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `R_*` in `const.py`); der Options-Flow ist ein Menü und speichert Regeln
   sofort über `async_update_entry` (Eintrag lädt bei jeder Speicherung neu).
   Manuelle Bedienung = Schlosswechsel außerhalb des `OWN_ACTION_WINDOW`
-  nach einem eigenen Befehl.
+  nach einem eigenen Befehl. **Anwesenheit/Bedingungen:** `presence_entities` der Tür (`CONF_PRESENCE`);
+  Auslöser `presence` (`R_PRESENCE_MODE` `all_away`/`any_home`, `R_FOR_MINUTES`, flankengesteuert über
+  `_presence_was`, Timer `presence_<id>`, kein Nachholen beim Start); Bedingungen `R_PRESENCE`,
+  `R_ONLY_IF_ON` (UND), `R_SKIP_IF_ON` (ODER) für alle Auslöser im Schritt `rule_conditions`.
+  Reine Funktionen `entity_on()`, `presence_met()`, `evaluate_conditions()`; `_async_run_rule()` prüft sie
+  und trägt Übersprungenes als `skipped` ein (keine Meldung). Unklar: Anwesenheit = nichts schalten,
+  sonst Aufschließen nicht, Abschließen schon.
 - Türklingel-Profile liegen als Liste in `options["profiles"]` (Schlüssel `P_*`
   in `const.py`). `in_window()`/`assign_players()` in `doorbell.py` sind reine
   Funktionen (Fenster über Mitternacht gehören zum Starttag, ein Player wird

@@ -28,7 +28,7 @@ def _assert_sections(schema, general: set[str], notifications: set[str]) -> None
     ("function", "general", "notifications"),
     [
         ("door_guard",
-         {"name", "lock", "contact", "block_action", "retry_minutes", "open_alert_minutes",
+         {"name", "lock", "contact", "presence_entities", "block_action", "retry_minutes", "open_alert_minutes",
           "open_alert_repeat_minutes", "verify_seconds", "manual_override", "manual_pause_minutes"},
          NOTIFY_FIELDS),
         ("task_planner", {"name"}, NOTIFY_FIELDS),
