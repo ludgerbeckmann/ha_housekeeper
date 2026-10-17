@@ -214,6 +214,21 @@
       },
       "consumption_since": {
         "name": "Läuft seit"
+      },
+      "energy_grid": {
+        "name": "Netzbezug {unit}"
+      },
+      "energy_pv": {
+        "name": "PV-Anteil {unit}"
+      },
+      "energy_share": {
+        "name": "Verbrauchsanteil {unit} (Monat)"
+      },
+      "energy_settlement_month": {
+        "name": "Verrechnung Monat ({unit} schuldet)"
+      },
+      "energy_settlement_year": {
+        "name": "Verrechnung Jahr ({unit} schuldet)"
       }
     },
     "button": {
@@ -2463,6 +2478,115 @@
         "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
         "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
         "window_incomplete": "Für das Zeitfenster werden „von“ und „bis“ benötigt (oder beide leer lassen)."
+      },
+      "abort": {
+        "reconfigure_successful": "Gespeichert."
+      }
+    },
+    "energy_monitor": {
+      "initiate_flow": {
+        "user": "Energiemonitor hinzufügen"
+      },
+      "entry_type": "Energiemonitor",
+      "step": {
+        "new_energy_monitor": {
+          "title": "Energiemonitor",
+          "description": "Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Einheiten auf und rechnet die Verrechnung aus. Es ist eine Rechenhilfe, keine Steuer- oder Rechtsberatung. Gezählt wird ab dem Einrichten.",
+          "sections": {
+            "meters": {
+              "name": "Zähler",
+              "description": "Energiesensoren in kWh, die immer weiter hochzählen. Die Zwischenzähler müssen den Verbrauch inklusive PV-Strom messen (der Wechselrichter speist vor ihnen ein).",
+              "data": {
+                "name": "Name (erscheint als „Energiemonitor: Name“)",
+                "grid_energy": "Netzbezug (kWh)",
+                "feed_in_energy": "Einspeisung (kWh)",
+                "pv_energy": "PV-Erzeugung (kWh)",
+                "meter_a_energy": "Zwischenzähler Einheit A (kWh)",
+                "meter_b_energy": "Zwischenzähler Einheit B (kWh)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Energiemonitor“.",
+                "meter_a_energy": "Einheit A zahlt die Energiekosten zentral.",
+                "meter_b_energy": "Einheit B betreibt die PV-Anlage und erstattet ihren Anteil."
+              }
+            },
+            "units": {
+              "name": "Einheiten",
+              "description": "Namen der beiden Wohneinheiten.",
+              "data": {
+                "unit_a_name": "Name Einheit A",
+                "unit_b_name": "Name Einheit B"
+              }
+            },
+            "prices": {
+              "name": "Preise",
+              "description": "Grundlage der Verrechnung. Alle Preise brutto, wie sie auf der Rechnung stehen.",
+              "data": {
+                "grid_price": "Strompreis (ct/kWh)",
+                "pv_price": "Preis je PV-kWh von Einheit A (ct/kWh)",
+                "base_fee_monthly": "Grundpreis (€ pro Monat)",
+                "base_fee_share_b": "Anteil von Einheit B am Grundpreis (%)"
+              },
+              "data_description": {
+                "grid_price": "Gesamtpreis je kWh Netzbezug, zum Beispiel 34.",
+                "pv_price": "Was Einheit A für den PV-Strom verrechnet bekommt, den sie verbraucht. Auswahl oder eigener Wert, auch mit Komma. Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber.",
+                "base_fee_monthly": "Wird nach dem Anteil verteilt; 0 = ohne Grundpreis.",
+                "base_fee_share_b": "Der Rest geht an Einheit A."
+              }
+            }
+          }
+        },
+        "em_settings": {
+          "title": "Energiemonitor",
+          "description": "Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Einheiten auf und rechnet die Verrechnung aus. Es ist eine Rechenhilfe, keine Steuer- oder Rechtsberatung. Gezählt wird ab dem Einrichten.",
+          "sections": {
+            "meters": {
+              "name": "Zähler",
+              "description": "Energiesensoren in kWh, die immer weiter hochzählen. Die Zwischenzähler müssen den Verbrauch inklusive PV-Strom messen (der Wechselrichter speist vor ihnen ein).",
+              "data": {
+                "name": "Name (erscheint als „Energiemonitor: Name“)",
+                "grid_energy": "Netzbezug (kWh)",
+                "feed_in_energy": "Einspeisung (kWh)",
+                "pv_energy": "PV-Erzeugung (kWh)",
+                "meter_a_energy": "Zwischenzähler Einheit A (kWh)",
+                "meter_b_energy": "Zwischenzähler Einheit B (kWh)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Energiemonitor“.",
+                "meter_a_energy": "Einheit A zahlt die Energiekosten zentral.",
+                "meter_b_energy": "Einheit B betreibt die PV-Anlage und erstattet ihren Anteil."
+              }
+            },
+            "units": {
+              "name": "Einheiten",
+              "description": "Namen der beiden Wohneinheiten.",
+              "data": {
+                "unit_a_name": "Name Einheit A",
+                "unit_b_name": "Name Einheit B"
+              }
+            },
+            "prices": {
+              "name": "Preise",
+              "description": "Grundlage der Verrechnung. Alle Preise brutto, wie sie auf der Rechnung stehen.",
+              "data": {
+                "grid_price": "Strompreis (ct/kWh)",
+                "pv_price": "Preis je PV-kWh von Einheit A (ct/kWh)",
+                "base_fee_monthly": "Grundpreis (€ pro Monat)",
+                "base_fee_share_b": "Anteil von Einheit B am Grundpreis (%)"
+              },
+              "data_description": {
+                "grid_price": "Gesamtpreis je kWh Netzbezug, zum Beispiel 34.",
+                "pv_price": "Was Einheit A für den PV-Strom verrechnet bekommt, den sie verbraucht. Auswahl oder eigener Wert, auch mit Komma. Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber.",
+                "base_fee_monthly": "Wird nach dem Anteil verteilt; 0 = ohne Grundpreis.",
+                "base_fee_share_b": "Der Rest geht an Einheit A."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "duplicate_meter": "Jeder Zähler darf nur einmal gewählt werden.",
+        "invalid_price": "Der Preis je PV-kWh muss eine Zahl von 0 an sein, zum Beispiel 16,26."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert."
