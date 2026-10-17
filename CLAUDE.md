@@ -228,7 +228,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   solange es noch nicht überschritten ist), `error` (nach `FAILURES_BEFORE_ALERT`, Key-Fehler
   sofort, dann zusätzlich der Reparaturhinweis `<id>_llm_auth`, den der Controller selbst anlegt und löscht). Die Sensoren sind `state_class: measurement` ohne Geräteklasse (Verlauf über die Recorder-Statistiken).
   Der Modus lässt sich nach dem Anlegen nicht ändern; Betrag im Guthaben-Modus nur über `llm_calibrate`.
-  Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key`), `api_key` steht in
+  Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key` liefert Fehlerschlüssel und Ursache; die Ursache steht als `{detail}` in den Fehlertexten und im Log; `_get()` meldet HTTP-Status plus `error.message` des Anbieters), Leerraum um den Key wird entfernt, `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue

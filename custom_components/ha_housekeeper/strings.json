@@ -2029,8 +2029,8 @@
       },
       "error": {
         "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
-        "invalid_auth": "The key was rejected. An admin key of the organization is needed, not a normal API key. Anthropic: Console → Settings → Admin keys (organization needed). OpenAI: organization settings → Admin keys (owners only), with the permission for usage and costs.",
-        "cannot_connect": "The query failed. Please check the connection and the key."
+        "invalid_auth": "The key was rejected ({detail}). An admin key of the organization is needed, not a normal API key. Anthropic: Console → Settings → Admin keys (organization needed). OpenAI: organization settings → Admin keys (owners only), with the permission for usage and costs.",
+        "cannot_connect": "The query failed: {detail}. Please check the connection and the key (details are also in the log)."
       },
       "abort": {}
     }
