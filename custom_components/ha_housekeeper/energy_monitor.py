@@ -17,18 +17,30 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_EM_BASE_FEE,
     CONF_EM_BASE_SHARE,
+    CONF_EM_AREA_A,
+    CONF_EM_AREA_B,
     CONF_EM_FEED,
+    CONF_EM_GAS,
+    CONF_EM_GAS_FEE,
+    CONF_EM_GAS_KEY,
+    CONF_EM_GAS_PRICE,
     CONF_EM_GRID,
     CONF_EM_METER_A,
     CONF_EM_METER_B,
     CONF_EM_NAME_A,
     CONF_EM_NAME_B,
+    CONF_EM_PERSONS_A,
+    CONF_EM_PERSONS_B,
     CONF_EM_PRICE,
     CONF_EM_PV,
     CONF_EM_PV_PRICE,
+    CONF_EM_WATER,
+    CONF_EM_WATER_FEE,
+    CONF_EM_WATER_PRICE,
     DEFAULT_EM_BASE_SHARE,
     DEFAULT_EM_NAME_A,
     DEFAULT_EM_NAME_B,
+    DEFAULT_EM_PERSONS,
     DOMAIN,
     signal_update,
 )
@@ -41,8 +53,13 @@ CHECK_INTERVAL = timedelta(minutes=1)
 KEEP_MONTHS = 36
 _UNKNOWN = (STATE_UNAVAILABLE, STATE_UNKNOWN)
 
-# Summen je Zeitraum: Netzbezug und PV-Eigenverbrauch je Einheit, dazu der Verbrauch laut Zwischenzähler
-KEYS = ("grid_a", "grid_b", "pv_a", "pv_b", "cons_a", "cons_b")
+# Summen je Zeitraum: Netzbezug und PV-Eigenverbrauch je Einheit, dazu der Verbrauch laut Zwischenzähler,
+# außerdem der gemeinsame Verbrauch von Wasser und Gas (m³)
+KEYS = ("grid_a", "grid_b", "pv_a", "pv_b", "cons_a", "cons_b", "water", "gas")
+UTILITIES = {
+    "water": (CONF_EM_WATER, CONF_EM_WATER_PRICE, CONF_EM_WATER_FEE),
+    "gas": (CONF_EM_GAS, CONF_EM_GAS_PRICE, CONF_EM_GAS_FEE),
+}
 SOURCES = (CONF_EM_GRID, CONF_EM_FEED, CONF_EM_PV, CONF_EM_METER_A, CONF_EM_METER_B)
 
 
@@ -99,6 +116,20 @@ def settle(
     }
 
 
+def persons_share_b(persons_a: float, persons_b: float) -> float:
+    """Anteil von Einheit B nach Personenzahl oder Wohnfläche (0 bis 1; ohne Bezugsgröße 0)."""
+    total = persons_a + persons_b
+    return 0.0 if total <= 0 else persons_b / total
+
+
+def utility_cost_b(
+    volume: float, price: float, base_fee: float, share_b: float, months: int
+) -> dict[str, float]:
+    """Wasser oder Gas: Kosten insgesamt und der Anteil von Einheit B (Personenschlüssel)."""
+    total = volume * price + base_fee * months
+    return {"total": total, "cost_b": total * share_b}
+
+
 def share_a(acc: dict[str, float]) -> float | None:
     """Anteil von Einheit A am Verbrauch in Prozent (`None` ohne Verbrauch)."""
     total = acc.get("cons_a", 0.0) + acc.get("cons_b", 0.0)
@@ -126,6 +157,7 @@ class EnergyMonitorController:
         self.hass = hass
         self.entry = entry
         self.baseline: dict[str, float] | None = None
+        self.util_baseline: dict[str, float] = {}
         self.totals: dict[str, float] = {key: 0.0 for key in KEYS}
         self.months: dict[str, dict[str, float]] = {}
         self._get = entry_opt(entry)
@@ -147,8 +179,31 @@ class EnergyMonitorController:
     def currency(self) -> str:
         return self.hass.config.currency
 
+    def configured(self, kind: str) -> bool:
+        """Ist für Wasser bzw. Gas ein Zähler gewählt?"""
+        return bool(self._get(UTILITIES[kind][0]))
+
+    def share_b(self, kind: str) -> float:
+        """Anteil von Einheit B: Wasser nach Personen, Gas nach Wohnfläche (Standard) oder Personen."""
+        if kind == "gas" and self._get(CONF_EM_GAS_KEY, "area") == "area":
+            keys = (CONF_EM_AREA_A, CONF_EM_AREA_B)
+        else:
+            keys = (CONF_EM_PERSONS_A, CONF_EM_PERSONS_B)
+        return persons_share_b(*(float(self._get(key, DEFAULT_EM_PERSONS) or 0) for key in keys))
+
+    def utility(self, kind: str, acc: dict[str, float], months: int) -> dict[str, float]:
+        """Verbrauch (m³), Gesamtkosten und Anteil von Einheit B; ohne Zähler alles 0."""
+        if not self.configured(kind):
+            return {"volume": 0.0, "total": 0.0, "cost_b": 0.0}
+        _meter, price, fee = UTILITIES[kind]
+        volume = acc.get(kind, 0.0)
+        result = utility_cost_b(
+            volume, float(self._get(price, 0) or 0), float(self._get(fee, 0) or 0), self.share_b(kind), months
+        )
+        return {"volume": volume, **result}
+
     def _settle(self, acc: dict[str, float], months: int) -> dict[str, float]:
-        return settle(
+        result = settle(
             acc,
             float(self._get(CONF_EM_PRICE, 0)),
             float(self._get(CONF_EM_PV_PRICE, 0)),
@@ -156,6 +211,10 @@ class EnergyMonitorController:
             float(self._get(CONF_EM_BASE_SHARE, DEFAULT_EM_BASE_SHARE)),
             months,
         )
+        for kind in UTILITIES:
+            result[f"{kind}_cost_b"] = self.utility(kind, acc, months)["cost_b"]
+            result["owed"] += result[f"{kind}_cost_b"]
+        return result
 
     # --- Auswertung für die Entitäten -----------------------------------------
 
@@ -189,6 +248,7 @@ class EnergyMonitorController:
     async def async_start(self) -> None:
         stored = await self._store.async_load() or {}
         self.baseline = stored.get("baseline")
+        self.util_baseline = stored.get("util_baseline") or {}
         self.totals = {**self.totals, **(stored.get("totals") or {})}
         self.months = stored.get("months") or {}
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, CHECK_INTERVAL))
@@ -204,7 +264,12 @@ class EnergyMonitorController:
 
     async def _async_save(self) -> None:
         await self._store.async_save(
-            {"baseline": self.baseline, "totals": self.totals, "months": self.months}
+            {
+                "baseline": self.baseline,
+                "util_baseline": self.util_baseline,
+                "totals": self.totals,
+                "months": self.months,
+            }
         )
 
     # --- Berechnung --------------------------------------------------------------
@@ -218,12 +283,41 @@ class EnergyMonitorController:
             values[key] = number
         return values
 
+    async def _async_update_utilities(self) -> None:
+        """Wasser und Gas: der Verbrauch seit dem letzten Stand gehört zum laufenden Monat (kein Verteilen nötig)."""
+        changed = False
+        for kind in UTILITIES:
+            if not self.configured(kind):
+                if self.util_baseline.pop(kind, None) is not None:
+                    changed = True
+                continue
+            number = _number(self.hass.states.get(self._get(UTILITIES[kind][0])))
+            if number is None:
+                continue                            # Zähler unklar: der Zeitraum wächst weiter
+            last = self.util_baseline.get(kind)
+            if last is None or number < last:       # erster Stand oder Zähler zurückgesetzt
+                self.util_baseline[kind] = number
+                changed = True
+                continue
+            if number == last:
+                continue
+            part = {kind: number - last}
+            key = self.month_key()
+            self.months[key] = add_up(self.months.get(key), part)
+            self.totals = add_up(self.totals, part)
+            self.util_baseline[kind] = number
+            changed = True
+        if changed:
+            await self._async_save()
+            async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
+
     async def async_update(self) -> None:
         """Zählerstände einlesen und den Zeitraum seit dem letzten Stand verteilen."""
         month = self.month_key()
         if month != self._last_month:               # neuer Monat (oder Start): Entitäten aktualisieren
             self._last_month = month
             async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
+        await self._async_update_utilities()
         current = self._read()
         if current is None:
             return                                  # ein Zähler fehlt: der Zeitraum wächst weiter

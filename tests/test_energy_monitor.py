@@ -10,7 +10,9 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from .helpers import is_menu, make_entry, new_instance, reconfigure
 from custom_components.ha_housekeeper.const import DOMAIN
-from custom_components.ha_housekeeper.energy_monitor import settle, share_a, split_interval
+from custom_components.ha_housekeeper.energy_monitor import (
+    persons_share_b, settle, share_a, split_interval, utility_cost_b,
+)
 from custom_components.ha_housekeeper.flows.energy import pv_price_value
 from custom_components.ha_housekeeper.issues import collect_references
 
@@ -142,21 +144,34 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
         prices = {"grid_price": 34, "pv_price": "16.26", "base_fee_monthly": 0, "base_fee_share_b": 50}
         meters.update({k: v for k, v in over.items() if k in meters})
         prices.update({k: v for k, v in over.items() if k in prices})
-        return {"meters": meters, "units": {"unit_a_name": "Altbau", "unit_b_name": "Neubau"}, "prices": prices}
+        units = {"unit_a_name": "Altbau", "unit_b_name": "Neubau", "persons_a": 2, "persons_b": 2,
+                 "area_a": 100, "area_b": 50}
+        water = {"water_price": 0, "water_base_fee": 0}
+        gas = {"gas_price": 0, "gas_base_fee": 0, "gas_key": "area"}
+        water.update({k: v for k, v in over.items() if k == "water_meter"})
+        gas.update({k: v for k, v in over.items() if k == "gas_meter"})
+        for group in (units, water, gas):
+            group.update({k: v for k, v in over.items() if k in group})
+        return {"meters": meters, "units": units, "prices": prices, "water": water, "gas": gas}
 
     bad = await flow.async_configure(result["flow_id"], page(meter_b_energy=A))
     assert bad["errors"] == {"base": "duplicate_meter"}
+    bad = await flow.async_configure(result["flow_id"], page(water_meter=WATER, persons_a=0, persons_b=0))
+    assert bad["errors"] == {"base": "no_persons"}
+    bad = await flow.async_configure(result["flow_id"], page(gas_meter=GAS, area_a=0, area_b=0))
+    assert bad["errors"] == {"base": "no_area"}
     bad = await flow.async_configure(result["flow_id"], page(pv_price="viel"))
     assert bad["errors"] == {"base": "invalid_price"}
     ok = await flow.async_configure(result["flow_id"], page(pv_price="12,5"))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["pv_price"] == 12.5 and "name" not in ok["data"]
+    assert ok["data"]["water_meter"] is None and ok["data"]["gas_key"] == "area"
 
     entry, _ = await _setup(hass)
     page_result = await reconfigure(hass, entry)
     assert page_result["step_id"] == "em_settings" and not is_menu(page_result)
     sections = {str(k): v for k, v in page_result["data_schema"].schema.items()}
-    assert list(sections) == ["meters", "units", "prices"]
+    assert list(sections) == ["meters", "units", "prices", "water", "gas"]
     assert [name for name, sec in sections.items() if not sec.options["collapsed"]] == ["meters"]
     done = await flow.async_configure(page_result["flow_id"], page(pv_price="0", grid_price=30, name="Gesamt"))
     assert done["reason"] == "reconfigure_successful"
@@ -167,3 +182,47 @@ def test_references() -> None:
     entry = make_entry(domain=DOMAIN, title="Haus", data=BASE)
     entities, _ = collect_references(entry.sub)
     assert {GRID, FEED, PV, A, B} <= set(entities)
+
+
+WATER, GAS = "sensor.water", "sensor.gas"
+UTIL = {
+    "water_meter": WATER, "water_price": 4.0, "water_base_fee": 10.0,
+    "gas_meter": GAS, "gas_price": 1.0, "gas_base_fee": 20.0,
+    "persons_a": 2.0, "persons_b": 2.0, "area_a": 100.0, "area_b": 50.0,
+}
+
+
+def test_utility_shares() -> None:
+    assert persons_share_b(3, 1) == pytest.approx(0.25) and persons_share_b(0, 0) == 0
+    result = utility_cost_b(volume=10, price=4, base_fee=10, share_b=0.25, months=2)
+    assert result["total"] == pytest.approx(60) and result["cost_b"] == pytest.approx(15)
+
+
+async def test_water_and_gas(hass: HomeAssistant, freezer) -> None:
+    hass.states.async_set(WATER, "100")
+    hass.states.async_set(GAS, "500")
+    entry, controller = await _setup(hass, **UTIL)
+    assert controller.util_baseline == {"water": 100.0, "gas": 500.0}
+    hass.states.async_set(WATER, "110")
+    hass.states.async_set(GAS, "530")
+    await _tick(hass, freezer)
+    assert controller.month()["water"] == pytest.approx(10) and controller.month()["gas"] == pytest.approx(30)
+    water = hass.states.get(_entity(hass, "energy_water_cost_month", entry))
+    gas = hass.states.get(_entity(hass, "energy_gas_cost_month", entry))
+    assert float(water.state) == pytest.approx((10 * 4 + 10) * 0.5)          # Personen 2:2
+    assert float(gas.state) == pytest.approx((30 * 1 + 20) / 3, abs=0.01)            # Wohnfläche 100:50
+    assert gas.attributes["share_b"] == pytest.approx(33.33)
+    month = hass.states.get(_entity(hass, "energy_settlement_month", entry))
+    assert month.attributes["water_cost_b"] == pytest.approx(25) and month.attributes["gas_m3"] == pytest.approx(30)
+    assert float(month.state) == pytest.approx(10 + 25 + 50 / 3, abs=0.01)             # Grundpreis Strom B + Wasser + Gas
+    hass.states.async_set(WATER, "5")                                        # Zähler zurückgesetzt: überspringen
+    await _tick(hass, freezer)
+    assert controller.month()["water"] == pytest.approx(10) and controller.util_baseline["water"] == 5
+    assert controller.share_b("water") == pytest.approx(0.5)
+
+
+async def test_gas_by_persons_and_no_meter(hass: HomeAssistant) -> None:
+    entry, controller = await _setup(hass, **{**UTIL, "gas_key": "persons", "persons_b": 6.0})
+    assert controller.share_b("gas") == pytest.approx(0.75)
+    plain, other = await _setup(hass)
+    assert not other.configured("water") and _entity(hass, "energy_water_month", plain) is None

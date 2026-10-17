@@ -88,7 +88,19 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
                 EnergySettlementSensor(controller, "month"),
                 EnergySettlementSensor(controller, "year"),
             ]
+            + [
+                cls(controller, kind, period)
+                for kind in ("water", "gas")
+                if controller.configured(kind)
+                for cls in (EnergyUtilitySensor, EnergyUtilityCostSensor)
+                for period in ("month", "year")
+            ]
         )
+        for kind in ("water", "gas"):               # nicht (mehr) gewählte Zähler: Sensoren entfernen
+            if not controller.configured(kind):
+                for period in ("month", "year"):
+                    remove_unconfigured(hass, "sensor", controller, f"energy_{kind}_{period}")
+                    remove_unconfigured(hass, "sensor", controller, f"energy_{kind}_cost_{period}")
     elif isinstance(controller, ConsumptionGuardController):
         async_add_entities([ConsumptionSinceSensor(controller)])
     elif isinstance(controller, IrRemoteController):
@@ -607,6 +619,65 @@ class EnergyShareSensor(FunctionEntity, SensorEntity):
         return None if value is None else round(value, 2)
 
 
+class EnergyUtilitySensor(FunctionEntity, SensorEntity):
+    """Verbrauch von Wasser oder Gas im Monat oder Jahr (m³, beide Einheiten zusammen)."""
+
+    _attr_native_unit_of_measurement = "m³"
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, controller, kind: str, period: str) -> None:
+        super().__init__(controller, f"energy_{kind}_{period}")
+        self._kind = kind
+        self._period = period
+        self._attr_device_class = (
+            SensorDeviceClass.WATER if kind == "water" else SensorDeviceClass.GAS
+        )
+
+    @property
+    def native_value(self) -> float:
+        controller = self._controller
+        acc = controller.month() if self._period == "month" else controller.year()[0]
+        return round(acc.get(self._kind, 0.0), 3)
+
+
+class EnergyUtilityCostSensor(FunctionEntity, SensorEntity):
+    """Anteil von Einheit B an den Kosten für Wasser oder Gas im Monat oder Jahr (Personen bzw. Wohnfläche)."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, controller, kind: str, period: str) -> None:
+        super().__init__(controller, f"energy_{kind}_cost_{period}")
+        self._kind = kind
+        self._period = period
+        self._attr_translation_placeholders = {"unit": controller.name_b}
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        return self._controller.currency
+
+    def _result(self) -> dict[str, float]:
+        controller = self._controller
+        if self._period == "month":
+            acc, months = controller.month(), 1
+        else:
+            acc, months = controller.year()
+        return controller.utility(self._kind, acc, months)
+
+    @property
+    def native_value(self) -> float:
+        return round(self._result()["cost_b"], 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        result = self._result()
+        return {
+            "volume_m3": round(result["volume"], 3),
+            "total_cost": round(result["total"], 2),
+            "share_b": round(self._controller.share_b(self._kind) * 100, 2),
+        }
+
+
 class EnergySettlementSensor(FunctionEntity, SensorEntity):
     """Verrechnung im Monat oder Jahr: was Einheit B an Einheit A schuldet (negativ = A schuldet B)."""
 
@@ -650,4 +721,8 @@ class EnergySettlementSensor(FunctionEntity, SensorEntity):
             "grid_cost_b": round(result["grid_cost_b"], 2),
             "pv_credit_a": round(result["pv_credit_a"], 2),
             "base_fee_b": round(result["base_fee_b"], 2),
+            "water_m3": round(acc.get("water", 0.0), 3),
+            "gas_m3": round(acc.get("gas", 0.0), 3),
+            "water_cost_b": round(result["water_cost_b"], 2),
+            "gas_cost_b": round(result["gas_cost_b"], 2),
         }

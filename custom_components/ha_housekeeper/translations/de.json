@@ -104,6 +104,12 @@
         "ir": "Infrarot",
         "rf": "Funk (RF)"
       }
+    },
+    "gas_key": {
+      "options": {
+        "area": "Wohnfläche",
+        "persons": "Personen"
+      }
     }
   },
   "entity": {
@@ -229,6 +235,30 @@
       },
       "energy_settlement_year": {
         "name": "Verrechnung Jahr ({unit} schuldet)"
+      },
+      "energy_water_month": {
+        "name": "Wasserverbrauch (Monat)"
+      },
+      "energy_water_year": {
+        "name": "Wasserverbrauch (Jahr)"
+      },
+      "energy_gas_month": {
+        "name": "Gasverbrauch (Monat)"
+      },
+      "energy_gas_year": {
+        "name": "Gasverbrauch (Jahr)"
+      },
+      "energy_water_cost_month": {
+        "name": "Wasseranteil {unit} (Monat)"
+      },
+      "energy_water_cost_year": {
+        "name": "Wasseranteil {unit} (Jahr)"
+      },
+      "energy_gas_cost_month": {
+        "name": "Gasanteil {unit} (Monat)"
+      },
+      "energy_gas_cost_year": {
+        "name": "Gasanteil {unit} (Jahr)"
       }
     },
     "button": {
@@ -2512,10 +2542,14 @@
             },
             "units": {
               "name": "Einheiten",
-              "description": "Namen der beiden Wohneinheiten.",
+              "description": "Namen der beiden Wohneinheiten und die Schlüssel für Wasser und Gas: Wasser nach Personen, Gas nach Wohnfläche (oder Personen).",
               "data": {
                 "unit_a_name": "Name Einheit A",
-                "unit_b_name": "Name Einheit B"
+                "unit_b_name": "Name Einheit B",
+                "persons_a": "Personen in Einheit A",
+                "persons_b": "Personen in Einheit B",
+                "area_a": "Wohnfläche Einheit A (m²)",
+                "area_b": "Wohnfläche Einheit B (m²)"
               }
             },
             "prices": {
@@ -2532,6 +2566,35 @@
                 "pv_price": "Was Einheit A für den PV-Strom verrechnet bekommt, den sie verbraucht. Auswahl oder eigener Wert, auch mit Komma. Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber.",
                 "base_fee_monthly": "Wird nach dem Anteil verteilt; 0 = ohne Grundpreis.",
                 "base_fee_share_b": "Der Rest geht an Einheit A."
+              }
+            },
+            "water": {
+              "name": "Wasser (optional)",
+              "description": "Ein gemeinsamer Wasserzähler für beide Einheiten. Die Kosten werden nach Personenzahl verteilt (Duschen, Waschen, Kochen).",
+              "data": {
+                "water_meter": "Wasserzähler (m³)",
+                "water_price": "Wasserpreis (€/m³)",
+                "water_base_fee": "Grundpreis (€ pro Monat)"
+              },
+              "data_description": {
+                "water_meter": "Sensor in m³, der immer weiter hochzählt. Leer = keine Wasserverrechnung.",
+                "water_price": "Gesamtpreis je m³ inklusive Abwasser.",
+                "water_base_fee": "Wird ebenfalls nach Personen verteilt."
+              }
+            },
+            "gas": {
+              "name": "Gas (optional)",
+              "description": "Ein gemeinsamer Gaszähler für beide Einheiten. Das Heizen überwiegt, deshalb ist die Wohnfläche der Standardschlüssel.",
+              "data": {
+                "gas_meter": "Gaszähler (m³)",
+                "gas_price": "Gaspreis (€/m³)",
+                "gas_base_fee": "Grundpreis (€ pro Monat)",
+                "gas_key": "Verteilung nach"
+              },
+              "data_description": {
+                "gas_meter": "Sensor in m³, der immer weiter hochzählt. Leer = keine Gasverrechnung.",
+                "gas_price": "Preis je m³ wie abgerechnet (den Preis je m³ eintragen, nicht je kWh).",
+                "gas_base_fee": "Wird nach demselben Schlüssel verteilt."
               }
             }
           }
@@ -2559,10 +2622,14 @@
             },
             "units": {
               "name": "Einheiten",
-              "description": "Namen der beiden Wohneinheiten.",
+              "description": "Namen der beiden Wohneinheiten und die Schlüssel für Wasser und Gas: Wasser nach Personen, Gas nach Wohnfläche (oder Personen).",
               "data": {
                 "unit_a_name": "Name Einheit A",
-                "unit_b_name": "Name Einheit B"
+                "unit_b_name": "Name Einheit B",
+                "persons_a": "Personen in Einheit A",
+                "persons_b": "Personen in Einheit B",
+                "area_a": "Wohnfläche Einheit A (m²)",
+                "area_b": "Wohnfläche Einheit B (m²)"
               }
             },
             "prices": {
@@ -2580,13 +2647,44 @@
                 "base_fee_monthly": "Wird nach dem Anteil verteilt; 0 = ohne Grundpreis.",
                 "base_fee_share_b": "Der Rest geht an Einheit A."
               }
+            },
+            "water": {
+              "name": "Wasser (optional)",
+              "description": "Ein gemeinsamer Wasserzähler für beide Einheiten. Die Kosten werden nach Personenzahl verteilt (Duschen, Waschen, Kochen).",
+              "data": {
+                "water_meter": "Wasserzähler (m³)",
+                "water_price": "Wasserpreis (€/m³)",
+                "water_base_fee": "Grundpreis (€ pro Monat)"
+              },
+              "data_description": {
+                "water_meter": "Sensor in m³, der immer weiter hochzählt. Leer = keine Wasserverrechnung.",
+                "water_price": "Gesamtpreis je m³ inklusive Abwasser.",
+                "water_base_fee": "Wird ebenfalls nach Personen verteilt."
+              }
+            },
+            "gas": {
+              "name": "Gas (optional)",
+              "description": "Ein gemeinsamer Gaszähler für beide Einheiten. Das Heizen überwiegt, deshalb ist die Wohnfläche der Standardschlüssel.",
+              "data": {
+                "gas_meter": "Gaszähler (m³)",
+                "gas_price": "Gaspreis (€/m³)",
+                "gas_base_fee": "Grundpreis (€ pro Monat)",
+                "gas_key": "Verteilung nach"
+              },
+              "data_description": {
+                "gas_meter": "Sensor in m³, der immer weiter hochzählt. Leer = keine Gasverrechnung.",
+                "gas_price": "Preis je m³ wie abgerechnet (den Preis je m³ eintragen, nicht je kWh).",
+                "gas_base_fee": "Wird nach demselben Schlüssel verteilt."
+              }
             }
           }
         }
       },
       "error": {
         "duplicate_meter": "Jeder Zähler darf nur einmal gewählt werden.",
-        "invalid_price": "Der Preis je PV-kWh muss eine Zahl von 0 an sein, zum Beispiel 16,26."
+        "invalid_price": "Der Preis je PV-kWh muss eine Zahl von 0 an sein, zum Beispiel 16,26.",
+        "no_persons": "Trage die Personenzahl für mindestens eine Einheit ein.",
+        "no_area": "Trage die Wohnfläche für mindestens eine Einheit ein."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert."

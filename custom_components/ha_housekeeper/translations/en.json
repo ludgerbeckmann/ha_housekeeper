@@ -104,6 +104,12 @@
         "ir": "Infrared",
         "rf": "Radio (RF)"
       }
+    },
+    "gas_key": {
+      "options": {
+        "area": "Living area",
+        "persons": "Persons"
+      }
     }
   },
   "entity": {
@@ -229,6 +235,30 @@
       },
       "energy_settlement_year": {
         "name": "Settlement year ({unit} owes)"
+      },
+      "energy_water_month": {
+        "name": "Water consumption (month)"
+      },
+      "energy_water_year": {
+        "name": "Water consumption (year)"
+      },
+      "energy_gas_month": {
+        "name": "Gas consumption (month)"
+      },
+      "energy_gas_year": {
+        "name": "Gas consumption (year)"
+      },
+      "energy_water_cost_month": {
+        "name": "Water share {unit} (month)"
+      },
+      "energy_water_cost_year": {
+        "name": "Water share {unit} (year)"
+      },
+      "energy_gas_cost_month": {
+        "name": "Gas share {unit} (month)"
+      },
+      "energy_gas_cost_year": {
+        "name": "Gas share {unit} (year)"
       }
     },
     "button": {
@@ -2512,10 +2542,14 @@
             },
             "units": {
               "name": "Units",
-              "description": "Names of the two dwellings.",
+              "description": "Names of the two dwellings and the keys for water and gas: water is split by persons, gas by living area (or persons).",
               "data": {
                 "unit_a_name": "Name of unit A",
-                "unit_b_name": "Name of unit B"
+                "unit_b_name": "Name of unit B",
+                "persons_a": "Persons in unit A",
+                "persons_b": "Persons in unit B",
+                "area_a": "Living area unit A (m²)",
+                "area_b": "Living area unit B (m²)"
               }
             },
             "prices": {
@@ -2532,6 +2566,35 @@
                 "pv_price": "What unit A is charged for the PV power it uses. Pick one or type your own value. The self-consumption tariff stays with the system operator.",
                 "base_fee_monthly": "Split by the share; 0 = no base fee.",
                 "base_fee_share_b": "The rest goes to unit A."
+              }
+            },
+            "water": {
+              "name": "Water (optional)",
+              "description": "One shared water meter for both units. The cost is split by the number of persons (showering, washing, cooking).",
+              "data": {
+                "water_meter": "Water meter (m³)",
+                "water_price": "Water price (€/m³)",
+                "water_base_fee": "Base fee (€ per month)"
+              },
+              "data_description": {
+                "water_meter": "Sensor in m³ that keeps counting up. Empty = no water settlement.",
+                "water_price": "Total price per m³ incl. waste water.",
+                "water_base_fee": "Split by persons as well."
+              }
+            },
+            "gas": {
+              "name": "Gas (optional)",
+              "description": "One shared gas meter for both units. Heating dominates, so the default key is living area.",
+              "data": {
+                "gas_meter": "Gas meter (m³)",
+                "gas_price": "Gas price (€/m³)",
+                "gas_base_fee": "Base fee (€ per month)",
+                "gas_key": "Split by"
+              },
+              "data_description": {
+                "gas_meter": "Sensor in m³ that keeps counting up. Empty = no gas settlement.",
+                "gas_price": "Price per m³ as invoiced (use the price per m³, not per kWh).",
+                "gas_base_fee": "Split by the same key."
               }
             }
           }
@@ -2559,10 +2622,14 @@
             },
             "units": {
               "name": "Units",
-              "description": "Names of the two dwellings.",
+              "description": "Names of the two dwellings and the keys for water and gas: water is split by persons, gas by living area (or persons).",
               "data": {
                 "unit_a_name": "Name of unit A",
-                "unit_b_name": "Name of unit B"
+                "unit_b_name": "Name of unit B",
+                "persons_a": "Persons in unit A",
+                "persons_b": "Persons in unit B",
+                "area_a": "Living area unit A (m²)",
+                "area_b": "Living area unit B (m²)"
               }
             },
             "prices": {
@@ -2580,13 +2647,44 @@
                 "base_fee_monthly": "Split by the share; 0 = no base fee.",
                 "base_fee_share_b": "The rest goes to unit A."
               }
+            },
+            "water": {
+              "name": "Water (optional)",
+              "description": "One shared water meter for both units. The cost is split by the number of persons (showering, washing, cooking).",
+              "data": {
+                "water_meter": "Water meter (m³)",
+                "water_price": "Water price (€/m³)",
+                "water_base_fee": "Base fee (€ per month)"
+              },
+              "data_description": {
+                "water_meter": "Sensor in m³ that keeps counting up. Empty = no water settlement.",
+                "water_price": "Total price per m³ incl. waste water.",
+                "water_base_fee": "Split by persons as well."
+              }
+            },
+            "gas": {
+              "name": "Gas (optional)",
+              "description": "One shared gas meter for both units. Heating dominates, so the default key is living area.",
+              "data": {
+                "gas_meter": "Gas meter (m³)",
+                "gas_price": "Gas price (€/m³)",
+                "gas_base_fee": "Base fee (€ per month)",
+                "gas_key": "Split by"
+              },
+              "data_description": {
+                "gas_meter": "Sensor in m³ that keeps counting up. Empty = no gas settlement.",
+                "gas_price": "Price per m³ as invoiced (use the price per m³, not per kWh).",
+                "gas_base_fee": "Split by the same key."
+              }
             }
           }
         }
       },
       "error": {
         "duplicate_meter": "Each meter may only be chosen once.",
-        "invalid_price": "The price per PV kWh must be a number from 0 up, for example 16.26."
+        "invalid_price": "The price per PV kWh must be a number from 0 up, for example 16.26.",
+        "no_persons": "Enter the number of persons for at least one unit.",
+        "no_area": "Enter the living area for at least one unit."
       },
       "abort": {
         "reconfigure_successful": "Saved."
