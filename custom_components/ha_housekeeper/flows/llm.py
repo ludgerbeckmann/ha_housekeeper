@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import logging
 from typing import Any
 
@@ -145,10 +146,10 @@ async def async_check_key(
     hass: HomeAssistant, provider: str, api_key: str
 ) -> tuple[str | None, str]:
     """Key mit einer Abfrage prüfen: (`None`, "") = in Ordnung, sonst (Fehlerschlüssel, Ursache)."""
-    today = dt_util.utcnow().date()
+    yesterday = dt_util.utcnow().date() - timedelta(days=1)
     try:
         await llm_providers.async_fetch_costs(
-            async_get_clientsession(hass), provider, api_key, today
+            async_get_clientsession(hass), provider, api_key, yesterday
         )
     except llm_providers.ProviderAuthError as err:
         _LOGGER.warning("LLM-Verbrauch: Key abgelehnt (%s): %s", provider, err)

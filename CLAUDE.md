@@ -226,7 +226,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - `llm_usage.py` / `llm_providers.py`: Je Instanz ein Anbieterkonto (`anthropic`, `openai`). `llm_providers.py`
   fragt per aiohttp die **Kosten je Tag (UTC)** ab (`async_fetch_costs()`, Anthropic `/v1/organizations/cost_report`
   mit `x-api-key` (Admin-Key), `amount` in **Cent** als Dezimalstring; OpenAI `/v1/organization/costs`, `amount.value`),
-  mit Seitenwechsel (`next_page`, höchstens `MAX_PAGES`); 401/403 = `ProviderAuthError`. Beide liefern **kein
+  mit Seitenwechsel (`next_page`, höchstens `MAX_PAGES`); 401/403 = `ProviderAuthError`. Anthropic: ohne `ending_at` endet der Zeitraum mit dem Beginn des heutigen Tages, deshalb beginnen die Abfragen (Kosten, Tokens, Key-Prüfung) höchstens **gestern** (`_request()`), sonst HTTP 400 „ending date must be after starting date“. Beide liefern **kein
   Guthaben**: `remaining_balance()` rechnet im Modus `balance` Betrag minus Kosten seit `baseline_time` (der
   Abgleichstag zählt nur über den beim ersten Abruf gemerkten `snapshot`), im Modus `budget` Betrag minus Kosten
   des Monats. Die Tageskosten liegen im `Store` (`days`, `days_from`); später werden nur die letzten
