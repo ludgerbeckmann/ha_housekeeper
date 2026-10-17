@@ -118,7 +118,10 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Abschnitt `speaker`) mit den Abschnitten `speaker`, `playback`, `volume`, `scenes`, `scene_1…8` (eingeklappt),
   `status` (nach dem Blueprint „KNX Media Player“): Schlüssel `addr_*`, `scene_<n>_favorite/volume/address`,
   `status_*`, `idle_text`, `player`/`max_volume`/`volume_step`/`stop_instead_of_pause`. Gruppenadressen sind optional,
-  geleerte Felder stehen als `None` in den Daten (`_CLEARABLE`). `settings_commands()`/`settings_status()` bilden
+  geleerte Felder stehen als `None` in den Daten (`_CLEARABLE`). `knx_project.py` liest die Gruppenadressen des in der KNX-Integration importierten ETS-Projekts aus deren Speicherdatei
+  (`knx/knx_project.json`, `group_addresses` mit `address`, `name`, `dpt.main/sub`; Fehler/fehlend = leere Liste); `_address()`
+  macht daraus ein Dropdown (`custom_value`, frei beschreibbar), gefiltert nach dem Haupt-Datentyp des Felds (`_FIELD_DPT`,
+  Adressen ohne Datentyp passen überall), ohne Projekt ein Textfeld. Tests: `hass_storage["knx/knx_project.json"]`. `settings_commands()`/`settings_status()` bilden
   daraus beim Start dieselben Befehls- und Rückmeldungslisten wie früher (Schlüssel `K_*`; z. B. Play/Pause = `play` bei
   1 und `pause` bei 0, Szene = Favorit plus Lautstärke auf 17.001 und auf der eigenen 1-Bit-Adresse mit „0 = Pause“),
   die Dekodierung bleibt unverändert; ältere Listen `commands`/`status` laufen daneben weiter. **Ältere Einträge:** mehrere

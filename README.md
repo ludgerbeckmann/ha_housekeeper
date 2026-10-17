@@ -380,6 +380,13 @@ Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es 
 | **Szenen** | Szenenadresse (17.001, Szenennummer 1–8); je **Szene 1–8** (eingeklappt): Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
 | **Rückmeldungen** | Spielt, Pausiert, Stumm (je 1 Bit), Lautstärke (5.001), Titel, Interpret, Album, Quelle (Text, auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
 
+**Gruppenadressen aus dem ETS-Projekt:** Hast du in der KNX-Integration ein **ETS-Projekt importiert**
+(KNX → Konfigurieren → ETS-Projekt importieren), bieten alle Adressfelder die Adressen des Projekts als Dropdown an
+(„1/2/3 – Name (Datentyp)“, durchsuchbar). Jedes Feld zeigt nur Adressen mit passendem Datentyp (1 Bit, 5.xxx,
+3.xxx, 17.xxx, 16.xxx), Adressen ohne hinterlegten Datentyp erscheinen überall. Die Felder bleiben frei beschreibbar,
+gespeichert wird nur die Adresse. Ohne importiertes Projekt sind es Textfelder. Die Liste wird beim Öffnen der Seite aus
+der Speicherdatei der KNX-Integration gelesen (eine interne Datei: ändert sich ihr Format, entfällt nur die Auswahl).
+
 Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** (GroupValueRead) auf der
 Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
 (3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit

@@ -47,6 +47,7 @@ from ..const import (
     scene_key,
 )
 from ..knx_codec import is_valid_ga
+from ..knx_project import address_label, async_project_addresses
 from ..knx_sonos import speaker_profiles
 from .common import _flatten_sections, _number, _suggest
 
@@ -89,14 +90,52 @@ _SCENE_VOLUMES = [scene_key(n, "volume") for n in range(1, SCENE_COUNT + 1)]
 _CLEARABLE = [*ADDRESS_FIELDS, *_SCENE_FAVORITES, *_SCENE_VOLUMES, CONF_IDLE_TEXT]
 
 
-def _address(key: str, defaults: dict[str, Any]) -> tuple[Any, Any]:
-    return vol.Optional(key, description=_suggest(key, defaults)), str
+# Haupt-Datentyp je Adressfeld (für den Filter der Projektadressen)
+_FIELD_DPT: dict[str, int] = {
+    **{key: 1 for key in (*_PLAYBACK_FIELDS, CONF_ADDR_VOLUME_STEP, CONF_ADDR_MUTE, *_SCENE_ADDRESSES)},
+    CONF_ADDR_VOLUME: 5,
+    CONF_ADDR_VOLUME_DIM: 3,
+    CONF_ADDR_SCENE: 17,
+    CONF_STATUS_PLAYING: 1,
+    CONF_STATUS_PAUSED: 1,
+    CONF_STATUS_MUTED: 1,
+    CONF_STATUS_VOLUME: 5,
+    CONF_STATUS_TITLE: 16,
+    CONF_STATUS_ARTIST: 16,
+    CONF_STATUS_ALBUM: 16,
+    CONF_STATUS_SOURCE: 16,
+}
+
+
+def _address(
+    key: str, defaults: dict[str, Any], project: list[dict[str, Any]]
+) -> tuple[Any, Any]:
+    """Adressfeld: Dropdown mit den passenden Adressen des ETS-Projekts (frei beschreibbar),
+    ohne Projekt ein Textfeld. Adressen ohne Datentyp im Projekt passen zu jedem Feld."""
+    wanted = _FIELD_DPT.get(key)
+    options = [
+        selector.SelectOptionDict(value=item["address"], label=address_label(item))
+        for item in project
+        if item["main"] is None or item["main"] == wanted
+    ]
+    field = vol.Optional(key, description=_suggest(key, defaults))
+    if not options:
+        return field, str
+    return field, selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=options, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN
+        )
+    )
 
 
 def _knx_schema(
-    defaults: dict[str, Any], sources: list[str], with_legacy: bool
+    defaults: dict[str, Any],
+    sources: list[str],
+    with_legacy: bool,
+    project: list[dict[str, Any]] | None = None,
 ) -> vol.Schema:
     """Die Seite: Abschnitte Lautsprecher, Wiedergabe, Lautstärke, Szenen, Rückmeldungen."""
+    project = project or []
 
     def _section(fields: dict[Any, Any], collapsed: bool = False) -> Any:
         return section(vol.Schema(fields), {"collapsed": collapsed})
@@ -117,12 +156,12 @@ def _knx_schema(
     sections: dict[Any, Any] = {
         vol.Required(SECTION_SPEAKER): _section(speaker),
         vol.Required(SECTION_PLAYBACK): _section(
-            dict(_address(key, defaults) for key in _PLAYBACK_FIELDS)
+            dict(_address(key, defaults, project) for key in _PLAYBACK_FIELDS)
         ),
         vol.Required(SECTION_VOLUME): _section(
-            dict(_address(key, defaults) for key in _VOLUME_FIELDS)
+            dict(_address(key, defaults, project) for key in _VOLUME_FIELDS)
         ),
-        vol.Required(SECTION_SCENES): _section(dict([_address(CONF_ADDR_SCENE, defaults)])),
+        vol.Required(SECTION_SCENES): _section(dict([_address(CONF_ADDR_SCENE, defaults, project)])),
     }
     favorite = selector.SelectSelector(
         selector.SelectSelectorConfig(
@@ -137,11 +176,11 @@ def _knx_schema(
                 vol.Optional(vol_key, description=_suggest(vol_key, defaults)): _number(
                     0, 100, "%"
                 ),
-                vol.Optional(addr, description=_suggest(addr, defaults)): str,
+                **dict([_address(addr, defaults, project)]),
             },
             collapsed=True,
         )
-    status: dict[Any, Any] = dict(_address(key, defaults) for key in _STATUS_FIELDS)
+    status: dict[Any, Any] = dict(_address(key, defaults, project) for key in _STATUS_FIELDS)
     status[vol.Optional(CONF_IDLE_TEXT, description=_suggest(CONF_IDLE_TEXT, defaults))] = str
     sections[vol.Required(SECTION_STATUS)] = _section(status)
     if with_legacy:
@@ -293,6 +332,7 @@ class KnxSonosOptions:
                 with_legacy=bool(
                     self._current.get(CONF_COMMANDS) or self._current.get(CONF_STATUS)
                 ),
+                project=await async_project_addresses(self.hass),
             ),
             errors=errors,
             description_placeholders={"detail": detail, "legacy": legacy},

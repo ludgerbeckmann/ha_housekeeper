@@ -440,3 +440,68 @@ async def test_status_not_sent_without_knx_service(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     assert send == []                           # KNX ist (noch) nicht bereit
+
+
+# --- Gruppenadressen aus dem ETS-Projekt der KNX-Integration --------------------------------------------------
+
+
+def _project(hass_storage) -> None:
+    def ga(address, name, main=None, sub=None):
+        return {"address": address, "name": name, "description": "",
+                "dpt": None if main is None else {"main": main, "sub": sub}}
+
+    hass_storage["knx/knx_project.json"] = {
+        "version": 1, "minor_version": 1, "key": "knx/knx_project.json",
+        "data": {"group_addresses": {
+            "a": ga("1/0/10", "Wohnzimmer Play", 1, 1),
+            "b": ga("1/0/2", "Wohnzimmer Volumen", 5, 1),
+            "c": ga("1/0/3", "Ohne Typ"),
+            "d": ga("2/0/1", "Szene", 17, 1),
+            "e": ga("5/0/4", "Titel", 16, 0),
+        }},
+    }
+
+
+def _field_selector(result, field):
+    for section in result["data_schema"].schema.values():
+        for key, value in section.schema.schema.items():
+            if str(key) == field:
+                return value
+    raise AssertionError(field)
+
+
+async def test_project_addresses_are_read_sorted(hass: HomeAssistant, hass_storage) -> None:
+    from custom_components.ha_housekeeper.knx_project import address_label, async_project_addresses
+
+    assert await async_project_addresses(hass) == []           # kein Projekt importiert
+    _project(hass_storage)
+    items = await async_project_addresses(hass)
+    assert [i["address"] for i in items] == ["1/0/2", "1/0/3", "1/0/10", "2/0/1", "5/0/4"]
+    assert address_label(items[0]) == "1/0/2 – Wohnzimmer Volumen (5.001)"
+    assert address_label(items[1]) == "1/0/3 – Ohne Typ"
+
+
+async def test_address_fields_offer_matching_project_addresses(hass: HomeAssistant, hass_storage) -> None:
+    from homeassistant.helpers import selector
+
+    _project(hass_storage)
+    entry, _ = await _setup(hass)
+    result = await reconfigure(hass, entry)
+    options = lambda field: {o["value"] for o in _field_selector(result, field).config["options"]}  # noqa: E731
+    assert options("addr_play_pause") == {"1/0/10", "1/0/3"}          # 1 Bit plus Adresse ohne Typ
+    assert options("addr_volume") == {"1/0/2", "1/0/3"}
+    assert options("addr_scene") == {"2/0/1", "1/0/3"}
+    assert options("status_title") == {"5/0/4", "1/0/3"}
+    assert options("scene_3_address") == {"1/0/10", "1/0/3"}
+    assert _field_selector(result, "addr_play_pause").config["custom_value"] is True
+    # eine gewählte Adresse wird wie bisher gespeichert
+    flow = hass.config_entries.subentries
+    done = await flow.async_configure(result["flow_id"], page(addr_play_pause="1/0/10"))
+    assert done["reason"] == "reconfigure_successful" and entry.options["addr_play_pause"] == "1/0/10"
+    assert isinstance(_field_selector(await reconfigure(hass, entry), "addr_volume"), selector.SelectSelector)
+
+
+async def test_address_fields_are_text_without_project(hass: HomeAssistant) -> None:
+    entry, _ = await _setup(hass)
+    result = await reconfigure(hass, entry)
+    assert _field_selector(result, "addr_play_pause") is str
