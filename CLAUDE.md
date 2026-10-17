@@ -62,17 +62,22 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - `notify.py`: gemeinsame Benachrichtigungswege (`Notifier`) und `entry_opt()`.
   Ein in den Optionen auf `None` gesetzter Wert überdeckt den Wert aus den
   Daten (so lassen sich optionale Felder leeren, siehe `_with_cleared`).
-- Türwächter-Regeln liegen als Liste in `options["rules"]` (Schlüssel
-  `R_*` in `const.py`); der Options-Flow ist ein Menü und speichert Regeln
-  sofort über `async_update_entry` (Eintrag lädt bei jeder Speicherung neu).
-  Manuelle Bedienung = Schlosswechsel außerhalb des `OWN_ACTION_WINDOW`
-  nach einem eigenen Befehl. **Anwesenheit/Bedingungen:** `presence_entities` der Tür (`CONF_PRESENCE`);
-  Auslöser `presence` (`R_PRESENCE_MODE` `all_away`/`any_home`, `R_FOR_MINUTES`, flankengesteuert über
-  `_presence_was`, Timer `presence_<id>`, kein Nachholen beim Start); Bedingungen `R_PRESENCE`,
-  `R_ONLY_IF_ON` (UND), `R_SKIP_IF_ON` (ODER) für alle Auslöser im Schritt `rule_conditions`.
-  Reine Funktionen `entity_on()`, `presence_met()`, `evaluate_conditions()`; `_async_run_rule()` prüft sie
-  und trägt Übersprungenes als `skipped` ein (keine Meldung). Unklar: Anwesenheit = nichts schalten,
-  sonst Aufschließen nicht, Abschließen schon.
+- Türwächter: Die Einstellungen sind **feste Felder auf einer Seite** (`async_step_door_settings`, kein Menü, Name als Feld,
+  Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `door`, `unlock`, `lock`, `checks`,
+  `notifications`, nur `door` aufgeklappt, `legacy` nur mit älteren Regeln). Felder: `workday_sensor`, `unlock_time_workday`/
+  `unlock_time_free`, `unlock_only_when_home`, `unlock_on_arrival`, `unlock_only_if_on`/`unlock_skip_if_on`, `lock_time`,
+  `lock_when_away` + `lock_away_minutes`, `lock_closed_seconds`, `lock_only_if_on`/`lock_skip_if_on` (Konstanten `CONF_UNLOCK_*`/
+  `CONF_LOCK_*`). `settings_rules()` bildet daraus beim Start die Regeln (Schlüssel `R_*`, IDs `basic:<name>`): Zeit an Arbeitstagen =
+  `only_if_on` + Arbeitstag-Sensor, an freien Tagen = `skip_if_on` + Sensor (ohne Sensor gilt die Arbeitstag-Zeit täglich, die für freie
+  Tage entfällt); Anwesenheit/Heimkommen = Auslöser `presence` (`all_away` mit Wartezeit, `any_home`), Tür geschlossen =
+  `door_closed`. Der Controller wertet sie wie früher aus (`_rules()` = ältere aktive Regeln aus `options["rules"]` + `settings_rules()`):
+  Auslöser state/time/door_closed/presence, `_async_run_rule()` prüft Bedingungen (`evaluate_conditions()`) und trägt Übersprungenes als
+  `skipped` ein. Unklar: Anwesenheit = nichts schalten, sonst Aufschließen nicht, Abschließen schon. Prüfung beim Speichern
+  (`_validate_dg`): `alert_needs_contact`, `no_contact`, `no_presence_entities`, `no_workday_sensor`. **Ältere Einträge:** Regeln in
+  `options["rules"]` laufen weiter; der Schalter `clear_legacy_rules` setzt sie auf `None`. Einen Regeldialog gibt es nicht mehr; Tests
+  mit Regeln geben sie direkt in den Daten vor, Seiteneingaben über `dg_page()` in `tests/test_door_guard.py`. Manuelle Bedienung =
+  Schlosswechsel außerhalb des `OWN_ACTION_WINDOW` nach einem eigenen Befehl. `entity_on()`, `presence_met()`, `evaluate_conditions()` sind
+  reine Funktionen.
 - Türklingel-Profile liegen als Liste in `options["profiles"]` (Schlüssel `P_*`
   in `const.py`). `in_window()`/`assign_players()` in `doorbell.py` sind reine
   Funktionen (Fenster über Mitternacht gehören zum Starttag, ein Player wird
