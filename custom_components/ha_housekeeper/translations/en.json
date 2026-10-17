@@ -1115,12 +1115,12 @@
             },
             "scenes": {
               "name": "Scenes",
-              "description": "Scenes 1 to 8 are in the following sections.",
+              "description": "Scenes 1 to 5 are in the following sections.",
               "data": {
                 "addr_scene": "Scene address (17.001)"
               },
               "data_description": {
-                "addr_scene": "Scene number 1 to 8 starts the scene with that number."
+                "addr_scene": "Scene number 1 to 5 starts the scene with that number."
               }
             },
             "scene_1": {
@@ -1183,50 +1183,26 @@
                 "scene_5_favorite": "Choose from the speaker's sources or type the name."
               }
             },
-            "scene_6": {
-              "name": "Scene 6",
-              "description": "Runs on scene number 6 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_6_favorite": "Favorite (Sonos source)",
-                "scene_6_volume": "Volume",
-                "scene_6_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_6_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_7": {
-              "name": "Scene 7",
-              "description": "Runs on scene number 7 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_7_favorite": "Favorite (Sonos source)",
-                "scene_7_volume": "Volume",
-                "scene_7_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_7_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_8": {
-              "name": "Scene 8",
-              "description": "Runs on scene number 8 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_8_favorite": "Favorite (Sonos source)",
-                "scene_8_volume": "Volume",
-                "scene_8_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_8_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "status": {
-              "name": "Feedback",
-              "description": "Group addresses the speaker state is sent to (also as answer to read telegrams).",
+            "status_play": {
+              "name": "Feedback playback",
+              "description": "Group addresses that report whether the speaker plays or is paused (also as answer to read telegrams).",
               "data": {
                 "status_playing": "Playing (1 bit)",
-                "status_paused": "Paused (1 bit)",
+                "status_paused": "Paused (1 bit)"
+              }
+            },
+            "status_level": {
+              "name": "Feedback volume",
+              "description": "Group addresses for volume and mute.",
+              "data": {
                 "status_volume": "Volume (5.001)",
-                "status_muted": "Muted (1 bit)",
+                "status_muted": "Muted (1 bit)"
+              }
+            },
+            "status_text": {
+              "name": "Feedback text",
+              "description": "Group addresses for title, artist, album and source (text, at most 14 characters).",
+              "data": {
                 "status_title": "Title (text)",
                 "status_artist": "Artist (text)",
                 "status_album": "Album (text)",
@@ -1293,12 +1269,12 @@
             },
             "scenes": {
               "name": "Scenes",
-              "description": "Scenes 1 to 8 are in the following sections.",
+              "description": "Scenes 1 to 5 are in the following sections.",
               "data": {
                 "addr_scene": "Scene address (17.001)"
               },
               "data_description": {
-                "addr_scene": "Scene number 1 to 8 starts the scene with that number."
+                "addr_scene": "Scene number 1 to 5 starts the scene with that number."
               }
             },
             "scene_1": {
@@ -1361,50 +1337,26 @@
                 "scene_5_favorite": "Choose from the speaker's sources or type the name."
               }
             },
-            "scene_6": {
-              "name": "Scene 6",
-              "description": "Runs on scene number 6 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_6_favorite": "Favorite (Sonos source)",
-                "scene_6_volume": "Volume",
-                "scene_6_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_6_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_7": {
-              "name": "Scene 7",
-              "description": "Runs on scene number 7 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_7_favorite": "Favorite (Sonos source)",
-                "scene_7_volume": "Volume",
-                "scene_7_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_7_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_8": {
-              "name": "Scene 8",
-              "description": "Runs on scene number 8 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_8_favorite": "Favorite (Sonos source)",
-                "scene_8_volume": "Volume",
-                "scene_8_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_8_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "status": {
-              "name": "Feedback",
-              "description": "Group addresses the speaker state is sent to (also as answer to read telegrams).",
+            "status_play": {
+              "name": "Feedback playback",
+              "description": "Group addresses that report whether the speaker plays or is paused (also as answer to read telegrams).",
               "data": {
                 "status_playing": "Playing (1 bit)",
-                "status_paused": "Paused (1 bit)",
+                "status_paused": "Paused (1 bit)"
+              }
+            },
+            "status_level": {
+              "name": "Feedback volume",
+              "description": "Group addresses for volume and mute.",
+              "data": {
                 "status_volume": "Volume (5.001)",
-                "status_muted": "Muted (1 bit)",
+                "status_muted": "Muted (1 bit)"
+              }
+            },
+            "status_text": {
+              "name": "Feedback text",
+              "description": "Group addresses for title, artist, album and source (text, at most 14 characters).",
+              "data": {
                 "status_title": "Title (text)",
                 "status_artist": "Artist (text)",
                 "status_album": "Album (text)",

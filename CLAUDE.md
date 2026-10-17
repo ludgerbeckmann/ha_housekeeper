@@ -115,8 +115,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `connector_active` (nicht `active`, der gehört zur Türklingel). **Ein Eintrag = ein Lautsprecher.**
   Die Einstellungen sind **feste Felder auf einer Seite** (`async_step_knx_settings`, kein Menü; `_MENU_STEPS` zeigt
   direkt darauf, Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`, der Name steht als Feld im
-  Abschnitt `speaker`) mit den Abschnitten `speaker`, `playback`, `volume`, `scenes`, `scene_1…8` (eingeklappt),
-  `status` (nach dem Blueprint „KNX Media Player“): Schlüssel `addr_*`, `scene_<n>_favorite/volume/address`,
+  Abschnitt `speaker`) mit den Abschnitten `speaker` (als einziger aufgeklappt), `playback`, `volume`, `scenes`, `scene_1…5`
+  (`SCENE_COUNT` = 5; frühere Szenen 6–8 werden nicht mehr ausgewertet und beim Speichern auf `None` gesetzt, `OBSOLETE_SCENES`),
+  `status_play`/`status_level`/`status_text` (nach dem Blueprint „KNX Media Player“); alle Abschnitte außer `speaker` sind eingeklappt: Schlüssel `addr_*`, `scene_<n>_favorite/volume/address`,
   `status_*`, `idle_text`, `player`/`max_volume`/`volume_step`/`stop_instead_of_pause`. Gruppenadressen sind optional,
   geleerte Felder stehen als `None` in den Daten (`_CLEARABLE`). `knx_project.py` liest die Gruppenadressen des in der KNX-Integration importierten ETS-Projekts aus deren Speicherdatei
   (`knx/knx_project.json`, `group_addresses` mit `address`, `name`, `dpt.main/sub`; Fehler/fehlend = leere Liste); `_address()`

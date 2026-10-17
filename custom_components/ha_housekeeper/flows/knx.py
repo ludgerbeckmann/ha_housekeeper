@@ -40,6 +40,7 @@ from ..const import (
     CONF_VOLUME_STEP,
     DEFAULT_MAX_VOLUME,
     DEFAULT_VOLUME_STEP,
+    OBSOLETE_SCENES,
     SCENE_COUNT,
     clean_instance_name,
     instance_name,
@@ -60,21 +61,18 @@ SECTION_SPEAKER = "speaker"
 SECTION_PLAYBACK = "playback"
 SECTION_VOLUME = "volume"
 SECTION_SCENES = "scenes"
-SECTION_STATUS = "status"
+SECTION_STATUS_PLAY = "status_play"
+SECTION_STATUS_LEVEL = "status_level"
+SECTION_STATUS_TEXT = "status_text"
 SECTION_LEGACY = "legacy"
 
 _PLAYBACK_FIELDS = [CONF_ADDR_PLAY_PAUSE, CONF_ADDR_NEXT_PREV, CONF_ADDR_STOP, CONF_ADDR_TOGGLE]
 _VOLUME_FIELDS = [CONF_ADDR_VOLUME, CONF_ADDR_VOLUME_STEP, CONF_ADDR_VOLUME_DIM, CONF_ADDR_MUTE]
-_STATUS_FIELDS = [
-    CONF_STATUS_PLAYING,
-    CONF_STATUS_PAUSED,
-    CONF_STATUS_VOLUME,
-    CONF_STATUS_MUTED,
-    CONF_STATUS_TITLE,
-    CONF_STATUS_ARTIST,
-    CONF_STATUS_ALBUM,
-    CONF_STATUS_SOURCE,
-]
+# Rückmeldungen in drei Abschnitten: Wiedergabe, Lautstärke, Text
+_STATUS_PLAY_FIELDS = [CONF_STATUS_PLAYING, CONF_STATUS_PAUSED]
+_STATUS_LEVEL_FIELDS = [CONF_STATUS_VOLUME, CONF_STATUS_MUTED]
+_STATUS_TEXT_FIELDS = [CONF_STATUS_TITLE, CONF_STATUS_ARTIST, CONF_STATUS_ALBUM, CONF_STATUS_SOURCE]
+_STATUS_FIELDS = [*_STATUS_PLAY_FIELDS, *_STATUS_LEVEL_FIELDS, *_STATUS_TEXT_FIELDS]
 _SCENE_ADDRESSES = [scene_key(n, "address") for n in range(1, SCENE_COUNT + 1)]
 # alle Felder mit einer Gruppenadresse (leer = nicht verwendet)
 ADDRESS_FIELDS = [
@@ -88,6 +86,12 @@ _SCENE_FAVORITES = [scene_key(n, "favorite") for n in range(1, SCENE_COUNT + 1)]
 _SCENE_VOLUMES = [scene_key(n, "volume") for n in range(1, SCENE_COUNT + 1)]
 # Felder, die beim Leeren explizit auf None gesetzt werden müssen
 _CLEARABLE = [*ADDRESS_FIELDS, *_SCENE_FAVORITES, *_SCENE_VOLUMES, CONF_IDLE_TEXT]
+# frühere Szenen 6 bis 8 verfallen beim Speichern
+_OBSOLETE = [
+    scene_key(n, field)
+    for n in OBSOLETE_SCENES
+    for field in ("favorite", "volume", "address")
+]
 
 
 # Haupt-Datentyp je Adressfeld (für den Filter der Projektadressen)
@@ -137,7 +141,7 @@ def _knx_schema(
     """Die Seite: Abschnitte Lautsprecher, Wiedergabe, Lautstärke, Szenen, Rückmeldungen."""
     project = project or []
 
-    def _section(fields: dict[Any, Any], collapsed: bool = False) -> Any:
+    def _section(fields: dict[Any, Any], collapsed: bool = True) -> Any:
         return section(vol.Schema(fields), {"collapsed": collapsed})
 
     speaker: dict[Any, Any] = {
@@ -154,7 +158,7 @@ def _knx_schema(
         ): bool,
     }
     sections: dict[Any, Any] = {
-        vol.Required(SECTION_SPEAKER): _section(speaker),
+        vol.Required(SECTION_SPEAKER): _section(speaker, collapsed=False),   # nur der erste Abschnitt ist offen
         vol.Required(SECTION_PLAYBACK): _section(
             dict(_address(key, defaults, project) for key in _PLAYBACK_FIELDS)
         ),
@@ -177,15 +181,20 @@ def _knx_schema(
                     0, 100, "%"
                 ),
                 **dict([_address(addr, defaults, project)]),
-            },
-            collapsed=True,
+            }
         )
-    status: dict[Any, Any] = dict(_address(key, defaults, project) for key in _STATUS_FIELDS)
-    status[vol.Optional(CONF_IDLE_TEXT, description=_suggest(CONF_IDLE_TEXT, defaults))] = str
-    sections[vol.Required(SECTION_STATUS)] = _section(status)
+    sections[vol.Required(SECTION_STATUS_PLAY)] = _section(
+        dict(_address(key, defaults, project) for key in _STATUS_PLAY_FIELDS)
+    )
+    sections[vol.Required(SECTION_STATUS_LEVEL)] = _section(
+        dict(_address(key, defaults, project) for key in _STATUS_LEVEL_FIELDS)
+    )
+    text: dict[Any, Any] = dict(_address(key, defaults, project) for key in _STATUS_TEXT_FIELDS)
+    text[vol.Optional(CONF_IDLE_TEXT, description=_suggest(CONF_IDLE_TEXT, defaults))] = str
+    sections[vol.Required(SECTION_STATUS_TEXT)] = _section(text)
     if with_legacy:
         sections[vol.Required(SECTION_LEGACY)] = _section(
-            {vol.Required(CONF_CLEAR_LEGACY, default=False): bool}, collapsed=True
+            {vol.Required(CONF_CLEAR_LEGACY, default=False): bool}
         )
     return vol.Schema(sections)
 
@@ -235,7 +244,7 @@ def _validate_knx(language: str, flat: dict[str, Any]) -> tuple[dict[str, str], 
 
 def knx_data(flat: dict[str, Any]) -> dict[str, Any]:
     """Eingaben speichern: geleerte Felder auf None, Leerraum entfernen, alte Listen auf Wunsch löschen."""
-    data: dict[str, Any] = {key: None for key in _CLEARABLE}
+    data: dict[str, Any] = {key: None for key in (*_CLEARABLE, *_OBSOLETE)}
     for key, value in flat.items():
         if isinstance(value, str):
             value = value.strip()

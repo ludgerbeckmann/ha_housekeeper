@@ -63,7 +63,8 @@ async def test_config_flow_needs_knx(hass: HomeAssistant) -> None:
 def page(**fields):
     """Eingaben der Konfigurationsseite: flache Felder auf die Abschnitte verteilen."""
     sections = {name: {} for name in
-                ("speaker", "playback", "volume", "scenes", *(f"scene_{n}" for n in range(1, 9)), "status")}
+                ("speaker", "playback", "volume", "scenes", *(f"scene_{n}" for n in range(1, 6)),
+                 "status_play", "status_level", "status_text")}
     for key, value in fields.items():
         if key in ("name", "player", "max_volume", "volume_step", "stop_instead_of_pause"):
             sections["speaker"][key] = value
@@ -77,8 +78,12 @@ def page(**fields):
             sections["scenes"][key] = value
         elif key == "clear_legacy":
             sections.setdefault("legacy", {})[key] = value
+        elif key in ("status_playing", "status_paused"):
+            sections["status_play"][key] = value
+        elif key in ("status_volume", "status_muted"):
+            sections["status_level"][key] = value
         else:
-            sections["status"][key] = value
+            sections["status_text"][key] = value
     sections["speaker"].setdefault("max_volume", 100)
     sections["speaker"].setdefault("volume_step", 5)
     sections["speaker"].setdefault("stop_instead_of_pause", False)
@@ -505,3 +510,25 @@ async def test_address_fields_are_text_without_project(hass: HomeAssistant) -> N
     entry, _ = await _setup(hass)
     result = await reconfigure(hass, entry)
     assert _field_selector(result, "addr_play_pause") is str
+
+
+async def test_page_layout_and_obsolete_scenes(hass: HomeAssistant) -> None:
+    entry, m = await _setup(
+        hass, addr_scene="2/0/1", scene_1_favorite="Jazz", scene_6_favorite="Radio", scene_7_address="2/1/7")
+    result = await reconfigure(hass, entry)
+    schema = {str(k): v for k, v in result["data_schema"].schema.items()}
+    # nur der erste Abschnitt ist offen, nur noch fünf Szenen, Rückmeldungen in drei Abschnitten
+    assert [name for name in schema if name.startswith("scene_")] == [f"scene_{n}" for n in range(1, 6)]
+    assert {"status_play", "status_level", "status_text"} <= set(schema) and "status" not in schema
+    assert [name for name, sec in schema.items() if not sec.options["collapsed"]] == ["speaker"]
+    # frühere Szenen 6 bis 8 werden nicht mehr ausgewertet
+    await _telegram(hass, "2/0/1", (5,))             # Szene 6
+    await _telegram(hass, "2/1/7", 1)
+    assert m["select_source"] == []
+    await _telegram(hass, "2/0/1", (0,))             # Szene 1 gilt weiter
+    assert [c.data["source"] for c in m["select_source"]] == ["Jazz"]
+    # beim Speichern verfallen sie
+    await hass.config_entries.subentries.async_configure(
+        result["flow_id"], page(addr_scene="2/0/1", scene_1_favorite="Jazz"))
+    assert entry.options["scene_6_favorite"] is None and entry.options["scene_7_address"] is None
+    assert entry.options["scene_1_favorite"] == "Jazz"
