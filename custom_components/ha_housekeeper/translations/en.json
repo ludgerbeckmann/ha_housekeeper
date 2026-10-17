@@ -158,6 +158,9 @@
       },
       "llm_warning": {
         "name": "LLM warning"
+      },
+      "consumption_warning": {
+        "name": "Consumption warning"
       }
     },
     "sensor": {
@@ -235,6 +238,9 @@
       },
       "ir_last_sent": {
         "name": "Last sent"
+      },
+      "consumption_since": {
+        "name": "Running since"
       }
     },
     "button": {
@@ -267,6 +273,9 @@
       },
       "llm_refresh": {
         "name": "Query now"
+      },
+      "consumption_acknowledge": {
+        "name": "Acknowledge warning"
       }
     },
     "switch": {
@@ -305,6 +314,9 @@
       },
       "ir_power": {
         "name": "Switch"
+      },
+      "consumption_active": {
+        "name": "Guard active"
       }
     }
   },
@@ -2440,6 +2452,102 @@
       "abort": {},
       "progress": {
         "learn": "Learning command “{command}” for “{remote}”: point the original remote at the sender now and press the button (timeout about 30 seconds)."
+      }
+    },
+    "consumption_guard": {
+      "initiate_flow": {
+        "user": "Add consumption guard"
+      },
+      "entry_type": "Consumption guard",
+      "step": {
+        "new_consumption_guard": {
+          "title": "Consumption guard",
+          "description": "Reports when e.g. water or power runs for too long without a break (such as a stuck toilet flush). Add another rule as a separate entry.",
+          "sections": {
+            "general": {
+              "name": "Monitoring",
+              "description": "Reports when the sensor value stays above the threshold for longer than the set time.",
+              "data": {
+                "name": "Name (shown as “Consumption guard: Name”)",
+                "consumption_sensor": "Sensor (flow or power)",
+                "threshold": "Threshold",
+                "duration_minutes": "Duration (minutes)",
+                "repeat_minutes": "Repeat the report every (minutes, 0 = never)",
+                "window_from": "Time window from (optional)",
+                "window_to": "Time window until (optional)"
+              },
+              "data_description": {
+                "consumption_sensor": "Sensor with a numeric value, e.g. water flow in l/min or power in W. Meter totals are not suitable.",
+                "threshold": "In the unit of the sensor. “Running” means: value greater than the threshold.",
+                "duration_minutes": "How long the value has to stay above the threshold before it is reported.",
+                "window_from": "Monitoring only happens inside the time window (also across midnight). Both fields empty = always."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and where the warning is reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        },
+        "cg_settings": {
+          "title": "Consumption guard",
+          "description": "Reports when e.g. water or power runs for too long without a break (such as a stuck toilet flush). Add another rule as a separate entry.",
+          "sections": {
+            "general": {
+              "name": "Monitoring",
+              "description": "Reports when the sensor value stays above the threshold for longer than the set time.",
+              "data": {
+                "name": "Name (shown as “Consumption guard: Name”)",
+                "consumption_sensor": "Sensor (flow or power)",
+                "threshold": "Threshold",
+                "duration_minutes": "Duration (minutes)",
+                "repeat_minutes": "Repeat the report every (minutes, 0 = never)",
+                "window_from": "Time window from (optional)",
+                "window_to": "Time window until (optional)"
+              },
+              "data_description": {
+                "consumption_sensor": "Sensor with a numeric value, e.g. water flow in l/min or power in W. Meter totals are not suitable.",
+                "threshold": "In the unit of the sensor. “Running” means: value greater than the threshold.",
+                "duration_minutes": "How long the value has to stay above the threshold before it is reported.",
+                "window_from": "Monitoring only happens inside the time window (also across midnight). Both fields empty = always."
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and where the warning is reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_method": "At least one notification method with a target must be enabled.",
+        "tts_incomplete": "Speech output needs a TTS service and a speaker.",
+        "window_incomplete": "The time window needs “from” and “until” (or leave both empty)."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved."
       }
     }
   }

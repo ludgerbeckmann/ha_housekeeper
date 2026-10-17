@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .alarm_clock import AlarmClockController
+from .consumption_guard import ConsumptionGuardController
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
@@ -62,6 +63,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([MonitorActiveSwitch(controller)])
     elif isinstance(controller, LlmUsageController):
         async_add_entities([LlmActiveSwitch(controller)])
+    elif isinstance(controller, ConsumptionGuardController):
+        async_add_entities([ConsumptionActiveSwitch(controller)])
     elif isinstance(controller, IrRemoteController):
         if controller.power_configured:
             async_add_entities([IrPowerSwitch(controller)])
@@ -306,3 +309,22 @@ class IrPowerSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_power(False)
+
+
+class ConsumptionActiveSwitch(FunctionEntity, SwitchEntity):
+    """on = der Verbrauch wird überwacht; off = Wächter pausiert."""
+
+    _attr_icon = "mdi:water-check"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "consumption_active")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_enabled(False)

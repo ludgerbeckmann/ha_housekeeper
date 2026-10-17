@@ -14,6 +14,7 @@ from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
+from .consumption_guard import ConsumptionGuardController
 from .ir_remote import IrRemoteController
 from .llm_usage import LlmUsageController
 from .mailbox import MailboxController
@@ -129,6 +130,13 @@ async def async_get_config_entry_diagnostics(
             "cost_month": controller.cost_month,
             "alerts": controller.active_alerts,
             "error": controller.error,
+        }
+    if isinstance(controller, ConsumptionGuardController):
+        result["state"] = {
+            "enabled": controller.enabled,
+            "warning": controller.warning,
+            "since": controller.since.isoformat() if controller.since else None,
+            "sensor": controller.sensor,
         }
     if isinstance(controller, IrRemoteController):
         result["state"] = {

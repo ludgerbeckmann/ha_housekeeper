@@ -21,6 +21,7 @@ FUNCTION_ALARM = "alarm_clock"
 FUNCTION_MONITOR = "integration_monitor"
 FUNCTION_LLM = "llm_usage"
 FUNCTION_IR = "ir_remote"
+FUNCTION_CONSUMPTION = "consumption_guard"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -37,6 +38,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_MONITOR: ("Integrationsmonitor", "Integration monitor"),
     FUNCTION_LLM: ("LLM-Verbrauch", "LLM usage"),
     FUNCTION_IR: ("IR-Fernbedienung", "IR remote"),
+    FUNCTION_CONSUMPTION: ("Verbrauchswächter", "Consumption guard"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -127,6 +129,12 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.SWITCH,
     ],
     FUNCTION_IR: [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH],
+    FUNCTION_CONSUMPTION: [
+        Platform.BINARY_SENSOR,
+        Platform.BUTTON,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -582,6 +590,15 @@ LLM_MODES = [LLM_MODE_BALANCE, LLM_MODE_BUDGET]
 DEFAULT_POLL_MINUTES = 60
 
 # Felder, die im Formular geleert werden können
+# --- Verbrauchswächter ---
+CONF_CG_SENSOR = "consumption_sensor"      # Sensor mit Durchfluss oder Leistung
+CONF_CG_THRESHOLD = "threshold"            # „läuft“ = Wert größer als die Schwelle
+CONF_CG_MINUTES = "duration_minutes"       # so lange am Stück, bis gemeldet wird
+CONF_CG_REPEAT = "repeat_minutes"          # Meldung wiederholen (0 = nie)
+CONF_CG_FROM = "window_from"               # optionales Zeitfenster
+CONF_CG_TO = "window_to"
+DEFAULT_CG_MINUTES = 15
+
 # --- IR-Fernbedienung ---
 CONF_REMOTES = "remotes"          # `remote`-Entitäten (Sender), z. B. Broadlink RM4 mini
 CONF_IR_DEVICE = "ir_device"      # Gerätename, unter dem die Codes beim Sender gespeichert sind

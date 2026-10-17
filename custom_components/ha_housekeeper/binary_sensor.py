@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .alarm_clock import AlarmClockController
+from .consumption_guard import ConsumptionGuardController
 from .door_guard import DoorGuardController
 from .integration_monitor import IntegrationMonitorController
 from .llm_usage import LlmUsageController
@@ -41,6 +42,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities([AlarmRingingSensor(controller)])
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities([IntegrationProblemSensor(controller)])
+    elif isinstance(controller, ConsumptionGuardController):
+        async_add_entities([ConsumptionWarningSensor(controller)])
     elif isinstance(controller, LlmUsageController):
         async_add_entities([LlmWarningSensor(controller)])
     elif isinstance(controller, PoolPumpController):
@@ -226,3 +229,25 @@ class LlmWarningSensor(FunctionEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {"alerts": self._controller.active_alerts, "error": self._controller.error}
+
+
+class ConsumptionWarningSensor(FunctionEntity, BinarySensorEntity):
+    """on = der Verbrauch liegt zu lange über der Schwelle."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "consumption_warning")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.warning
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        since = self._controller.since
+        return {
+            "sensor": self._controller.sensor,
+            "threshold": self._controller.threshold,
+            "since": since.isoformat() if since else None,
+        }

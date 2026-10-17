@@ -25,6 +25,7 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_ALARMS,
+    CONF_CG_SENSOR,
     CONF_CONTACT,
     CONF_FUNCTION_TYPE,
     CONF_LOCK,
@@ -49,6 +50,7 @@ from .const import (
     CONF_VIBRATION_SENSOR,
     DOMAIN,
     FUNCTION_ALARM,
+    FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
     FUNCTION_IR,
@@ -118,6 +120,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
     elif function == FUNCTION_MONITOR:
         entities += _listed(opt(CONF_MONITOR_RULES, []), "presence_entity")
+    elif function == FUNCTION_CONSUMPTION:
+        entities.append(opt(CONF_CG_SENSOR))
     elif function == FUNCTION_IR:
         entities += [str(e) for e in opt(CONF_REMOTES, []) or []]
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
