@@ -367,7 +367,7 @@ hinzufügen“), mit eigenem Gerät, Schalter und Sensor.
 
 ### Konfigurationsseite
 
-Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten. Jede
+Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten; nur „Lautsprecher“ ist aufgeklappt, die übrigen sind eingeklappt. Jede
 Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es zählen nur eingehende
 **Schreibtelegramme**. Das Layout orientiert sich am Blueprint
 [KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935).
@@ -377,8 +377,8 @@ Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es 
 | **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
 | **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
 | **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
-| **Szenen** | Szenenadresse (17.001, Szenennummer 1–8); je **Szene 1–8** (eingeklappt): Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
-| **Rückmeldungen** | Spielt, Pausiert, Stumm (je 1 Bit), Lautstärke (5.001), Titel, Interpret, Album, Quelle (Text, auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
+| **Szenen** | Szenenadresse (17.001, Szenennummer 1–5); je **Szene 1–5**: Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
+| **Rückmeldungen** (drei Abschnitte) | *Wiedergabe:* Spielt, Pausiert (1 Bit). *Lautstärke:* Lautstärke (5.001), Stumm (1 Bit). *Text:* Titel, Interpret, Album, Quelle (auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
 
 **Gruppenadressen aus dem ETS-Projekt:** Hast du in der KNX-Integration ein **ETS-Projekt importiert**
 (KNX → Konfigurieren → ETS-Projekt importieren), bieten alle Adressfelder die Adressen des Projekts als Dropdown an
@@ -391,6 +391,8 @@ Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** 
 Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
 (3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit
 wird als Name gespeichert; bei einem umbenannten Favoriten muss er angepasst werden.
+
+**Frühere Szenen 6–8** werden nicht mehr ausgewertet und beim Speichern der Seite gelöscht.
 
 ### Ältere Einträge
 

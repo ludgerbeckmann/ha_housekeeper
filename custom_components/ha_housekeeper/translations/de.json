@@ -1115,12 +1115,12 @@
             },
             "scenes": {
               "name": "Szenen",
-              "description": "Die Szenen 1 bis 8 stehen in den folgenden Abschnitten.",
+              "description": "Die Szenen 1 bis 5 stehen in den folgenden Abschnitten.",
               "data": {
                 "addr_scene": "Szenenadresse (17.001)"
               },
               "data_description": {
-                "addr_scene": "Die Szenennummer 1 bis 8 startet die Szene mit dieser Nummer."
+                "addr_scene": "Die Szenennummer 1 bis 5 startet die Szene mit dieser Nummer."
               }
             },
             "scene_1": {
@@ -1183,50 +1183,26 @@
                 "scene_5_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
               }
             },
-            "scene_6": {
-              "name": "Szene 6",
-              "description": "Wird bei Szenennummer 6 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_6_favorite": "Favorit (Sonos-Quelle)",
-                "scene_6_volume": "Lautstärke",
-                "scene_6_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_6_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "scene_7": {
-              "name": "Szene 7",
-              "description": "Wird bei Szenennummer 7 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_7_favorite": "Favorit (Sonos-Quelle)",
-                "scene_7_volume": "Lautstärke",
-                "scene_7_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_7_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "scene_8": {
-              "name": "Szene 8",
-              "description": "Wird bei Szenennummer 8 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_8_favorite": "Favorit (Sonos-Quelle)",
-                "scene_8_volume": "Lautstärke",
-                "scene_8_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_8_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "status": {
-              "name": "Rückmeldungen",
-              "description": "Gruppenadressen, an die der Zustand des Lautsprechers gesendet wird (auch als Antwort auf Lesetelegramme).",
+            "status_play": {
+              "name": "Rückmeldung Wiedergabe",
+              "description": "Gruppenadressen, an die gesendet wird, ob der Lautsprecher spielt oder pausiert (auch als Antwort auf Lesetelegramme).",
               "data": {
                 "status_playing": "Spielt (1 Bit)",
-                "status_paused": "Pausiert (1 Bit)",
+                "status_paused": "Pausiert (1 Bit)"
+              }
+            },
+            "status_level": {
+              "name": "Rückmeldung Lautstärke",
+              "description": "Gruppenadressen für Lautstärke und Stumm.",
+              "data": {
                 "status_volume": "Lautstärke (5.001)",
-                "status_muted": "Stumm (1 Bit)",
+                "status_muted": "Stumm (1 Bit)"
+              }
+            },
+            "status_text": {
+              "name": "Rückmeldung Text",
+              "description": "Gruppenadressen für Titel, Interpret, Album und Quelle (Text, höchstens 14 Zeichen).",
+              "data": {
                 "status_title": "Titel (Text)",
                 "status_artist": "Interpret (Text)",
                 "status_album": "Album (Text)",
@@ -1293,12 +1269,12 @@
             },
             "scenes": {
               "name": "Szenen",
-              "description": "Die Szenen 1 bis 8 stehen in den folgenden Abschnitten.",
+              "description": "Die Szenen 1 bis 5 stehen in den folgenden Abschnitten.",
               "data": {
                 "addr_scene": "Szenenadresse (17.001)"
               },
               "data_description": {
-                "addr_scene": "Die Szenennummer 1 bis 8 startet die Szene mit dieser Nummer."
+                "addr_scene": "Die Szenennummer 1 bis 5 startet die Szene mit dieser Nummer."
               }
             },
             "scene_1": {
@@ -1361,50 +1337,26 @@
                 "scene_5_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
               }
             },
-            "scene_6": {
-              "name": "Szene 6",
-              "description": "Wird bei Szenennummer 6 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_6_favorite": "Favorit (Sonos-Quelle)",
-                "scene_6_volume": "Lautstärke",
-                "scene_6_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_6_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "scene_7": {
-              "name": "Szene 7",
-              "description": "Wird bei Szenennummer 7 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_7_favorite": "Favorit (Sonos-Quelle)",
-                "scene_7_volume": "Lautstärke",
-                "scene_7_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_7_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "scene_8": {
-              "name": "Szene 8",
-              "description": "Wird bei Szenennummer 8 oder über die eigene 1-Bit-Adresse (1 = starten, 0 = Pause) ausgeführt.",
-              "data": {
-                "scene_8_favorite": "Favorit (Sonos-Quelle)",
-                "scene_8_volume": "Lautstärke",
-                "scene_8_address": "1-Bit-Adresse"
-              },
-              "data_description": {
-                "scene_8_favorite": "Aus den Quellen des Lautsprechers wählen oder den Namen eintippen."
-              }
-            },
-            "status": {
-              "name": "Rückmeldungen",
-              "description": "Gruppenadressen, an die der Zustand des Lautsprechers gesendet wird (auch als Antwort auf Lesetelegramme).",
+            "status_play": {
+              "name": "Rückmeldung Wiedergabe",
+              "description": "Gruppenadressen, an die gesendet wird, ob der Lautsprecher spielt oder pausiert (auch als Antwort auf Lesetelegramme).",
               "data": {
                 "status_playing": "Spielt (1 Bit)",
-                "status_paused": "Pausiert (1 Bit)",
+                "status_paused": "Pausiert (1 Bit)"
+              }
+            },
+            "status_level": {
+              "name": "Rückmeldung Lautstärke",
+              "description": "Gruppenadressen für Lautstärke und Stumm.",
+              "data": {
                 "status_volume": "Lautstärke (5.001)",
-                "status_muted": "Stumm (1 Bit)",
+                "status_muted": "Stumm (1 Bit)"
+              }
+            },
+            "status_text": {
+              "name": "Rückmeldung Text",
+              "description": "Gruppenadressen für Titel, Interpret, Album und Quelle (Text, höchstens 14 Zeichen).",
+              "data": {
                 "status_title": "Titel (Text)",
                 "status_artist": "Interpret (Text)",
                 "status_album": "Album (Text)",

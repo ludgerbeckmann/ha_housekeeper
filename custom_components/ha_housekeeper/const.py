@@ -324,7 +324,8 @@ CONF_ADDR_VOLUME_STEP = "addr_volume_step"    # 1 Bit: 1 = lauter, 0 = leiser (e
 CONF_ADDR_VOLUME_DIM = "addr_volume_dim"      # 3.007: relatives Dimmen
 CONF_ADDR_MUTE = "addr_mute"                  # 1 Bit: folgt dem Wert
 CONF_ADDR_SCENE = "addr_scene"                # 17.001: Szenennummer
-SCENE_COUNT = 8
+SCENE_COUNT = 5
+OBSOLETE_SCENES = range(6, 9)  # frühere Szenen 6 bis 8: werden nicht mehr ausgewertet und beim Speichern gelöscht
 CONF_STATUS_PLAYING = "status_playing"
 CONF_STATUS_PAUSED = "status_paused"
 CONF_STATUS_VOLUME = "status_volume"
