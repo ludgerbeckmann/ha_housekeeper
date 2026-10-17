@@ -59,6 +59,7 @@ from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.ir import IrOptions, _ir_schema, _validate_ir, new_instance_data as new_ir_data
 from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
 from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
+from .knx_project import async_project_addresses
 from .flows.mailbox import MailboxOptions, _mailbox_schema
 from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
 from .flows.planner import TaskPlannerOptions, _planner_schema, _validate_planner
@@ -204,7 +205,9 @@ class NewInstanceSteps:
             defaults = flat
         return self.async_show_form(
             step_id="new_knx_sonos",
-            data_schema=_knx_schema(defaults, [], with_legacy=False),
+            data_schema=_knx_schema(
+                defaults, [], with_legacy=False, project=await async_project_addresses(self.hass)
+            ),
             errors=errors,
             description_placeholders={"detail": detail, "legacy": ""},
         )
