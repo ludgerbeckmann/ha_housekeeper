@@ -120,38 +120,11 @@ async def test_door_guard_disabled_rule_is_ignored(hass: HomeAssistant) -> None:
     assert len(calls) == 1
 
 
-async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
+def test_door_guard_rule_summary(hass: HomeAssistant) -> None:
     hass.config.language = "en"
     rule = {"id": "r1", "action": "lock", "trigger": "time", "time": "22:00:00", "weekdays": ALL}
     assert rule_summary(hass, rule) == "Lock: 22:00"
     assert rule_summary(hass, {**rule, "enabled": False}) == "Lock: 22:00 (off)"
-
-    hass.states.async_set("lock.front_door", "locked")
-    entry = make_entry(domain=DOMAIN, title="Door", data={
-        "function_type": "door_guard", "name": "Door", "lock": "lock.front_door", "rules": [],
-        "persistent_enabled": True})
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.hub_id)
-    await hass.async_block_till_done()
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
-    assert "enabled" in {str(k) for k in result["data_schema"].schema}
-    result = await flow.async_configure(
-        result["flow_id"], {"action": "lock", "trigger": "time", "enabled": False})
-    result = await flow.async_configure(
-        result["flow_id"], {"time": "22:00:00", "weekdays": ["mon"]})
-    result = await flow.async_configure(result["flow_id"], {})
-    assert is_menu(result)
-    (saved,) = entry.options["rules"]
-    assert saved["enabled"] is False
-    # Standard: aktiv
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
-    result = await flow.async_configure(result["flow_id"], {"action": "lock", "trigger": "time"})
-    result = await flow.async_configure(
-        result["flow_id"], {"time": "23:00:00", "weekdays": ["tue"]})
-    await flow.async_configure(result["flow_id"], {})
-    assert entry.options["rules"][1]["enabled"] is True
 
 
 async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None:

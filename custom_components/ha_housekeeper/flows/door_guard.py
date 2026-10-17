@@ -1,31 +1,48 @@
-"""Dialoge der Funktion Türwächter."""
+"""Dialoge der Funktion Türwächter: eine Konfigurationsseite mit den Grundeinstellungen."""
 
 from __future__ import annotations
 
 from typing import Any
-import uuid
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import SubentryFlowResult
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
 from ..const import (
     BLOCK_NOTIFY,
     BLOCK_RETRY,
     CONF_BLOCK_ACTION,
+    CONF_CLEAR_RULES,
     CONF_CONTACT,
     CONF_LOCK,
+    CONF_LOCK_AWAY,
+    CONF_LOCK_AWAY_MINUTES,
+    CONF_LOCK_CLOSED,
+    CONF_LOCK_ONLY_IF,
+    CONF_LOCK_SKIP_IF,
+    CONF_LOCK_TIME,
     CONF_MANUAL_OVERRIDE,
     CONF_MANUAL_PAUSE_MINUTES,
+    CONF_MOBILE_TARGETS,
     CONF_NAME,
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
     CONF_PRESENCE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
+    CONF_TTS_ENTITY,
+    CONF_TTS_PLAYER,
+    CONF_UNLOCK_ARRIVAL,
+    CONF_UNLOCK_FREE,
+    CONF_UNLOCK_HOME,
+    CONF_UNLOCK_ONLY_IF,
+    CONF_UNLOCK_SKIP_IF,
+    CONF_UNLOCK_WORKDAY,
     CONF_VERIFY_SECONDS,
+    CONF_WORKDAY,
     DEFAULT_MANUAL_PAUSE_MINUTES,
     DEFAULT_OPEN_ALERT_MINUTES,
     DEFAULT_OPEN_ALERT_REPEAT,
@@ -34,45 +51,26 @@ from ..const import (
     DEFAULT_VERIFY_SECONDS,
     MANUAL_IGNORE,
     MANUAL_PAUSE,
-    PC_IGNORE,
-    PM_ALL_AWAY,
-    PRESENCE_CONDITIONS,
-    PRESENCE_MODES,
-    R_ACTION,
-    R_DELAY,
-    R_ENABLED,
-    R_ENTITY,
-    R_FOR_MINUTES,
-    R_ID,
-    R_ONLY_IF_ON,
-    R_PRESENCE,
-    R_PRESENCE_MODE,
-    R_SKIP_IF_ON,
-    R_TIME,
-    R_TO_STATE,
-    R_TRIGGER,
-    R_WEEKDAYS,
-    RULE_LOCK,
-    RULE_UNLOCK,
-    TRIGGER_DOOR_CLOSED,
-    TRIGGER_KEYS,
-    TRIGGER_PRESENCE,
-    TRIGGER_STATE,
-    TRIGGER_TIME,
-    WEEKDAYS,
+    clean_instance_name,
+    instance_name,
+    instance_title,
 )
-from ..door_guard import rule_summary
 from .common import (
     _flatten_sections,
     _notify_fields,
     _number,
-    _sections_schema,
     _select,
     _suggest,
     _validate_notify,
     _with_cleared,
 )
 
+SECTION_DOOR = "door"
+SECTION_CHECKS = "checks"
+SECTION_UNLOCK = "unlock"
+SECTION_LOCK = "lock"
+SECTION_NOTIFICATIONS = "notifications"
+SECTION_LEGACY = "legacy"
 
 _CONDITION_DOMAINS = [
     "binary_sensor",
@@ -84,6 +82,21 @@ _CONDITION_DOMAINS = [
     "zone",
 ]
 
+# Felder der Grundeinstellungen, die beim Leeren explizit auf None gesetzt werden müssen
+_CLEARABLE = (
+    CONF_WORKDAY,
+    CONF_UNLOCK_WORKDAY,
+    CONF_UNLOCK_FREE,
+    CONF_UNLOCK_ONLY_IF,
+    CONF_UNLOCK_SKIP_IF,
+    CONF_LOCK_TIME,
+    CONF_LOCK_ONLY_IF,
+    CONF_LOCK_SKIP_IF,
+    CONF_MOBILE_TARGETS,
+    CONF_TTS_ENTITY,
+    CONF_TTS_PLAYER,
+)
+
 
 def _condition_selector() -> selector.EntitySelector:
     return selector.EntitySelector(
@@ -91,345 +104,189 @@ def _condition_selector() -> selector.EntitySelector:
     )
 
 
-def _door_schema(
-    hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
+def _dg_schema(
+    hass: HomeAssistant,
+    defaults: dict[str, Any],
+    with_name: bool,
+    with_legacy: bool = False,
 ) -> vol.Schema:
-    fields: dict[Any, Any] = {}
+    """Die Seite: Tür, Prüfungen, Aufschließen, Abschließen, Benachrichtigungen (nur „Tür“ ist offen)."""
+
+    def _section(fields: dict[Any, Any], collapsed: bool = True) -> Any:
+        return section(vol.Schema(fields), {"collapsed": collapsed})
+
+    door: dict[Any, Any] = {}
     if with_name:
-        fields[vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))] = str
-    fields[
-        vol.Required(CONF_LOCK, description=_suggest(CONF_LOCK, defaults))
-    ] = selector.EntitySelector(selector.EntitySelectorConfig(domain="lock"))
-    fields[
-        vol.Optional(CONF_CONTACT, description=_suggest(CONF_CONTACT, defaults))
-    ] = selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
-    fields[
-        vol.Optional(CONF_PRESENCE, description=_suggest(CONF_PRESENCE, defaults))
-    ] = selector.EntitySelector(
-        selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)
+        door[vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults))] = str
+    door[vol.Required(CONF_LOCK, description=_suggest(CONF_LOCK, defaults))] = (
+        selector.EntitySelector(selector.EntitySelectorConfig(domain="lock"))
     )
-    fields.update(
-        {
-            vol.Required(
-                CONF_BLOCK_ACTION, default=defaults.get(CONF_BLOCK_ACTION, BLOCK_NOTIFY)
-            ): _select([BLOCK_NOTIFY, BLOCK_RETRY], CONF_BLOCK_ACTION),
-            vol.Required(
-                CONF_RETRY_MINUTES,
-                default=defaults.get(CONF_RETRY_MINUTES, DEFAULT_RETRY_MINUTES),
-            ): _number(1, 240, "min"),
-            vol.Required(
-                CONF_OPEN_ALERT_MINUTES,
-                default=defaults.get(CONF_OPEN_ALERT_MINUTES, DEFAULT_OPEN_ALERT_MINUTES),
-            ): _number(0, 1440, "min"),
-            vol.Required(
-                CONF_OPEN_ALERT_REPEAT,
-                default=defaults.get(CONF_OPEN_ALERT_REPEAT, DEFAULT_OPEN_ALERT_REPEAT),
-            ): _number(0, 1440, "min"),
-            vol.Required(
-                CONF_VERIFY_SECONDS,
-                default=defaults.get(CONF_VERIFY_SECONDS, DEFAULT_VERIFY_SECONDS),
-            ): _number(0, 600, "s"),
-            vol.Required(
-                CONF_MANUAL_OVERRIDE,
-                default=defaults.get(CONF_MANUAL_OVERRIDE, MANUAL_IGNORE),
-            ): _select([MANUAL_IGNORE, MANUAL_PAUSE], CONF_MANUAL_OVERRIDE),
-            vol.Required(
-                CONF_MANUAL_PAUSE_MINUTES,
-                default=defaults.get(
-                    CONF_MANUAL_PAUSE_MINUTES, DEFAULT_MANUAL_PAUSE_MINUTES
-                ),
-            ): _number(1, 1440, "min"),
-        }
+    door[vol.Optional(CONF_CONTACT, description=_suggest(CONF_CONTACT, defaults))] = (
+        selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
     )
-    return _sections_schema(fields, _notify_fields(hass, defaults, with_action=False))
+    door[vol.Optional(CONF_PRESENCE, description=_suggest(CONF_PRESENCE, defaults))] = (
+        selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)
+        )
+    )
+    door[vol.Optional(CONF_WORKDAY, description=_suggest(CONF_WORKDAY, defaults))] = (
+        selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
+    )
+
+    checks: dict[Any, Any] = {
+        vol.Required(
+            CONF_BLOCK_ACTION, default=defaults.get(CONF_BLOCK_ACTION, BLOCK_NOTIFY)
+        ): _select([BLOCK_NOTIFY, BLOCK_RETRY], CONF_BLOCK_ACTION),
+        vol.Required(
+            CONF_RETRY_MINUTES, default=defaults.get(CONF_RETRY_MINUTES, DEFAULT_RETRY_MINUTES)
+        ): _number(1, 240, "min"),
+        vol.Required(
+            CONF_OPEN_ALERT_MINUTES,
+            default=defaults.get(CONF_OPEN_ALERT_MINUTES, DEFAULT_OPEN_ALERT_MINUTES),
+        ): _number(0, 1440, "min"),
+        vol.Required(
+            CONF_OPEN_ALERT_REPEAT,
+            default=defaults.get(CONF_OPEN_ALERT_REPEAT, DEFAULT_OPEN_ALERT_REPEAT),
+        ): _number(0, 1440, "min"),
+        vol.Required(
+            CONF_VERIFY_SECONDS, default=defaults.get(CONF_VERIFY_SECONDS, DEFAULT_VERIFY_SECONDS)
+        ): _number(0, 600, "s"),
+        vol.Required(
+            CONF_MANUAL_OVERRIDE, default=defaults.get(CONF_MANUAL_OVERRIDE, MANUAL_IGNORE)
+        ): _select([MANUAL_IGNORE, MANUAL_PAUSE], CONF_MANUAL_OVERRIDE),
+        vol.Required(
+            CONF_MANUAL_PAUSE_MINUTES,
+            default=defaults.get(CONF_MANUAL_PAUSE_MINUTES, DEFAULT_MANUAL_PAUSE_MINUTES),
+        ): _number(1, 1440, "min"),
+    }
+
+    def _optional(key: str, kind: Any) -> tuple[Any, Any]:
+        return vol.Optional(key, description=_suggest(key, defaults)), kind
+
+    unlock = dict(
+        [
+            _optional(CONF_UNLOCK_WORKDAY, selector.TimeSelector()),
+            _optional(CONF_UNLOCK_FREE, selector.TimeSelector()),
+        ]
+    )
+    unlock[vol.Required(CONF_UNLOCK_HOME, default=bool(defaults.get(CONF_UNLOCK_HOME, False)))] = bool
+    unlock[
+        vol.Required(CONF_UNLOCK_ARRIVAL, default=bool(defaults.get(CONF_UNLOCK_ARRIVAL, False)))
+    ] = bool
+    unlock.update(
+        dict(
+            [
+                _optional(CONF_UNLOCK_ONLY_IF, _condition_selector()),
+                _optional(CONF_UNLOCK_SKIP_IF, _condition_selector()),
+            ]
+        )
+    )
+
+    lock = dict([_optional(CONF_LOCK_TIME, selector.TimeSelector())])
+    lock[vol.Required(CONF_LOCK_AWAY, default=bool(defaults.get(CONF_LOCK_AWAY, False)))] = bool
+    lock[
+        vol.Required(
+            CONF_LOCK_AWAY_MINUTES,
+            default=defaults.get(CONF_LOCK_AWAY_MINUTES, DEFAULT_PRESENCE_MINUTES),
+        )
+    ] = _number(0, 1440, "min")
+    lock[
+        vol.Required(CONF_LOCK_CLOSED, default=defaults.get(CONF_LOCK_CLOSED, 0) or 0)
+    ] = _number(0, 3600, "s")
+    lock.update(
+        dict(
+            [
+                _optional(CONF_LOCK_ONLY_IF, _condition_selector()),
+                _optional(CONF_LOCK_SKIP_IF, _condition_selector()),
+            ]
+        )
+    )
+
+    sections: dict[Any, Any] = {
+        vol.Required(SECTION_DOOR): _section(door, collapsed=False),
+        vol.Required(SECTION_UNLOCK): _section(unlock),
+        vol.Required(SECTION_LOCK): _section(lock),
+        vol.Required(SECTION_CHECKS): _section(checks),
+        vol.Required(SECTION_NOTIFICATIONS): _section(
+            _notify_fields(hass, defaults, with_action=False)
+        ),
+    }
+    if with_legacy:
+        sections[vol.Required(SECTION_LEGACY)] = _section(
+            {vol.Required(CONF_CLEAR_RULES, default=False): bool}
+        )
+    return vol.Schema(sections)
 
 
-def _validate_door(user_input: dict[str, Any]) -> dict[str, str]:
+def _validate_dg(user_input: dict[str, Any]) -> dict[str, str]:
+    """Prüfung der Seite (die Fehler stehen als Schlüssel in den Übersetzungen)."""
     errors = _validate_notify(user_input, require_method=False)
-    if float(user_input.get(CONF_OPEN_ALERT_MINUTES) or 0) > 0 and not user_input.get(
-        CONF_CONTACT
-    ):
-        errors["base"] = "alert_needs_contact"
-    return errors
+    if errors:
+        return errors
+    if float(user_input.get(CONF_OPEN_ALERT_MINUTES) or 0) > 0 and not user_input.get(CONF_CONTACT):
+        return {"base": "alert_needs_contact"}
+    if float(user_input.get(CONF_LOCK_CLOSED) or 0) > 0 and not user_input.get(CONF_CONTACT):
+        return {"base": "no_contact"}
+    needs_presence = (
+        user_input.get(CONF_UNLOCK_HOME)
+        or user_input.get(CONF_UNLOCK_ARRIVAL)
+        or user_input.get(CONF_LOCK_AWAY)
+    )
+    if needs_presence and not user_input.get(CONF_PRESENCE):
+        return {"base": "no_presence_entities"}
+    if user_input.get(CONF_UNLOCK_FREE) and not user_input.get(CONF_WORKDAY):
+        return {"base": "no_workday_sensor"}
+    return {}
+
+
+def dg_data(flat: dict[str, Any]) -> dict[str, Any]:
+    """Eingaben speichern: geleerte optionale Felder auf None, ältere Regeln nur auf Wunsch löschen."""
+    data = {**_with_cleared(flat), **{key: None for key in _CLEARABLE if key not in flat}}
+    data.pop(CONF_NAME, None)
+    for key in (CONF_LOCK_CLOSED,):
+        data[key] = int(data.get(key) or 0)
+    if data.pop(CONF_CLEAR_RULES, False):
+        data[CONF_RULES] = None
+    return data
+
+
+def new_instance_data(flat: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in dg_data(flat).items() if value is not None}
 
 
 class DoorGuardOptions:
-    """Options-Flow-Schritte: Türwächter."""
+    """Konfigurationsseite des Türwächters (kein Menü, der Name ist ein Feld)."""
 
-    def _rules(self) -> list[dict[str, Any]]:
+    def _legacy_rules(self) -> list[dict[str, Any]]:
         return list(self._current.get(CONF_RULES) or [])
 
-    async def async_step_menu(
+    async def async_step_door_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        options = ["general", "add_rule"]
-        if self._rules():
-            options += ["edit_rule", "delete_rule"]
-        options.append("rename")
-        return await self._menu("menu", options, user_input)
-
-    async def async_step_general(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         errors: dict[str, str] = {}
-        defaults = self._current
+        subentry = self._get_reconfigure_subentry()
+        defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
         if user_input is not None:
-            user_input = _flatten_sections(user_input)
-            errors = _validate_door(user_input)
+            flat = _flatten_sections(user_input)
+            errors = _validate_dg(flat)
             if not errors:
-                self._save(_with_cleared(user_input))
-                return await self.async_step_menu()
-            defaults = user_input
-        return self.async_show_form(
-            step_id="general",
-            data_schema=_door_schema(self.hass, defaults, with_name=False),
-            errors=errors,
-        )
-
-    async def async_step_add_rule(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        self._edit_id = None
-        self._draft = {}
-        return await self.async_step_rule_type()
-
-    async def async_step_edit_rule(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            rule = next(r for r in self._rules() if r[R_ID] == user_input["rule"])
-            self._edit_id = rule[R_ID]
-            self._draft = dict(rule)
-            return await self.async_step_rule_type()
-        return self.async_show_form(
-            step_id="edit_rule", data_schema=self._rule_picker_schema()
-        )
-
-    async def async_step_delete_rule(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._save(
-                {CONF_RULES: [r for r in self._rules() if r[R_ID] != user_input["rule"]]}
-            )
-            return await self.async_step_menu()
-        return self.async_show_form(
-            step_id="delete_rule", data_schema=self._rule_picker_schema()
-        )
-
-    def _rule_picker_schema(self) -> vol.Schema:
-        return vol.Schema(
-            {
-                vol.Required("rule"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[
-                            selector.SelectOptionDict(
-                                value=r[R_ID], label=rule_summary(self.hass, r)
-                            )
-                            for r in self._rules()
-                        ],
-                        mode=selector.SelectSelectorMode.LIST,
-                    )
+                name = (flat.get(CONF_NAME) or "").strip()
+                self.hass.config_entries.async_update_subentry(
+                    self._get_entry(),
+                    subentry,
+                    title=instance_title(
+                        self.hass, self.function_type, clean_instance_name(self.function_type, name)
+                    ),
+                    data={**subentry.data, **dg_data(flat)},
                 )
-            }
-        )
-
-    async def async_step_rule_type(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        draft = self._draft
-        if user_input is not None:
-            if user_input[R_TRIGGER] == TRIGGER_DOOR_CLOSED:
-                if not self._current.get(CONF_CONTACT):
-                    errors["base"] = "no_contact"
-                elif user_input[R_ACTION] != RULE_LOCK:
-                    errors["base"] = "door_closed_needs_lock"
-            if user_input[R_TRIGGER] == TRIGGER_PRESENCE and not self._current.get(
-                CONF_PRESENCE
-            ):
-                errors["base"] = "no_presence_entities"
-            if not errors:
-                self._draft.update(user_input)
-                return await getattr(self, f"async_step_rule_{user_input[R_TRIGGER]}")()
-            draft = user_input
+                return self.async_abort(reason="reconfigure_successful")
+            defaults = {**defaults, **flat}
+        legacy = self._legacy_rules()
         return self.async_show_form(
-            step_id="rule_type",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_ACTION, default=draft.get(R_ACTION, RULE_LOCK)
-                    ): _select([RULE_LOCK, RULE_UNLOCK], "rule_action"),
-                    vol.Required(
-                        R_TRIGGER, default=draft.get(R_TRIGGER, TRIGGER_STATE)
-                    ): _select(
-                        [TRIGGER_STATE, TRIGGER_TIME, TRIGGER_PRESENCE, TRIGGER_DOOR_CLOSED],
-                        "rule_trigger",
-                    ),
-                    vol.Required(R_ENABLED, default=draft.get(R_ENABLED, True)): bool,
-                }
+            step_id="door_settings",
+            data_schema=_dg_schema(
+                self.hass, defaults, with_name=True, with_legacy=bool(legacy)
             ),
             errors=errors,
+            description_placeholders={"legacy": str(len(legacy))},
         )
-
-    async def async_step_rule_state(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._draft.update(user_input)
-            return await self.async_step_rule_conditions()
-        d = self._draft
-        return self.async_show_form(
-            step_id="rule_state",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_ENTITY, description=_suggest(R_ENTITY, d)
-                    ): selector.EntitySelector(),
-                    vol.Required(R_TO_STATE, description=_suggest(R_TO_STATE, d)): str,
-                    vol.Required(R_FOR_MINUTES, default=d.get(R_FOR_MINUTES, 0)): _number(
-                        0, 1440, "min"
-                    ),
-                }
-            ),
-        )
-
-    async def async_step_rule_time(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        d = self._draft
-        if user_input is not None:
-            if not user_input.get(R_WEEKDAYS):
-                errors["base"] = "no_weekday"
-            else:
-                self._draft.update(user_input)
-                return await self.async_step_rule_conditions()
-            d = user_input
-        return self.async_show_form(
-            step_id="rule_time",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_TIME, description=_suggest(R_TIME, d)
-                    ): selector.TimeSelector(),
-                    vol.Required(
-                        R_WEEKDAYS, default=d.get(R_WEEKDAYS, WEEKDAYS)
-                    ): _select(
-                        WEEKDAYS,
-                        "weekday",
-                        multiple=True,
-                        mode=selector.SelectSelectorMode.LIST,
-                    ),
-                }
-            ),
-            errors=errors,
-        )
-
-    async def async_step_rule_door_closed(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._draft.update(user_input)
-            return await self.async_step_rule_conditions()
-        return self.async_show_form(
-            step_id="rule_door_closed",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_DELAY, default=self._draft.get(R_DELAY, 30)
-                    ): _number(0, 3600, "s")
-                }
-            ),
-        )
-
-    async def async_step_rule_presence(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._draft.update(user_input)
-            return await self.async_step_rule_conditions()
-        d = self._draft
-        return self.async_show_form(
-            step_id="rule_presence",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_PRESENCE_MODE, default=d.get(R_PRESENCE_MODE, PM_ALL_AWAY)
-                    ): _select(
-                        PRESENCE_MODES, "presence_mode", mode=selector.SelectSelectorMode.LIST
-                    ),
-                    vol.Required(
-                        R_FOR_MINUTES, default=d.get(R_FOR_MINUTES, DEFAULT_PRESENCE_MINUTES)
-                    ): _number(0, 1440, "min"),
-                }
-            ),
-        )
-
-    async def async_step_rule_conditions(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Bedingungen der Regel (für alle Auslöser, alle optional)."""
-        errors: dict[str, str] = {}
-        d = self._draft
-        if user_input is not None:
-            if user_input.get(R_PRESENCE, PC_IGNORE) != PC_IGNORE and not self._current.get(
-                CONF_PRESENCE
-            ):
-                errors["base"] = "no_presence_entities"
-            else:
-                self._draft.update(
-                    {
-                        R_PRESENCE: user_input.get(R_PRESENCE, PC_IGNORE),
-                        R_ONLY_IF_ON: user_input.get(R_ONLY_IF_ON) or [],
-                        R_SKIP_IF_ON: user_input.get(R_SKIP_IF_ON) or [],
-                    }
-                )
-                return await self._finish_rule()
-            d = user_input
-        return self.async_show_form(
-            step_id="rule_conditions",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        R_PRESENCE, default=d.get(R_PRESENCE, PC_IGNORE)
-                    ): _select(
-                        PRESENCE_CONDITIONS,
-                        "presence_condition",
-                        mode=selector.SelectSelectorMode.LIST,
-                    ),
-                    vol.Optional(
-                        R_ONLY_IF_ON,
-                        description=_suggest(R_ONLY_IF_ON, d) if d.get(R_ONLY_IF_ON) else {},
-                    ): _condition_selector(),
-                    vol.Optional(
-                        R_SKIP_IF_ON,
-                        description=_suggest(R_SKIP_IF_ON, d) if d.get(R_SKIP_IF_ON) else {},
-                    ): _condition_selector(),
-                }
-            ),
-            errors=errors,
-        )
-
-    async def _finish_rule(self) -> ConfigFlowResult:
-        trigger = self._draft[R_TRIGGER]
-        rule: dict[str, Any] = {
-            R_ID: self._edit_id or uuid.uuid4().hex[:8],
-            R_ACTION: self._draft[R_ACTION],
-            R_TRIGGER: trigger,
-            R_ENABLED: self._draft.get(R_ENABLED, True),
-            **{k: self._draft[k] for k in TRIGGER_KEYS[trigger] if k in self._draft},
-        }
-        # Bedingungen (nur gesetzte speichern)
-        if (self._draft.get(R_PRESENCE) or PC_IGNORE) != PC_IGNORE:
-            rule[R_PRESENCE] = self._draft[R_PRESENCE]
-        for key in (R_ONLY_IF_ON, R_SKIP_IF_ON):
-            if self._draft.get(key):
-                rule[key] = list(self._draft[key])
-        rules = self._rules()
-        if self._edit_id:
-            rules = [rule if r[R_ID] == self._edit_id else r for r in rules]
-        else:
-            rules.append(rule)
-        self._save({CONF_RULES: rules})
-        return await self.async_step_menu()

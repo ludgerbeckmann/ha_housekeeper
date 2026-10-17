@@ -233,6 +233,22 @@ TRIGGER_KEYS: dict[str, list[str]] = {
 
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
+# Grundeinstellungen zum Auf- und Abschließen (feste Felder statt einzelner Regeln)
+CONF_WORKDAY = "workday_sensor"                  # Binärsensor: an = Arbeits- bzw. Schultag
+CONF_UNLOCK_WORKDAY = "unlock_time_workday"      # Uhrzeit zum Aufschließen an Arbeitstagen
+CONF_UNLOCK_FREE = "unlock_time_free"            # Uhrzeit zum Aufschließen an freien Tagen
+CONF_UNLOCK_HOME = "unlock_only_when_home"       # Zeitaufschließen nur, wenn jemand zu Hause ist
+CONF_UNLOCK_ARRIVAL = "unlock_on_arrival"        # Aufschließen, wenn jemand nach Hause kommt
+CONF_UNLOCK_ONLY_IF = "unlock_only_if_on"
+CONF_UNLOCK_SKIP_IF = "unlock_skip_if_on"
+CONF_LOCK_TIME = "lock_time"                     # Uhrzeit zum Abschließen
+CONF_LOCK_AWAY = "lock_when_away"                # Abschließen, wenn alle weg sind
+CONF_LOCK_AWAY_MINUTES = "lock_away_minutes"
+CONF_LOCK_CLOSED = "lock_closed_seconds"         # Abschließen, wenn die Tür so lange geschlossen ist (0 = aus)
+CONF_LOCK_ONLY_IF = "lock_only_if_on"
+CONF_LOCK_SKIP_IF = "lock_skip_if_on"
+CONF_CLEAR_RULES = "clear_legacy_rules"          # nur im Formular: ältere Regeln entfernen
+
 
 # --- Türklingel ---
 CONF_TRIGGER_ENTITY = "trigger_entity"

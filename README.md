@@ -12,7 +12,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Typ | Beschreibung |
 | --- | --- |
 | Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
-| Türwächter | Schließt eine Tür per Regeln automatisch auf/ab und warnt, wenn sie zu lange offen steht |
+| Türwächter | Schließt eine Tür zu festen Zeiten, bei Anwesenheit und nach dem Schließen automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 | Poolsteuerung | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
 | KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
@@ -141,40 +141,40 @@ Der Zustand bleibt über Neustarts erhalten.
 ## Türwächter
 
 Pro Tür ein Eintrag: ein **Schloss** (`lock`) und optional ein **Türkontakt**
-(`binary_sensor`, `on` = offen). Das Auf- und Abschließen steuerst du über
-**Regeln**, die du unter *Konfigurieren* verwaltest (Menü: Einstellungen,
-Regel hinzufügen/bearbeiten/löschen).
+(`binary_sensor`, `on` = offen). Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein
+Feld), in Abschnitten; nur „Tür“ ist aufgeklappt. Leere Felder und nicht gesetzte Haken sind „aus“.
 
-### Regeln
+### Tür
 
-Jede Regel hat eine Aktion (**Abschließen** oder **Aufschließen**) und einen Auslöser:
+Name, Schloss, Türkontakt, **Personen für die Anwesenheit** (Personen oder Gerätetracker, z. B. die Eltern; Kinder
+nicht eintragen) und der **Arbeitstag-Sensor** (Binärsensor, an = Arbeits- oder Schultag, z. B. „Werktag Ferien“).
 
-- **Zustand einer Entität**: löst beim *Wechsel* in den Zielzustand aus
-  (z. B. `person.ludger` → `home`, Alarmanlage → `armed_away`), optional erst
-  nach X Minuten in diesem Zustand. Wechselt die Entität vorher zurück, wird
-  abgebrochen.
-- **Uhrzeit**: zu einer Uhrzeit an den gewählten Wochentagen.
-- **Tür geschlossen seit X Sekunden**: nur zum Abschließen, braucht den Türkontakt.
-- **Anwesenheit**: braucht die *Personen für die Anwesenheit* in den Einstellungen der Tür
-  (Personen oder Gerätetracker, z. B. die Eltern; Kinder nicht eintragen). *Alle sind weg*
-  löst nach einer Wartezeit aus (Standard 3 Minuten; kommt jemand zurück, wird abgebrochen),
-  *Jemand kommt nach Hause* sobald eine Person ankommt. Beim Start wird nichts nachgeholt.
+### Aufschließen
 
-### Bedingungen (optional, für alle Auslöser)
+- **Uhrzeit an Arbeitstagen** (Arbeitstag-Sensor an; ohne Sensor gilt sie jeden Tag) und **Uhrzeit an freien Tagen**
+  (Sensor aus, braucht den Sensor).
+- **Zu den Uhrzeiten nur aufschließen, wenn jemand zu Hause ist** (braucht die Personen).
+- **Aufschließen, wenn jemand nach Hause kommt** (Wechsel von „alle weg“ zu „jemand da“; beim Start wird nichts nachgeholt).
+- **Nur wenn an** (alle gewählten Entitäten müssen an sein) und **Nicht wenn an** (ist eine an, wird übersprungen; z. B. Urlaub).
+  Erlaubt sind Binärsensor, Hilfsschalter, Kalender, Zeitplan, Person, Gerätetracker und Zone (Personen/Tracker zählen zu
+  Hause als an). Bei unklarem Zustand wird **nicht aufgeschlossen**.
 
-- **Anwesenheit**: *Egal* (Standard), *Nur wenn jemand zu Hause ist* oder *Nur wenn alle weg sind*.
-  Ist ein Standort unklar, wird nichts geschaltet.
-- **Nur wenn an**: alle gewählten Entitäten müssen an sein (z. B. Arbeitstagssensor).
-- **Nicht wenn an**: ist eine der Entitäten an, wird die Regel übersprungen (z. B. Ferien).
+### Abschließen
 
-Erlaubt sind Binärsensor, Hilfsschalter, Kalender, Zeitplan, Person, Gerätetracker und Zone
-(Personen/Tracker zählen zu Hause als an, Zonen mit mindestens einer Person darin). Bei
-unklarem Zustand gilt die sichere Seite: Aufschließen entfällt, Abschließen läuft. Übersprungene
-Regeln senden keine Meldung, stehen aber mit Grund in „Letzte Aktion“ (Ergebnis `skipped`).
+- **Uhrzeit** (täglich).
+- **Abschließen, wenn alle weg sind**, mit Wartezeit (Standard 3 Minuten; kommt in der Zeit jemand zurück, wird abgebrochen).
+- **Abschließen, wenn die Tür X Sekunden geschlossen ist** (0 = aus, braucht den Türkontakt).
+- **Nur wenn an** / **Nicht wenn an** wie beim Aufschließen; bei unklarem Zustand wird **trotzdem abgeschlossen**.
 
-**Empfehlung (Batterie schont):** morgens und abends je eine Zeitregel mit Bedingungen,
-dazu „Abschließen bei Anwesenheit: alle weg“; Regeln wie „Tür geschlossen seit X Sekunden“
-vermeiden, sie lösen oft aus.
+Übersprungene Aktionen senden keine Meldung, stehen aber mit Grund in „Letzte Aktion“ (Ergebnis `skipped`). Ist ein Standort
+unklar, wird bei Anwesenheit nichts geschaltet. **Empfehlung (Batterie schont):** morgens und abends je eine Uhrzeit, dazu
+„Abschließen, wenn alle weg sind“; die Tür-geschlossen-Sekunden nur, wenn sie wirklich gebraucht werden.
+
+### Ältere Einträge
+
+Bestehende Einträge laufen unverändert weiter: ihre bisherigen einzelnen Regeln bleiben aktiv, auch neben den neuen
+Feldern. Auf der Seite erscheint dann ein eingeklappter Abschnitt „Ältere Regeln“ mit dem Schalter „Alte Regeln löschen“
+(nur, wenn es welche gibt).
 
 ### Türkontakt-Prüfungen
 

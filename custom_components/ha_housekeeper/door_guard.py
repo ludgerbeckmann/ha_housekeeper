@@ -30,7 +30,20 @@ from .const import (
     CONF_OPEN_ALERT_REPEAT,
     CONF_PRESENCE,
     CONF_RETRY_MINUTES,
+    CONF_LOCK_AWAY,
+    CONF_LOCK_AWAY_MINUTES,
+    CONF_LOCK_CLOSED,
+    CONF_LOCK_ONLY_IF,
+    CONF_LOCK_SKIP_IF,
+    CONF_LOCK_TIME,
     CONF_RULES,
+    CONF_UNLOCK_ARRIVAL,
+    CONF_UNLOCK_FREE,
+    CONF_UNLOCK_HOME,
+    CONF_UNLOCK_ONLY_IF,
+    CONF_UNLOCK_SKIP_IF,
+    CONF_UNLOCK_WORKDAY,
+    CONF_WORKDAY,
     CONF_VERIFY_SECONDS,
     DEFAULT_MANUAL_PAUSE_MINUTES,
     DEFAULT_OPEN_ALERT_MINUTES,
@@ -42,6 +55,8 @@ from .const import (
     PC_ALL_AWAY,
     PC_IGNORE,
     PC_SOMEONE_HOME,
+    PM_ANY_HOME,
+    DEFAULT_PRESENCE_MINUTES,
     PM_ALL_AWAY,
     R_ACTION,
     R_ENABLED,
@@ -122,6 +137,77 @@ def _lang(hass: HomeAssistant) -> dict[str, str]:
 
 def _fmt(text: str, **values: Any) -> str:
     return text.format(**values)
+
+
+def settings_rules(get: Any) -> list[dict[str, Any]]:
+    """Regeln aus den Grundeinstellungen zum Auf- und Abschließen (feste Felder der Konfigurationsseite).
+
+    Daraus entstehen dieselben Regeln wie früher, der Controller wertet sie unverändert aus:
+    Aufschließen zu einer Uhrzeit an Arbeitstagen (Arbeitstag-Sensor an) bzw. an freien Tagen
+    (Sensor aus), beim Heimkommen; Abschließen zu einer Uhrzeit, wenn alle weg sind und wenn die
+    Tür geschlossen ist."""
+    rules: list[dict[str, Any]] = []
+    workday = get(CONF_WORKDAY)
+
+    def _lists(only: list[str], skip: list[str], key_only: str, key_skip: str) -> dict[str, Any]:
+        return {
+            R_ONLY_IF_ON: [*only, *(get(key_only) or [])],
+            R_SKIP_IF_ON: [*skip, *(get(key_skip) or [])],
+        }
+
+    def _unlock(rule_id: str, trigger: str, only: list[str], skip: list[str], **extra: Any) -> None:
+        rules.append(
+            {
+                R_ID: f"basic:{rule_id}",
+                R_ACTION: RULE_UNLOCK,
+                R_TRIGGER: trigger,
+                R_ENABLED: True,
+                **extra,
+                **_lists(only, skip, CONF_UNLOCK_ONLY_IF, CONF_UNLOCK_SKIP_IF),
+            }
+        )
+
+    home = PC_SOMEONE_HOME if get(CONF_UNLOCK_HOME) else PC_IGNORE
+    if get(CONF_UNLOCK_WORKDAY):
+        _unlock(
+            "unlock_workday", TRIGGER_TIME, [workday] if workday else [], [],
+            **{R_TIME: get(CONF_UNLOCK_WORKDAY), R_WEEKDAYS: list(WEEKDAYS), R_PRESENCE: home},
+        )
+    if get(CONF_UNLOCK_FREE) and workday:
+        _unlock(
+            "unlock_free", TRIGGER_TIME, [], [workday],
+            **{R_TIME: get(CONF_UNLOCK_FREE), R_WEEKDAYS: list(WEEKDAYS), R_PRESENCE: home},
+        )
+    if get(CONF_UNLOCK_ARRIVAL):
+        _unlock(
+            "unlock_arrival", TRIGGER_PRESENCE, [], [],
+            **{R_PRESENCE_MODE: PM_ANY_HOME, R_FOR_MINUTES: 0, R_PRESENCE: PC_IGNORE},
+        )
+
+    def _lock(rule_id: str, trigger: str, **extra: Any) -> None:
+        rules.append(
+            {
+                R_ID: f"basic:{rule_id}",
+                R_ACTION: RULE_LOCK,
+                R_TRIGGER: trigger,
+                R_ENABLED: True,
+                R_PRESENCE: PC_IGNORE,
+                **extra,
+                **_lists([], [], CONF_LOCK_ONLY_IF, CONF_LOCK_SKIP_IF),
+            }
+        )
+
+    if get(CONF_LOCK_TIME):
+        _lock("lock_time", TRIGGER_TIME, **{R_TIME: get(CONF_LOCK_TIME), R_WEEKDAYS: list(WEEKDAYS)})
+    if get(CONF_LOCK_AWAY):
+        _lock(
+            "lock_away", TRIGGER_PRESENCE,
+            **{R_PRESENCE_MODE: PM_ALL_AWAY,
+               R_FOR_MINUTES: float(get(CONF_LOCK_AWAY_MINUTES, DEFAULT_PRESENCE_MINUTES))},
+        )
+    if float(get(CONF_LOCK_CLOSED) or 0) > 0:
+        _lock("lock_closed", TRIGGER_DOOR_CLOSED, **{R_DELAY: float(get(CONF_LOCK_CLOSED))})
+    return rules
 
 
 def rule_summary(hass: HomeAssistant, rule: dict[str, Any]) -> str:
@@ -251,7 +337,8 @@ class DoorGuardController:
 
     def _rules(self) -> list[dict[str, Any]]:
         """Aktive Regeln (ausgeschaltete werden ignoriert)."""
-        return [r for r in self._opt(CONF_RULES, []) or [] if r.get(R_ENABLED, True)]
+        legacy = [r for r in self._opt(CONF_RULES, []) or [] if r.get(R_ENABLED, True)]
+        return [*legacy, *settings_rules(self._get)]
 
     def _contact_state(self) -> str | None:
         contact = self._opt(CONF_CONTACT)

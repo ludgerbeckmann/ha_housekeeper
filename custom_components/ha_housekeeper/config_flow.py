@@ -23,7 +23,6 @@ from .const import (
     CONF_NAME,
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
-    CONF_RULES,
     CONF_SCHEDULES,
     CONF_TASKS,
     DOMAIN,
@@ -48,7 +47,12 @@ from .const import (
 )
 from .flows.alarm import AlarmOptions, _alarm_settings_schema, _validate_alarm_settings
 from .flows.common import OptionsBase, _flatten_sections, _validate_notify
-from .flows.door_guard import DoorGuardOptions, _door_schema, _validate_door
+from .flows.door_guard import (
+    DoorGuardOptions,
+    _dg_schema,
+    _validate_dg,
+    new_instance_data as new_dg_data,
+)
 from .flows.consumption import (
     ConsumptionGuardOptions,
     _cg_schema,
@@ -73,7 +77,7 @@ from .flows.updater import UpdaterOptions, _updater_schema
 
 _MENU_STEPS = {
     FUNCTION_MAILBOX: "mailbox_menu",
-    FUNCTION_DOOR_GUARD: "menu",
+    FUNCTION_DOOR_GUARD: "door_settings",
     FUNCTION_DOORBELL: "bell_menu",
     FUNCTION_POOL: "pool_menu",
     FUNCTION_KNX_SONOS: "knx_settings",
@@ -129,19 +133,13 @@ class NewInstanceSteps:
         defaults: dict[str, Any] = {}
         if user_input is not None:
             user_input = _flatten_sections(user_input)
-            errors = _validate_door(user_input)
+            errors = _validate_dg(user_input)
             if not errors:
-                return await self._finish_new(
-                    user_input.get(CONF_NAME),
-                    {
-                        CONF_RULES: [],
-                        **user_input,
-                    },
-                )
+                return await self._finish_new(user_input.get(CONF_NAME), new_dg_data(user_input))
             defaults = user_input
         return self.async_show_form(
             step_id="new_door_guard",
-            data_schema=_door_schema(self.hass, defaults, with_name=True),
+            data_schema=_dg_schema(self.hass, defaults, with_name=True),
             errors=errors,
         )
 

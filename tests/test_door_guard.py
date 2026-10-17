@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, new_instance
+from .helpers import is_menu, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.door_guard import (
     entity_on,
@@ -58,18 +58,51 @@ async def _advance(hass: HomeAssistant, **delta) -> None:
     await hass.async_block_till_done()
 
 
+def dg_page(**fields):
+    """Eingaben der Konfigurationsseite: flache Felder auf die Abschnitte verteilen."""
+    keys = {
+        "door": ("name", "lock", "contact", "presence_entities", "workday_sensor"),
+        "unlock": ("unlock_time_workday", "unlock_time_free", "unlock_only_when_home",
+                   "unlock_on_arrival", "unlock_only_if_on", "unlock_skip_if_on"),
+        "lock": ("lock_time", "lock_when_away", "lock_away_minutes", "lock_closed_seconds",
+                 "lock_only_if_on", "lock_skip_if_on"),
+        "checks": ("block_action", "retry_minutes", "open_alert_minutes", "open_alert_repeat_minutes",
+                   "verify_seconds", "manual_override", "manual_pause_minutes"),
+        "legacy": ("clear_legacy_rules",),
+    }
+    sections = {name: {} for name in ("door", "unlock", "lock", "checks", "notifications")}
+    for key, value in fields.items():
+        for name, names in keys.items():
+            if key in names:
+                sections.setdefault(name, {})[key] = value
+                break
+        else:
+            sections["notifications"][key] = value
+    return sections
+
+
 async def test_config_flow(hass: HomeAssistant) -> None:
     result = await new_instance(hass, "door_guard")
     assert result["step_id"] == "new_door_guard"
+    flow = hass.config_entries.subentries
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules")}
-    bad = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], sectioned({k: v for k, v in data.items() if k != "contact"})
-    )
+    bad = await flow.async_configure(
+        result["flow_id"], dg_page(**{k: v for k, v in data.items() if k != "contact"}))
     assert bad["errors"] == {"base": "alert_needs_contact"}
-    ok = await hass.config_entries.subentries.async_configure(result["flow_id"], sectioned(data))
+    bad = await flow.async_configure(
+        result["flow_id"], dg_page(**{**data, "lock_when_away": True}))
+    assert bad["errors"] == {"base": "no_presence_entities"}
+    bad = await flow.async_configure(
+        result["flow_id"], dg_page(**{**data, "lock_when_away": False, "unlock_time_free": "08:30:00"}))
+    assert bad["errors"] == {"base": "no_workday_sensor"}
+    no_contact = {k: v for k, v in data.items() if k != "contact"}
+    bad = await flow.async_configure(
+        result["flow_id"], dg_page(**{**no_contact, "open_alert_minutes": 0, "lock_when_away": False,
+                                      "lock_closed_seconds": 20}))
+    assert bad["errors"] == {"base": "no_contact"}
+    ok = await flow.async_configure(result["flow_id"], dg_page(**data, lock_when_away=False))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
-
-    assert ok["data"]["rules"] == []
+    assert "rules" not in ok["data"] and ok["data"]["lock"] == LOCK
 
 
 async def test_state_rule_unlocks(hass: HomeAssistant) -> None:
@@ -232,49 +265,6 @@ async def test_verify_failure_notifies(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.door_last_action").attributes["result"] == "failed"
 
 
-async def test_options_flow_rules(hass: HomeAssistant) -> None:
-    entry = await _setup(hass)
-    result = await reconfigure(hass, entry)
-    assert is_menu(result)
-    assert "edit_rule" not in menu_options(result)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"action": "unlock", "trigger": "state"}
-    )
-    assert result["step_id"] == "rule_state"
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"entity_id": PERSON, "to_state": "home", "for_minutes": 0}
-    )
-    assert result["step_id"] == "rule_conditions"
-    result = await hass.config_entries.subentries.async_configure(result["flow_id"], {})
-    assert is_menu(result)
-    assert "edit_rule" in menu_options(result)
-    assert len(entry.options["rules"]) == 1
-    rule_id = entry.options["rules"][0]["id"]
-
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "delete_rule"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"rule": rule_id}
-    )
-    assert entry.options["rules"] == []
-
-
-async def test_options_flow_door_closed_needs_contact(hass: HomeAssistant) -> None:
-    entry = await _setup(hass, contact=None)
-    result = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"action": "lock", "trigger": "door_closed"}
-    )
-    assert result["errors"] == {"base": "no_contact"}
-
-
 def _st(entity_id: str, state: str):
     from homeassistant.core import State
 
@@ -388,31 +378,119 @@ async def test_presence_rule_unclear_and_no_catch_up(hass: HomeAssistant) -> Non
     assert calls == []
 
 
-async def test_options_flow_presence_rule(hass: HomeAssistant) -> None:
-    entry = await _setup(hass)
-    result = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"action": "lock", "trigger": "presence"}
-    )
-    assert result["errors"] == {"base": "no_presence_entities"}
+# --- Grundeinstellungen zum Auf- und Abschließen ------------------------------------------------------------
 
 
-async def test_condition_needs_presence_entities(hass: HomeAssistant) -> None:
-    entry = await _setup(hass)
+def test_settings_rules() -> None:
+    from custom_components.ha_housekeeper.door_guard import settings_rules
+
+    values = {"workday_sensor": "binary_sensor.workday", "unlock_time_workday": "06:30:00",
+              "unlock_time_free": "08:30:00", "unlock_only_when_home": True, "unlock_on_arrival": True,
+              "unlock_skip_if_on": ["input_boolean.vacation"], "lock_time": "22:30:00",
+              "lock_when_away": True, "lock_away_minutes": 3, "lock_closed_seconds": 20,
+              "lock_only_if_on": ["binary_sensor.guest"]}
+    get = lambda key, default=None: values.get(key, default)  # noqa: E731
+    rules = {r["id"]: r for r in settings_rules(get)}
+    assert set(rules) == {"basic:unlock_workday", "basic:unlock_free", "basic:unlock_arrival",
+                          "basic:lock_time", "basic:lock_away", "basic:lock_closed"}
+    work = rules["basic:unlock_workday"]
+    assert work["action"] == "unlock" and work["time"] == "06:30:00" and work["presence"] == "someone_home"
+    assert work["only_if_on"] == ["binary_sensor.workday"] and work["skip_if_on"] == ["input_boolean.vacation"]
+    free = rules["basic:unlock_free"]
+    assert free["skip_if_on"] == ["binary_sensor.workday", "input_boolean.vacation"] and free["only_if_on"] == []
+    arrival = rules["basic:unlock_arrival"]
+    assert arrival["trigger"] == "presence" and arrival["presence_mode"] == "any_home"
+    away = rules["basic:lock_away"]
+    assert away["action"] == "lock" and away["presence_mode"] == "all_away" and away["for_minutes"] == 3
+    assert rules["basic:lock_closed"]["delay_seconds"] == 20
+    assert rules["basic:lock_time"]["only_if_on"] == ["binary_sensor.guest"]
+    # ohne Arbeitstag-Sensor gilt die Uhrzeit für Arbeitstage jeden Tag, die für freie Tage entfällt
+    values.update({"workday_sensor": None})
+    rules = {r["id"]: r for r in settings_rules(get)}
+    assert rules["basic:unlock_workday"]["only_if_on"] == [] and "basic:unlock_free" not in rules
+    assert settings_rules(lambda key, default=None: default) == []
+
+
+async def test_workday_and_free_day_unlock_times(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "unlock")
+    await _setup(hass, lock_state="locked", workday_sensor="binary_sensor.workday",
+                 unlock_time_workday="06:30:00", unlock_time_free="08:30:00",
+                 unlock_only_when_home=True, presence_entities=[PERSON])
+    hass.states.async_set(PERSON, "home")
+    fire = lambda h, m, d: dt_util.now().replace(hour=h, minute=m, second=0, microsecond=0) + timedelta(days=d)  # noqa: E731
+    hass.states.async_set("binary_sensor.workday", "on")
+    async_fire_time_changed(hass, fire(6, 30, 1))
+    await hass.async_block_till_done()
+    assert len(calls) == 1                                  # Arbeitstag: 06:30 gilt
+    async_fire_time_changed(hass, fire(8, 30, 1))
+    await hass.async_block_till_done()
+    assert len(calls) == 1                                  # 08:30 gilt nur an freien Tagen
+    assert hass.states.get("sensor.door_last_action").attributes["result"] == "skipped"
+    hass.states.async_set("binary_sensor.workday", "off")
+    async_fire_time_changed(hass, fire(8, 30, 2))
+    await hass.async_block_till_done()
+    assert len(calls) == 2                                  # freier Tag: 08:30 gilt
+    async_fire_time_changed(hass, fire(6, 30, 2))
+    await hass.async_block_till_done()
+    assert len(calls) == 2
+    # niemand zu Hause: nichts aufschließen
+    hass.states.async_set(PERSON, "not_home")
+    async_fire_time_changed(hass, fire(8, 30, 3))
+    await hass.async_block_till_done()
+    assert len(calls) == 2
+    # Arbeitstag-Sensor nicht verfügbar: sichere Seite, nicht aufschließen
+    hass.states.async_set(PERSON, "home")
+    hass.states.async_set("binary_sensor.workday", "unavailable")
+    async_fire_time_changed(hass, fire(8, 30, 4))
+    await hass.async_block_till_done()
+    assert len(calls) == 2
+
+
+async def test_lock_when_everyone_is_away_from_settings(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "lock")
+    entry = make_entry(domain=DOMAIN, title="Door", data={
+        **BASE, "presence_entities": [PERSON, "person.partner"], "lock_when_away": True,
+        "lock_away_minutes": 3})
+    entry.add_to_hass(hass)
+    hass.states.async_set(LOCK, "unlocked")
+    hass.states.async_set(CONTACT, "off")
+    hass.states.async_set(PERSON, "home")
+    hass.states.async_set("person.partner", "home")
+    assert await hass.config_entries.async_setup(entry.hub_id)
+    await hass.async_block_till_done()
+    hass.states.async_set(PERSON, "not_home")
+    hass.states.async_set("person.partner", "not_home")
+    await hass.async_block_till_done()
+    await _advance(hass, minutes=4)
+    assert len(calls) == 1
+
+
+async def test_legacy_rules_run_next_to_the_fields(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "lock")
+    rule = {"id": "r1", "action": "lock", "trigger": "time", "time": "22:00:00",
+            "weekdays": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}
+    await _setup(hass, rules=[rule], lock_time="23:00:00")
+    fire = dt_util.now().replace(hour=23, minute=30, second=0, microsecond=0)
+    async_fire_time_changed(hass, fire + timedelta(days=1))   # beide Uhrzeiten sind überschritten
+    await hass.async_block_till_done()
+    assert len(calls) == 2                                      # die ältere Regel und das Feld laufen
+
+
+async def test_settings_page(hass: HomeAssistant) -> None:
+    entry = await _setup(hass, lock_time="22:30:00", rules=[{"id": "x", "action": "lock", "trigger": "time",
+                                                              "time": "21:00:00", "weekdays": ["mon"]}])
+    flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "add_rule"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"action": "unlock", "trigger": "state"}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"entity_id": PERSON, "to_state": "home", "for_minutes": 0}
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"presence": "someone_home"}
-    )
-    assert result["errors"] == {"base": "no_presence_entities"}
+    assert result["step_id"] == "door_settings" and not is_menu(result)
+    sections = {str(k): v for k, v in result["data_schema"].schema.items()}
+    assert list(sections) == ["door", "unlock", "lock", "checks", "notifications", "legacy"]
+    assert [name for name, sec in sections.items() if not sec.options["collapsed"]] == ["door"]
+    assert result["description_placeholders"]["legacy"] == "1"
+    data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules", "name")}
+    done = await flow.async_configure(result["flow_id"], dg_page(
+        **data, name="Garage", unlock_time_workday="06:30:00", clear_legacy_rules=True))
+    assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
+    assert entry.options["unlock_time_workday"] == "06:30:00" and entry.options["lock_time"] is None
+    assert entry.options["rules"] is None and entry.title.endswith("Garage")
+    again = await reconfigure(hass, entry)
+    assert "legacy" not in {str(k) for k in again["data_schema"].schema}

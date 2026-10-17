@@ -24,20 +24,6 @@
         "pause": "Automatik pausieren"
       }
     },
-    "rule_action": {
-      "options": {
-        "lock": "Abschließen",
-        "unlock": "Aufschließen"
-      }
-    },
-    "rule_trigger": {
-      "options": {
-        "state": "Zustand einer Entität",
-        "time": "Uhrzeit",
-        "door_closed": "Tür geschlossen seit",
-        "presence": "Anwesenheit"
-      }
-    },
     "weekday": {
       "options": {
         "mon": "Montag",
@@ -111,19 +97,6 @@
       "options": {
         "balance": "Guthaben (mit Abgleich)",
         "budget": "Monatsbudget"
-      }
-    },
-    "presence_mode": {
-      "options": {
-        "all_away": "Alle sind weg",
-        "any_home": "Jemand kommt nach Hause"
-      }
-    },
-    "presence_condition": {
-      "options": {
-        "ignore": "Egal",
-        "someone_home": "Nur wenn jemand zu Hause ist",
-        "all_away": "Nur wenn alle weg sind"
       }
     },
     "ir_type": {
@@ -523,31 +496,80 @@
       "step": {
         "new_door_guard": {
           "title": "Türwächter",
+          "description": "Alle Einstellungen der Tür auf einer Seite. Leere Felder sind aus; nur „Tür“ ist aufgeklappt.",
           "sections": {
-            "general": {
-              "name": "Allgemein",
-              "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+            "door": {
+              "name": "Tür",
+              "description": "Schloss, Türkontakt und die Sensoren, die für das automatische Auf- und Abschließen gebraucht werden.",
               "data": {
                 "name": "Name (erscheint als „Türwächter: Name“)",
                 "lock": "Schloss",
                 "contact": "Türkontakt (optional)",
+                "presence_entities": "Personen für die Anwesenheit (optional)",
+                "workday_sensor": "Arbeitstag-Sensor (optional)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
+                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen.",
+                "workday_sensor": "Binärsensor, der an Arbeits- oder Schultagen an ist (z. B. „Werktag Ferien“). Nötig für unterschiedliche Uhrzeiten an freien Tagen."
+              }
+            },
+            "unlock": {
+              "name": "Aufschließen",
+              "description": "Automatisches Aufschließen. Leere Felder sind aus.",
+              "data": {
+                "unlock_time_workday": "Uhrzeit an Arbeitstagen",
+                "unlock_time_free": "Uhrzeit an freien Tagen",
+                "unlock_only_when_home": "Zu den Uhrzeiten nur aufschließen, wenn jemand zu Hause ist",
+                "unlock_on_arrival": "Aufschließen, wenn jemand nach Hause kommt",
+                "unlock_only_if_on": "Nur wenn an",
+                "unlock_skip_if_on": "Nicht wenn an"
+              },
+              "data_description": {
+                "unlock_time_workday": "Gilt, wenn der Arbeitstag-Sensor an ist. Ohne Sensor gilt sie jeden Tag.",
+                "unlock_time_free": "Gilt, wenn der Arbeitstag-Sensor aus ist. Braucht den Arbeitstag-Sensor.",
+                "unlock_only_when_home": "Braucht die Personen für die Anwesenheit.",
+                "unlock_on_arrival": "Braucht die Personen für die Anwesenheit. Es wird nichts nachgeholt, wenn schon jemand da ist.",
+                "unlock_only_if_on": "Alle gewählten Entitäten müssen an sein. Personen und Tracker zählen zu Hause als an. Bei unklarem Zustand wird nicht aufgeschlossen.",
+                "unlock_skip_if_on": "Ist eine der Entitäten an (z. B. Urlaub), wird nicht aufgeschlossen."
+              }
+            },
+            "lock": {
+              "name": "Abschließen",
+              "description": "Automatisches Abschließen. Leere Felder und Haken sind aus.",
+              "data": {
+                "lock_time": "Uhrzeit (täglich)",
+                "lock_when_away": "Abschließen, wenn alle weg sind",
+                "lock_away_minutes": "Wartezeit, wenn alle weg sind (Minuten)",
+                "lock_closed_seconds": "Abschließen, wenn die Tür so lange geschlossen ist (Sekunden, 0 = aus)",
+                "lock_only_if_on": "Nur wenn an",
+                "lock_skip_if_on": "Nicht wenn an"
+              },
+              "data_description": {
+                "lock_when_away": "Braucht die Personen für die Anwesenheit. Kommt in der Wartezeit jemand zurück, wird abgebrochen.",
+                "lock_closed_seconds": "Braucht den Türkontakt.",
+                "lock_only_if_on": "Alle gewählten Entitäten müssen an sein. Bei unklarem Zustand wird trotzdem abgeschlossen.",
+                "lock_skip_if_on": "Ist eine der Entitäten an, wird nicht abgeschlossen."
+              }
+            },
+            "checks": {
+              "name": "Prüfungen und manuelle Bedienung",
+              "description": "Türkontakt-Prüfungen und der Umgang mit manueller Bedienung.",
+              "data": {
                 "block_action": "Wenn beim Abschließen die Tür offen ist",
                 "retry_minutes": "Abschließen nachholen bis (Minuten)",
                 "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
                 "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
                 "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
                 "manual_override": "Bei manueller Bedienung des Schlosses",
-                "manual_pause_minutes": "Automatik pausieren für (Minuten)",
-                "presence_entities": "Personen für die Anwesenheit (optional)"
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
               },
               "data_description": {
-                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
                 "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
                 "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
                 "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
-                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
-                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen."
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
               }
             },
             "notifications": {
@@ -567,42 +589,82 @@
             }
           }
         },
-        "menu": {
+        "door_settings": {
           "title": "Türwächter",
-          "description": "Einstellungen und Regeln des Türwächters.",
-          "menu_options": {
-            "general": "Einstellungen",
-            "add_rule": "Regel hinzufügen",
-            "edit_rule": "Regel bearbeiten",
-            "delete_rule": "Regel löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "general": {
-          "title": "Einstellungen",
+          "description": "Alle Einstellungen der Tür auf einer Seite. Leere Felder sind aus; nur „Tür“ ist aufgeklappt.",
           "sections": {
-            "general": {
-              "name": "Allgemein",
-              "description": "Schloss, Türkontakt und Verhalten des Türwächters.",
+            "door": {
+              "name": "Tür",
+              "description": "Schloss, Türkontakt und die Sensoren, die für das automatische Auf- und Abschließen gebraucht werden.",
               "data": {
+                "name": "Name (erscheint als „Türwächter: Name“)",
                 "lock": "Schloss",
                 "contact": "Türkontakt (optional)",
+                "presence_entities": "Personen für die Anwesenheit (optional)",
+                "workday_sensor": "Arbeitstag-Sensor (optional)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Türwächter“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
+                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
+                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen.",
+                "workday_sensor": "Binärsensor, der an Arbeits- oder Schultagen an ist (z. B. „Werktag Ferien“). Nötig für unterschiedliche Uhrzeiten an freien Tagen."
+              }
+            },
+            "unlock": {
+              "name": "Aufschließen",
+              "description": "Automatisches Aufschließen. Leere Felder sind aus.",
+              "data": {
+                "unlock_time_workday": "Uhrzeit an Arbeitstagen",
+                "unlock_time_free": "Uhrzeit an freien Tagen",
+                "unlock_only_when_home": "Zu den Uhrzeiten nur aufschließen, wenn jemand zu Hause ist",
+                "unlock_on_arrival": "Aufschließen, wenn jemand nach Hause kommt",
+                "unlock_only_if_on": "Nur wenn an",
+                "unlock_skip_if_on": "Nicht wenn an"
+              },
+              "data_description": {
+                "unlock_time_workday": "Gilt, wenn der Arbeitstag-Sensor an ist. Ohne Sensor gilt sie jeden Tag.",
+                "unlock_time_free": "Gilt, wenn der Arbeitstag-Sensor aus ist. Braucht den Arbeitstag-Sensor.",
+                "unlock_only_when_home": "Braucht die Personen für die Anwesenheit.",
+                "unlock_on_arrival": "Braucht die Personen für die Anwesenheit. Es wird nichts nachgeholt, wenn schon jemand da ist.",
+                "unlock_only_if_on": "Alle gewählten Entitäten müssen an sein. Personen und Tracker zählen zu Hause als an. Bei unklarem Zustand wird nicht aufgeschlossen.",
+                "unlock_skip_if_on": "Ist eine der Entitäten an (z. B. Urlaub), wird nicht aufgeschlossen."
+              }
+            },
+            "lock": {
+              "name": "Abschließen",
+              "description": "Automatisches Abschließen. Leere Felder und Haken sind aus.",
+              "data": {
+                "lock_time": "Uhrzeit (täglich)",
+                "lock_when_away": "Abschließen, wenn alle weg sind",
+                "lock_away_minutes": "Wartezeit, wenn alle weg sind (Minuten)",
+                "lock_closed_seconds": "Abschließen, wenn die Tür so lange geschlossen ist (Sekunden, 0 = aus)",
+                "lock_only_if_on": "Nur wenn an",
+                "lock_skip_if_on": "Nicht wenn an"
+              },
+              "data_description": {
+                "lock_when_away": "Braucht die Personen für die Anwesenheit. Kommt in der Wartezeit jemand zurück, wird abgebrochen.",
+                "lock_closed_seconds": "Braucht den Türkontakt.",
+                "lock_only_if_on": "Alle gewählten Entitäten müssen an sein. Bei unklarem Zustand wird trotzdem abgeschlossen.",
+                "lock_skip_if_on": "Ist eine der Entitäten an, wird nicht abgeschlossen."
+              }
+            },
+            "checks": {
+              "name": "Prüfungen und manuelle Bedienung",
+              "description": "Türkontakt-Prüfungen und der Umgang mit manueller Bedienung.",
+              "data": {
                 "block_action": "Wenn beim Abschließen die Tür offen ist",
                 "retry_minutes": "Abschließen nachholen bis (Minuten)",
                 "open_alert_minutes": "Warnung, wenn Tür offen nach (Minuten, 0 = aus)",
                 "open_alert_repeat_minutes": "Warnung wiederholen alle (Minuten, 0 = nie)",
                 "verify_seconds": "Schloss prüfen nach (Sekunden, 0 = aus)",
                 "manual_override": "Bei manueller Bedienung des Schlosses",
-                "manual_pause_minutes": "Automatik pausieren für (Minuten)",
-                "presence_entities": "Personen für die Anwesenheit (optional)"
+                "manual_pause_minutes": "Automatik pausieren für (Minuten)"
               },
               "data_description": {
-                "contact": "Meldet die Tür offen (on) oder geschlossen (off). Nötig für Warnung und Prüfung beim Abschließen.",
                 "block_action": "Nur melden oder nach dem Schließen automatisch abschließen.",
                 "retry_minutes": "Gilt nur bei „Nach dem Schließen abschließen“.",
                 "manual_override": "Manuelle Bedienung = Änderung des Schlosszustands, die nicht vom Türwächter ausging.",
-                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“.",
-                "presence_entities": "Personen oder Gerätetracker, die als anwesend zählen, z. B. die Eltern. Kinder nicht eintragen. Nötig für Anwesenheitsauslöser und -bedingungen."
+                "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
               }
             },
             "notifications": {
@@ -619,88 +681,14 @@
               "data_description": {
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
+            },
+            "legacy": {
+              "name": "Ältere Regeln",
+              "description": "Noch aktive Regeln aus der früheren Konfiguration: {legacy}.",
+              "data": {
+                "clear_legacy_rules": "Alte Regeln löschen"
+              }
             }
-          }
-        },
-        "edit_rule": {
-          "title": "Regel bearbeiten",
-          "data": {
-            "rule": "Regel"
-          }
-        },
-        "delete_rule": {
-          "title": "Regel löschen",
-          "data": {
-            "rule": "Regel"
-          }
-        },
-        "rule_type": {
-          "title": "Regel",
-          "data": {
-            "action": "Aktion",
-            "trigger": "Auslöser",
-            "enabled": "Aktiv"
-          }
-        },
-        "rule_state": {
-          "title": "Auslöser: Zustand einer Entität",
-          "data": {
-            "entity_id": "Entität",
-            "to_state": "Zielzustand",
-            "for_minutes": "Mindestdauer (Minuten, 0 = sofort)"
-          },
-          "data_description": {
-            "to_state": "Zustandstext, z. B. home, on, armed_away. Die Regel löst beim Wechsel in diesen Zustand aus."
-          }
-        },
-        "rule_time": {
-          "title": "Auslöser: Uhrzeit",
-          "data": {
-            "time": "Uhrzeit",
-            "weekdays": "Wochentage"
-          }
-        },
-        "rule_door_closed": {
-          "title": "Auslöser: Tür geschlossen",
-          "data": {
-            "delay_seconds": "Abschließen nach (Sekunden)"
-          },
-          "data_description": {
-            "delay_seconds": "Zeit, die die Tür geschlossen sein muss."
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Türwächter: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Türwächter: Büro“. Ein vorangestellter Funktionsname wird entfernt."
-          }
-        },
-        "rule_presence": {
-          "title": "Auslöser: Anwesenheit",
-          "data": {
-            "presence_mode": "Auslösen, wenn",
-            "for_minutes": "Wartezeit (Minuten)"
-          },
-          "data_description": {
-            "presence_mode": "„Alle sind weg“ löst aus, wenn alle Personen dieser Tür weg sind; „Jemand kommt nach Hause“, sobald mindestens eine ankommt.",
-            "for_minutes": "Die Bedingung muss so lange gelten; kommt jemand zurück, wird abgebrochen. 0 = sofort."
-          }
-        },
-        "rule_conditions": {
-          "title": "Bedingungen (optional)",
-          "data": {
-            "presence": "Anwesenheit",
-            "only_if_on": "Nur wenn an",
-            "skip_if_on": "Nicht wenn an"
-          },
-          "data_description": {
-            "presence": "Gilt für die bei dieser Tür hinterlegten Personen. Bei unklarem Standort wird nichts geschaltet.",
-            "only_if_on": "Alle gewählten Entitäten müssen an sein (z. B. ein Werktagssensor). Personen und Tracker zählen zu Hause als an, Zonen mit Personen darin.",
-            "skip_if_on": "Ist eine der gewählten Entitäten an, wird die Regel übersprungen (z. B. ein Ferien-Sensor). Bei unklarem Zustand: Aufschließen entfällt, Abschließen läuft."
           }
         }
       },
@@ -709,35 +697,13 @@
         "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
         "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
         "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
-        "door_closed_needs_lock": "Dieser Auslöser ist nur für „Abschließen“ sinnvoll.",
-        "no_weekday": "Mindestens ein Wochentag muss gewählt sein.",
-        "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-        "no_output": "Das Profil braucht mindestens einen Media Player oder App-Push.",
-        "no_tts": "Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
-        "no_ringtone": "Für den Klingelton muss eine Audiodatei gewählt sein.",
-        "no_temperature": "Für die Heizung muss ein Temperatursensor gewählt sein.",
-        "off_ge_on": "Die Ausschaltschwelle muss unter der Einschaltschwelle liegen.",
-        "too_many_windows": "Maximale Anzahl an Zeitfenstern erreicht.",
-        "start_equals_end": "Beginn und Ende müssen sich unterscheiden.",
-        "min_ge_max": "Die untere Grenze muss unter der oberen liegen.",
-        "profile_in_use": "Das Profil wird noch von Befehlen oder Rückmeldungen verwendet. Lösche oder ändere diese zuerst.",
-        "last_profile": "Das letzte Profil kann nicht gelöscht werden.",
-        "invalid_address": "Ungültige Gruppenadresse.",
-        "dimming_mismatch": "Relatives Dimmen (3.007) und die Aktion „Lautstärke dimmen“ gehören zusammen.",
-        "mute_set_needs_switch": "„Stumm (Wert)“ braucht den Datentyp Schalten (1.001).",
-        "no_update_selected": "Mindestens ein Update muss gewählt sein.",
-        "invalid_window": "Das Zeitfenster braucht Beginn und Ende, und beide dürfen nicht gleich sein.",
-        "no_actions": "Mindestens eine Aktion muss definiert sein.",
-        "invalid_datetime": "Ungültiges Datum.",
-        "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
-        "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
-        "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei.",
-        "no_presence_entities": "Wähle zuerst in den Einstellungen dieser Tür Personen für die Anwesenheit."
+        "no_presence_entities": "Wähle zuerst in den Einstellungen dieser Tür Personen für die Anwesenheit.",
+        "no_workday_sensor": "Für die Uhrzeit an freien Tagen wird der Arbeitstag-Sensor benötigt."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
-        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten."
+        "knx_missing": "Die KNX-Integration ist nicht eingerichtet oder nicht geladen. Bitte zuerst die KNX-Integration einrichten.",
+        "reconfigure_successful": "Gespeichert."
       }
     },
     "doorbell": {
