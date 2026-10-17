@@ -142,6 +142,7 @@ async def async_get_config_entry_diagnostics(
     if isinstance(controller, EnergyMonitorController):
         result["state"] = {
             "baseline": controller.baseline,
+            "util_baseline": controller.util_baseline,
             "totals": controller.totals,
             "month": controller.month(),
             "settlement_month": controller.settlement_month(),

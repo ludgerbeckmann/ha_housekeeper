@@ -286,7 +286,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`months`, `YYYY-MM`, höchstens 36) und gesamt (`totals`, Schlüssel `KEYS`). `settle()`: B schuldet A = Netzkosten B + Grundpreis-Anteil B
   (je Monat) − PV-kWh A × Preis je PV-kWh. Sensoren mit Namens-Platzhalter `{unit}` (`_attr_translation_placeholders`):
   `energy_grid`/`energy_pv` je Einheit (`total_increasing`), `energy_share`, `energy_settlement_month`/`_year` (monetär, Attribute).
-  Keine Eigenverbrauchsvergütung im Modell (bleibt beim Anlagenbetreiber, nur über den PV-Preis). Tests mit `freezer`.
+  **Wasser/Gas** (`water_meter`, `gas_meter`, jeweils mit `*_price` €/m³ und `*_base_fee`; ein gemeinsamer Zähler in m³): der Verbrauch seit
+  dem letzten Stand (`util_baseline` im `Store`, getrennt vom Strom, Zählerrückgang = überspringen) wird ohne Verteilen im Monat/gesamt
+  (`water`, `gas` in `KEYS`) gesammelt; `utility_cost_b()` verteilt Kosten + Grundpreis nach `share_b(kind)`: Wasser nach Personen
+  (`persons_a/b`), Gas nach `gas_key` `area` (Standard, `area_a/b`) oder `persons`. Der Anteil von B fließt in `settle`-Ergebnis `owed`
+  (`water_cost_b`, `gas_cost_b`). Sensoren `energy_<water|gas>_<month|year>` und `energy_<…>_cost_<…>` nur mit Zähler (sonst
+  `remove_unconfigured()`); leere Felder stehen als `None` in den Daten. Keine Eigenverbrauchsvergütung im Modell (bleibt beim Anlagenbetreiber, nur über den PV-Preis). Tests mit `freezer`.
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

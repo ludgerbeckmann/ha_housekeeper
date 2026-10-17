@@ -862,9 +862,14 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nu
 - **Zähler:** Netzbezug, Einspeisung, PV-Erzeugung, Zwischenzähler Einheit A und B, jeweils ein Energiesensor in **kWh**, der
   immer weiter hochzählt. Die Zwischenzähler müssen den Verbrauch **inklusive PV-Strom** messen (der Wechselrichter speist
   vor ihnen ein).
-- **Einheiten:** Namen der beiden Einheiten (Standard „Altbau“ und „Neubau“).
+- **Einheiten:** Namen der beiden Einheiten (Standard „Altbau“ und „Neubau“), Personenzahl und Wohnfläche (m²) je Einheit
+  (Schlüssel für Wasser und Gas).
 - **Preise:** Strompreis (ct/kWh, Gesamtpreis), **Preis je PV-kWh** von Einheit A (Dropdown mit Vorschlägen 0, 8,17, 16,26 und
   24,43 ct, auch eigener Wert, Komma erlaubt), Grundpreis (€/Monat) und der Anteil von Einheit B daran (Standard 50 %).
+- **Wasser** und **Gas** (jeweils optional, eingeklappt): ein gemeinsamer Zähler in **m³** (steigender Sensor), Preis je m³
+  und Grundpreis (€/Monat). Wasser wird **nach Personen** verteilt (Duschen, Waschen, Kochen), Gas wahlweise **nach
+  Wohnfläche (Standard, das Heizen überwiegt)** oder nach Personen; der Grundpreis folgt demselben Schlüssel. Einheit A zahlt
+  die Rechnungen, Einheit B erstattet ihren Anteil. Beim Gas den Preis je **m³** eintragen (nicht je kWh).
 
 ### Rechenweg
 
@@ -874,7 +879,7 @@ diesem Anteil auf die Einheiten verteilt, der Allgemeinstrom wird dabei mitverte
 weiter gesammelt; ist ein Zähler nicht verfügbar, wächst der Zeitraum weiter; fällt ein Zähler zurück (Zählertausch), wird der
 Zeitraum übersprungen. Die Monate der letzten drei Jahre werden gespeichert.
 
-**Verrechnung:** Einheit B schuldet A = Netzstrom von B + Grundpreis-Anteil von B − PV-kWh von A × Preis je PV-kWh
+**Verrechnung:** Einheit B schuldet A = Netzstrom von B + Grundpreis-Anteil von B + Wasser- und Gasanteil von B − PV-kWh von A × Preis je PV-kWh
 (negativ: A schuldet B). Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber und fließt nur über den Preis je PV-kWh
 ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen Eigenverbrauchsvergütung 8,17 ct).
 
@@ -883,7 +888,8 @@ ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen E
 - je Einheit zwei `sensor` **Netzbezug** und **PV-Anteil** (kWh seit dem Einrichten, steigend, für die Energie-Statistik geeignet)
 - `sensor` **Verbrauchsanteil** von Einheit A im Monat (%)
 - `sensor` **Verrechnung Monat** und **Verrechnung Jahr** (Währung der Instanz, Attribute: Richtung, kWh je Einheit, Netzkosten,
-  PV-Gutschrift, Grundpreis, Monate)
+  PV-Gutschrift, Grundpreis, Wasser- und Gasanteil, Monate)
+- mit Wasser-/Gaszähler: je `sensor` **Verbrauch** (m³) und **Anteil Einheit B** (Währung) für Monat und Jahr
 
 ## Entwicklung
 
