@@ -278,10 +278,11 @@ class NewInstanceSteps:
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
+        detail = ""
         defaults: dict[str, Any] = {}
         if user_input is not None:
             flat = _flatten_sections(user_input)
-            errors = await async_validate_new(self.hass, flat)
+            errors, detail = await async_validate_new(self.hass, flat)
             if not errors:
                 return await self._finish_new(flat.get(CONF_NAME), new_instance_data(flat))
             defaults = flat
@@ -289,6 +290,7 @@ class NewInstanceSteps:
             step_id="new_llm_usage",
             data_schema=_llm_new_schema(self.hass, defaults),
             errors=errors,
+            description_placeholders={"detail": detail},
         )
 
     async def async_step_new_task_planner(

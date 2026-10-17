@@ -712,7 +712,9 @@ Ein normaler API-Key funktioniert nicht. So kommst du an den Key:
 
 Der Admin-Key kann auch Mitglieder und Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
 Speicher von Home Assistant (die Diagnose schwärzt ihn). Beim Anlegen und beim Ändern wird der Key mit
-einer Abfrage geprüft.
+einer Abfrage geprüft. Schlägt sie fehl, nennt die Meldung die Ursache (HTTP-Status und Meldung des Anbieters oder den
+Verbindungsfehler), sie steht auch im Protokoll. Leerzeichen und Zeilenumbrüche am Anfang und Ende des Keys
+werden entfernt.
 
 **Wie das Guthaben entsteht:** Die Anbieter liefern nur die **Kosten je Tag** (UTC, mit einigen Stunden
 Verzögerung), kein Guthaben. Zwei Modi:

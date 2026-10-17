@@ -2029,8 +2029,8 @@
       },
       "error": {
         "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
-        "invalid_auth": "Der Key wurde abgelehnt. Es wird ein Admin-Key der Organisation benötigt, kein normaler API-Key. Anthropic: Console → Settings → Admin keys (Organisation nötig). OpenAI: Organisations-Einstellungen → Admin keys (nur Owner), mit Recht für Nutzung und Kosten.",
-        "cannot_connect": "Die Abfrage ist fehlgeschlagen. Bitte Verbindung und Key prüfen."
+        "invalid_auth": "Der Key wurde abgelehnt ({detail}). Es wird ein Admin-Key der Organisation benötigt, kein normaler API-Key. Anthropic: Console → Settings → Admin keys (Organisation nötig). OpenAI: Organisations-Einstellungen → Admin keys (nur Owner), mit Recht für Nutzung und Kosten.",
+        "cannot_connect": "Die Abfrage ist fehlgeschlagen: {detail}. Bitte Verbindung und Key prüfen (Details stehen auch im Protokoll)."
       },
       "abort": {}
     }

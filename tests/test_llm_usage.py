@@ -631,3 +631,85 @@ async def test_new_instance_stores_the_new_options(hass: HomeAssistant, monkeypa
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], new_form(track_usage=True, forecast_warning=False, monthly_limit=30))
     assert result["data"]["track_usage"] is True and result["data"]["forecast_warning"] is False
+
+
+# --- Fehlerdiagnose -------------------------------------------------------------------------------------
+
+
+async def test_http_errors_carry_status_and_provider_message(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.ANTHROPIC_URL, status=400, json={
+        "type": "error", "error": {"type": "invalid_request_error", "message": "starting_at is bad"}})
+    with pytest.raises(prov.ProviderError, match="HTTP 400: starting_at is bad") as err:
+        await prov.async_fetch_costs(async_get_clientsession(hass), "anthropic", "k", today())
+    assert not isinstance(err.value, prov.ProviderAuthError)
+
+
+async def test_auth_errors_carry_the_provider_message(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.ANTHROPIC_URL, status=401, json={
+        "type": "error", "error": {"type": "authentication_error", "message": "API key is invalid."}})
+    with pytest.raises(prov.ProviderAuthError, match="HTTP 401: API key is invalid."):
+        await prov.async_fetch_costs(async_get_clientsession(hass), "anthropic", "k", today())
+
+
+async def test_non_json_error_body_is_shortened(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.OPENAI_URL, status=502, text="<html>" + "x" * 500 + "</html>")
+    with pytest.raises(prov.ProviderError) as err:
+        await prov.async_fetch_costs(async_get_clientsession(hass), "openai", "k", today())
+    assert str(err.value).startswith("HTTP 502: <html>") and len(str(err.value)) < 230
+
+
+async def test_connection_errors_name_the_cause(hass: HomeAssistant, aioclient_mock) -> None:
+    import aiohttp
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.ANTHROPIC_URL, exc=aiohttp.ClientConnectionError("Cannot connect to host"))
+    with pytest.raises(prov.ProviderError, match="ClientConnectionError: Cannot connect to host"):
+        await prov.async_fetch_costs(async_get_clientsession(hass), "anthropic", "k", today())
+
+
+async def test_invalid_json_is_reported(hass: HomeAssistant, aioclient_mock) -> None:
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.ANTHROPIC_URL, text="not json")
+    with pytest.raises(prov.ProviderError, match="keine gültige JSON-Antwort"):
+        await prov.async_fetch_costs(async_get_clientsession(hass), "anthropic", "k", today())
+
+
+async def test_invalid_key_characters_are_explained() -> None:
+    class Session:
+        def get(self, *args, **kwargs):
+            raise ValueError("Newline or carriage return character detected in HTTP status message or header")
+
+    with pytest.raises(prov.ProviderError, match="ungültige Zeichen im Key"):
+        await prov.async_fetch_costs(Session(), "anthropic", "k\nx", today())
+
+
+async def test_create_shows_the_cause_and_strips_the_key(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, error=prov.ProviderError("HTTP 400: starting_at is bad"))
+    result = await new_instance(hass, "llm_usage")
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], new_form())
+    assert result["errors"] == {"base": "cannot_connect"}
+    assert result["description_placeholders"] == {"detail": "HTTP 400: starting_at is bad"}
+
+    mock = fake_costs(monkeypatch, {})
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], new_form(api_key="  sk-ant-admin-x \n"))
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"]["api_key"] == "sk-ant-admin-x"
+    assert mock.await_args.args[2] == "sk-ant-admin-x"
+
+
+async def test_auth_failure_shows_the_provider_message(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, error=prov.ProviderAuthError("HTTP 403: not allowed"))
+    result = await new_instance(hass, "llm_usage")
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], new_form())
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert result["description_placeholders"] == {"detail": "HTTP 403: not allowed"}
+
+
+async def test_stored_key_with_whitespace_is_stripped_for_queries(hass: HomeAssistant, monkeypatch) -> None:
+    mock = fake_costs(monkeypatch, {iso(0): 1.0})
+    _, ctrl, _ = await _setup(hass, api_key="  sk-ant-admin-test \n")
+    await ctrl.async_refresh()
+    assert mock.await_args.args[2] == "sk-ant-admin-test"

@@ -8,11 +8,15 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, date, datetime
+import json
+import logging
 from typing import Any
 
 import aiohttp
 
 from .const import PROVIDER_ANTHROPIC, PROVIDER_OPENAI
+
+_LOGGER = logging.getLogger(__name__)
 
 TIMEOUT = aiohttp.ClientTimeout(total=30)
 PAGE_SIZE = 31
@@ -102,18 +106,39 @@ def parse_openai_usage(page: dict[str, Any]) -> tuple[str, dict[str, dict[str, A
     return "", days
 
 
+def _error_detail(body: str) -> str:
+    """Meldung aus einer Fehlerantwort des Anbieters (`error.message`), sonst der Anfang des Textes."""
+    try:
+        parsed = json.loads(body)
+        message = parsed["error"]["message"]
+    except (ValueError, KeyError, TypeError):
+        message = body
+    return " ".join(str(message).split())[:200]
+
+
 async def _get(
     session: aiohttp.ClientSession, url: str, headers: dict[str, str], params: dict[str, Any]
 ) -> dict[str, Any]:
+    """Eine Seite abrufen; Fehler enthalten Status und Meldung des Anbieters."""
     try:
         async with session.get(url, headers=headers, params=params, timeout=TIMEOUT) as response:
-            if response.status in (401, 403):
-                raise ProviderAuthError(f"HTTP {response.status}")
             if response.status != 200:
-                raise ProviderError(f"HTTP {response.status}")
-            data = await response.json()
+                detail = _error_detail(await response.text())
+                message = f"HTTP {response.status}" + (f": {detail}" if detail else "")
+                if response.status in (401, 403):
+                    raise ProviderAuthError(message)
+                raise ProviderError(message)
+            try:
+                data = await response.json(content_type=None)
+            except ValueError as err:
+                raise ProviderError("keine gültige JSON-Antwort") from err
+    except ProviderError:
+        raise
     except (aiohttp.ClientError, TimeoutError, asyncio.TimeoutError) as err:
-        raise ProviderError(str(err) or type(err).__name__) from err
+        raise ProviderError(f"{type(err).__name__}: {err}".rstrip(": ")) from err
+    except (ValueError, UnicodeError) as err:
+        # z. B. Zeilenumbruch oder Sonderzeichen im Key (ungültiger Kopfzeilenwert)
+        raise ProviderError("ungültige Zeichen im Key (Leerzeichen, Zeilenumbruch?)") from err
     if not isinstance(data, dict):
         raise ProviderError("unerwartete Antwort")
     return data

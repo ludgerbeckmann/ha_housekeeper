@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -45,6 +46,8 @@ from .common import (
     _suggest,
     _validate_notify,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 _CLEARABLE = (
     CONF_MOBILE_TARGETS,
@@ -138,27 +141,36 @@ def llm_data(flat: dict[str, Any]) -> dict[str, Any]:
     return {**{key: None for key in _CLEARABLE}, **flat}
 
 
-async def async_check_key(hass: HomeAssistant, provider: str, api_key: str) -> str | None:
-    """Key mit einer Abfrage prüfen: `None` = in Ordnung, sonst der Fehlerschlüssel."""
+async def async_check_key(
+    hass: HomeAssistant, provider: str, api_key: str
+) -> tuple[str | None, str]:
+    """Key mit einer Abfrage prüfen: (`None`, "") = in Ordnung, sonst (Fehlerschlüssel, Ursache)."""
     today = dt_util.utcnow().date()
     try:
         await llm_providers.async_fetch_costs(
             async_get_clientsession(hass), provider, api_key, today
         )
-    except llm_providers.ProviderAuthError:
-        return "invalid_auth"
-    except llm_providers.ProviderError:
-        return "cannot_connect"
-    return None
+    except llm_providers.ProviderAuthError as err:
+        _LOGGER.warning("LLM-Verbrauch: Key abgelehnt (%s): %s", provider, err)
+        return "invalid_auth", str(err)
+    except llm_providers.ProviderError as err:
+        _LOGGER.warning("LLM-Verbrauch: Prüfung des Keys fehlgeschlagen (%s): %s", provider, err)
+        return "cannot_connect", str(err)
+    return None, ""
 
 
-async def async_validate_new(hass: HomeAssistant, flat: dict[str, Any]) -> dict[str, str]:
+async def async_validate_new(
+    hass: HomeAssistant, flat: dict[str, Any]
+) -> tuple[dict[str, str], str]:
+    """Eingaben prüfen: (Fehler, Ursache des Key-Fehlers); der Key wird dabei bereinigt."""
     errors = _validate_notify(flat, require_method=False)
+    detail = ""
     if not errors:
-        error = await async_check_key(hass, flat[CONF_PROVIDER], flat[CONF_API_KEY])
+        flat[CONF_API_KEY] = flat[CONF_API_KEY].strip()
+        error, detail = await async_check_key(hass, flat[CONF_PROVIDER], flat[CONF_API_KEY])
         if error:
             errors["base"] = error
-    return errors
+    return errors, detail
 
 
 def new_instance_data(flat: dict[str, Any]) -> dict[str, Any]:
@@ -186,15 +198,16 @@ class LlmOptions:
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
+        detail = ""
         defaults = self._current
         mode = defaults.get(CONF_LLM_MODE, LLM_MODE_BALANCE)
         if user_input is not None:
             flat = _flatten_sections(user_input)
             errors = _validate_notify(flat, require_method=False)
             if not errors:
-                key = flat.pop(CONF_API_KEY, None)
+                key = (flat.pop(CONF_API_KEY, None) or "").strip()
                 if key:
-                    error = await async_check_key(self.hass, defaults[CONF_PROVIDER], key)
+                    error, detail = await async_check_key(self.hass, defaults[CONF_PROVIDER], key)
                     if error:
                         errors["base"] = error
                     else:
@@ -207,6 +220,7 @@ class LlmOptions:
             step_id="llm_general",
             data_schema=_llm_settings_schema(self.hass, defaults, mode),
             errors=errors,
+            description_placeholders={"detail": detail},
         )
 
     async def async_step_llm_calibrate(

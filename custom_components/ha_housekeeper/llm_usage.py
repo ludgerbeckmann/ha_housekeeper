@@ -364,7 +364,7 @@ class LlmUsageController:
             currency, fetched = await llm_providers.async_fetch_costs(
                 async_get_clientsession(self.hass),
                 self._opt(CONF_PROVIDER),
-                self._opt(CONF_API_KEY, ""),
+                str(self._opt(CONF_API_KEY, "")).strip(),
                 fetch_from,
             )
         except ProviderAuthError as err:
@@ -410,7 +410,7 @@ class LlmUsageController:
             fetched = await llm_providers.async_fetch_usage(
                 async_get_clientsession(self.hass),
                 self._opt(CONF_PROVIDER),
-                self._opt(CONF_API_KEY, ""),
+                str(self._opt(CONF_API_KEY, "")).strip(),
                 month_start(today),
             )
         except ProviderError as err:
