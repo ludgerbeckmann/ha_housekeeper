@@ -13,3 +13,17 @@ run_pump:
       required: false
       selector:
         text:
+
+send_ir_command:
+  target:
+    entity:
+      integration: ha_housekeeper
+      domain: button
+  fields:
+    num_repeats:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 20
+          mode: box

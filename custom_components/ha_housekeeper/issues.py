@@ -35,6 +35,7 @@ from .const import (
     CONF_PRESENCE,
     CONF_HEATER_ENTITY,
     CONF_PROFILES,
+    CONF_REMOTES,
     CONF_PUMP_ENTITY,
     CONF_RULES,
     CONF_SCHEDULES,
@@ -50,6 +51,7 @@ from .const import (
     FUNCTION_ALARM,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_IR,
     FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
@@ -116,6 +118,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
     elif function == FUNCTION_MONITOR:
         entities += _listed(opt(CONF_MONITOR_RULES, []), "presence_entity")
+    elif function == FUNCTION_IR:
+        entities += [str(e) for e in opt(CONF_REMOTES, []) or []]
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
     if function == FUNCTION_UPDATER:
         devices += _listed(opt(CONF_SCHEDULES, []), CONF_MOBILE_TARGETS)

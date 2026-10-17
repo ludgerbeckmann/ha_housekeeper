@@ -27,6 +27,7 @@ from .entity import FunctionEntity, remove_unconfigured
 from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 from .integration_monitor import IntegrationMonitorController
+from .ir_remote import IrRemoteController
 from .llm_usage import LlmUsageController
 from .task_planner import TaskPlannerController
 from .updater import UpdaterController
@@ -73,6 +74,8 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities(
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
         )
+    elif isinstance(controller, IrRemoteController):
+        async_add_entities([IrLastSentSensor(controller)])
     elif isinstance(controller, LlmUsageController):
         entities: list[FunctionEntity] = [
             LlmRemainingSensor(controller),
@@ -512,3 +515,23 @@ class LlmRequestsMonthSensor(LlmRequestsTodaySensor):
 
     def _usage(self) -> dict[str, Any]:
         return self._controller.usage_month
+
+
+class IrLastSentSensor(FunctionEntity, SensorEntity):
+    """Zeitpunkt des letzten gesendeten IR-Befehls, mit Befehl, Ergebnis und Fehlern je Sender."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:remote"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "ir_last_sent")
+
+    @property
+    def native_value(self) -> datetime | None:
+        last = self._controller.last_sent
+        return dt_util.parse_datetime(last["time"]) if last else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self._controller.last_sent or {}
+        return {k: last.get(k) for k in ("command", "result", "errors")}
