@@ -12,6 +12,11 @@ from pytest_homeassistant_custom_component.common import (
 
 from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
+from custom_components.ha_housekeeper.door_guard import (
+    entity_on,
+    evaluate_conditions,
+    presence_met,
+)
 
 LOCK = "lock.front_door"
 CONTACT = "binary_sensor.front_door_contact"
@@ -242,6 +247,8 @@ async def test_options_flow_rules(hass: HomeAssistant) -> None:
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"], {"entity_id": PERSON, "to_state": "home", "for_minutes": 0}
     )
+    assert result["step_id"] == "rule_conditions"
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], {})
     assert is_menu(result)
     assert "edit_rule" in menu_options(result)
     assert len(entry.options["rules"]) == 1
@@ -266,3 +273,146 @@ async def test_options_flow_door_closed_needs_contact(hass: HomeAssistant) -> No
         result["flow_id"], {"action": "lock", "trigger": "door_closed"}
     )
     assert result["errors"] == {"base": "no_contact"}
+
+
+def _st(entity_id: str, state: str):
+    from homeassistant.core import State
+
+    return State(entity_id, state)
+
+
+def test_entity_on() -> None:
+    assert entity_on(None) is None
+    assert entity_on(_st("binary_sensor.x", "unavailable")) is None
+    assert entity_on(_st("binary_sensor.x", "on")) is True
+    assert entity_on(_st("input_boolean.x", "off")) is False
+    assert entity_on(_st("person.a", "home")) is True
+    assert entity_on(_st("person.a", "not_home")) is False
+    assert entity_on(_st("zone.home", "2")) is True
+    assert entity_on(_st("zone.home", "0")) is False
+    assert entity_on(_st("zone.home", "abc")) is None
+
+
+def test_presence_met() -> None:
+    assert presence_met("all_away", [False, False])
+    assert not presence_met("all_away", [False, None])
+    assert not presence_met("all_away", [False, True])
+    assert not presence_met("all_away", [])
+    assert presence_met("any_home", [False, True])
+    assert not presence_met("any_home", [None, False])
+
+
+def test_evaluate_conditions() -> None:
+    assert evaluate_conditions({}, "unlock", [], {}) is None
+    rule = {"presence": "someone_home"}
+    assert evaluate_conditions(rule, "unlock", [True, False], {}) is None
+    assert evaluate_conditions(rule, "unlock", [False, False], {}) == "presence:away"
+    assert evaluate_conditions(rule, "unlock", [None, False], {}) == "presence:unclear"
+    assert evaluate_conditions(rule, "unlock", [], {}) == "presence:none"
+    away = {"presence": "all_away"}
+    assert evaluate_conditions(away, "lock", [False, False], {}) is None
+    assert evaluate_conditions(away, "lock", [False, True], {}) == "presence:home"
+    assert evaluate_conditions(away, "lock", [False, None], {}) == "presence:unclear"
+    only = {"only_if_on": ["binary_sensor.a", "binary_sensor.b"]}
+    assert evaluate_conditions(only, "unlock", [], {"binary_sensor.a": True, "binary_sensor.b": True}) is None
+    assert evaluate_conditions(only, "unlock", [], {"binary_sensor.a": True, "binary_sensor.b": False}) == "only_if:binary_sensor.b"
+    assert evaluate_conditions(only, "unlock", [], {"binary_sensor.a": True, "binary_sensor.b": None}) == "only_if:binary_sensor.b"
+    assert evaluate_conditions(only, "lock", [], {"binary_sensor.a": True, "binary_sensor.b": None}) is None
+    skip = {"skip_if_on": ["binary_sensor.a"]}
+    assert evaluate_conditions(skip, "unlock", [], {"binary_sensor.a": True}) == "skip_if:binary_sensor.a"
+    assert evaluate_conditions(skip, "unlock", [], {"binary_sensor.a": None}) == "skip_if:binary_sensor.a"
+    assert evaluate_conditions(skip, "lock", [], {"binary_sensor.a": None}) is None
+
+
+async def test_time_rule_skipped_by_condition(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "unlock")
+    rule = {"id": "r1", "action": "unlock", "trigger": "time", "time": "06:30:00",
+            "weekdays": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+            "presence": "someone_home", "only_if_on": [], "skip_if_on": ["binary_sensor.holiday"]}
+    await _setup(hass, lock_state="locked", rules=[rule], presence_entities=[PERSON])
+    hass.states.async_set("binary_sensor.holiday", "on")
+    hass.states.async_set(PERSON, "home")
+    fire = dt_util.now().replace(hour=6, minute=30, second=0, microsecond=0)
+    async_fire_time_changed(hass, fire + timedelta(days=1))
+    await hass.async_block_till_done()
+    assert calls == []
+    last = hass.states.get("sensor.door_last_action")
+    assert last.attributes["result"] == "skipped"
+    hass.states.async_set("binary_sensor.holiday", "off")
+    async_fire_time_changed(hass, fire + timedelta(days=2))
+    await hass.async_block_till_done()
+    assert len(calls) == 1
+
+
+async def test_presence_rule_all_away(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "lock")
+    p2 = "person.partner"
+    rule = {"id": "r1", "action": "lock", "trigger": "presence",
+            "presence_mode": "all_away", "for_minutes": 3}
+    entry = make_entry(domain=DOMAIN, title="Door",
+                       data={**BASE, "rules": [rule], "presence_entities": [PERSON, p2]})
+    entry.add_to_hass(hass)
+    hass.states.async_set(LOCK, "unlocked")
+    hass.states.async_set(CONTACT, "off")
+    hass.states.async_set(PERSON, "home")
+    hass.states.async_set(p2, "home")
+    assert await hass.config_entries.async_setup(entry.hub_id)
+    await hass.async_block_till_done()
+
+    hass.states.async_set(PERSON, "not_home")
+    await hass.async_block_till_done()
+    await _advance(hass, minutes=4)
+    assert calls == []                      # eine Person ist noch da
+    hass.states.async_set(p2, "not_home")
+    await hass.async_block_till_done()
+    hass.states.async_set(p2, "home")       # kommt zurück: abgebrochen
+    await hass.async_block_till_done()
+    await _advance(hass, minutes=4)
+    assert calls == []
+    hass.states.async_set(p2, "not_home")
+    await hass.async_block_till_done()
+    await _advance(hass, minutes=4)
+    assert len(calls) == 1
+
+
+async def test_presence_rule_unclear_and_no_catch_up(hass: HomeAssistant) -> None:
+    calls = async_mock_service(hass, "lock", "lock")
+    rule = {"id": "r1", "action": "lock", "trigger": "presence",
+            "presence_mode": "all_away", "for_minutes": 0}
+    # Beim Start sind schon alle weg: kein Nachholen
+    await _setup(hass, rules=[rule], presence_entities=[PERSON])
+    await hass.async_block_till_done()
+    assert calls == []
+    hass.states.async_set(PERSON, "unavailable")
+    await hass.async_block_till_done()
+    assert calls == []
+
+
+async def test_options_flow_presence_rule(hass: HomeAssistant) -> None:
+    entry = await _setup(hass)
+    result = await reconfigure(hass, entry)
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "add_rule"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"action": "lock", "trigger": "presence"}
+    )
+    assert result["errors"] == {"base": "no_presence_entities"}
+
+
+async def test_condition_needs_presence_entities(hass: HomeAssistant) -> None:
+    entry = await _setup(hass)
+    result = await reconfigure(hass, entry)
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "add_rule"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"action": "unlock", "trigger": "state"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"entity_id": PERSON, "to_state": "home", "for_minutes": 0}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"presence": "someone_home"}
+    )
+    assert result["errors"] == {"base": "no_presence_entities"}

@@ -166,6 +166,7 @@ CONF_VERIFY_SECONDS = "verify_seconds"
 CONF_MANUAL_OVERRIDE = "manual_override"
 CONF_MANUAL_PAUSE_MINUTES = "manual_pause_minutes"
 CONF_RULES = "rules"
+CONF_PRESENCE = "presence_entities"
 
 BLOCK_NOTIFY = "notify"
 BLOCK_RETRY = "retry"
@@ -189,18 +190,34 @@ R_TIME = "time"
 R_WEEKDAYS = "weekdays"
 R_DELAY = "delay_seconds"
 R_ENABLED = "enabled"
+R_PRESENCE_MODE = "presence_mode"   # Auslöser „Anwesenheit“: alle weg / jemand kommt
+R_PRESENCE = "presence"             # Bedingung: Anwesenheit der Personen der Tür
+R_ONLY_IF_ON = "only_if_on"         # Bedingung: alle diese Entitäten müssen an sein
+R_SKIP_IF_ON = "skip_if_on"         # Bedingung: ist eine davon an, wird übersprungen
 
 RULE_LOCK = "lock"
 RULE_UNLOCK = "unlock"
 TRIGGER_STATE = "state"
 TRIGGER_TIME = "time"
 TRIGGER_DOOR_CLOSED = "door_closed"
+TRIGGER_PRESENCE = "presence"
+
+PM_ALL_AWAY = "all_away"
+PM_ANY_HOME = "any_home"
+PRESENCE_MODES = [PM_ALL_AWAY, PM_ANY_HOME]
+
+PC_IGNORE = "ignore"
+PC_SOMEONE_HOME = "someone_home"
+PC_ALL_AWAY = "all_away"
+PRESENCE_CONDITIONS = [PC_IGNORE, PC_SOMEONE_HOME, PC_ALL_AWAY]
+DEFAULT_PRESENCE_MINUTES = 3
 
 # Pro Auslöser gültige Regel-Schlüssel
 TRIGGER_KEYS: dict[str, list[str]] = {
     TRIGGER_STATE: [R_ENTITY, R_TO_STATE, R_FOR_MINUTES],
     TRIGGER_TIME: [R_TIME, R_WEEKDAYS],
     TRIGGER_DOOR_CLOSED: [R_DELAY],
+    TRIGGER_PRESENCE: [R_PRESENCE_MODE, R_FOR_MINUTES],
 }
 
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -535,6 +552,7 @@ DEFAULT_POLL_MINUTES = 60
 
 # Felder, die im Formular geleert werden können
 OPTIONAL_KEYS = [
+    CONF_PRESENCE,
     CONF_MOBILE_TARGETS,
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,

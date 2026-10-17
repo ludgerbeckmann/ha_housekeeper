@@ -152,6 +152,26 @@ Jede Regel hat eine Aktion (**Abschließen** oder **Aufschließen**) und einen A
   abgebrochen.
 - **Uhrzeit**: zu einer Uhrzeit an den gewählten Wochentagen.
 - **Tür geschlossen seit X Sekunden**: nur zum Abschließen, braucht den Türkontakt.
+- **Anwesenheit**: braucht die *Personen für die Anwesenheit* in den Einstellungen der Tür
+  (Personen oder Gerätetracker, z. B. die Eltern; Kinder nicht eintragen). *Alle sind weg*
+  löst nach einer Wartezeit aus (Standard 3 Minuten; kommt jemand zurück, wird abgebrochen),
+  *Jemand kommt nach Hause* sobald eine Person ankommt. Beim Start wird nichts nachgeholt.
+
+### Bedingungen (optional, für alle Auslöser)
+
+- **Anwesenheit**: *Egal* (Standard), *Nur wenn jemand zu Hause ist* oder *Nur wenn alle weg sind*.
+  Ist ein Standort unklar, wird nichts geschaltet.
+- **Nur wenn an**: alle gewählten Entitäten müssen an sein (z. B. Arbeitstagssensor).
+- **Nicht wenn an**: ist eine der Entitäten an, wird die Regel übersprungen (z. B. Ferien).
+
+Erlaubt sind Binärsensor, Hilfsschalter, Kalender, Zeitplan, Person, Gerätetracker und Zone
+(Personen/Tracker zählen zu Hause als an, Zonen mit mindestens einer Person darin). Bei
+unklarem Zustand gilt die sichere Seite: Aufschließen entfällt, Abschließen läuft. Übersprungene
+Regeln senden keine Meldung, stehen aber mit Grund in „Letzte Aktion“ (Ergebnis `skipped`).
+
+**Empfehlung (Batterie schont):** morgens und abends je eine Zeitregel mit Bedingungen,
+dazu „Abschließen bei Anwesenheit: alle weg“; Regeln wie „Tür geschlossen seit X Sekunden“
+vermeiden, sie lösen oft aus.
 
 ### Türkontakt-Prüfungen
 

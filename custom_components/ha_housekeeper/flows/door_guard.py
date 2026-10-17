@@ -22,22 +22,32 @@ from ..const import (
     CONF_NAME,
     CONF_OPEN_ALERT_MINUTES,
     CONF_OPEN_ALERT_REPEAT,
+    CONF_PRESENCE,
     CONF_RETRY_MINUTES,
     CONF_RULES,
     CONF_VERIFY_SECONDS,
     DEFAULT_MANUAL_PAUSE_MINUTES,
     DEFAULT_OPEN_ALERT_MINUTES,
     DEFAULT_OPEN_ALERT_REPEAT,
+    DEFAULT_PRESENCE_MINUTES,
     DEFAULT_RETRY_MINUTES,
     DEFAULT_VERIFY_SECONDS,
     MANUAL_IGNORE,
     MANUAL_PAUSE,
+    PC_IGNORE,
+    PM_ALL_AWAY,
+    PRESENCE_CONDITIONS,
+    PRESENCE_MODES,
     R_ACTION,
     R_DELAY,
     R_ENABLED,
     R_ENTITY,
     R_FOR_MINUTES,
     R_ID,
+    R_ONLY_IF_ON,
+    R_PRESENCE,
+    R_PRESENCE_MODE,
+    R_SKIP_IF_ON,
     R_TIME,
     R_TO_STATE,
     R_TRIGGER,
@@ -46,6 +56,7 @@ from ..const import (
     RULE_UNLOCK,
     TRIGGER_DOOR_CLOSED,
     TRIGGER_KEYS,
+    TRIGGER_PRESENCE,
     TRIGGER_STATE,
     TRIGGER_TIME,
     WEEKDAYS,
@@ -63,6 +74,23 @@ from .common import (
 )
 
 
+_CONDITION_DOMAINS = [
+    "binary_sensor",
+    "input_boolean",
+    "calendar",
+    "schedule",
+    "person",
+    "device_tracker",
+    "zone",
+]
+
+
+def _condition_selector() -> selector.EntitySelector:
+    return selector.EntitySelector(
+        selector.EntitySelectorConfig(domain=_CONDITION_DOMAINS, multiple=True)
+    )
+
+
 def _door_schema(
     hass: HomeAssistant, defaults: dict[str, Any], with_name: bool
 ) -> vol.Schema:
@@ -75,6 +103,11 @@ def _door_schema(
     fields[
         vol.Optional(CONF_CONTACT, description=_suggest(CONF_CONTACT, defaults))
     ] = selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
+    fields[
+        vol.Optional(CONF_PRESENCE, description=_suggest(CONF_PRESENCE, defaults))
+    ] = selector.EntitySelector(
+        selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)
+    )
     fields.update(
         {
             vol.Required(
@@ -212,6 +245,10 @@ class DoorGuardOptions:
                     errors["base"] = "no_contact"
                 elif user_input[R_ACTION] != RULE_LOCK:
                     errors["base"] = "door_closed_needs_lock"
+            if user_input[R_TRIGGER] == TRIGGER_PRESENCE and not self._current.get(
+                CONF_PRESENCE
+            ):
+                errors["base"] = "no_presence_entities"
             if not errors:
                 self._draft.update(user_input)
                 return await getattr(self, f"async_step_rule_{user_input[R_TRIGGER]}")()
@@ -226,7 +263,7 @@ class DoorGuardOptions:
                     vol.Required(
                         R_TRIGGER, default=draft.get(R_TRIGGER, TRIGGER_STATE)
                     ): _select(
-                        [TRIGGER_STATE, TRIGGER_TIME, TRIGGER_DOOR_CLOSED],
+                        [TRIGGER_STATE, TRIGGER_TIME, TRIGGER_PRESENCE, TRIGGER_DOOR_CLOSED],
                         "rule_trigger",
                     ),
                     vol.Required(R_ENABLED, default=draft.get(R_ENABLED, True)): bool,
@@ -240,7 +277,7 @@ class DoorGuardOptions:
     ) -> ConfigFlowResult:
         if user_input is not None:
             self._draft.update(user_input)
-            return await self._finish_rule()
+            return await self.async_step_rule_conditions()
         d = self._draft
         return self.async_show_form(
             step_id="rule_state",
@@ -267,7 +304,7 @@ class DoorGuardOptions:
                 errors["base"] = "no_weekday"
             else:
                 self._draft.update(user_input)
-                return await self._finish_rule()
+                return await self.async_step_rule_conditions()
             d = user_input
         return self.async_show_form(
             step_id="rule_time",
@@ -294,7 +331,7 @@ class DoorGuardOptions:
     ) -> ConfigFlowResult:
         if user_input is not None:
             self._draft.update(user_input)
-            return await self._finish_rule()
+            return await self.async_step_rule_conditions()
         return self.async_show_form(
             step_id="rule_door_closed",
             data_schema=vol.Schema(
@@ -306,6 +343,74 @@ class DoorGuardOptions:
             ),
         )
 
+    async def async_step_rule_presence(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._draft.update(user_input)
+            return await self.async_step_rule_conditions()
+        d = self._draft
+        return self.async_show_form(
+            step_id="rule_presence",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        R_PRESENCE_MODE, default=d.get(R_PRESENCE_MODE, PM_ALL_AWAY)
+                    ): _select(
+                        PRESENCE_MODES, "presence_mode", mode=selector.SelectSelectorMode.LIST
+                    ),
+                    vol.Required(
+                        R_FOR_MINUTES, default=d.get(R_FOR_MINUTES, DEFAULT_PRESENCE_MINUTES)
+                    ): _number(0, 1440, "min"),
+                }
+            ),
+        )
+
+    async def async_step_rule_conditions(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Bedingungen der Regel (für alle Auslöser, alle optional)."""
+        errors: dict[str, str] = {}
+        d = self._draft
+        if user_input is not None:
+            if user_input.get(R_PRESENCE, PC_IGNORE) != PC_IGNORE and not self._current.get(
+                CONF_PRESENCE
+            ):
+                errors["base"] = "no_presence_entities"
+            else:
+                self._draft.update(
+                    {
+                        R_PRESENCE: user_input.get(R_PRESENCE, PC_IGNORE),
+                        R_ONLY_IF_ON: user_input.get(R_ONLY_IF_ON) or [],
+                        R_SKIP_IF_ON: user_input.get(R_SKIP_IF_ON) or [],
+                    }
+                )
+                return await self._finish_rule()
+            d = user_input
+        return self.async_show_form(
+            step_id="rule_conditions",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        R_PRESENCE, default=d.get(R_PRESENCE, PC_IGNORE)
+                    ): _select(
+                        PRESENCE_CONDITIONS,
+                        "presence_condition",
+                        mode=selector.SelectSelectorMode.LIST,
+                    ),
+                    vol.Optional(
+                        R_ONLY_IF_ON,
+                        description=_suggest(R_ONLY_IF_ON, d) if d.get(R_ONLY_IF_ON) else {},
+                    ): _condition_selector(),
+                    vol.Optional(
+                        R_SKIP_IF_ON,
+                        description=_suggest(R_SKIP_IF_ON, d) if d.get(R_SKIP_IF_ON) else {},
+                    ): _condition_selector(),
+                }
+            ),
+            errors=errors,
+        )
+
     async def _finish_rule(self) -> ConfigFlowResult:
         trigger = self._draft[R_TRIGGER]
         rule: dict[str, Any] = {
@@ -315,6 +420,12 @@ class DoorGuardOptions:
             R_ENABLED: self._draft.get(R_ENABLED, True),
             **{k: self._draft[k] for k in TRIGGER_KEYS[trigger] if k in self._draft},
         }
+        # Bedingungen (nur gesetzte speichern)
+        if (self._draft.get(R_PRESENCE) or PC_IGNORE) != PC_IGNORE:
+            rule[R_PRESENCE] = self._draft[R_PRESENCE]
+        for key in (R_ONLY_IF_ON, R_SKIP_IF_ON):
+            if self._draft.get(key):
+                rule[key] = list(self._draft[key])
         rules = self._rules()
         if self._edit_id:
             rules = [rule if r[R_ID] == self._edit_id else r for r in rules]

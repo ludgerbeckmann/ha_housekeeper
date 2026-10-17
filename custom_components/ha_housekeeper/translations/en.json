@@ -34,7 +34,8 @@
       "options": {
         "state": "Entity state",
         "time": "Time",
-        "door_closed": "Door closed for"
+        "door_closed": "Door closed for",
+        "presence": "Presence"
       }
     },
     "weekday": {
@@ -156,6 +157,19 @@
       "options": {
         "balance": "Balance (with calibration)",
         "budget": "Monthly budget"
+      }
+    },
+    "presence_mode": {
+      "options": {
+        "all_away": "Everyone is away",
+        "any_home": "Someone comes home"
+      }
+    },
+    "presence_condition": {
+      "options": {
+        "ignore": "Don't care",
+        "someone_home": "Only if someone is home",
+        "all_away": "Only if everyone is away"
       }
     }
   },
@@ -535,7 +549,8 @@
                 "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
                 "verify_seconds": "Verify lock after (seconds, 0 = off)",
                 "manual_override": "When the lock is operated manually",
-                "manual_pause_minutes": "Pause automation for (minutes)"
+                "manual_pause_minutes": "Pause automation for (minutes)",
+                "presence_entities": "People for presence (optional)"
               },
               "data_description": {
                 "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
@@ -543,7 +558,8 @@
                 "retry_minutes": "Only applies to \"Lock after closing\".",
                 "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
                 "manual_pause_minutes": "Only applies to \"Pause automation\".",
-                "name": "Optional. Empty = “Door guard”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+                "name": "Optional. Empty = “Door guard”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically.",
+                "presence_entities": "People or device trackers that count as present, e.g. the parents. Do not add children. Needed for presence triggers and conditions."
               }
             },
             "notifications": {
@@ -589,14 +605,16 @@
                 "open_alert_repeat_minutes": "Repeat warning every (minutes, 0 = never)",
                 "verify_seconds": "Verify lock after (seconds, 0 = off)",
                 "manual_override": "When the lock is operated manually",
-                "manual_pause_minutes": "Pause automation for (minutes)"
+                "manual_pause_minutes": "Pause automation for (minutes)",
+                "presence_entities": "People for presence (optional)"
               },
               "data_description": {
                 "contact": "Reports the door open (on) or closed (off). Required for the warning and for the check before locking.",
                 "block_action": "Only notify, or lock automatically once the door is closed.",
                 "retry_minutes": "Only applies to \"Lock after closing\".",
                 "manual_override": "Manual operation = a lock state change that was not caused by the door guard.",
-                "manual_pause_minutes": "Only applies to \"Pause automation\"."
+                "manual_pause_minutes": "Only applies to \"Pause automation\".",
+                "presence_entities": "People or device trackers that count as present, e.g. the parents. Do not add children. Needed for presence triggers and conditions."
               }
             },
             "notifications": {
@@ -672,6 +690,30 @@
           "data_description": {
             "name": "Only the name, e.g. “Office”; the title then reads “Door guard: Office”. A leading function name is removed."
           }
+        },
+        "rule_presence": {
+          "title": "Trigger: presence",
+          "data": {
+            "presence_mode": "Trigger when",
+            "for_minutes": "Wait (minutes)"
+          },
+          "data_description": {
+            "presence_mode": "“Everyone is away” triggers when all people of this door are away; “Someone comes home” when at least one arrives.",
+            "for_minutes": "The condition must hold this long; it is cancelled if someone returns. 0 = immediately."
+          }
+        },
+        "rule_conditions": {
+          "title": "Conditions (optional)",
+          "data": {
+            "presence": "Presence",
+            "only_if_on": "Only if on",
+            "skip_if_on": "Not if on"
+          },
+          "data_description": {
+            "presence": "Applies to the people configured for this door. If a location is unclear, nothing is switched.",
+            "only_if_on": "All selected entities must be on (e.g. a workday sensor). Persons and trackers count as on when home, zones when someone is in them.",
+            "skip_if_on": "If any selected entity is on, the rule is skipped (e.g. a holiday sensor). Unclear states: unlocking is skipped, locking still runs."
+          }
         }
       },
       "error": {
@@ -702,7 +744,8 @@
         "in_past": "The time is in the past.",
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
-        "no_media": "Select an audio file."
+        "no_media": "Select an audio file.",
+        "no_presence_entities": "Choose people for presence in the settings of this door first."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",

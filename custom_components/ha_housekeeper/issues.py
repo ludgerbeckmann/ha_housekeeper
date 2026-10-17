@@ -32,6 +32,7 @@ from .const import (
     CONF_MOBILE_TARGETS,
     CONF_PLAYER,
     CONF_POWER_ENTITY,
+    CONF_PRESENCE,
     CONF_HEATER_ENTITY,
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
@@ -90,6 +91,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
     elif function == FUNCTION_DOOR_GUARD:
         entities += [opt(CONF_LOCK), opt(CONF_CONTACT)]
         entities += _listed(opt(CONF_RULES, []), "entity_id")
+        entities += _listed(opt(CONF_RULES, []), "only_if_on", "skip_if_on")
+        entities += [str(e) for e in opt(CONF_PRESENCE, []) or []]
     elif function == FUNCTION_DOORBELL:
         entities.append(opt(CONF_TRIGGER_ENTITY))
         profiles = opt(CONF_PROFILES, [])

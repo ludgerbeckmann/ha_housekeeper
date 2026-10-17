@@ -141,13 +141,16 @@ async def test_door_guard_rule_summary_and_flow(hass: HomeAssistant) -> None:
         result["flow_id"], {"action": "lock", "trigger": "time", "enabled": False})
     result = await flow.async_configure(
         result["flow_id"], {"time": "22:00:00", "weekdays": ["mon"]})
+    result = await flow.async_configure(result["flow_id"], {})
     assert is_menu(result)
     (saved,) = entry.options["rules"]
     assert saved["enabled"] is False
     # Standard: aktiv
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_rule"})
     result = await flow.async_configure(result["flow_id"], {"action": "lock", "trigger": "time"})
-    await flow.async_configure(result["flow_id"], {"time": "23:00:00", "weekdays": ["tue"]})
+    result = await flow.async_configure(
+        result["flow_id"], {"time": "23:00:00", "weekdays": ["tue"]})
+    await flow.async_configure(result["flow_id"], {})
     assert entry.options["rules"][1]["enabled"] is True
 
 
