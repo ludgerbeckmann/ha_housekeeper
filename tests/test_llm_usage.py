@@ -125,6 +125,18 @@ async def test_fetch_anthropic_with_paging(hass: HomeAssistant, aioclient_mock) 
     assert "starting_at=2026-10-01T00" in str(aioclient_mock.mock_calls[0][1])
 
 
+async def test_fetch_anthropic_never_starts_today(hass: HomeAssistant, aioclient_mock) -> None:
+    """Ein Start „heute“ ergäbe einen leeren Zeitraum (HTTP 400): die Abfrage beginnt höchstens gestern."""
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    aioclient_mock.get(prov.ANTHROPIC_URL, json={"data": [], "has_more": False})
+    aioclient_mock.get(prov.ANTHROPIC_USAGE_URL, json={"data": [], "has_more": False})
+    session = async_get_clientsession(hass)
+    await prov.async_fetch_costs(session, "anthropic", "sk-ant-admin-x", today())
+    await prov.async_fetch_usage(session, "anthropic", "sk-ant-admin-x", today())
+    for call in aioclient_mock.mock_calls:
+        assert f"starting_at={iso(1)}T00" in str(call[1])
+
+
 async def test_fetch_openai(hass: HomeAssistant, aioclient_mock) -> None:
     from homeassistant.helpers.aiohttp_client import async_get_clientsession
     start = int(datetime(2026, 10, 1, tzinfo=UTC).timestamp())

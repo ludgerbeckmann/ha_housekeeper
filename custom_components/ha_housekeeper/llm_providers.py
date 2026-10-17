@@ -7,7 +7,7 @@ die Funktion selbst (`llm_usage.py`). Abgefragt wird mit einem Admin-Key der Org
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 import json
 import logging
 from typing import Any
@@ -177,6 +177,9 @@ def _request(provider: str, api_key: str, since: date, kind: str) -> tuple[Any, 
     """URL, Kopfzeilen, Parameter und Auswertung für `costs` bzw. `usage` eines Anbieters."""
     if provider == PROVIDER_ANTHROPIC:
         headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
+        # Ohne Ende gilt der Beginn des heutigen Tages; ein Start „heute“ ergibt dann einen leeren
+        # Zeitraum (HTTP 400 „ending date must be after starting date“), also höchstens gestern.
+        since = min(since, datetime.now(UTC).date() - timedelta(days=1))
         params: dict[str, Any] = {
             "starting_at": f"{since.isoformat()}T00:00:00Z",
             "limit": PAGE_SIZE,
