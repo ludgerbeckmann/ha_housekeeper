@@ -21,6 +21,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 | LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
 | Verbrauchswächter | Meldet, wenn ein Durchfluss oder eine Leistung (z. B. Wasser, Strom) länger als eine eingestellte Zeit am Stück über einer Schwelle liegt |
+| Energiemonitor | Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Wohneinheiten auf und rechnet die Verrechnung aus |
 | IR-Fernbedienung | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
 | Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
@@ -60,7 +61,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
@@ -845,6 +846,44 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
 - `button` **Warnung quittieren** (schaltet die Warnung ab und unterdrückt die Wiederholung, bis der Verbrauch einmal
   unter die Schwelle gefallen ist)
 - `switch` **Wächter aktiv** (aus = keine Überwachung; beim Einschalten beginnt die Dauer neu)
+
+## Energiemonitor
+
+Teilt **Netzbezug** und **PV-Eigenverbrauch** eines Hauses mit einem gemeinsamen Zweirichtungszähler und zwei
+Wohneinheiten (jede mit eigenem Zwischenzähler) **zeitgleich anteilig** auf (Summenzähler-Prinzip) und rechnet die
+Verrechnung aus. Einheit A zahlt die Energiekosten zentral, Einheit B betreibt die PV-Anlage und erstattet ihren
+Anteil. Es ist eine **Rechenhilfe, keine Steuer- oder Rechtsberatung** (Umsatzsteuer, Eigenverbraucher beim Netzbetreiber
+und Eigenverbrauchsvergütung klärst du selbst). Gezählt wird ab dem Einrichten, die Zeit davor wird nicht nachgerechnet.
+
+### Konfigurationsseite
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nur „Zähler“ ist aufgeklappt:
+
+- **Zähler:** Netzbezug, Einspeisung, PV-Erzeugung, Zwischenzähler Einheit A und B, jeweils ein Energiesensor in **kWh**, der
+  immer weiter hochzählt. Die Zwischenzähler müssen den Verbrauch **inklusive PV-Strom** messen (der Wechselrichter speist
+  vor ihnen ein).
+- **Einheiten:** Namen der beiden Einheiten (Standard „Altbau“ und „Neubau“).
+- **Preise:** Strompreis (ct/kWh, Gesamtpreis), **Preis je PV-kWh** von Einheit A (Dropdown mit Vorschlägen 0, 8,17, 16,26 und
+  24,43 ct, auch eigener Wert, Komma erlaubt), Grundpreis (€/Monat) und der Anteil von Einheit B daran (Standard 50 %).
+
+### Rechenweg
+
+Alle paar Minuten wird der Zeitraum seit dem letzten Stand betrachtet: Eigenverbrauch `S = P − E` (Erzeugung minus
+Einspeisung, nicht negativ), Anteil der Einheit `C_i / (C_A + C_B)` aus den Zwischenzählern. Netzbezug `I` und `S` werden nach
+diesem Anteil auf die Einheiten verteilt, der Allgemeinstrom wird dabei mitverteilt. Hat keine Einheit etwas verbraucht, wird
+weiter gesammelt; ist ein Zähler nicht verfügbar, wächst der Zeitraum weiter; fällt ein Zähler zurück (Zählertausch), wird der
+Zeitraum übersprungen. Die Monate der letzten drei Jahre werden gespeichert.
+
+**Verrechnung:** Einheit B schuldet A = Netzstrom von B + Grundpreis-Anteil von B − PV-kWh von A × Preis je PV-kWh
+(negativ: A schuldet B). Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber und fließt nur über den Preis je PV-kWh
+ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen Eigenverbrauchsvergütung 8,17 ct).
+
+### Entitäten
+
+- je Einheit zwei `sensor` **Netzbezug** und **PV-Anteil** (kWh seit dem Einrichten, steigend, für die Energie-Statistik geeignet)
+- `sensor` **Verbrauchsanteil** von Einheit A im Monat (%)
+- `sensor` **Verrechnung Monat** und **Verrechnung Jahr** (Währung der Instanz, Attribute: Richtung, kWh je Einheit, Netzkosten,
+  PV-Gutschrift, Grundpreis, Monate)
 
 ## Entwicklung
 

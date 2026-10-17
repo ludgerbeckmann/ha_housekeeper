@@ -22,6 +22,7 @@ FUNCTION_MONITOR = "integration_monitor"
 FUNCTION_LLM = "llm_usage"
 FUNCTION_IR = "ir_remote"
 FUNCTION_CONSUMPTION = "consumption_guard"
+FUNCTION_ENERGY = "energy_monitor"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -39,6 +40,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_LLM: ("LLM-Verbrauch", "LLM usage"),
     FUNCTION_IR: ("IR-Fernbedienung", "IR remote"),
     FUNCTION_CONSUMPTION: ("Verbrauchswächter", "Consumption guard"),
+    FUNCTION_ENERGY: ("Energiemonitor", "Energy monitor"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -135,6 +137,7 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.SENSOR,
         Platform.SWITCH,
     ],
+    FUNCTION_ENERGY: [Platform.SENSOR],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -607,6 +610,23 @@ LLM_MODES = [LLM_MODE_BALANCE, LLM_MODE_BUDGET]
 DEFAULT_POLL_MINUTES = 60
 
 # Felder, die im Formular geleert werden können
+# --- Energiemonitor ---
+CONF_EM_GRID = "grid_energy"          # Netzbezug (kWh, steigend)
+CONF_EM_FEED = "feed_in_energy"       # Einspeisung (kWh, steigend)
+CONF_EM_PV = "pv_energy"              # PV-Erzeugung (kWh, steigend)
+CONF_EM_METER_A = "meter_a_energy"    # Zwischenzähler Einheit A (zahlt zentral)
+CONF_EM_METER_B = "meter_b_energy"    # Zwischenzähler Einheit B (Anlagenbetreiber)
+CONF_EM_NAME_A = "unit_a_name"
+CONF_EM_NAME_B = "unit_b_name"
+CONF_EM_PRICE = "grid_price"          # Strompreis in ct/kWh
+CONF_EM_PV_PRICE = "pv_price"         # Preis je PV-kWh, die Einheit A verbraucht (ct/kWh)
+CONF_EM_BASE_FEE = "base_fee_monthly" # Grundpreis in €/Monat
+CONF_EM_BASE_SHARE = "base_fee_share_b"  # Anteil von Einheit B am Grundpreis in %
+DEFAULT_EM_NAME_A = "Altbau"
+DEFAULT_EM_NAME_B = "Neubau"
+DEFAULT_EM_BASE_SHARE = 50
+EM_PV_PRICES = ["0", "8.17", "16.26", "24.43"]  # Vorschläge für den Preis je PV-kWh (ct/kWh)
+
 # --- Verbrauchswächter ---
 CONF_CG_SENSOR = "consumption_sensor"      # Sensor mit Durchfluss oder Leistung
 CONF_CG_THRESHOLD = "threshold"            # „läuft“ = Wert größer als die Schwelle

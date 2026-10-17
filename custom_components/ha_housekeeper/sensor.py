@@ -22,6 +22,7 @@ from homeassistant.util import dt as dt_util
 from .alarm_clock import AlarmClockController
 from .consumption_guard import ConsumptionGuardController
 from .door_guard import DoorGuardController
+from .energy_monitor import EnergyMonitorController, share_a
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
@@ -74,6 +75,19 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities(
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
+        )
+    elif isinstance(controller, EnergyMonitorController):
+        async_add_entities(
+            [
+                EnergyTotalSensor(controller, unit, kind)
+                for unit in ("a", "b")
+                for kind in ("grid", "pv")
+            ]
+            + [
+                EnergyShareSensor(controller),
+                EnergySettlementSensor(controller, "month"),
+                EnergySettlementSensor(controller, "year"),
+            ]
         )
     elif isinstance(controller, ConsumptionGuardController):
         async_add_entities([ConsumptionSinceSensor(controller)])
@@ -552,3 +566,88 @@ class ConsumptionSinceSensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self._controller.since
+
+
+class EnergyTotalSensor(FunctionEntity, SensorEntity):
+    """Netzbezug oder PV-Anteil einer Einheit (kWh seit dem Einrichten, steigend)."""
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = "kWh"
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, controller, unit: str, kind: str) -> None:
+        super().__init__(controller, f"energy_{kind}_{unit}")
+        self._attr_translation_key = f"energy_{kind}"
+        self._attr_translation_placeholders = {
+            "unit": controller.name_a if unit == "a" else controller.name_b
+        }
+        self._key = f"{kind}_{unit}"
+
+    @property
+    def native_value(self) -> float:
+        return round(self._controller.totals.get(self._key, 0.0), 3)
+
+
+class EnergyShareSensor(FunctionEntity, SensorEntity):
+    """Anteil von Einheit A am Verbrauch im laufenden Monat (laut Zwischenzählern)."""
+
+    _attr_native_unit_of_measurement = "%"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:percent"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "energy_share")
+        self._attr_translation_placeholders = {"unit": controller.name_a}
+
+    @property
+    def native_value(self) -> float | None:
+        value = share_a(self._controller.month())
+        return None if value is None else round(value, 2)
+
+
+class EnergySettlementSensor(FunctionEntity, SensorEntity):
+    """Verrechnung im Monat oder Jahr: was Einheit B an Einheit A schuldet (negativ = A schuldet B)."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, controller, period: str) -> None:
+        super().__init__(controller, f"energy_settlement_{period}")
+        self._period = period
+        self._attr_translation_placeholders = {"unit": controller.name_b}
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        return self._controller.currency
+
+    def _values(self) -> tuple[dict[str, float], dict[str, float], int]:
+        controller = self._controller
+        if self._period == "month":
+            acc, months = controller.month(), 1
+        else:
+            acc, months = controller.year()
+        return acc, controller._settle(acc, months), months  # noqa: SLF001
+
+    @property
+    def native_value(self) -> float:
+        return round(self._values()[1]["owed"], 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        acc, result, months = self._values()
+        controller = self._controller
+        return {
+            "unit_a": controller.name_a,
+            "unit_b": controller.name_b,
+            "direction": "b_owes_a" if result["owed"] >= 0 else "a_owes_b",
+            "months": months,
+            "grid_kwh_a": round(acc["grid_a"], 3),
+            "grid_kwh_b": round(acc["grid_b"], 3),
+            "pv_kwh_a": round(acc["pv_a"], 3),
+            "pv_kwh_b": round(acc["pv_b"], 3),
+            "grid_cost_b": round(result["grid_cost_b"], 2),
+            "pv_credit_a": round(result["pv_credit_a"], 2),
+            "base_fee_b": round(result["base_fee_b"], 2),
+        }

@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) und `consumption_guard` („Verbrauchswächter“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) `consumption_guard` („Verbrauchswächter“) und `energy_monitor` („Energiemonitor“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`, `energy.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -276,6 +276,17 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`since`, Warnung) liegt nur im Speicher; im `Store` steht nur `enabled` (Schalter `consumption_active`). Entitäten:
   `binary_sensor` `consumption_warning`, `sensor` `consumption_since`, `button` `consumption_acknowledge`. In Tests mit
   `freezer` arbeiten und `hass.config.async_set_time_zone(...)` setzen, wenn das Zeitfenster geprüft wird.
+- `energy_monitor.py`: Je Instanz fünf Energiesensoren in kWh (`grid_energy`, `feed_in_energy`, `pv_energy`, `meter_a_energy`,
+  `meter_b_energy`; Einheit A zahlt zentral, B betreibt die PV-Anlage). Eine **Konfigurationsseite** (`em_settings`, kein Menü, Name als
+  Feld; Abschnitte `meters` (offen), `units`, `prices`) mit Strompreis `grid_price` (ct/kWh), `pv_price` (Preis je PV-kWh von A, Dropdown
+  `EM_PV_PRICES` mit `custom_value`, gespeichert als Zahl, `pv_price_value()` akzeptiert Komma), `base_fee_monthly`, `base_fee_share_b`.
+  Jede Minute (`async_update()`): Zähler lesen (ein Zähler unklar = Zeitraum wächst weiter), `baseline` im `Store`; fällt ein Zähler
+  zurück, wird die Baseline neu gesetzt (Zeitraum übersprungen); `split_interval()` verteilt Netzbezug und Eigenverbrauch
+  `max(P−E, 0)` nach dem Verbrauchsverhältnis der Zwischenzähler (kein Verbrauch = weiter sammeln, Baseline bleibt). Summen je Monat
+  (`months`, `YYYY-MM`, höchstens 36) und gesamt (`totals`, Schlüssel `KEYS`). `settle()`: B schuldet A = Netzkosten B + Grundpreis-Anteil B
+  (je Monat) − PV-kWh A × Preis je PV-kWh. Sensoren mit Namens-Platzhalter `{unit}` (`_attr_translation_placeholders`):
+  `energy_grid`/`energy_pv` je Einheit (`total_increasing`), `energy_share`, `energy_settlement_month`/`_year` (monetär, Attribute).
+  Keine Eigenverbrauchsvergütung im Modell (bleibt beim Anlagenbetreiber, nur über den PV-Preis). Tests mit `freezer`.
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

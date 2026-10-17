@@ -214,6 +214,21 @@
       },
       "consumption_since": {
         "name": "Running since"
+      },
+      "energy_grid": {
+        "name": "Grid import {unit}"
+      },
+      "energy_pv": {
+        "name": "PV share {unit}"
+      },
+      "energy_share": {
+        "name": "Consumption share {unit} (month)"
+      },
+      "energy_settlement_month": {
+        "name": "Settlement month ({unit} owes)"
+      },
+      "energy_settlement_year": {
+        "name": "Settlement year ({unit} owes)"
       }
     },
     "button": {
@@ -2463,6 +2478,115 @@
         "no_method": "At least one notification method with a target must be enabled.",
         "tts_incomplete": "Speech output needs a TTS service and a speaker.",
         "window_incomplete": "The time window needs “from” and “until” (or leave both empty)."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved."
+      }
+    },
+    "energy_monitor": {
+      "initiate_flow": {
+        "user": "Add energy monitor"
+      },
+      "entry_type": "Energy monitor",
+      "step": {
+        "new_energy_monitor": {
+          "title": "Energy monitor",
+          "description": "Splits grid import and PV self-consumption between two units in proportion to their simultaneous use and calculates the settlement. It is a calculation aid, not tax or legal advice. Counting starts when it is set up.",
+          "sections": {
+            "meters": {
+              "name": "Meters",
+              "description": "Energy sensors in kWh that keep counting up. The sub-meters must measure the consumption including PV power (the inverter feeds in before them).",
+              "data": {
+                "name": "Name (shown as “Energy monitor: Name”)",
+                "grid_energy": "Grid import (kWh)",
+                "feed_in_energy": "Feed-in (kWh)",
+                "pv_energy": "PV generation (kWh)",
+                "meter_a_energy": "Sub-meter unit A (kWh)",
+                "meter_b_energy": "Sub-meter unit B (kWh)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Energy monitor”.",
+                "meter_a_energy": "Unit A pays the energy costs centrally.",
+                "meter_b_energy": "Unit B operates the PV system and reimburses its share."
+              }
+            },
+            "units": {
+              "name": "Units",
+              "description": "Names of the two dwellings.",
+              "data": {
+                "unit_a_name": "Name of unit A",
+                "unit_b_name": "Name of unit B"
+              }
+            },
+            "prices": {
+              "name": "Prices",
+              "description": "Basis of the settlement. All prices gross, as shown on the invoice.",
+              "data": {
+                "grid_price": "Electricity price (ct/kWh)",
+                "pv_price": "Price per PV kWh used by unit A (ct/kWh)",
+                "base_fee_monthly": "Base fee (€ per month)",
+                "base_fee_share_b": "Share of unit B in the base fee (%)"
+              },
+              "data_description": {
+                "grid_price": "Total price per kWh of grid import, for example 34.",
+                "pv_price": "What unit A is charged for the PV power it uses. Pick one or type your own value. The self-consumption tariff stays with the system operator.",
+                "base_fee_monthly": "Split by the share; 0 = no base fee.",
+                "base_fee_share_b": "The rest goes to unit A."
+              }
+            }
+          }
+        },
+        "em_settings": {
+          "title": "Energy monitor",
+          "description": "Splits grid import and PV self-consumption between two units in proportion to their simultaneous use and calculates the settlement. It is a calculation aid, not tax or legal advice. Counting starts when it is set up.",
+          "sections": {
+            "meters": {
+              "name": "Meters",
+              "description": "Energy sensors in kWh that keep counting up. The sub-meters must measure the consumption including PV power (the inverter feeds in before them).",
+              "data": {
+                "name": "Name (shown as “Energy monitor: Name”)",
+                "grid_energy": "Grid import (kWh)",
+                "feed_in_energy": "Feed-in (kWh)",
+                "pv_energy": "PV generation (kWh)",
+                "meter_a_energy": "Sub-meter unit A (kWh)",
+                "meter_b_energy": "Sub-meter unit B (kWh)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Energy monitor”.",
+                "meter_a_energy": "Unit A pays the energy costs centrally.",
+                "meter_b_energy": "Unit B operates the PV system and reimburses its share."
+              }
+            },
+            "units": {
+              "name": "Units",
+              "description": "Names of the two dwellings.",
+              "data": {
+                "unit_a_name": "Name of unit A",
+                "unit_b_name": "Name of unit B"
+              }
+            },
+            "prices": {
+              "name": "Prices",
+              "description": "Basis of the settlement. All prices gross, as shown on the invoice.",
+              "data": {
+                "grid_price": "Electricity price (ct/kWh)",
+                "pv_price": "Price per PV kWh used by unit A (ct/kWh)",
+                "base_fee_monthly": "Base fee (€ per month)",
+                "base_fee_share_b": "Share of unit B in the base fee (%)"
+              },
+              "data_description": {
+                "grid_price": "Total price per kWh of grid import, for example 34.",
+                "pv_price": "What unit A is charged for the PV power it uses. Pick one or type your own value. The self-consumption tariff stays with the system operator.",
+                "base_fee_monthly": "Split by the share; 0 = no base fee.",
+                "base_fee_share_b": "The rest goes to unit A."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "duplicate_meter": "Each meter may only be chosen once.",
+        "invalid_price": "The price per PV kWh must be a number from 0 up, for example 16.26."
       },
       "abort": {
         "reconfigure_successful": "Saved."

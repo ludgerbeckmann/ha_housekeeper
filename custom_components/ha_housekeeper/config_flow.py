@@ -30,6 +30,7 @@ from .const import (
     FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_ENERGY,
     FUNCTION_IR,
     FUNCTION_KNX_SONOS,
     FUNCTION_LLM,
@@ -61,6 +62,12 @@ from .flows.consumption import (
 )
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.ir import IrOptions, _ir_schema, _validate_ir, new_instance_data as new_ir_data
+from .flows.energy import (
+    EnergyMonitorOptions,
+    _em_schema,
+    _validate_em,
+    em_data,
+)
 from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
 from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
 from .knx_project import async_project_addresses
@@ -88,6 +95,7 @@ _MENU_STEPS = {
     FUNCTION_LLM: "llm_menu",
     FUNCTION_IR: "ir_menu",
     FUNCTION_CONSUMPTION: "cg_settings",
+    FUNCTION_ENERGY: "em_settings",
 }
 
 
@@ -325,6 +333,23 @@ class NewInstanceSteps:
             errors=errors,
         )
 
+    async def async_step_new_energy_monitor(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            flat = _flatten_sections(user_input)
+            errors = _validate_em(flat)
+            if not errors:
+                return await self._finish_new(flat.get(CONF_NAME), em_data(flat))
+            defaults = flat
+        return self.async_show_form(
+            step_id="new_energy_monitor",
+            data_schema=_em_schema(self.hass.config.language or "", defaults),
+            errors=errors,
+        )
+
     async def async_step_new_task_planner(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -391,6 +416,7 @@ class HousekeeperSubentryFlow(
     LlmOptions,
     IrOptions,
     ConsumptionGuardOptions,
+    EnergyMonitorOptions,
     NewInstanceSteps,
     OptionsBase,
     ConfigSubentryFlow,

@@ -26,6 +26,11 @@ from homeassistant.util import slugify
 from .const import (
     CONF_ALARMS,
     CONF_CG_SENSOR,
+    CONF_EM_FEED,
+    CONF_EM_GRID,
+    CONF_EM_METER_A,
+    CONF_EM_METER_B,
+    CONF_EM_PV,
     CONF_CONTACT,
     CONF_FUNCTION_TYPE,
     CONF_LOCK,
@@ -58,6 +63,7 @@ from .const import (
     FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_ENERGY,
     FUNCTION_IR,
     FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
@@ -128,6 +134,11 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
     elif function == FUNCTION_MONITOR:
         entities += _listed(opt(CONF_MONITOR_RULES, []), "presence_entity")
+    elif function == FUNCTION_ENERGY:
+        entities += [
+            opt(CONF_EM_GRID), opt(CONF_EM_FEED), opt(CONF_EM_PV),
+            opt(CONF_EM_METER_A), opt(CONF_EM_METER_B),
+        ]
     elif function == FUNCTION_CONSUMPTION:
         entities.append(opt(CONF_CG_SENSOR))
     elif function == FUNCTION_IR:
