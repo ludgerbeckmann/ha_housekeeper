@@ -1108,6 +1108,18 @@
                 "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten. 0 wird ignoriert."
               }
             },
+            "start": {
+              "name": "Start der Wiedergabe",
+              "description": "Gilt, wenn ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher startet, der nicht spielt. So wird nie eine alte hohe Lautstärke übernommen. Leer = keine Änderung. Pausieren und bereits laufende Wiedergabe bleiben unberührt.",
+              "data": {
+                "start_volume": "Lautstärke beim Start (%)",
+                "start_favorite": "Favorit beim Start"
+              },
+              "data_description": {
+                "start_volume": "Wird vor dem Start gesetzt, begrenzt durch die Lautstärkegrenze.",
+                "start_favorite": "Spielt diesen Favoriten, statt nur fortzusetzen."
+              }
+            },
             "volume": {
               "name": "Lautstärke",
               "description": "Gruppenadressen für die Lautstärke.",
@@ -1260,6 +1272,18 @@
                 "addr_next_prev": "1 = nächster, 0 = vorheriger Titel.",
                 "addr_stop": "1 = Stopp.",
                 "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten. 0 wird ignoriert."
+              }
+            },
+            "start": {
+              "name": "Start der Wiedergabe",
+              "description": "Gilt, wenn ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher startet, der nicht spielt. So wird nie eine alte hohe Lautstärke übernommen. Leer = keine Änderung. Pausieren und bereits laufende Wiedergabe bleiben unberührt.",
+              "data": {
+                "start_volume": "Lautstärke beim Start (%)",
+                "start_favorite": "Favorit beim Start"
+              },
+              "data_description": {
+                "start_volume": "Wird vor dem Start gesetzt, begrenzt durch die Lautstärkegrenze.",
+                "start_favorite": "Spielt diesen Favoriten, statt nur fortzusetzen."
               }
             },
             "volume": {

@@ -27,6 +27,8 @@ from ..const import (
     CONF_NAME,
     CONF_PLAYER,
     CONF_SPEAKERS,
+    CONF_START_FAVORITE,
+    CONF_START_VOLUME,
     CONF_STATUS,
     CONF_STATUS_ALBUM,
     CONF_STATUS_ARTIST,
@@ -59,6 +61,7 @@ _SONOS_SELECTOR = selector.EntitySelector(
 # Abschnitte der Seite mit ihren Gruppenadressfeldern
 SECTION_SPEAKER = "speaker"
 SECTION_PLAYBACK = "playback"
+SECTION_START = "start"
 SECTION_VOLUME = "volume"
 SECTION_SCENES = "scenes"
 SECTION_STATUS_PLAY = "status_play"
@@ -85,7 +88,10 @@ ADDRESS_FIELDS = [
 _SCENE_FAVORITES = [scene_key(n, "favorite") for n in range(1, SCENE_COUNT + 1)]
 _SCENE_VOLUMES = [scene_key(n, "volume") for n in range(1, SCENE_COUNT + 1)]
 # Felder, die beim Leeren explizit auf None gesetzt werden müssen
-_CLEARABLE = [*ADDRESS_FIELDS, *_SCENE_FAVORITES, *_SCENE_VOLUMES, CONF_IDLE_TEXT]
+_CLEARABLE = [
+    *ADDRESS_FIELDS, *_SCENE_FAVORITES, *_SCENE_VOLUMES, CONF_IDLE_TEXT,
+    CONF_START_VOLUME, CONF_START_FAVORITE,
+]
 # frühere Szenen 6 bis 8 verfallen beim Speichern
 _OBSOLETE = [
     scene_key(n, field)
@@ -157,20 +163,30 @@ def _knx_schema(
             CONF_STOP_INSTEAD, default=bool(defaults.get(CONF_STOP_INSTEAD, False))
         ): bool,
     }
-    sections: dict[Any, Any] = {
-        vol.Required(SECTION_SPEAKER): _section(speaker, collapsed=False),   # nur der erste Abschnitt ist offen
-        vol.Required(SECTION_PLAYBACK): _section(
-            dict(_address(key, defaults, project) for key in _PLAYBACK_FIELDS)
-        ),
-        vol.Required(SECTION_VOLUME): _section(
-            dict(_address(key, defaults, project) for key in _VOLUME_FIELDS)
-        ),
-    }
     favorite = selector.SelectSelector(
         selector.SelectSelectorConfig(
             options=sources, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN
         )
     )
+    sections: dict[Any, Any] = {
+        vol.Required(SECTION_SPEAKER): _section(speaker, collapsed=False),   # nur der erste Abschnitt ist offen
+        vol.Required(SECTION_PLAYBACK): _section(
+            dict(_address(key, defaults, project) for key in _PLAYBACK_FIELDS)
+        ),
+        vol.Required(SECTION_START): _section(
+            {
+                vol.Optional(
+                    CONF_START_VOLUME, description=_suggest(CONF_START_VOLUME, defaults)
+                ): _number(0, 100, "%"),
+                vol.Optional(
+                    CONF_START_FAVORITE, description=_suggest(CONF_START_FAVORITE, defaults)
+                ): favorite,
+            }
+        ),
+        vol.Required(SECTION_VOLUME): _section(
+            dict(_address(key, defaults, project) for key in _VOLUME_FIELDS)
+        ),
+    }
     sections[vol.Required(SECTION_STATUS_PLAY)] = _section(
         dict(_address(key, defaults, project) for key in _STATUS_PLAY_FIELDS)
     )
