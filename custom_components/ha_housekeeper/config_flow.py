@@ -84,7 +84,7 @@ from .flows.updater import UpdaterOptions, _updater_schema
 _MENU_STEPS = {
     FUNCTION_MAILBOX: "mailbox_settings",
     FUNCTION_DOOR_GUARD: "door_settings",
-    FUNCTION_DOORBELL: "bell_menu",
+    FUNCTION_DOORBELL: "bell_settings",
     FUNCTION_POOL: "pool_menu",
     FUNCTION_KNX_SONOS: "knx_settings",
     FUNCTION_UPDATER: "upd_menu",

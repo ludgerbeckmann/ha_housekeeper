@@ -759,105 +759,117 @@
             }
           }
         },
-        "bell_menu": {
-          "title": "Doorbell",
-          "description": "Settings and time window profiles of the doorbell.",
-          "menu_options": {
-            "bell_general": "Settings",
-            "add_profile": "Add profile",
-            "edit_profile": "Edit profile",
-            "delete_profile": "Delete profile",
-            "rename": "Rename"
-          }
-        },
-        "bell_general": {
+        "bell_settings": {
           "title": "Settings",
           "sections": {
             "general": {
               "name": "General",
               "description": "Trigger and debounce time.",
               "data": {
+                "name": "Name (shown as “Doorbell: Name”)",
                 "trigger_entity": "Trigger (sensor or event)",
                 "debounce_seconds": "Lockout time"
               },
               "data_description": {
                 "trigger_entity": "binary_sensor (triggers on change to on) or event entity (triggers on every event).",
-                "debounce_seconds": "Further rings within this time are ignored."
+                "debounce_seconds": "Further rings within this time are ignored.",
+                "name": "Optional. Empty = “Doorbell”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
-            }
-          }
-        },
-        "edit_profile": {
-          "title": "Edit profile",
-          "data": {
-            "profile": "Profile"
-          }
-        },
-        "delete_profile": {
-          "title": "Delete profile",
-          "data": {
-            "profile": "Profile"
-          }
-        },
-        "profile_basic": {
-          "title": "Time window profile",
-          "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
-          "sections": {
-            "timing": {
-              "name": "Time window",
-              "description": "When the profile applies.",
+            },
+            "profile_1": {
+              "name": "Profile 1",
+              "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
               "data": {
                 "name": "Name",
                 "enabled": "Enabled",
                 "from": "From",
                 "to": "To",
-                "weekdays": "Weekdays"
-              },
-              "data_description": {
-                "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day."
-              }
-            },
-            "sound": {
-              "name": "Sound",
-              "description": "Optional. Without media players this profile plays no sound.",
-              "data": {
+                "weekdays": "Weekdays",
                 "players": "Media Player",
                 "mode": "Output",
                 "tts_entity": "TTS service",
                 "text": "Announcement text",
                 "media": "Ringtone",
-                "volume": "Volume (0 = unchanged)"
-              },
-              "data_description": {
-                "tts_entity": "Only for the output “Announcement”.",
-                "text": "Only for the output “Announcement”.",
-                "media": "Only for the output “Ringtone”."
-              }
-            },
-            "notifications": {
-              "name": "Notification",
-              "description": "Optional. App push of this profile.",
-              "data": {
+                "volume": "Volume (0 = unchanged)",
                 "mobile_enabled": "Enable app push",
                 "mobile_targets": "Push targets (companion app devices)",
                 "message": "Push text",
                 "clear_after_hours": "Clear push after X hours (0 = never)"
               },
               "data_description": {
+                "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day.",
+                "tts_entity": "Only for the output “Announcement”.",
+                "text": "Only for the output “Announcement”.",
+                "media": "Only for the output “Ringtone”.",
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
                 "clear_after_hours": "Removes the notification via clear_notification."
               }
+            },
+            "profile_2": {
+              "name": "Profile 2",
+              "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
+              "data": {
+                "name": "Name",
+                "enabled": "Enabled",
+                "from": "From",
+                "to": "To",
+                "weekdays": "Weekdays",
+                "players": "Media Player",
+                "mode": "Output",
+                "tts_entity": "TTS service",
+                "text": "Announcement text",
+                "media": "Ringtone",
+                "volume": "Volume (0 = unchanged)",
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "message": "Push text",
+                "clear_after_hours": "Clear push after X hours (0 = never)"
+              },
+              "data_description": {
+                "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day.",
+                "tts_entity": "Only for the output “Announcement”.",
+                "text": "Only for the output “Announcement”.",
+                "media": "Only for the output “Ringtone”.",
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
+                "clear_after_hours": "Removes the notification via clear_notification."
+              }
+            },
+            "profile_3": {
+              "name": "Profile 3",
+              "description": "Time window, sound and app push of this profile. All matching profiles apply equally; each player and each push target is used only once per ring, by the first matching profile. A profile may have only push or only sound.",
+              "data": {
+                "name": "Name",
+                "enabled": "Enabled",
+                "from": "From",
+                "to": "To",
+                "weekdays": "Weekdays",
+                "players": "Media Player",
+                "mode": "Output",
+                "tts_entity": "TTS service",
+                "text": "Announcement text",
+                "media": "Ringtone",
+                "volume": "Volume (0 = unchanged)",
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "message": "Push text",
+                "clear_after_hours": "Clear push after X hours (0 = never)"
+              },
+              "data_description": {
+                "from": "If To is before From, the window spans midnight (e.g. 22:00 to 06:00). It belongs to the weekday it starts on. From = To means all day.",
+                "tts_entity": "Only for the output “Announcement”.",
+                "text": "Only for the output “Announcement”.",
+                "media": "Only for the output “Ringtone”.",
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible.",
+                "clear_after_hours": "Removes the notification via clear_notification."
+              }
+            },
+            "legacy": {
+              "name": "Older profiles",
+              "description": "Profiles from an earlier version beyond the third keep running next to the three above.",
+              "data": {
+                "clear_legacy_rules": "Delete older profiles (4 and up)"
+              }
             }
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “Doorbell: Name”)"
-          },
-          "data_description": {
-            "name": "Only the name, e.g. “Office”; the title then reads “Doorbell: Office”. A leading function name is removed."
           }
         }
       },
@@ -889,7 +901,12 @@
         "in_past": "The time is in the past.",
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
-        "no_media": "Select an audio file."
+        "no_media": "Select an audio file.",
+        "profile_no_weekday": "Profile ｛profile｝: select at least one weekday.",
+        "profile_no_output": "Profile ｛profile｝ needs at least one media player or app push.",
+        "profile_no_targets": "Profile ｛profile｝: select at least one target for app push.",
+        "profile_no_tts": "Profile ｛profile｝: the announcement needs a TTS service and a text.",
+        "profile_no_ringtone": "Profile ｛profile｝: select an audio file for the ringtone."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",

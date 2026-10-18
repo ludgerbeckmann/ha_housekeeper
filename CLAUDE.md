@@ -86,8 +86,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `clear_after_hours`); ein Profil braucht Ton oder Push. Der Push steht **nur im Profil**, nicht
   im Eintrag: `assign_push()` liefert alle passenden Profile gleichberechtigt, jedes Ziel nur einmal
   (erstes Profil); je Profil ein eigener `Notifier` (`_notifier_for(targets)`). Löschzeitpunkte stehen
-  je Profil im `Store` (`clears`, älteres `clear_at` = Schlüssel `*`). Der Profil-Dialog ist **ein** Formular mit den Abschnitten
-  `timing`, `sound`, `notifications` (`profile_basic`). Audio über `async_safe_call`.
+  je Profil im `Store` (`clears`, älteres `clear_at` = Schlüssel `*`). Die Einstellungen sind **eine Seite** (`bell_settings`, kein Menü, Name als Feld,
+  Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`) mit `general` (offen, Auslöser/Sperrzeit) und **drei festen
+  Profilplätzen** `profile_1…3` (`PROFILE_SLOTS`, eingeklappt, je Platz alle Profilfelder `P_*` in einem Abschnitt, Fehler mit Platzhalter
+  `profile` = Name des Platzes: `profile_no_output` usw.); `legacy` nur mit mehr als drei Profilen. Die Plätze entsprechen der Reihenfolge in
+  `options["profiles"]` (`slots_to_profiles()`: bis zum letzten benutzten Platz, Lücken als ausgeschaltetes Profil, ID bleibt; Profile ab dem
+  vierten bleiben unverändert, der Schalter `clear_legacy_rules` löscht sie). Nur eingeschaltete Plätze werden geprüft (`_validate_slot()`).
+  Tests: `bell_page()`/`slot()` in `tests/test_doorbell.py`. Audio über `async_safe_call`.
 - `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und
   `pool_dry_run.py` sind reine Logik ohne HA-Imports und unverändert aus dem
   Ursprungsprojekt. Der Controller ist der einzige mit `async def async_stop`

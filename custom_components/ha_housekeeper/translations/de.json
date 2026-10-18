@@ -759,105 +759,117 @@
             }
           }
         },
-        "bell_menu": {
-          "title": "Türklingel",
-          "description": "Einstellungen und Zeitfenster-Profile der Türklingel.",
-          "menu_options": {
-            "bell_general": "Einstellungen",
-            "add_profile": "Profil hinzufügen",
-            "edit_profile": "Profil bearbeiten",
-            "delete_profile": "Profil löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "bell_general": {
+        "bell_settings": {
           "title": "Einstellungen",
           "sections": {
             "general": {
               "name": "Allgemein",
               "description": "Auslöser und Entprellzeit.",
               "data": {
+                "name": "Name (erscheint als „Türklingel: Name“)",
                 "trigger_entity": "Auslöser (Sensor oder Ereignis)",
                 "debounce_seconds": "Sperrzeit"
               },
               "data_description": {
                 "trigger_entity": "binary_sensor (löst beim Wechsel auf on aus) oder event-Entität (löst bei jedem Ereignis aus).",
-                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert."
+                "debounce_seconds": "Weiteres Klingeln innerhalb dieser Zeit wird ignoriert.",
+                "name": "Optional. Leer = „Türklingel“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
-            }
-          }
-        },
-        "edit_profile": {
-          "title": "Profil bearbeiten",
-          "data": {
-            "profile": "Profil"
-          }
-        },
-        "delete_profile": {
-          "title": "Profil löschen",
-          "data": {
-            "profile": "Profil"
-          }
-        },
-        "profile_basic": {
-          "title": "Zeitfenster-Profil",
-          "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
-          "sections": {
-            "timing": {
-              "name": "Zeitfenster",
-              "description": "Wann das Profil gilt.",
+            },
+            "profile_1": {
+              "name": "Profil 1",
+              "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
               "data": {
                 "name": "Name",
                 "enabled": "Aktiv",
                 "from": "Von",
                 "to": "Bis",
-                "weekdays": "Wochentage"
-              },
-              "data_description": {
-                "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig."
-              }
-            },
-            "sound": {
-              "name": "Ton",
-              "description": "Optional. Ohne Media Player gibt dieses Profil keinen Ton aus.",
-              "data": {
+                "weekdays": "Wochentage",
                 "players": "Media Player",
                 "mode": "Ausgabe",
                 "tts_entity": "TTS-Dienst",
                 "text": "Ansagetext",
                 "media": "Klingelton",
-                "volume": "Lautstärke (0 = unverändert)"
-              },
-              "data_description": {
-                "tts_entity": "Nur bei Ausgabe „Ansage“.",
-                "text": "Nur bei Ausgabe „Ansage“.",
-                "media": "Nur bei Ausgabe „Klingelton“."
-              }
-            },
-            "notifications": {
-              "name": "Benachrichtigung",
-              "description": "Optional. App-Push dieses Profils.",
-              "data": {
+                "volume": "Lautstärke (0 = unverändert)",
                 "mobile_enabled": "App-Push aktivieren",
                 "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
                 "message": "Push-Text",
                 "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
               },
               "data_description": {
+                "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig.",
+                "tts_entity": "Nur bei Ausgabe „Ansage“.",
+                "text": "Nur bei Ausgabe „Ansage“.",
+                "media": "Nur bei Ausgabe „Klingelton“.",
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
                 "clear_after_hours": "Löscht die Meldung per clear_notification."
               }
+            },
+            "profile_2": {
+              "name": "Profil 2",
+              "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
+              "data": {
+                "name": "Name",
+                "enabled": "Aktiv",
+                "from": "Von",
+                "to": "Bis",
+                "weekdays": "Wochentage",
+                "players": "Media Player",
+                "mode": "Ausgabe",
+                "tts_entity": "TTS-Dienst",
+                "text": "Ansagetext",
+                "media": "Klingelton",
+                "volume": "Lautstärke (0 = unverändert)",
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "message": "Push-Text",
+                "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+              },
+              "data_description": {
+                "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig.",
+                "tts_entity": "Nur bei Ausgabe „Ansage“.",
+                "text": "Nur bei Ausgabe „Ansage“.",
+                "media": "Nur bei Ausgabe „Klingelton“.",
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
+                "clear_after_hours": "Löscht die Meldung per clear_notification."
+              }
+            },
+            "profile_3": {
+              "name": "Profil 3",
+              "description": "Zeitfenster, Ton und App-Push dieses Profils. Alle passenden Profile gelten gleichberechtigt; jeder Player und jedes Push-Ziel wird pro Klingeln nur einmal bedient, und zwar vom ersten passenden Profil. Ein Profil darf auch nur Push oder nur Ton haben.",
+              "data": {
+                "name": "Name",
+                "enabled": "Aktiv",
+                "from": "Von",
+                "to": "Bis",
+                "weekdays": "Wochentage",
+                "players": "Media Player",
+                "mode": "Ausgabe",
+                "tts_entity": "TTS-Dienst",
+                "text": "Ansagetext",
+                "media": "Klingelton",
+                "volume": "Lautstärke (0 = unverändert)",
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "message": "Push-Text",
+                "clear_after_hours": "Push nach X Stunden löschen (0 = nie)"
+              },
+              "data_description": {
+                "from": "Liegt Bis vor Von, gilt das Fenster über Mitternacht (z. B. 22:00 bis 06:00). Es gehört zum Wochentag, an dem es beginnt. Von = Bis bedeutet ganztägig.",
+                "tts_entity": "Nur bei Ausgabe „Ansage“.",
+                "text": "Nur bei Ausgabe „Ansage“.",
+                "media": "Nur bei Ausgabe „Klingelton“.",
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich.",
+                "clear_after_hours": "Löscht die Meldung per clear_notification."
+              }
+            },
+            "legacy": {
+              "name": "Ältere Profile",
+              "description": "Profile ab dem vierten aus einer früheren Version laufen neben den drei oben weiter.",
+              "data": {
+                "clear_legacy_rules": "Ältere Profile (ab dem vierten) löschen"
+              }
             }
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Türklingel: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Türklingel: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -889,7 +901,12 @@
         "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "no_media": "Wähle eine Audiodatei.",
+        "profile_no_weekday": "Profil ｛profile｝: Mindestens ein Wochentag muss gewählt sein.",
+        "profile_no_output": "Profil ｛profile｝ braucht mindestens einen Media Player oder App-Push.",
+        "profile_no_targets": "Profil ｛profile｝: Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "profile_no_tts": "Profil ｛profile｝: Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "profile_no_ringtone": "Profil ｛profile｝: Für den Klingelton muss eine Audiodatei gewählt sein."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
