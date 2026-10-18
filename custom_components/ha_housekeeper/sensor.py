@@ -721,6 +721,8 @@ class EnergySettlementSensor(FunctionEntity, SensorEntity):
             "grid_cost_b": round(result["grid_cost_b"], 2),
             "pv_credit_a": round(result["pv_credit_a"], 2),
             "base_fee_b": round(result["base_fee_b"], 2),
+            "common_kwh": round(acc.get("common", 0.0), 3),
+            "common_kwh_b": round(acc.get("common_b", 0.0), 3),
             "water_m3": round(acc.get("water", 0.0), 3),
             "gas_m3": round(acc.get("gas", 0.0), 3),
             "water_cost_b": round(result["water_cost_b"], 2),

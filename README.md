@@ -866,12 +866,18 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nu
   und Grundpreis (€/Monat). Wasser wird **nach Personen** verteilt (Duschen, Waschen, Kochen), Gas wahlweise **nach
   Wohnfläche (Standard, das Heizen überwiegt)** oder nach Personen; der Grundpreis folgt demselben Schlüssel. Einheit A zahlt
   die Rechnungen, Einheit B erstattet ihren Anteil. Beim Gas den Preis je **m³** eintragen (nicht je kWh).
+- **Allgemeinstrom** (optional, eingeklappt): Gastherme, Außenbeleuchtung, Router u. ä. laufen über den Zwischenzähler von Einheit A.
+  Dieser Teil wird nach einem Schlüssel Einheit B zugerechnet, **bevor** Netzbezug und PV aufgeteilt werden. Entweder ein
+  **Zähler Allgemeinstrom** (kWh, steigend, muss zum Verbrauch von A gehören, z. B. eine Messsteckdose) oder ersatzweise eine
+  **feste Leistung** in W (je verstrichener Zeit gerechnet, höchstens der Verbrauch von A); mit Zähler wird die Leistung
+  ignoriert. **Verteilung nach** Wohnfläche (Standard, passt zur Gastherme), Personen oder je zur Hälfte. Leer und 0 = keine Korrektur.
 
 ### Rechenweg
 
 Alle paar Minuten wird der Zeitraum seit dem letzten Stand betrachtet: Eigenverbrauch `S = P − E` (Erzeugung minus
 Einspeisung, nicht negativ), Anteil der Einheit `C_i / (C_A + C_B)` aus den Zwischenzählern. Netzbezug `I` und `S` werden nach
-diesem Anteil auf die Einheiten verteilt, der Allgemeinstrom wird dabei mitverteilt. Hat keine Einheit etwas verbraucht, wird
+diesem Anteil auf die Einheiten verteilt. Ein konfigurierter Allgemeinstrom wird vorher von A nach B verschoben (`C_A − g·s_B`,
+`C_B + g·s_B`), ohne Angabe wird er wie der übrige Verbrauch von A mitverteilt. Hat keine Einheit etwas verbraucht, wird
 weiter gesammelt; ist ein Zähler nicht verfügbar, wächst der Zeitraum weiter; fällt ein Zähler zurück (Zählertausch), wird der
 Zeitraum übersprungen. Die Monate der letzten drei Jahre werden gespeichert.
 
@@ -884,7 +890,7 @@ ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen E
 - je Einheit zwei `sensor` **Netzbezug** und **PV-Anteil** (kWh seit dem Einrichten, steigend, für die Energie-Statistik geeignet)
 - `sensor` **Verbrauchsanteil** von Einheit A im Monat (%)
 - `sensor` **Verrechnung Monat** und **Verrechnung Jahr** (Währung der Instanz, Attribute: Richtung, kWh je Einheit, Netzkosten,
-  PV-Gutschrift, Grundpreis, Wasser- und Gasanteil, Monate)
+  PV-Gutschrift, Grundpreis, Wasser- und Gasanteil, Allgemeinstrom, Monate)
 - mit Wasser-/Gaszähler: je `sensor` **Verbrauch** (m³) und **Anteil Einheit B** (Währung) für Monat und Jahr
 
 ## Entwicklung

@@ -13,6 +13,9 @@ from homeassistant.helpers import selector
 from ..const import (
     CONF_EM_BASE_FEE,
     CONF_EM_BASE_SHARE,
+    CONF_EM_COMMON_KEY,
+    CONF_EM_COMMON_METER,
+    CONF_EM_COMMON_POWER,
     CONF_EM_AREA_A,
     CONF_EM_AREA_B,
     CONF_EM_FEED,
@@ -38,6 +41,7 @@ from ..const import (
     DEFAULT_EM_NAME_A,
     DEFAULT_EM_NAME_B,
     DEFAULT_EM_PERSONS,
+    EM_COMMON_KEYS,
     EM_GAS_KEYS,
     EM_PV_PRICES,
     clean_instance_name,
@@ -51,12 +55,13 @@ SECTION_UNITS = "units"
 SECTION_PRICES = "prices"
 SECTION_WATER = "water"
 SECTION_GAS = "gas"
+SECTION_COMMON = "common"
 
 _SOURCES = (CONF_EM_GRID, CONF_EM_FEED, CONF_EM_PV, CONF_EM_METER_A, CONF_EM_METER_B)
 
 _OPTIONAL = (  # Zähler und Preise von Wasser und Gas
     CONF_EM_WATER, CONF_EM_WATER_PRICE, CONF_EM_WATER_FEE,
-    CONF_EM_GAS, CONF_EM_GAS_PRICE, CONF_EM_GAS_FEE,
+    CONF_EM_GAS, CONF_EM_GAS_PRICE, CONF_EM_GAS_FEE, CONF_EM_COMMON_METER,
 )
 
 _PV_PRICE_LABELS = {
@@ -153,6 +158,21 @@ def _em_schema(language: str, defaults: dict[str, Any]) -> vol.Schema:
             mode=selector.SelectSelectorMode.DROPDOWN,
         )
     )
+    common: dict[Any, Any] = {
+        vol.Optional(
+            CONF_EM_COMMON_METER, description=_suggest(CONF_EM_COMMON_METER, defaults)
+        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+        vol.Required(
+            CONF_EM_COMMON_POWER, default=defaults.get(CONF_EM_COMMON_POWER) or 0
+        ): _number(0, 100000, "W", step=1),
+        vol.Required(CONF_EM_COMMON_KEY, default=defaults.get(CONF_EM_COMMON_KEY, "area")): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=EM_COMMON_KEYS,
+                translation_key=CONF_EM_COMMON_KEY,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+    }
     return vol.Schema(
         {
             vol.Required(SECTION_METERS): _section(meters, collapsed=False),
@@ -160,12 +180,13 @@ def _em_schema(language: str, defaults: dict[str, Any]) -> vol.Schema:
             vol.Required(SECTION_PRICES): _section(prices),
             vol.Required(SECTION_WATER): _section(_utility(CONF_EM_WATER, CONF_EM_WATER_PRICE, CONF_EM_WATER_FEE)),
             vol.Required(SECTION_GAS): _section(gas),
+            vol.Required(SECTION_COMMON): _section(common),
         }
     )
 
 
 def _validate_em(flat: dict[str, Any]) -> dict[str, str]:
-    chosen = [flat.get(key) for key in (*_SOURCES, CONF_EM_WATER, CONF_EM_GAS) if flat.get(key)]
+    chosen = [flat.get(key) for key in (*_SOURCES, CONF_EM_WATER, CONF_EM_GAS, CONF_EM_COMMON_METER) if flat.get(key)]
     if len(set(chosen)) < len(chosen):
         return {"base": "duplicate_meter"}
     def _basis(a: str, b: str) -> float:
@@ -173,6 +194,12 @@ def _validate_em(flat: dict[str, Any]) -> dict[str, str]:
 
     if flat.get(CONF_EM_WATER) and _basis(CONF_EM_PERSONS_A, CONF_EM_PERSONS_B) <= 0:
         return {"base": "no_persons"}
+    if flat.get(CONF_EM_COMMON_METER) or float(flat.get(CONF_EM_COMMON_POWER) or 0) > 0:
+        key = flat.get(CONF_EM_COMMON_KEY, "area")
+        if key == "area" and _basis(CONF_EM_AREA_A, CONF_EM_AREA_B) <= 0:
+            return {"base": "no_area"}
+        if key == "persons" and _basis(CONF_EM_PERSONS_A, CONF_EM_PERSONS_B) <= 0:
+            return {"base": "no_persons"}
     if flat.get(CONF_EM_GAS):
         by_area = flat.get(CONF_EM_GAS_KEY, "area") == "area"
         if _basis(*((CONF_EM_AREA_A, CONF_EM_AREA_B) if by_area else (CONF_EM_PERSONS_A, CONF_EM_PERSONS_B))) <= 0:
@@ -188,6 +215,7 @@ def em_data(flat: dict[str, Any]) -> dict[str, Any]:
     data.pop(CONF_NAME, None)
     data[CONF_EM_PV_PRICE] = pv_price_value(flat[CONF_EM_PV_PRICE])
     data[CONF_EM_BASE_SHARE] = float(data[CONF_EM_BASE_SHARE])
+    data[CONF_EM_COMMON_POWER] = float(data[CONF_EM_COMMON_POWER])
     for key in (CONF_EM_PERSONS_A, CONF_EM_PERSONS_B, CONF_EM_AREA_A, CONF_EM_AREA_B):
         data[key] = float(data[key])
     for key in _OPTIONAL:                           # geleerte Felder überdecken frühere Werte

@@ -116,6 +116,13 @@
         "notify": "Nur melden",
         "install": "Automatisch installieren"
       }
+    },
+    "common_key": {
+      "options": {
+        "area": "Wohnfläche",
+        "persons": "Personen",
+        "half": "Je zur Hälfte"
+      }
     }
   },
   "entity": {
@@ -2744,6 +2751,20 @@
                 "gas_price": "Preis je m³ wie abgerechnet (den Preis je m³ eintragen, nicht je kWh).",
                 "gas_base_fee": "Wird nach demselben Schlüssel verteilt."
               }
+            },
+            "common": {
+              "name": "Allgemeinstrom (optional)",
+              "description": "Gastherme, Außenbeleuchtung, Router u. ä. laufen über den Zwischenzähler von Einheit A. Dieser Teil wird nach dem Schlüssel Einheit B zugerechnet, bevor Netzbezug und PV aufgeteilt werden. Ohne Zähler trägst du eine feste Leistung ein, mit Zähler wird die Leistung ignoriert. Leer und 0 = keine Korrektur.",
+              "data": {
+                "common_meter": "Zähler Allgemeinstrom (kWh)",
+                "common_power": "Feste Leistung (W)",
+                "common_key": "Verteilung nach"
+              },
+              "data_description": {
+                "common_meter": "Optionaler Energiesensor (kWh, steigend) dieser Verbraucher, z. B. eine Messsteckdose an Gastherme und Router. Er muss zum Verbrauch von Einheit A gehören.",
+                "common_power": "Durchschnittliche Leistung der Allgemeinverbraucher, gerechnet je verstrichener Zeit. Sie wird durch den Verbrauch von Einheit A begrenzt.",
+                "common_key": "Wohnfläche (Standard), Personen oder je zur Hälfte."
+              }
             }
           }
         },
@@ -2823,6 +2844,20 @@
                 "gas_meter": "Sensor in m³, der immer weiter hochzählt. Leer = keine Gasverrechnung.",
                 "gas_price": "Preis je m³ wie abgerechnet (den Preis je m³ eintragen, nicht je kWh).",
                 "gas_base_fee": "Wird nach demselben Schlüssel verteilt."
+              }
+            },
+            "common": {
+              "name": "Allgemeinstrom (optional)",
+              "description": "Gastherme, Außenbeleuchtung, Router u. ä. laufen über den Zwischenzähler von Einheit A. Dieser Teil wird nach dem Schlüssel Einheit B zugerechnet, bevor Netzbezug und PV aufgeteilt werden. Ohne Zähler trägst du eine feste Leistung ein, mit Zähler wird die Leistung ignoriert. Leer und 0 = keine Korrektur.",
+              "data": {
+                "common_meter": "Zähler Allgemeinstrom (kWh)",
+                "common_power": "Feste Leistung (W)",
+                "common_key": "Verteilung nach"
+              },
+              "data_description": {
+                "common_meter": "Optionaler Energiesensor (kWh, steigend) dieser Verbraucher, z. B. eine Messsteckdose an Gastherme und Router. Er muss zum Verbrauch von Einheit A gehören.",
+                "common_power": "Durchschnittliche Leistung der Allgemeinverbraucher, gerechnet je verstrichener Zeit. Sie wird durch den Verbrauch von Einheit A begrenzt.",
+                "common_key": "Wohnfläche (Standard), Personen oder je zur Hälfte."
               }
             }
           }

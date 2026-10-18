@@ -17,6 +17,9 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_EM_BASE_FEE,
     CONF_EM_BASE_SHARE,
+    CONF_EM_COMMON_KEY,
+    CONF_EM_COMMON_METER,
+    CONF_EM_COMMON_POWER,
     CONF_EM_AREA_A,
     CONF_EM_AREA_B,
     CONF_EM_FEED,
@@ -55,7 +58,7 @@ _UNKNOWN = (STATE_UNAVAILABLE, STATE_UNKNOWN)
 
 # Summen je Zeitraum: Netzbezug und PV-Eigenverbrauch je Einheit, dazu der Verbrauch laut Zwischenzähler,
 # außerdem der gemeinsame Verbrauch von Wasser und Gas (m³)
-KEYS = ("grid_a", "grid_b", "pv_a", "pv_b", "cons_a", "cons_b", "water", "gas")
+KEYS = ("grid_a", "grid_b", "pv_a", "pv_b", "cons_a", "cons_b", "water", "gas", "common", "common_b")
 UTILITIES = {
     "water": (CONF_EM_WATER, CONF_EM_WATER_PRICE, CONF_EM_WATER_FEE),
     "gas": (CONF_EM_GAS, CONF_EM_GAS_PRICE, CONF_EM_GAS_FEE),
@@ -67,13 +70,17 @@ SOURCES = (CONF_EM_GRID, CONF_EM_FEED, CONF_EM_PV, CONF_EM_METER_A, CONF_EM_METE
 
 
 def split_interval(
-    d_grid: float, d_feed: float, d_pv: float, d_a: float, d_b: float
+    d_grid: float, d_feed: float, d_pv: float, d_a: float, d_b: float, shift: float = 0.0
 ) -> dict[str, float] | None:
     """Einen Zeitraum aufteilen (zeitgleich anteilig nach den Zwischenzählern).
 
     Der PV-Eigenverbrauch ist Erzeugung minus Einspeisung (nicht negativ); Netzbezug und
     Eigenverbrauch werden im Verhältnis des Verbrauchs der Zwischenzähler auf die Einheiten verteilt.
-    Hat keine Einheit etwas verbraucht, gibt es nichts zu verteilen (`None`)."""
+    Hat keine Einheit etwas verbraucht, gibt es nichts zu verteilen (`None`).
+
+    `shift` ist der Teil des Allgemeinstroms (läuft über den Zähler von A), der Einheit B zugerechnet wird:
+    er wandert von A nach B, bevor verteilt wird."""
+    d_a, d_b = d_a - shift, d_b + shift
     total = d_a + d_b
     if total <= 0:
         return None
@@ -91,6 +98,16 @@ def split_interval(
 
 def add_up(acc: dict[str, float] | None, part: dict[str, float]) -> dict[str, float]:
     return {key: (acc or {}).get(key, 0.0) + part.get(key, 0.0) for key in KEYS}
+
+
+def common_part(
+    d_a: float, meter_delta: float | None, power_w: float, hours: float, share_b: float
+) -> tuple[float, float]:
+    """Allgemeinstrom im Zeitraum (Zähler, sonst feste Leistung × Zeit, höchstens der Verbrauch von A) und
+    der Anteil, der Einheit B zugerechnet wird."""
+    common = meter_delta if meter_delta is not None else power_w / 1000 * hours
+    common = max(0.0, min(common, d_a))
+    return common, common * share_b
 
 
 def settle(
@@ -158,6 +175,7 @@ class EnergyMonitorController:
         self.entry = entry
         self.baseline: dict[str, float] | None = None
         self.util_baseline: dict[str, float] = {}
+        self.baseline_time: datetime | None = None
         self.totals: dict[str, float] = {key: 0.0 for key in KEYS}
         self.months: dict[str, dict[str, float]] = {}
         self._get = entry_opt(entry)
@@ -184,8 +202,13 @@ class EnergyMonitorController:
         return bool(self._get(UTILITIES[kind][0]))
 
     def share_b(self, kind: str) -> float:
-        """Anteil von Einheit B: Wasser nach Personen, Gas nach Wohnfläche (Standard) oder Personen."""
-        if kind == "gas" and self._get(CONF_EM_GAS_KEY, "area") == "area":
+        """Anteil von Einheit B: Wasser nach Personen, Gas und Allgemeinstrom nach Wohnfläche (Standard),
+        Personen oder (Allgemeinstrom) je zur Hälfte."""
+        key_name = {"gas": CONF_EM_GAS_KEY, "common": CONF_EM_COMMON_KEY}.get(kind)
+        key = self._get(key_name, "area") if key_name else "persons"
+        if key == "half":
+            return 0.5
+        if key == "area":
             keys = (CONF_EM_AREA_A, CONF_EM_AREA_B)
         else:
             keys = (CONF_EM_PERSONS_A, CONF_EM_PERSONS_B)
@@ -249,6 +272,7 @@ class EnergyMonitorController:
         stored = await self._store.async_load() or {}
         self.baseline = stored.get("baseline")
         self.util_baseline = stored.get("util_baseline") or {}
+        self.baseline_time = dt_util.parse_datetime(stored.get("baseline_time") or "")
         self.totals = {**self.totals, **(stored.get("totals") or {})}
         self.months = stored.get("months") or {}
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, CHECK_INTERVAL))
@@ -267,6 +291,7 @@ class EnergyMonitorController:
             {
                 "baseline": self.baseline,
                 "util_baseline": self.util_baseline,
+                "baseline_time": self.baseline_time.isoformat() if self.baseline_time else None,
                 "totals": self.totals,
                 "months": self.months,
             }
@@ -281,6 +306,11 @@ class EnergyMonitorController:
             if number is None:
                 return None
             values[key] = number
+        if self._get(CONF_EM_COMMON_METER):         # optionaler Zähler: unklar = Zeitraum wächst weiter
+            number = _number(self.hass.states.get(self._get(CONF_EM_COMMON_METER)))
+            if number is None:
+                return None
+            values[CONF_EM_COMMON_METER] = number
         return values
 
     async def _async_update_utilities(self) -> None:
@@ -321,28 +351,43 @@ class EnergyMonitorController:
         current = self._read()
         if current is None:
             return                                  # ein Zähler fehlt: der Zeitraum wächst weiter
+        now = dt_util.utcnow()
         if self.baseline is None or any(
-            current[key] < self.baseline.get(key, current[key]) for key in SOURCES
+            value < self.baseline.get(key, value) for key, value in current.items()
         ):
             if self.baseline is not None:
                 _LOGGER.warning("%s: Zähler zurückgesetzt, der Zeitraum wird übersprungen", self.entry.title)
             self.baseline = current
+            self.baseline_time = now
             await self._async_save()
             return
+        d_a = current[CONF_EM_METER_A] - self.baseline[CONF_EM_METER_A]
+        meter_delta = (
+            current[CONF_EM_COMMON_METER] - self.baseline.get(CONF_EM_COMMON_METER, current[CONF_EM_COMMON_METER])
+            if CONF_EM_COMMON_METER in current
+            else None
+        )
+        hours = (now - self.baseline_time).total_seconds() / 3600 if self.baseline_time else 0.0
+        common, shift = common_part(
+            d_a, meter_delta, float(self._get(CONF_EM_COMMON_POWER, 0) or 0), hours, self.share_b("common")
+        )
         part = split_interval(
             current[CONF_EM_GRID] - self.baseline[CONF_EM_GRID],
             current[CONF_EM_FEED] - self.baseline[CONF_EM_FEED],
             current[CONF_EM_PV] - self.baseline[CONF_EM_PV],
-            current[CONF_EM_METER_A] - self.baseline[CONF_EM_METER_A],
+            d_a,
             current[CONF_EM_METER_B] - self.baseline[CONF_EM_METER_B],
+            shift,
         )
         if part is None:
             return                                  # nichts verbraucht: weiter sammeln
+        part["common"], part["common_b"] = common, shift
         key = self.month_key()
         self.months[key] = add_up(self.months.get(key), part)
         for old in sorted(self.months)[:-KEEP_MONTHS]:
             self.months.pop(old)
         self.totals = add_up(self.totals, part)
         self.baseline = current
+        self.baseline_time = now
         await self._async_save()
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
