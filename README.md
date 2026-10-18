@@ -658,11 +658,19 @@ Aussetzer lösen nichts aus. Geprüft wird beim Start (nach zwei Minuten) und da
 
 ### Einstellungen
 
-- **Wartezeit**, **Mindestanzahl Entitäten**, **Prüfintervall**
-- **Fehlerstatus melden** (Standard an) und **„Alle Entitäten nicht verfügbar“ melden** (Standard aus für neue
-  Instanzen), dazu eine Liste **ausgenommener** Integrationen
-- **Meldungen bündeln** (Standard 10 Minuten, 0 = sofort)
-- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung)
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nur „Allgemein“ ist aufgeklappt:
+
+- **Allgemein:** Name, **Wartezeit**, **Mindestanzahl Entitäten**, **Prüfintervall**
+- **Nur melden:** Integrationen als Liste, dazu die Wahl **Whitelist** (nur diese) oder **Blacklist** (alle außer diesen,
+  Standard mit leerer Liste = alle). Das ersetzt die frühere Ausnahmenliste.
+- **Neu laden:** Liste mit Whitelist/Blacklist (Standard: leere Whitelist = nichts), dazu „bei Fehlerstatus“ und „bei
+  alle Entitäten nicht verfügbar“. Eine Blacklist trifft jede gestörte Integration außer den genannten, mit Vorsicht verwenden.
+- **Deaktivieren:** wie „Neu laden“ (hat Vorrang), dazu die **Anwesenheitsentität** und *Bei Anwesenheit wieder aktivieren*
+- **Benachrichtigung:** **Fehlerstatus melden** (Standard an), **„Alle Entitäten nicht verfügbar“ melden** (Standard aus für neue
+  Instanzen), **Meldungen bündeln** (Standard 10 Minuten, 0 = sofort) und die Benachrichtigungswege (App-Push, Sprachausgabe,
+  persistente Meldung)
+- **Ältere Regeln** (nur sichtbar, wenn es welche gibt): Regeln aus früheren Versionen laufen weiter und werden nur mit dem
+  Schalter gelöscht. Eine frühere Ausnahmenliste wird beim ersten Speichern zur Blacklist von „Nur melden“.
 
 **Sammelmeldung:** Alle Störungen stehen in **einer** Meldung, je Zeile die **Integration**, der Eintrag, die
 Art der Störung (bei „nicht verfügbar“ mit Anzahl der Entitäten), seit wann und eine ausgeführte Aktion, z. B.
@@ -672,22 +680,15 @@ Störung mehr besteht. Die Sprachausgabe nennt nur die Anzahl. Einzelne „läuf
 
 **Empfehlung:** „Alle Entitäten nicht verfügbar“ ist bei **Einzelgeräten** (Lampen, Steckdosen, Shelly, IKEA,
 Batteriegeräte, Drucker, Klimaanlage) oft normal, z. B. bei ausgeschaltetem Wandschalter. Lass die globale
-Meldung dafür aus und lege stattdessen eine **Regel mit „Melden“** für Brücken und Dienste an, bei denen ein
-Ausfall zählt (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.).
+Meldung dafür aus und nimm stattdessen Brücken und Dienste, bei denen ein Ausfall zählt (MQTT, Zigbee2MQTT, ZHA, KNX,
+Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.), in die **Whitelist von „Nur melden“** auf.
 
-### Regeln
+### Aktionen
 
-Eine Regel gilt für **eine oder mehrere ausdrücklich gewählte Integrationen** und hat:
-
-- Name und Schalter *Aktiv*
-- **Auslöser**: bei Fehlerstatus und/oder wenn alle Entitäten nicht verfügbar sind
-- **Aktion**: *Nur melden*, *Neu laden* oder *Deaktivieren* (einmal je Störung), dazu der Schalter
-  *Melden* (nimmt die Störung auch dann in die Sammelmeldung auf, wenn die globalen Schalter aus sind)
-- optional eine **Anwesenheitsentität** und *Automatisch wieder aktivieren*: Eine vom Monitor
-  deaktivierte Integration wird wieder aktiviert, sobald die Anwesenheitsentität „an“ oder „home“
-  meldet. Das passt zu Geräten, die zeitweise fehlen (Klimaanlage, Drucker): Die Entität sollte
-  unabhängig von der Integration zeigen, ob das Gerät da ist (z. B. ein Ping-Sensor, ein
-  Router-Tracker oder eine Steckdose).
+„Neu laden“ und „Deaktivieren“ wirken **einmal je Störung** auf die Integrationen ihrer Liste. Eine vom Monitor deaktivierte
+Integration wird wieder aktiviert, sobald die Anwesenheitsentität „an“ oder „home“ meldet. Das passt zu Geräten, die
+zeitweise fehlen (Klimaanlage, Drucker): Die Entität sollte unabhängig von der Integration zeigen, ob das Gerät da ist
+(z. B. ein Ping-Sensor, ein Router-Tracker oder eine Steckdose).
 
 Der Monitor aktiviert **nur Integrationen wieder, die er selbst deaktiviert hat**. Schaltest du eine
 solche Integration von Hand wieder ein, vergisst er sie.

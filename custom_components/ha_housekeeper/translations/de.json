@@ -80,13 +80,6 @@
         "day": "Bestimmter Tag"
       }
     },
-    "monitor_action": {
-      "options": {
-        "none": "Nur melden",
-        "reload": "Neu laden",
-        "disable": "Deaktivieren"
-      }
-    },
     "llm_provider": {
       "options": {
         "anthropic": "Anthropic",
@@ -109,6 +102,12 @@
       "options": {
         "area": "Wohnfläche",
         "persons": "Personen"
+      }
+    },
+    "monitor_list_mode": {
+      "options": {
+        "whitelist": "Whitelist (nur diese)",
+        "blacklist": "Blacklist (alle außer diesen)"
       }
     }
   },
@@ -1952,36 +1951,74 @@
       "step": {
         "new_integration_monitor": {
           "title": "Integrationsmonitor",
-          "description": "Der Monitor überwacht alle Integrationen. Regeln für bestimmte Integrationen (neu laden, deaktivieren, wieder aktivieren) legst du anschließend über das Zahnrad (Neu konfigurieren) an.",
           "sections": {
             "general": {
               "name": "Überwachung",
-              "description": "Wann eine Integration als gestört gilt und was gemeldet wird.",
+              "description": "Wann eine Integration als gestört gilt.",
               "data": {
                 "name": "Name (erscheint als „Integrationsmonitor: Name“)",
                 "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
-                "min_entities": "Mindestanzahl Entitäten",
-                "check_minutes": "Prüfintervall (Minuten)",
-                "notify_errors": "Fehlerstatus melden",
-                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
-                "summary_minutes": "Meldungen bündeln (Minuten)",
-                "excluded": "Von der Meldung ausgenommen"
+                "min_entities": "Mindestzahl Entitäten",
+                "check_minutes": "Prüfintervall (Minuten)"
               },
               "data_description": {
-                "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
-                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
-                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
-                "notify_errors": "Meldet Integrationen, die nicht laufen (Setup-Fehler, Wiederholungsversuch, Migrationsfehler). Das ist fast immer relevant.",
-                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, z. B. bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und stattdessen eine Regel mit „Melden“ für Brücken und Dienste anlegen (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router, Sonos, Wetter u. ä.).",
-                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet bzw. aktualisiert wird, damit bei einem Netzausfall nicht viele Pushs kommen. 0 = sofort. Verschwindet die letzte Störung, wird die Meldung entfernt.",
-                "excluded": "Diese Integrationen kommen nicht in die Sammelmeldung. Regeln gelten unabhängig davon.",
-                "name": "Optional. Leer = „Integrationsmonitor“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+                "name": "Optional. Leer = „Integrationsmonitor“.",
+                "grace_minutes": "Eine Integration muss so lange ununterbrochen gestört sein, bevor gemeldet oder gehandelt wird. Kurze Ausfälle lösen nichts aus.",
+                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst ab dieser Zahl aktiver Entitäten. Vermeidet Fehlalarme bei Integrationen mit nur einer Entität.",
+                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten)."
+              }
+            },
+            "report": {
+              "name": "Nur melden",
+              "description": "Welche Integrationen in der Sammelmeldung erscheinen.",
+              "data": {
+                "report_mode": "Die Liste ist eine",
+                "report_entries": "Integrationen"
+              },
+              "data_description": {
+                "report_mode": "Whitelist: nur die genannten Integrationen werden gemeldet. Blacklist: alle außer den genannten (leer = alle).",
+                "report_entries": "Integrationen für die Liste oben."
+              }
+            },
+            "reload": {
+              "name": "Neu laden",
+              "description": "Lädt diese Integrationen einmal neu, wenn sie gestört sind. Leere Whitelist = nichts wird neu geladen.",
+              "data": {
+                "reload_mode": "Die Liste ist eine",
+                "reload_entries": "Integrationen",
+                "reload_on_error": "Bei Fehlerstatus",
+                "reload_on_unavailable": "Bei „alle Entitäten nicht verfügbar“"
+              },
+              "data_description": {
+                "reload_mode": "Whitelist: nur die genannten Integrationen. Blacklist: jede gestörte Integration außer den genannten – mit Vorsicht verwenden.",
+                "reload_entries": "Integrationen für die Liste oben."
+              }
+            },
+            "disable": {
+              "name": "Deaktivieren",
+              "description": "Deaktiviert diese Integrationen, wenn sie gestört sind (hat Vorrang vor dem Neuladen). Wieder aktiviert werden nur Integrationen, die der Monitor deaktiviert hat. Leere Whitelist = nichts wird deaktiviert.",
+              "data": {
+                "disable_mode": "Die Liste ist eine",
+                "disable_entries": "Integrationen",
+                "disable_on_error": "Bei Fehlerstatus",
+                "disable_on_unavailable": "Bei „alle Entitäten nicht verfügbar“",
+                "disable_presence": "Anwesenheitsentität",
+                "disable_reenable": "Bei Anwesenheit wieder aktivieren"
+              },
+              "data_description": {
+                "disable_mode": "Whitelist: nur die genannten Integrationen. Blacklist: jede gestörte Integration außer den genannten – mit Vorsicht verwenden.",
+                "disable_entries": "Integrationen für die Liste oben.",
+                "disable_presence": "Zustand on oder home gilt als anwesend.",
+                "disable_reenable": "Aktiviert die vom Monitor deaktivierten Integrationen wieder, sobald die Anwesenheitsentität Anwesenheit meldet."
               }
             },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit der Monitor meldet.",
               "data": {
+                "notify_errors": "Fehlerstatus melden",
+                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
+                "summary_minutes": "Meldungen bündeln (Minuten)",
                 "mobile_enabled": "App-Push aktivieren",
                 "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
                 "tts_enabled": "Sprachausgabe aktivieren",
@@ -1990,51 +2027,85 @@
                 "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
               },
               "data_description": {
+                "notify_errors": "Meldet Integrationen, die nicht laufen (Einrichtungsfehler, Wiederholung, Migrationsfehler). Fast immer relevant.",
+                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, etwa bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und Bridges und Dienste in die Whitelist von „Nur melden“ aufnehmen.",
+                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet oder aktualisiert wird, damit ein Netzausfall nicht viele Pushes auslöst. 0 = sofort. Ist die letzte Störung weg, wird die Meldung entfernt.",
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
             }
-          }
+          },
+          "description": "Der Monitor überwacht alle Integrationen. Regeln für bestimmte Integrationen (neu laden, deaktivieren, wieder aktivieren) legst du anschließend über das Zahnrad (Neu konfigurieren) an."
         },
-        "mon_menu": {
+        "mon_settings": {
           "title": "Integrationsmonitor",
-          "description": "Überwachung und Regeln des Integrationsmonitors.",
-          "menu_options": {
-            "mon_general": "Einstellungen",
-            "add_monitor_rule": "Regel hinzufügen",
-            "edit_monitor_rule": "Regel bearbeiten",
-            "delete_monitor_rule": "Regel löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "mon_general": {
-          "title": "Einstellungen",
           "sections": {
             "general": {
               "name": "Überwachung",
-              "description": "Wann eine Integration als gestört gilt und was gemeldet wird.",
+              "description": "Wann eine Integration als gestört gilt.",
               "data": {
+                "name": "Name (erscheint als „Integrationsmonitor: Name“)",
                 "grace_minutes": "Wartezeit bis zur Störung (Minuten)",
-                "min_entities": "Mindestanzahl Entitäten",
-                "check_minutes": "Prüfintervall (Minuten)",
-                "notify_errors": "Fehlerstatus melden",
-                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
-                "summary_minutes": "Meldungen bündeln (Minuten)",
-                "excluded": "Von der Meldung ausgenommen"
+                "min_entities": "Mindestzahl Entitäten",
+                "check_minutes": "Prüfintervall (Minuten)"
               },
               "data_description": {
-                "grace_minutes": "So lange muss eine Integration ununterbrochen gestört sein, bevor sie gemeldet oder behandelt wird. Kurze Aussetzer lösen nichts aus.",
-                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst, wenn die Integration mindestens so viele aktive Entitäten hat. Verhindert Fehlalarme bei Integrationen mit nur einer Entität.",
-                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten).",
-                "notify_errors": "Meldet Integrationen, die nicht laufen (Setup-Fehler, Wiederholungsversuch, Migrationsfehler). Das ist fast immer relevant.",
-                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, z. B. bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und stattdessen eine Regel mit „Melden“ für Brücken und Dienste anlegen (MQTT, Zigbee2MQTT, ZHA, KNX, Hue-Bridge, Router, Sonos, Wetter u. ä.).",
-                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet bzw. aktualisiert wird, damit bei einem Netzausfall nicht viele Pushs kommen. 0 = sofort. Verschwindet die letzte Störung, wird die Meldung entfernt.",
-                "excluded": "Diese Integrationen kommen nicht in die Sammelmeldung. Regeln gelten unabhängig davon."
+                "name": "Optional. Leer = „Integrationsmonitor“.",
+                "grace_minutes": "Eine Integration muss so lange ununterbrochen gestört sein, bevor gemeldet oder gehandelt wird. Kurze Ausfälle lösen nichts aus.",
+                "min_entities": "„Alle Entitäten nicht verfügbar“ gilt erst ab dieser Zahl aktiver Entitäten. Vermeidet Fehlalarme bei Integrationen mit nur einer Entität.",
+                "check_minutes": "Zusätzlich zur Prüfung beim Start (nach zwei Minuten)."
+              }
+            },
+            "report": {
+              "name": "Nur melden",
+              "description": "Welche Integrationen in der Sammelmeldung erscheinen.",
+              "data": {
+                "report_mode": "Die Liste ist eine",
+                "report_entries": "Integrationen"
+              },
+              "data_description": {
+                "report_mode": "Whitelist: nur die genannten Integrationen werden gemeldet. Blacklist: alle außer den genannten (leer = alle).",
+                "report_entries": "Integrationen für die Liste oben."
+              }
+            },
+            "reload": {
+              "name": "Neu laden",
+              "description": "Lädt diese Integrationen einmal neu, wenn sie gestört sind. Leere Whitelist = nichts wird neu geladen.",
+              "data": {
+                "reload_mode": "Die Liste ist eine",
+                "reload_entries": "Integrationen",
+                "reload_on_error": "Bei Fehlerstatus",
+                "reload_on_unavailable": "Bei „alle Entitäten nicht verfügbar“"
+              },
+              "data_description": {
+                "reload_mode": "Whitelist: nur die genannten Integrationen. Blacklist: jede gestörte Integration außer den genannten – mit Vorsicht verwenden.",
+                "reload_entries": "Integrationen für die Liste oben."
+              }
+            },
+            "disable": {
+              "name": "Deaktivieren",
+              "description": "Deaktiviert diese Integrationen, wenn sie gestört sind (hat Vorrang vor dem Neuladen). Wieder aktiviert werden nur Integrationen, die der Monitor deaktiviert hat. Leere Whitelist = nichts wird deaktiviert.",
+              "data": {
+                "disable_mode": "Die Liste ist eine",
+                "disable_entries": "Integrationen",
+                "disable_on_error": "Bei Fehlerstatus",
+                "disable_on_unavailable": "Bei „alle Entitäten nicht verfügbar“",
+                "disable_presence": "Anwesenheitsentität",
+                "disable_reenable": "Bei Anwesenheit wieder aktivieren"
+              },
+              "data_description": {
+                "disable_mode": "Whitelist: nur die genannten Integrationen. Blacklist: jede gestörte Integration außer den genannten – mit Vorsicht verwenden.",
+                "disable_entries": "Integrationen für die Liste oben.",
+                "disable_presence": "Zustand on oder home gilt als anwesend.",
+                "disable_reenable": "Aktiviert die vom Monitor deaktivierten Integrationen wieder, sobald die Anwesenheitsentität Anwesenheit meldet."
               }
             },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit der Monitor meldet.",
               "data": {
+                "notify_errors": "Fehlerstatus melden",
+                "notify_unavailable": "„Alle Entitäten nicht verfügbar“ melden",
+                "summary_minutes": "Meldungen bündeln (Minuten)",
                 "mobile_enabled": "App-Push aktivieren",
                 "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
                 "tts_enabled": "Sprachausgabe aktivieren",
@@ -2043,86 +2114,28 @@
                 "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
               },
               "data_description": {
+                "notify_errors": "Meldet Integrationen, die nicht laufen (Einrichtungsfehler, Wiederholung, Migrationsfehler). Fast immer relevant.",
+                "notify_unavailable": "Meldet Integrationen, deren Entitäten alle nicht verfügbar sind. Bei Einzelgeräten (Lampen, Steckdosen, Shelly, IKEA, Batteriegeräte, Drucker) ist das oft normal, etwa bei ausgeschaltetem Wandschalter. Empfehlung: aus lassen und Bridges und Dienste in die Whitelist von „Nur melden“ aufnehmen.",
+                "summary_minutes": "Alle Störungen stehen in einer Sammelmeldung, die nach dieser Zeit gesendet oder aktualisiert wird, damit ein Netzausfall nicht viele Pushes auslöst. 0 = sofort. Ist die letzte Störung weg, wird die Meldung entfernt.",
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
-            }
-          }
-        },
-        "edit_monitor_rule": {
-          "title": "Regel bearbeiten",
-          "data": {
-            "rule": "Regel"
-          }
-        },
-        "delete_monitor_rule": {
-          "title": "Regel löschen",
-          "data": {
-            "rule": "Regel"
-          }
-        },
-        "monitor_rule_edit": {
-          "title": "Regel",
-          "description": "Für ausgewählte Integrationen kannst du melden und zusätzlich neu laden oder deaktivieren. Eine deaktivierte Integration kann automatisch wieder aktiviert werden, sobald eine Anwesenheitsentität des Geräts (z. B. ein Ping-Sensor) „an“ meldet.",
-          "sections": {
-            "general": {
-              "name": "Regel",
-              "description": "Name und Schalter dieser Regel.",
-              "data": {
-                "name": "Name",
-                "enabled": "Aktiv"
-              }
             },
-            "condition": {
-              "name": "Auslöser",
-              "description": "Welche Integrationen und welche Störungen.",
+            "legacy": {
+              "name": "Ältere Regeln",
+              "description": "Regeln aus einer früheren Version laufen neben den Feldern oben weiter.",
               "data": {
-                "entries": "Integrationen",
-                "on_error": "Bei Fehlerstatus",
-                "on_unavailable": "Wenn alle Entitäten nicht verfügbar sind"
-              },
-              "data_description": {
-                "entries": "Nur ausdrücklich gewählte Integrationen werden von der Regel behandelt.",
-                "on_error": "Setup-Fehler, Wiederholungsversuch, Migrationsfehler oder Fehler beim Entladen."
-              }
-            },
-            "action": {
-              "name": "Aktion",
-              "description": "Was bei einer Störung passiert.",
-              "data": {
-                "action": "Aktion",
-                "notify": "Melden",
-                "presence_entity": "Anwesenheitsentität",
-                "reenable": "Automatisch wieder aktivieren"
-              },
-              "data_description": {
-                "action": "„Deaktivieren“ schaltet die Integration ab (Entitäten und Automationen, die sie nutzen, laufen dann ins Leere). Nur von dir selbst deaktivierte Integrationen werden nie angefasst.",
-                "notify": "Meldet diese Störung über die Wege der Einstellungen, auch wenn „Alle Störungen melden“ aus ist.",
-                "presence_entity": "Zeigt unabhängig von der Integration, ob das Gerät wieder da ist, z. B. ein Ping-Binärsensor, ein Router-Tracker oder eine Steckdose. Meldet sie „an“ oder „home“, wird aktiviert.",
-                "reenable": "Aktiviert die vom Monitor deaktivierte Integration wieder, sobald die Anwesenheitsentität „an“ oder „home“ meldet."
+                "clear_legacy_rules": "Ältere Regeln löschen"
               }
             }
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Integrationsmonitor: Name“)"
           },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Integrationsmonitor: Büro“. Ein vorangestellter Funktionsname wird entfernt."
-          }
+          "description": "Der Monitor überwacht alle Integrationen. Regeln für bestimmte Integrationen (neu laden, deaktivieren, wieder aktivieren) legst du anschließend über das Zahnrad (Neu konfigurieren) an."
         }
       },
       "error": {
         "no_method": "Mindestens ein Benachrichtigungsweg mit Ziel muss aktiv sein.",
         "tts_incomplete": "Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt.",
         "no_targets": "Für den App-Push muss mindestens ein Ziel gewählt sein.",
-        "no_integration": "Mindestens eine Integration muss gewählt sein.",
-        "no_condition": "Mindestens ein Auslöser muss gewählt sein.",
-        "nothing_to_do": "Die Regel braucht eine Aktion oder die Meldung.",
-        "no_presence": "Für das automatische Aktivieren wird eine Anwesenheitsentität benötigt.",
-        "reenable_needs_disable": "Automatisch aktivieren ist nur mit der Aktion „Deaktivieren“ sinnvoll."
+        "no_presence": "Das automatische Wiederaktivieren braucht eine Anwesenheitsentität."
       },
       "abort": {}
     },

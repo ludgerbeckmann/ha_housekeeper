@@ -223,15 +223,21 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (Zeile = Integrationsname aus dem Manifest + Eintragstitel, Art, Entitätenzahl, seit, Aktion); gesendet nach
   `summary_minutes` (`summary.pending`), geändert nur bei geänderter Liste (`summary.sent`), bei leerer Liste sofort
   entfernt; TTS spricht nur die Anzahl (`Notifier.async_send(spoken=…)`). Gemeldet wird je Art nach `notify_errors`/
-  `notify_unavailable` (fehlen beide: der ältere `notify_all`, Standard an), Ausnahmenliste, oder eine Regel mit
+  `notify_unavailable` (fehlen beide: der ältere `notify_all`, Standard an) im Bereich von „Nur melden“, oder eine ältere Regel mit
   `notify`. Beim Update von den Einzelmeldungen werden die alten Meldungen je Integration einmal entfernt.
-  Regeln in `options["monitor_rules"]` (Schlüssel `M_*`) gelten nur für ausdrücklich gewählte Integrationen;
-  Aktion `none`/`reload`/`disable` (Vorrang: disable). Deaktiviert wird per `async_set_disabled_by(USER)`, der
+  Die Einstellungen sind **feste Felder auf einer Seite** (`mon_settings`, kein Menü, Name als Feld, Speichern =
+  `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `general` (offen), `report`, `reload`, `disable`,
+  `notifications`, `legacy` nur mit älteren Regeln). Je Aktion eine Liste (`report_entries`, `reload_entries`, `disable_entries`)
+  mit `*_mode` `whitelist` (nur diese) oder `blacklist` (alle außer diesen, `in_scope()`); „Nur melden“ ersetzt die frühere
+  Ausnahmenliste `excluded` (beim Anzeigen als Vorbelegung, beim Speichern auf `None`), „Neu laden“/„Deaktivieren“ haben
+  `*_on_error`/`*_on_unavailable`, „Deaktivieren“ dazu `disable_presence`/`disable_reenable`. `settings_rules()` bildet daraus
+  beim Start interne Regeln (IDs `basic:reload`/`basic:disable`, Schlüssel `M_*` mit `M_MODE`; eine leere Whitelist ergibt keine
+  Regel); `rules` = ältere Regeln aus `options["monitor_rules"]` + `settings_rules()`, `rule_matches()` kennt den Modus. Aktion
+  `none`/`reload`/`disable` (Vorrang: disable). Ältere Regeln laufen weiter, der Schalter `clear_legacy_rules` setzt sie auf `None`
+  (einen Regeldialog gibt es nicht mehr). Deaktiviert wird per `async_set_disabled_by(USER)`, der
   Monitor merkt sich seine Deaktivierungen in `disabled` (Store) und aktiviert **nur diese** wieder: über die
-  Anwesenheitsentität der Regel (`on`/`home`, Listener auf deren Zustand) oder den Button. Von Hand aktivierte
+  Anwesenheitsentität (`on`/`home`, Listener auf deren Zustand) oder den Button. Von Hand aktivierte
   oder gelöschte Einträge werden vergessen. Kein `busy`/`ReloadWhenIdle` (der Zustand liegt im `Store`).
-  Menü `mon_menu` (Schritte `add/edit/delete_monitor_rule`, `monitor_rule_edit` mit den Abschnitten
-  `general`, `condition`, `action`); Benachrichtigung nur im Eintrag (nicht je Regel).
 - `llm_usage.py` / `llm_providers.py`: Je Instanz ein Anbieterkonto (`anthropic`, `openai`). `llm_providers.py`
   fragt per aiohttp die **Kosten je Tag (UTC)** ab (`async_fetch_costs()`, Anthropic `/v1/organizations/cost_report`
   mit `x-api-key` (Admin-Key), `amount` in **Cent** als Dezimalstring; OpenAI `/v1/organization/costs`, `amount.value`),

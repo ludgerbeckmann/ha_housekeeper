@@ -41,6 +41,7 @@ from .const import (
     CONF_UNLOCK_ONLY_IF,
     CONF_UNLOCK_SKIP_IF,
     CONF_WORKDAY,
+    CONF_MON_DISABLE_PRESENCE,
     CONF_MONITOR_RULES,
     CONF_MOBILE_TARGETS,
     CONF_PLAYER,
@@ -136,6 +137,7 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities += _listed(opt(CONF_ALARMS, []), "players", "only_if_on", "skip_if_on")
     elif function == FUNCTION_MONITOR:
         entities += _listed(opt(CONF_MONITOR_RULES, []), "presence_entity")
+        entities.append(opt(CONF_MON_DISABLE_PRESENCE))
     elif function == FUNCTION_ENERGY:
         entities += [
             opt(CONF_EM_GRID), opt(CONF_EM_FEED), opt(CONF_EM_PV),

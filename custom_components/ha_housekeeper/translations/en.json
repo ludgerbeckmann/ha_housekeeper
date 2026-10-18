@@ -80,13 +80,6 @@
         "day": "Specific day"
       }
     },
-    "monitor_action": {
-      "options": {
-        "none": "Report only",
-        "reload": "Reload",
-        "disable": "Disable"
-      }
-    },
     "llm_provider": {
       "options": {
         "anthropic": "Anthropic",
@@ -109,6 +102,12 @@
       "options": {
         "area": "Living area",
         "persons": "Persons"
+      }
+    },
+    "monitor_list_mode": {
+      "options": {
+        "whitelist": "Whitelist (only these)",
+        "blacklist": "Blacklist (all except these)"
       }
     }
   },
@@ -1952,36 +1951,74 @@
       "step": {
         "new_integration_monitor": {
           "title": "Integration monitor",
-          "description": "The monitor watches all integrations. You add rules for specific integrations (reload, disable, re-enable) afterwards via the gear icon (Reconfigure).",
           "sections": {
             "general": {
               "name": "Monitoring",
-              "description": "When an integration counts as faulty and what is reported.",
+              "description": "When an integration counts as faulty.",
               "data": {
                 "name": "Name (shown as “Integration monitor: Name”)",
                 "grace_minutes": "Wait time before a fault (minutes)",
                 "min_entities": "Minimum number of entities",
-                "check_minutes": "Check interval (minutes)",
-                "notify_errors": "Report error state",
-                "notify_unavailable": "Report “all entities unavailable”",
-                "summary_minutes": "Bundle reports (minutes)",
-                "excluded": "Excluded from reports"
+                "check_minutes": "Check interval (minutes)"
               },
               "data_description": {
+                "name": "Optional. Empty = “Integration monitor”.",
                 "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
                 "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
-                "check_minutes": "In addition to the check at startup (after two minutes).",
-                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
-                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and create a rule with “Report” for bridges and services instead (MQTT, Zigbee2MQTT, ZHA, KNX, Hue bridge, router, Sonos, weather etc.).",
-                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
-                "excluded": "These integrations do not appear in the summary. Rules apply regardless.",
-                "name": "Optional. Empty = “Integration monitor”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+                "check_minutes": "In addition to the check at startup (after two minutes)."
+              }
+            },
+            "report": {
+              "name": "Report only",
+              "description": "Which integrations appear in the summary notification.",
+              "data": {
+                "report_mode": "List is a",
+                "report_entries": "Integrations"
+              },
+              "data_description": {
+                "report_mode": "Whitelist: only the listed integrations are reported. Blacklist: all except the listed ones (empty = all).",
+                "report_entries": "Integrations for the list above."
+              }
+            },
+            "reload": {
+              "name": "Reload",
+              "description": "Reloads these integrations once when they become faulty. Empty whitelist = nothing is reloaded.",
+              "data": {
+                "reload_mode": "List is a",
+                "reload_entries": "Integrations",
+                "reload_on_error": "On error state",
+                "reload_on_unavailable": "On “all entities unavailable”"
+              },
+              "data_description": {
+                "reload_mode": "Whitelist: only the listed integrations. Blacklist: every faulty integration except the listed ones – use with care.",
+                "reload_entries": "Integrations for the list above."
+              }
+            },
+            "disable": {
+              "name": "Disable",
+              "description": "Disables these integrations when they become faulty (takes precedence over reloading). Only integrations disabled by the monitor are enabled again. Empty whitelist = nothing is disabled.",
+              "data": {
+                "disable_mode": "List is a",
+                "disable_entries": "Integrations",
+                "disable_on_error": "On error state",
+                "disable_on_unavailable": "On “all entities unavailable”",
+                "disable_presence": "Presence entity",
+                "disable_reenable": "Enable again when present"
+              },
+              "data_description": {
+                "disable_mode": "Whitelist: only the listed integrations. Blacklist: every faulty integration except the listed ones – use with care.",
+                "disable_entries": "Integrations for the list above.",
+                "disable_presence": "State on or home counts as present.",
+                "disable_reenable": "Enables the integrations the monitor disabled again as soon as the presence entity reports presence."
               }
             },
             "notifications": {
               "name": "Notifications",
               "description": "How and with what the monitor reports.",
               "data": {
+                "notify_errors": "Report error state",
+                "notify_unavailable": "Report “all entities unavailable”",
+                "summary_minutes": "Bundle reports (minutes)",
                 "mobile_enabled": "Enable app push",
                 "mobile_targets": "Push targets (companion app devices)",
                 "tts_enabled": "Enable voice announcement",
@@ -1990,51 +2027,85 @@
                 "persistent_enabled": "Persistent notification in Home Assistant"
               },
               "data_description": {
+                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
+                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and put bridges and services on the whitelist of “Report only”.",
+                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
             }
-          }
+          },
+          "description": "The monitor watches all integrations. You add rules for specific integrations (reload, disable, re-enable) afterwards via the gear icon (Reconfigure)."
         },
-        "mon_menu": {
+        "mon_settings": {
           "title": "Integration monitor",
-          "description": "Monitoring and rules of the integration monitor.",
-          "menu_options": {
-            "mon_general": "Settings",
-            "add_monitor_rule": "Add rule",
-            "edit_monitor_rule": "Edit rule",
-            "delete_monitor_rule": "Delete rule",
-            "rename": "Rename"
-          }
-        },
-        "mon_general": {
-          "title": "Settings",
           "sections": {
             "general": {
               "name": "Monitoring",
-              "description": "When an integration counts as faulty and what is reported.",
+              "description": "When an integration counts as faulty.",
               "data": {
+                "name": "Name (shown as “Integration monitor: Name”)",
                 "grace_minutes": "Wait time before a fault (minutes)",
                 "min_entities": "Minimum number of entities",
-                "check_minutes": "Check interval (minutes)",
-                "notify_errors": "Report error state",
-                "notify_unavailable": "Report “all entities unavailable”",
-                "summary_minutes": "Bundle reports (minutes)",
-                "excluded": "Excluded from reports"
+                "check_minutes": "Check interval (minutes)"
               },
               "data_description": {
+                "name": "Optional. Empty = “Integration monitor”.",
                 "grace_minutes": "An integration must be faulty without interruption for this long before it is reported or handled. Short outages trigger nothing.",
                 "min_entities": "“All entities unavailable” only applies when the integration has at least this many active entities. Avoids false alarms for integrations with a single entity.",
-                "check_minutes": "In addition to the check at startup (after two minutes).",
-                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
-                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and create a rule with “Report” for bridges and services instead (MQTT, Zigbee2MQTT, ZHA, KNX, Hue bridge, router, Sonos, weather etc.).",
-                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
-                "excluded": "These integrations do not appear in the summary. Rules apply regardless."
+                "check_minutes": "In addition to the check at startup (after two minutes)."
+              }
+            },
+            "report": {
+              "name": "Report only",
+              "description": "Which integrations appear in the summary notification.",
+              "data": {
+                "report_mode": "List is a",
+                "report_entries": "Integrations"
+              },
+              "data_description": {
+                "report_mode": "Whitelist: only the listed integrations are reported. Blacklist: all except the listed ones (empty = all).",
+                "report_entries": "Integrations for the list above."
+              }
+            },
+            "reload": {
+              "name": "Reload",
+              "description": "Reloads these integrations once when they become faulty. Empty whitelist = nothing is reloaded.",
+              "data": {
+                "reload_mode": "List is a",
+                "reload_entries": "Integrations",
+                "reload_on_error": "On error state",
+                "reload_on_unavailable": "On “all entities unavailable”"
+              },
+              "data_description": {
+                "reload_mode": "Whitelist: only the listed integrations. Blacklist: every faulty integration except the listed ones – use with care.",
+                "reload_entries": "Integrations for the list above."
+              }
+            },
+            "disable": {
+              "name": "Disable",
+              "description": "Disables these integrations when they become faulty (takes precedence over reloading). Only integrations disabled by the monitor are enabled again. Empty whitelist = nothing is disabled.",
+              "data": {
+                "disable_mode": "List is a",
+                "disable_entries": "Integrations",
+                "disable_on_error": "On error state",
+                "disable_on_unavailable": "On “all entities unavailable”",
+                "disable_presence": "Presence entity",
+                "disable_reenable": "Enable again when present"
+              },
+              "data_description": {
+                "disable_mode": "Whitelist: only the listed integrations. Blacklist: every faulty integration except the listed ones – use with care.",
+                "disable_entries": "Integrations for the list above.",
+                "disable_presence": "State on or home counts as present.",
+                "disable_reenable": "Enables the integrations the monitor disabled again as soon as the presence entity reports presence."
               }
             },
             "notifications": {
               "name": "Notifications",
               "description": "How and with what the monitor reports.",
               "data": {
+                "notify_errors": "Report error state",
+                "notify_unavailable": "Report “all entities unavailable”",
+                "summary_minutes": "Bundle reports (minutes)",
                 "mobile_enabled": "Enable app push",
                 "mobile_targets": "Push targets (companion app devices)",
                 "tts_enabled": "Enable voice announcement",
@@ -2043,86 +2114,28 @@
                 "persistent_enabled": "Persistent notification in Home Assistant"
               },
               "data_description": {
+                "notify_errors": "Reports integrations that are not running (setup error, retry, migration error). This is almost always relevant.",
+                "notify_unavailable": "Reports integrations whose entities are all unavailable. For single devices (lamps, plugs, Shelly, IKEA, battery devices, printers) this is often normal, e.g. with the wall switch off. Recommendation: leave it off and put bridges and services on the whitelist of “Report only”.",
+                "summary_minutes": "All faults are listed in one summary notification that is sent or updated after this time, so a network outage does not cause many pushes. 0 = immediately. When the last fault is gone the notification is removed.",
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
-            }
-          }
-        },
-        "edit_monitor_rule": {
-          "title": "Edit rule",
-          "data": {
-            "rule": "Rule"
-          }
-        },
-        "delete_monitor_rule": {
-          "title": "Delete rule",
-          "data": {
-            "rule": "Rule"
-          }
-        },
-        "monitor_rule_edit": {
-          "title": "Rule",
-          "description": "For selected integrations you can report and additionally reload or disable. A disabled integration can be re-enabled automatically as soon as a presence entity of the device (e.g. a ping sensor) reports “on”.",
-          "sections": {
-            "general": {
-              "name": "Rule",
-              "description": "Name and switch of this rule.",
-              "data": {
-                "name": "Name",
-                "enabled": "Enabled"
-              }
             },
-            "condition": {
-              "name": "Trigger",
-              "description": "Which integrations and which faults.",
+            "legacy": {
+              "name": "Older rules",
+              "description": "Rules created with an earlier version keep running next to the fields above.",
               "data": {
-                "entries": "Integrations",
-                "on_error": "On error state",
-                "on_unavailable": "When all entities are unavailable"
-              },
-              "data_description": {
-                "entries": "Only integrations selected here are handled by the rule.",
-                "on_error": "Setup error, retry, migration error or unload failure."
-              }
-            },
-            "action": {
-              "name": "Action",
-              "description": "What happens on a fault.",
-              "data": {
-                "action": "Action",
-                "notify": "Report",
-                "presence_entity": "Presence entity",
-                "reenable": "Re-enable automatically"
-              },
-              "data_description": {
-                "action": "“Disable” turns the integration off (entities and automations that use it then fail silently). Integrations you disabled yourself are never touched.",
-                "notify": "Reports this fault via the ways in the settings, even if “Report all faults” is off.",
-                "presence_entity": "Shows independently of the integration whether the device is back, e.g. a ping binary sensor, a router tracker or a smart plug. When it reports “on” or “home”, the integration is enabled.",
-                "reenable": "Enables the integration the monitor disabled as soon as the presence entity reports “on” or “home”."
+                "clear_legacy_rules": "Delete older rules"
               }
             }
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “Integration monitor: Name”)"
           },
-          "data_description": {
-            "name": "Only the name, e.g. “Office”; the title then reads “Integration monitor: Office”. A leading function name is removed."
-          }
+          "description": "The monitor watches all integrations. You add rules for specific integrations (reload, disable, re-enable) afterwards via the gear icon (Reconfigure)."
         }
       },
       "error": {
         "no_method": "At least one notification method with a target must be enabled.",
         "tts_incomplete": "Voice announcement needs a TTS service and a speaker.",
         "no_targets": "Select at least one target for app push.",
-        "no_integration": "Select at least one integration.",
-        "no_condition": "Select at least one trigger.",
-        "nothing_to_do": "The rule needs an action or the report.",
-        "no_presence": "Automatic re-enabling needs a presence entity.",
-        "reenable_needs_disable": "Automatic re-enabling only makes sense with the action “Disable”."
+        "no_presence": "Automatic re-enabling needs a presence entity."
       },
       "abort": {}
     },
