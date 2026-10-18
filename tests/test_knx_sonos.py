@@ -63,7 +63,7 @@ async def test_config_flow_needs_knx(hass: HomeAssistant) -> None:
 def page(**fields):
     """Eingaben der Konfigurationsseite: flache Felder auf die Abschnitte verteilen."""
     sections = {name: {} for name in
-                ("speaker", "playback", "volume", "scenes", *(f"scene_{n}" for n in range(1, 6)),
+                ("speaker", "playback", "start", "volume", "scenes", *(f"scene_{n}" for n in range(1, 6)),
                  "status_play", "status_level", "status_text")}
     for key, value in fields.items():
         if key in ("name", "player", "max_volume", "volume_step", "stop_instead_of_pause"):
@@ -74,6 +74,8 @@ def page(**fields):
             sections["playback"][key] = value
         elif key in ("addr_volume", "addr_volume_step", "addr_volume_dim", "addr_mute"):
             sections["volume"][key] = value
+        elif key in ("start_volume", "start_favorite"):
+            sections["start"][key] = value
         elif key == "addr_scene":
             sections["scenes"][key] = value
         elif key == "clear_legacy":
@@ -535,3 +537,23 @@ async def test_page_layout_and_obsolete_scenes(hass: HomeAssistant) -> None:
         result["flow_id"], page(addr_scene="2/0/1", scene_1_favorite="Jazz"))
     assert entry.options["scene_6_favorite"] is None and entry.options["scene_7_address"] is None
     assert entry.options["scene_1_favorite"] == "Jazz"
+
+
+async def test_start_volume_and_favorite(hass: HomeAssistant) -> None:
+    entry, m = await _setup(
+        hass, state="paused", addr_toggle="1/0/1", max_volume=50, start_volume=80, start_favorite="Jazz")
+    await _telegram(hass, "1/0/1", 1)                      # startet: Lautstärke (begrenzt), dann Favorit
+    assert m["volume_set"][0].data["volume_level"] == 0.5
+    assert m["select_source"][0].data["source"] == "Jazz" and m["media_play"] == []
+    hass.states.async_set(PLAYER, "playing", {"volume_level": 0.5, "source_list": ["Jazz"]})
+    await _telegram(hass, "1/0/1", 1)                      # spielt schon: nur pausieren
+    assert len(m["media_pause"]) == 1 and len(m["volume_set"]) == 1 and len(m["select_source"]) == 1
+
+
+async def test_start_without_settings_just_plays(hass: HomeAssistant) -> None:
+    entry, m = await _setup(hass, state="idle", addr_toggle="1/0/1", addr_play_pause="1/0/2", start_volume=20)
+    await _telegram(hass, "1/0/1", 1)                      # nur Lautstärke, kein Favorit: media_play
+    assert m["volume_set"][0].data["volume_level"] == 0.2 and len(m["media_play"]) == 1
+    hass.states.async_set(PLAYER, "playing", {"volume_level": 0.2})
+    await _telegram(hass, "1/0/2", 1)                      # Schalter 1 bei laufender Wiedergabe: keine Änderung
+    assert len(m["volume_set"]) == 1

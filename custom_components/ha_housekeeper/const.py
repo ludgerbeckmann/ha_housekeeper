@@ -321,6 +321,8 @@ ATTR_ENTRY_ID = "entry_id"
 
 # --- KNX/Sonos-Connector ---
 CONF_PLAYER = "player"
+CONF_START_VOLUME = "start_volume"          # Lautstärke (%), die beim Starten der Wiedergabe gesetzt wird
+CONF_START_FAVORITE = "start_favorite"      # Favorit, der beim Starten der Wiedergabe abgespielt wird
 CONF_MAX_VOLUME = "max_volume"
 CONF_VOLUME_STEP = "volume_step"
 CONF_STOP_INSTEAD = "stop_instead_of_pause"

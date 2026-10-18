@@ -1108,6 +1108,18 @@
                 "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
               }
             },
+            "start": {
+              "name": "Start of playback",
+              "description": "Applied when a play command (play/pause toggle or play/pause switch with 1) starts a speaker that is not playing, so an old high volume is never resumed. Empty = no change. Pausing and playback that is already running are not affected.",
+              "data": {
+                "start_volume": "Volume at start (%)",
+                "start_favorite": "Favorite at start"
+              },
+              "data_description": {
+                "start_volume": "Set before playback starts, limited by the volume limit.",
+                "start_favorite": "Plays this favorite instead of simply resuming."
+              }
+            },
             "volume": {
               "name": "Volume",
               "description": "Group addresses for the volume.",
@@ -1260,6 +1272,18 @@
                 "addr_next_prev": "1 = next, 0 = previous track.",
                 "addr_stop": "1 = stop.",
                 "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
+              }
+            },
+            "start": {
+              "name": "Start of playback",
+              "description": "Applied when a play command (play/pause toggle or play/pause switch with 1) starts a speaker that is not playing, so an old high volume is never resumed. Empty = no change. Pausing and playback that is already running are not affected.",
+              "data": {
+                "start_volume": "Volume at start (%)",
+                "start_favorite": "Favorite at start"
+              },
+              "data_description": {
+                "start_volume": "Set before playback starts, limited by the volume limit.",
+                "start_favorite": "Plays this favorite instead of simply resuming."
               }
             },
             "volume": {

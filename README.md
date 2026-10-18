@@ -378,6 +378,7 @@ Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es 
 | **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
 | **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
 | **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
+| **Start** | **Lautstärke beim Start** (%) und **Favorit beim Start**, beide optional: Startet ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher, der **nicht spielt** (Pause, Leerlauf, Standby), wird zuerst die Lautstärke gesetzt (begrenzt durch die Lautstärkegrenze) und dann der Favorit gestartet, sonst nur fortgesetzt. Spielt er schon, pausiert der Taster wie bisher und ändert nichts. Damit wird nie eine alte hohe Lautstärke übernommen |
 | **Szenen** | Szenenadresse (17.001, Szenennummer 1–5); je **Szene 1–5**: Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
 | **Rückmeldungen** (drei Abschnitte) | *Wiedergabe:* Spielt, Pausiert (1 Bit). *Lautstärke:* Lautstärke (5.001), Stumm (1 Bit). *Text:* Titel, Interpret, Album, Quelle (auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
 

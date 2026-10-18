@@ -46,6 +46,8 @@ from .const import (
     CONF_ADDR_VOLUME,
     CONF_ADDR_VOLUME_DIM,
     CONF_ADDR_VOLUME_STEP,
+    CONF_START_FAVORITE,
+    CONF_START_VOLUME,
     CONF_COMMANDS,
     CONF_IDLE_TEXT,
     CONF_MAX_VOLUME,
@@ -586,19 +588,31 @@ class KnxSonosController:
         stop = bool(profile.get(CONF_STOP_INSTEAD, False))
         await self._async_player_call(profile, "media_stop" if stop else "media_pause")
 
+    async def _async_start(self, profile: dict[str, Any], state) -> None:
+        """Wiedergabe starten; spielt der Lautsprecher noch nicht, zuerst Startlautstärke und Startfavorit."""
+        if state.state != STATE_PLAYING:
+            volume = self._get(CONF_START_VOLUME)
+            if volume is not None:
+                await self._async_set_volume(profile, float(volume))
+            favorite = self._get(CONF_START_FAVORITE)
+            if favorite:
+                await self._async_player_call(profile, "select_source", source=favorite)
+                return
+        await self._async_player_call(profile, "media_play")
+
     async def _async_do(
         self, action: str, command: dict[str, Any], value: Any, state, profile: dict[str, Any]
     ) -> None:
         step = float(profile.get(CONF_VOLUME_STEP, DEFAULT_VOLUME_STEP))
         if action == ACT_PLAY:
-            await self._async_player_call(profile, "media_play")
+            await self._async_start(profile, state)
         elif action == ACT_PAUSE:
             await self._async_pause(profile)
         elif action == ACT_PLAY_PAUSE:
             if state.state == STATE_PLAYING:
                 await self._async_pause(profile)
             else:
-                await self._async_player_call(profile, "media_play")
+                await self._async_start(profile, state)
         elif action == ACT_STOP:
             await self._async_player_call(profile, "media_stop")
         elif action == ACT_NEXT:
