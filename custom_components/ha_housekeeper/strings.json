@@ -1096,16 +1096,16 @@
               "name": "Playback",
               "description": "Group addresses for control. Empty fields are not used.",
               "data": {
-                "addr_play_pause": "Play/pause (1 bit)",
+                "addr_play_pause": "Play/Pause switch (1 bit)",
                 "addr_next_prev": "Next/previous track (1 bit)",
                 "addr_stop": "Stop (1 bit)",
-                "addr_toggle": "Toggle play/pause (1 bit)"
+                "addr_toggle": "Play/Pause button (1 bit)"
               },
               "data_description": {
                 "addr_play_pause": "1 = play, 0 = pause.",
                 "addr_next_prev": "1 = next, 0 = previous track.",
                 "addr_stop": "1 = stop.",
-                "addr_toggle": "1 = switch between play and pause."
+                "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
               }
             },
             "volume": {
@@ -1250,16 +1250,16 @@
               "name": "Playback",
               "description": "Group addresses for control. Empty fields are not used.",
               "data": {
-                "addr_play_pause": "Play/pause (1 bit)",
+                "addr_play_pause": "Play/Pause switch (1 bit)",
                 "addr_next_prev": "Next/previous track (1 bit)",
                 "addr_stop": "Stop (1 bit)",
-                "addr_toggle": "Toggle play/pause (1 bit)"
+                "addr_toggle": "Play/Pause button (1 bit)"
               },
               "data_description": {
                 "addr_play_pause": "1 = play, 0 = pause.",
                 "addr_next_prev": "1 = next, 0 = previous track.",
                 "addr_stop": "1 = stop.",
-                "addr_toggle": "1 = switch between play and pause."
+                "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
               }
             },
             "volume": {

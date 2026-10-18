@@ -1096,16 +1096,16 @@
               "name": "Wiedergabe",
               "description": "Gruppenadressen für die Steuerung. Leere Felder werden nicht verwendet.",
               "data": {
-                "addr_play_pause": "Play/Pause (1 Bit)",
+                "addr_play_pause": "Play/Pause Schalter (1 Bit)",
                 "addr_next_prev": "Nächster/Vorheriger Titel (1 Bit)",
                 "addr_stop": "Stopp (1 Bit)",
-                "addr_toggle": "Play/Pause umschalten (1 Bit)"
+                "addr_toggle": "Play/Pause Taster (1 Bit)"
               },
               "data_description": {
                 "addr_play_pause": "1 = Wiedergabe, 0 = Pause.",
                 "addr_next_prev": "1 = nächster, 0 = vorheriger Titel.",
                 "addr_stop": "1 = Stopp.",
-                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten."
+                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten. 0 wird ignoriert."
               }
             },
             "volume": {
@@ -1250,16 +1250,16 @@
               "name": "Wiedergabe",
               "description": "Gruppenadressen für die Steuerung. Leere Felder werden nicht verwendet.",
               "data": {
-                "addr_play_pause": "Play/Pause (1 Bit)",
+                "addr_play_pause": "Play/Pause Schalter (1 Bit)",
                 "addr_next_prev": "Nächster/Vorheriger Titel (1 Bit)",
                 "addr_stop": "Stopp (1 Bit)",
-                "addr_toggle": "Play/Pause umschalten (1 Bit)"
+                "addr_toggle": "Play/Pause Taster (1 Bit)"
               },
               "data_description": {
                 "addr_play_pause": "1 = Wiedergabe, 0 = Pause.",
                 "addr_next_prev": "1 = nächster, 0 = vorheriger Titel.",
                 "addr_stop": "1 = Stopp.",
-                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten."
+                "addr_toggle": "1 = zwischen Wiedergabe und Pause umschalten. 0 wird ignoriert."
               }
             },
             "volume": {
