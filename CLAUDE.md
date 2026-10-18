@@ -142,7 +142,16 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   ersten Profils und setzt beim Speichern `speakers` auf `None` (weitere Profile gehen verloren, Hinweis in der
   Beschreibung); alte Listen werden nur mit dem Schalter `clear_legacy` (Abschnitt `legacy`, nur wenn welche da sind)
   gelöscht. Es gibt keine Menüeinträge `add/edit/delete_*` mehr für KNX.
-- `updater.py`: Zeitpläne in `options["schedules"]` (Schlüssel `U_*`), je Zeitplan eigene
+- `updater.py`: Die Einstellungen sind **feste Felder auf einer Seite** (`upd_settings`, kein Menü, Name als Feld, Speichern =
+  `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `general` (offen: `timeout_minutes`, `window_start`/`window_end`),
+  je Gruppe `system`/`addons`/`esphome`/`other`/`single` ein Abschnitt (`<g>_mode` `off`/`notify`/`install`, `<g>_trigger`, `<g>_time`,
+  `<g>_weekdays`, `<g>_backup`, `system_components`, `single_targets`) und `<g>_notify` (die sechs Schlüssel aus `NOTIFY_KEYS` mit
+  Präfix, z. B. `system_mobile_enabled`; je Gruppe eigene Meldewege), `legacy` nur mit älteren Zeitplänen). `settings_schedules()` bildet
+  daraus beim Start je Gruppe mit Aktion ≠ Aus einen internen Zeitplan (ID `basic:<g>`, Name je Sprache aus `GROUP_NAMES`); `all_schedules`
+  = ältere Zeitpläne aus `options["schedules"]` + `settings_schedules()`. Prüfung beim Speichern (`_validate_settings`, Fehler mit
+  Platzhalter `group`): `group_no_time`, `group_no_weekday`, `group_no_update_selected`, `group_no_targets`, `group_no_method`,
+  `group_tts_incomplete`, `invalid_window`. Ältere Zeitpläne laufen weiter, der Schalter `clear_legacy_rules` setzt sie auf `None`; es
+  gibt keinen Zeitplandialog mehr. Tests: `full()` in `tests/test_updater.py` (jeder Fehlerfall in einem frischen Dialog). Ein Zeitplan hat eigene
   Zielliste (`update`-Entitäten), Modus (melden/installieren) und Sicherung. Installiert
   wird über `update.install` **nacheinander**; Supervisor, Core und OS (Entity-IDs in
   `CRITICAL_ORDER`) immer zuletzt, nach einem Fehler ausgelassen, höchstens ein Neustart

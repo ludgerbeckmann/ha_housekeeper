@@ -32,6 +32,8 @@ from .const import (
     COMP_OS,
     COMP_OTHER,
     COMP_SUPERVISOR,
+    CONF_WINDOW_END,
+    CONF_WINDOW_START,
     CONF_SCHEDULES,
     CONF_TIMEOUT_MINUTES,
     DEFAULT_TIMEOUT_MINUTES,
@@ -48,8 +50,10 @@ from .const import (
     U_WEEKDAYS,
     U_WINDOW_END,
     U_WINDOW_START,
+    TRIGGER_TIME,
     TRIGGER_AVAILABLE,
     UPDATE_MODE_INSTALL,
+    UPDATE_MODE_NOTIFY,
     WEEKDAYS,
     signal_update,
 )
@@ -129,6 +133,59 @@ NOTIFY_KEYS = (
     CONF_TTS_PLAYER,
     CONF_PERSISTENT_ENABLED,
 )
+
+
+# --- feste Felder der Einstellungsseite: je Gruppe ein interner Zeitplan ---------------------------
+
+GROUPS = ("system", "addons", "esphome", "other", "single")
+SYSTEM_COMPONENTS = [COMP_CORE, COMP_SUPERVISOR, COMP_OS]
+GROUP_COMPONENTS = {"addons": [COMP_ADDONS], "esphome": [COMP_ESPHOME], "other": [COMP_OTHER]}
+GROUP_OFF = "off"
+GROUP_MODES = [GROUP_OFF, UPDATE_MODE_NOTIFY, UPDATE_MODE_INSTALL]
+GROUP_NAMES = {
+    "de": {"system": "System", "addons": "Add-ons", "esphome": "ESPHome-Geräte",
+           "other": "Weitere Updates", "single": "Einzelne Updates"},
+    "en": {"system": "System", "addons": "Add-ons", "esphome": "ESPHome devices",
+           "other": "Other updates", "single": "Selected updates"},
+}
+
+
+def group_key(group: str, field: str) -> str:
+    return f"{group}_{field}"
+
+
+def settings_schedules(get: Any, language: str) -> list[dict[str, Any]]:
+    """Interne Zeitpläne aus den festen Feldern (IDs `basic:<gruppe>`); Gruppen mit „Aus“ entfallen."""
+    names = GROUP_NAMES["de" if (language or "").startswith("de") else "en"]
+    schedules: list[dict[str, Any]] = []
+    for group in GROUPS:
+        mode = get(group_key(group, "mode"), GROUP_OFF) or GROUP_OFF
+        if mode == GROUP_OFF:
+            continue
+        if group == "system":
+            components = list(get(group_key(group, "components"), SYSTEM_COMPONENTS) or [])
+        else:
+            components = list(GROUP_COMPONENTS.get(group, []))
+        targets = list(get(group_key(group, "targets"), []) or []) if group == "single" else []
+        schedule: dict[str, Any] = {
+            U_ID: f"basic:{group}",
+            U_NAME: names[group],
+            U_ENABLED: True,
+            U_TRIGGER: get(group_key(group, "trigger"), TRIGGER_TIME) or TRIGGER_TIME,
+            U_TIME: get(group_key(group, "time")),
+            U_WEEKDAYS: list(get(group_key(group, "weekdays"), WEEKDAYS) or []),
+            U_WINDOW_START: get(CONF_WINDOW_START),
+            U_WINDOW_END: get(CONF_WINDOW_END),
+            U_MODE: mode,
+            U_COMPONENTS: components,
+            U_TARGETS: targets,
+            U_BACKUP: bool(get(group_key(group, "backup"), False)),
+        }
+        for key in NOTIFY_KEYS:
+            schedule[key] = get(group_key(group, key))
+        schedule[CONF_MOBILE_ENABLED] = bool(schedule[CONF_MOBILE_ENABLED])
+        schedules.append(schedule)
+    return schedules
 
 
 def has_own_notify(schedule: dict[str, Any]) -> bool:
@@ -359,7 +416,11 @@ class UpdaterController(ReloadWhenIdle):
 
     @property
     def all_schedules(self) -> list[dict[str, Any]]:
-        return list(self._opt(CONF_SCHEDULES, []) or [])
+        """Ältere Zeitpläne aus `schedules` plus die aus den festen Feldern der Einstellungsseite."""
+        return [
+            *(self._opt(CONF_SCHEDULES, []) or []),
+            *settings_schedules(self._get, self.hass.config.language or ""),
+        ]
 
     @property
     def schedules(self) -> list[dict[str, Any]]:

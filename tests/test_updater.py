@@ -4,7 +4,6 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
-import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
@@ -13,7 +12,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
+from .helpers import is_menu, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper import updater as upd
 from custom_components.ha_housekeeper.const import DOMAIN
 
@@ -344,79 +343,126 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     assert "mobile_enabled" not in ok["data"]               # Benachrichtigung je Zeitplan
 
 
-def sched_form(timing=None, actions=None, notifications=None):
-    """Zeitplan-Formular mit den Abschnitten Zeitpunkt, Aktionen und Benachrichtigungen."""
-    timing = {"name": "Sonntag", "enabled": True, "time": "03:00:00", "weekdays": ["sun"],
-              **(timing or {})}
-    return {
-        "timing": {k: v for k, v in timing.items() if v is not None},   # None = Feld leer
-        "actions": {"mode": "notify", "targets": [ADDON, DEVICE], "backup": False, **(actions or {})},
-        "notifications": {"mobile_enabled": False, "tts_enabled": False,
-                          "persistent_enabled": True, **(notifications or {})},
-    }
+def full(general=None, **groups):
+    """Eingaben der Einstellungsseite. `groups`: je Gruppe die Felder ohne Präfix, Meldewege als `notify_<feld>`;
+    ein Wert `None` lässt das Feld weg. Gruppen ohne Angabe bleiben bei den Vorgaben (Aus)."""
+    sections: dict = {"general": {"timeout_minutes": 30, **(general or {})}}
+    for group in upd.GROUPS:
+        fields = groups.get(group) or {}
+        sections[group] = {
+            f"{group}_{k}": v for k, v in fields.items() if not k.startswith("notify_") and v is not None}
+        sections[f"{group}_notify"] = {
+            f"{group}_{k[len('notify_'):]}": v for k, v in fields.items() if k.startswith("notify_")}
+    return sections
 
 
-async def test_options_flow_schedules(hass: HomeAssistant) -> None:
+async def test_settings_page_layout(hass: HomeAssistant) -> None:
+    entry, _, _ = await _setup(hass, [])
+    result = await reconfigure(hass, entry)
+    assert not is_menu(result) and result["step_id"] == "upd_settings"
+    schema = {str(k): v for k, v in result["data_schema"].schema.items()}
+    expected = ["general"] + [n for g in upd.GROUPS for n in (g, f"{g}_notify")]
+    assert list(schema) == expected
+    assert [n for n, sec in schema.items() if not sec.options["collapsed"]] == ["general"]
+    assert {str(k) for k in schema["general"].schema.schema} == {
+        "name", "timeout_minutes", "window_start", "window_end"}
+    assert {str(k) for k in schema["system"].schema.schema} == {
+        "system_mode", "system_components", "system_trigger", "system_time", "system_weekdays", "system_backup"}
+    assert "single_targets" in {str(k) for k in schema["single"].schema.schema}
+    assert {str(k) for k in schema["addons_notify"].schema.schema} >= {"addons_mobile_enabled", "addons_persistent_enabled"}
+
+
+async def test_settings_validation_and_saving(hass: HomeAssistant) -> None:
     entry, _, _ = await _setup(hass, [])
     flow = hass.config_entries.subentries
+
+    async def submit(page):
+        """Jeder Versuch in einem frischen Dialog (ein fehlerhaftes Formular bleibt sonst vorbelegt)."""
+        result = await reconfigure(hass, entry)
+        return await flow.async_configure(result["flow_id"], page)
+
+    ok_notify = {"notify_persistent_enabled": True}
+    bad = await submit(full(system=dict(mode="install", time=None, **ok_notify)))
+    assert bad["errors"] == {"base": "group_no_time"}
+    assert bad["description_placeholders"] == {"group": "System"}
+    bad = await submit(full(system=dict(mode="install", time="03:00:00", weekdays=[], **ok_notify)))
+    assert bad["errors"] == {"base": "group_no_weekday"}
+    bad = await submit(full(system=dict(mode="install", time="03:00:00", components=[], **ok_notify)))
+    assert bad["errors"] == {"base": "group_no_update_selected"}
+    bad = await submit(full(single=dict(mode="notify", time="03:00:00", **ok_notify)))
+    assert bad["errors"] == {"base": "group_no_update_selected"}
+    bad = await submit(full(addons=dict(mode="notify", time="03:00:00", notify_persistent_enabled=False)))
+    assert bad["errors"] == {"base": "group_no_method"}
+    bad = await submit(full(addons=dict(mode="notify", time="03:00:00", notify_mobile_enabled=True,
+                                        notify_persistent_enabled=False)))
+    assert bad["errors"] == {"base": "group_no_targets"}
+    bad = await submit(
+        full({"window_start": "22:00:00"}, addons=dict(mode="notify", time="03:00:00", **ok_notify)))
+    assert bad["errors"] == {"base": "invalid_window"}
+    done = await submit(full(
+        {"timeout_minutes": 10},
+        system=dict(mode="install", components=["core", "os"], time="04:00:00", weekdays=["sun"],
+                    backup=True, notify_mobile_enabled=True, notify_mobile_targets=["mobile_app_phone"]),
+        addons=dict(mode="notify", time="05:00:00", **ok_notify),
+        esphome=dict(mode="install", trigger="on_available", **ok_notify)))
+    assert done["reason"] == "reconfigure_successful"
+    assert entry.options["timeout_minutes"] == 10 and entry.options["system_mode"] == "install"
+    assert entry.options["system_components"] == ["core", "os"] and entry.options["system_backup"] is True
+    assert entry.options["system_mobile_targets"] == ["mobile_app_phone"]
+    assert entry.options["addons_tts_entity"] is None and entry.options["single_targets"] is None
+
+
+def test_settings_schedules_pure() -> None:
+    values = {
+        "system_mode": "install", "system_components": ["core"], "system_time": "04:00:00",
+        "system_weekdays": ["sun"], "system_backup": True, "system_mobile_enabled": True,
+        "system_mobile_targets": ["mobile_app_phone"],
+        "esphome_mode": "notify", "esphome_trigger": "on_available", "window_start": "22:00:00",
+        "window_end": "05:00:00", "esphome_persistent_enabled": True,
+        "single_mode": "notify", "single_targets": [DEVICE], "single_time": "06:00:00",
+        "other_mode": "off",
+    }
+    get = lambda key, default=None: values.get(key, default)  # noqa: E731
+    schedules = upd.settings_schedules(get, "de")
+    assert [s["id"] for s in schedules] == ["basic:system", "basic:esphome", "basic:single"]
+    system, esphome, single = schedules
+    assert system["name"] == "System" and system["components"] == ["core"] and system["backup"] is True
+    assert system["mode"] == "install" and system["mobile_targets"] == ["mobile_app_phone"]
+    assert esphome["components"] == ["esphome"] and esphome["trigger"] == "on_available"
+    assert esphome["window_start"] == "22:00:00" and esphome["persistent_enabled"] is True
+    assert single["targets"] == [DEVICE] and single["components"] == []
+    assert upd.settings_schedules(get, "en")[1]["name"] == "ESPHome devices"
+    assert upd.settings_schedules(lambda key, default=None: default, "de") == []     # alles aus
+
+
+async def test_fields_drive_the_controller(hass: HomeAssistant) -> None:
+    addon = register(hass, "hassio", "addon_mosquitto")
+    put(hass, addon)
+    Installer(hass)
+    _, ctrl, push = await _setup(
+        hass, [], addons_mode="notify", addons_time="03:00:00", addons_weekdays=ALL_DAYS,
+        addons_mobile_enabled=True, addons_mobile_targets=["mobile_app_phone"])
+    assert [s["id"] for s in ctrl.schedules] == ["basic:addons"]
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert len(push) == 1 and "addon_mosquitto" in push[0].data["message"]   # Meldeweg der Gruppe
+
+
+async def test_older_schedules_keep_running_and_can_be_cleared(hass: HomeAssistant) -> None:
+    put(hass, ADDON)
+    entry, ctrl, push = await _setup(hass, [schedule(mode="notify")])
+    flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    assert result["step_id"] == "upd_menu" and "edit_schedule" not in menu_options(result)
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
-    schema = result["data_schema"].schema
-    assert [str(k) for k in schema] == ["timing", "actions", "notifications"]
-    assert all(v.options["collapsed"] is False for v in schema.values())
-    assert {str(k) for k in next(iter(schema.values())).schema.schema} == {
-        "name", "enabled", "trigger", "time", "weekdays", "window_start", "window_end"}
-
-    # keine Vorgaben: weder Uhrzeit noch Wochentage sind vorbelegt
-    timing = next(iter(schema.values())).schema.schema
-    assert all(
-        k.default is vol.UNDEFINED and not k.description
-        for k in timing if str(k) in ("time", "weekdays")
-    )
-
-    bad = await flow.async_configure(result["flow_id"], sched_form(actions={"targets": []}))
-    assert bad["errors"] == {"base": "no_update_selected"}
-    none = await flow.async_configure(bad["flow_id"], sched_form(timing={"weekdays": []}))
-    assert none["errors"] == {"base": "no_weekday"}
-    notime = await flow.async_configure(none["flow_id"], sched_form(timing={"time": None}))
-    assert notime["errors"] == {"base": "no_time"}
-    nomethod = await flow.async_configure(
-        notime["flow_id"], sched_form(notifications={"persistent_enabled": False}))
-    assert nomethod["errors"] == {"base": "no_method"}
-    notarget = await flow.async_configure(
-        nomethod["flow_id"], sched_form(notifications={"mobile_enabled": True}))
-    assert notarget["errors"] == {"base": "no_targets"}
-    result = await flow.async_configure(notarget["flow_id"], sched_form())
-    assert is_menu(result)
-    (created,) = entry.options["schedules"]
-    assert created["targets"] == [ADDON, DEVICE] and created["mode"] == "notify"
-    assert created["backup"] is False and created["name"] == "Sonntag"
-    # Benachrichtigung steckt im Zeitplan (flach), nicht in Abschnitten
-    assert created["persistent_enabled"] is True and created["mobile_enabled"] is False
-    assert "timing" not in created and "notifications" not in created
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_schedule"})
-    result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
-    result = await flow.async_configure(
-        result["flow_id"],
-        sched_form(actions={"mode": "install", "backup": True, "targets": [CORE]},
-                   notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
-    (edited,) = entry.options["schedules"]
-    assert edited["id"] == created["id"] and edited["mode"] == "install"
-    assert edited["targets"] == [CORE] and edited["backup"] is True
-    assert edited["mobile_targets"] == ["mobile_app_phone"]
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
-    assert {str(k) for k in result["data_schema"].schema} == {"timeout_minutes"}
-    result = await flow.async_configure(result["flow_id"], {"timeout_minutes": 10})
-    assert entry.options["timeout_minutes"] == 10
-    assert is_menu(result)
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_schedule"})
-    result = await flow.async_configure(result["flow_id"], {"schedule": created["id"]})
-    assert entry.options["schedules"] == []
+    assert "legacy" in {str(k) for k in result["data_schema"].schema}
+    page = full(addons=dict(mode="notify", time="03:00:00", notify_persistent_enabled=True))
+    await flow.async_configure(result["flow_id"], {**page, "legacy": {"clear_legacy_rules": False}})
+    await hass.async_block_till_done()
+    ctrl = hass.data[DOMAIN][entry.entry_id]
+    assert [s["id"] for s in ctrl.all_schedules] == ["s1", "basic:addons"]
+    await ctrl.async_run_schedule(ctrl.schedules[0])
+    assert len(push) == 1                                            # Rückfall des Eintrags bleibt erhalten
+    result = await reconfigure(hass, entry)
+    await flow.async_configure(result["flow_id"], {**page, "legacy": {"clear_legacy_rules": True}})
+    assert entry.options["schedules"] is None
 
 
 # --- Komponenten ------------------------------------------------------------------------------
@@ -499,23 +545,6 @@ async def test_schedule_summary_with_components(hass: HomeAssistant) -> None:
     assert upd.schedule_summary(hass, schedule()) == "Plan s1: 03:00, 1 updates, install"
 
 
-async def test_options_flow_components_only(hass: HomeAssistant) -> None:
-    entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
-    bad = await flow.async_configure(
-        result["flow_id"], sched_form(timing={"name": "Nachts"}, actions={"targets": []}))
-    assert bad["errors"] == {"base": "no_update_selected"}
-    ok = await flow.async_configure(
-        bad["flow_id"],
-        sched_form(timing={"name": "Nachts"},
-                   actions={"mode": "install", "targets": [], "components": ["addons", "esphome"]}))
-    assert is_menu(ok)
-    (created,) = entry.options["schedules"]
-    assert created["components"] == ["addons", "esphome"] and created["targets"] == []
-
-
 # --- Benachrichtigung je Zeitplan ----------------------------------------------------------------
 
 
@@ -548,20 +577,6 @@ async def test_old_schedule_falls_back_to_entry_settings(hass: HomeAssistant) ->
     _, ctrl, push = await _setup(hass, [schedule(mode="notify")])
     await ctrl.async_run_schedule(ctrl.schedules[0])
     assert len(push) == 1
-
-
-async def test_general_settings_keep_entry_fallback(hass: HomeAssistant) -> None:
-    put(hass, ADDON)
-    entry, ctrl, push = await _setup(hass, [schedule(mode="notify")])
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "upd_general"})
-    await flow.async_configure(result["flow_id"], {"timeout_minutes": 15})
-    await hass.async_block_till_done()
-    ctrl = hass.data[DOMAIN][entry.entry_id]
-    assert entry.options["timeout_minutes"] == 15
-    await ctrl.async_run_schedule(ctrl.schedules[0])
-    assert len(push) == 1                                            # Rückfall bleibt erhalten
 
 
 async def test_check_now_uses_union_of_all_schedules(hass: HomeAssistant) -> None:
@@ -715,41 +730,6 @@ async def test_disabled_available_schedule_does_not_run(hass: HomeAssistant) -> 
     put(hass, ADDON)
     await _fire(hass, 120)
     assert inst.calls == []
-
-
-async def test_options_flow_available_trigger(hass: HomeAssistant) -> None:
-    entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
-    bad = await flow.async_configure(result["flow_id"], sched_form(
-        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00"}))
-    assert bad["errors"] == {"base": "invalid_window"}
-    same = await flow.async_configure(bad["flow_id"], sched_form(
-        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00",
-                "window_end": "22:00:00"}))
-    assert same["errors"] == {"base": "invalid_window"}
-    ok = await flow.async_configure(same["flow_id"], sched_form(
-        timing={"trigger": "on_available", "weekdays": [], "window_start": "22:00:00",
-                "window_end": "05:00:00"}))
-    assert is_menu(ok)
-    (created,) = entry.options["schedules"]
-    assert created["trigger"] == "on_available" and created["weekdays"] == []
-    assert created["window_start"] == "22:00:00" and created["window_end"] == "05:00:00"
-
-
-async def test_available_trigger_needs_no_time_or_weekdays(hass: HomeAssistant) -> None:
-    entry, _, _ = await _setup(hass, [])
-    flow = hass.config_entries.subentries
-    result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
-    form = sched_form(timing={"trigger": "on_available", "time": None, "weekdays": []})
-    result = await flow.async_configure(result["flow_id"], form)
-    assert is_menu(result)
-    (created,) = entry.options["schedules"]
-    assert created["trigger"] == "on_available" and created["time"] is None
-    assert created["weekdays"] == []
-    assert upd.schedule_summary(hass, created).startswith("Sonntag: when available")
 
 
 async def test_name_adds_device_name(hass: HomeAssistant) -> None:

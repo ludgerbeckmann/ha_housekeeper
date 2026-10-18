@@ -440,51 +440,37 @@ Betriebssystem, Add-ons wie ESPHome, außerdem die Firmware-Entitäten der
 ESPHome-Geräte). Die Update-Entitäten der ESPHome-Geräte sind in Home Assistant
 standardmäßig **deaktiviert** und müssen aktiviert sein.
 
-Ein Eintrag enthält **mehrere Zeitpläne**. Im Eintrag selbst (*Einstellungen*) steht nur das
-**Zeitlimit pro Update**; die **Benachrichtigung stellst du je Zeitplan ein**.
+Die Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld). „Allgemein“ ist aufgeklappt, die
+übrigen Abschnitte sind eingeklappt. Statt beliebig vieler Zeitpläne gibt es feste **Gruppen**, je Gruppe zwei Abschnitte
+(Aktion und Meldewege):
 
-### Zeitpläne
+- **Allgemein:** Name, **Zeitlimit pro Update** und ein optionales **Zeitfenster** (von/bis, auch über Mitternacht) für
+  „sobald verfügbar“, das für alle Gruppen gilt. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt.
+- **System:** Home Assistant Core, Supervisor und OS (Auswahl, Standard alle drei)
+- **Add-ons** (inklusive ESPHome-Add-on)
+- **ESPHome-Geräte** (Firmware)
+- **Weitere Updates** (Integrationen, HACS, Sonstiges)
+- **Einzelne Updates:** gewählte `update`-Entitäten, zusätzlich zu den Gruppen oben
+- **Ältere Zeitpläne** (nur sichtbar, wenn es welche gibt): Zeitpläne aus früheren Versionen laufen weiter, mit ihren eigenen
+  Meldewegen, und werden nur mit dem Schalter gelöscht.
 
-Unter *Konfigurieren* pflegst du die Zeitpläne (hinzufügen, bearbeiten, löschen). Der
-Dialog hat drei ausgeklappte Abschnitte. Ein Zeitplan hat:
+**Je Gruppe**
 
-**Zeitpunkt**
-
-- Name, **Auslöser** und – je nach Auslöser – die Zeitangaben:
-  - *Zu einer Uhrzeit* (Standard): **Uhrzeit** und **Wochentage** (beide ohne Vorgabe, du wählst sie selbst)
-  - *Sobald ein Update verfügbar wird*: Der Zeitplan läuft etwa eine Minute nach einer neuen
-    Update-Meldung eines seiner Ziele (mehrere gleichzeitige Meldungen ergeben einen Lauf);
-    Uhrzeit und Wochentage entfallen. Welche Updates ihn auslösen, bestimmen die gewählten
-    **Komponenten** und **einzelnen Updates** – für unterschiedliches Verhalten je Komponente
-    legst du einfach mehrere Zeitpläne an (z. B. Add-ons sofort, Core nur sonntags nachts).
-    Optional ein **Zeitfenster** (von/bis, auch über Mitternacht): Außerhalb wartet der Zeitplan
-    und holt zu Beginn des Fensters nach. Beim Start oder Neuladen werden bereits vorhandene
-    Updates nicht ausgelöst („Jetzt prüfen“ meldet sie).
-
-**Aktionen**
-
-- **Aktion**: *Nur benachrichtigen* (Standard) oder *Automatisch installieren*
-- die **Komponenten**, die aktualisiert werden sollen (Mehrfachauswahl):
-  *Home Assistant Core*, *Supervisor*, *Betriebssystem (OS)*, *Add-ons* (inklusive
-  ESPHome), *ESPHome-Geräte (Firmware)* sowie *Integrationen und Sonstiges* (z. B. HACS).
-  Die Komponenten werden **bei jedem Lauf neu ermittelt**, ein später installiertes Add-on
-  ist also automatisch dabei. Deaktivierte Entitäten zählen nicht.
-- optional zusätzlich **einzelne Updates**: eine oder mehrere `update`-Entitäten.
-  Verwendet wird die Vereinigung aus Komponenten und einzelnen Updates; mindestens eines
-  von beiden muss gewählt sein. Jeder Zeitplan hat seine eigene Auswahl.
+- **Aktion:** *Aus* (Standard, die Gruppe wird nicht beachtet), *Nur melden* oder *Automatisch installieren*
+- **Auslöser** und – je nach Auslöser – die Zeitangaben:
+  - *Zu einer Uhrzeit* (Standard): **Uhrzeit** und **Wochentage**
+  - *Sobald ein Update verfügbar wird*: Die Gruppe läuft etwa eine Minute nach einer neuen Update-Meldung eines ihrer Ziele
+    (mehrere gleichzeitige Meldungen ergeben einen Lauf); Uhrzeit und Wochentage entfallen. Beim Start oder Neuladen werden bereits
+    vorhandene Updates nicht ausgelöst („Jetzt prüfen“ meldet sie).
 - **Sicherung vor dem Installieren** (Standard: aus; nur bei Updates, die das unterstützen)
+- **Meldewege** (eigener Abschnitt je Gruppe): **App-Push** (ein oder mehrere Ziele), **Sprachausgabe** (TTS-Dienst und
+  Lautsprecher) und **persistente Meldung**; mindestens ein Weg muss gewählt sein. Fehler beim Speichern nennen die Gruppe.
 
-**Benachrichtigungen**
-
-- **App-Push** (ein oder mehrere Ziele), **Sprachausgabe** (TTS-Dienst und Lautsprecher),
-  **persistente Meldung**; mindestens ein Weg muss gewählt sein. Neue Zeitpläne sind mit den
-  bisherigen Einstellungen des Eintrags vorbelegt (sonst: nur persistente Meldung).
-- Zeitpläne aus älteren Versionen haben noch keine eigenen Einstellungen und nutzen weiter
-  die des Eintrags, bis du sie einmal bearbeitest und speicherst.
-- Der Bericht nach einem Neustart (Core/OS-Update) geht über die Wege des Zeitplans, der den
-  Lauf gestartet hat. Der Button **Jetzt prüfen** meldet über die **Vereinigung aller
-  Zeitpläne** (alle Push-Ziele, Sprachausgabe vom ersten Zeitplan, der sie nutzt, persistente
-  Meldung, wenn ein Zeitplan sie nutzt).
+Je Gruppe entsteht beim Start ein interner Zeitplan, der Ablauf ist unverändert. Die Komponenten werden **bei jedem Lauf neu
+ermittelt**, ein später installiertes Add-on ist also automatisch dabei. Deaktivierte Entitäten zählen nicht. Der Bericht nach
+einem Neustart (Core/OS-Update) geht über die Meldewege der Gruppe, die den Lauf gestartet hat. Der Button **Jetzt prüfen**
+meldet über die **Vereinigung aller Gruppen und Zeitpläne** (alle Push-Ziele, Sprachausgabe vom ersten, der sie nutzt,
+persistente Meldung, wenn einer sie nutzt).
 
 Zur eingestellten Zeit werden nur Updates berücksichtigt, die gerade bereitstehen
 (ein bewusst übersprungenes Update bleibt übersprungen). Zugeordnet wird über die

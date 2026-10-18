@@ -128,6 +128,7 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities += _listed(speakers, CONF_PLAYER) if speakers else [opt(CONF_PLAYER)]
     elif function == FUNCTION_UPDATER:
         entities += _listed(opt(CONF_SCHEDULES, []), "targets")
+        entities += [str(e) for e in opt("single_targets", []) or []]
         # Zeitpläne mit eigenen TTS-Einstellungen
         entities += _listed(opt(CONF_SCHEDULES, []), CONF_TTS_ENTITY, CONF_TTS_PLAYER)
     elif function == FUNCTION_TASK_PLANNER:

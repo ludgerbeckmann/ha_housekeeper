@@ -450,6 +450,8 @@ TEXT_SOURCES = [SRC_TITLE, SRC_ARTIST, SRC_ALBUM, SRC_SOURCE]
 # --- Updater ---
 CONF_SCHEDULES = "schedules"
 CONF_TIMEOUT_MINUTES = "timeout_minutes"
+CONF_WINDOW_START = "window_start"      # Zeitfenster für „sobald verfügbar“ (gilt für alle Gruppen)
+CONF_WINDOW_END = "window_end"
 DEFAULT_TIMEOUT_MINUTES = 30
 
 # Zeitplan: Schlüssel und Werte
