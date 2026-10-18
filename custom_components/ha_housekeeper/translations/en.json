@@ -109,6 +109,13 @@
         "whitelist": "Whitelist (only these)",
         "blacklist": "Blacklist (all except these)"
       }
+    },
+    "update_group_mode": {
+      "options": {
+        "off": "Off",
+        "notify": "Report only",
+        "install": "Install automatically"
+      }
     }
   },
   "entity": {
@@ -902,11 +909,11 @@
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
         "no_media": "Select an audio file.",
-        "profile_no_weekday": "Profile ｛profile｝: select at least one weekday.",
-        "profile_no_output": "Profile ｛profile｝ needs at least one media player or app push.",
-        "profile_no_targets": "Profile ｛profile｝: select at least one target for app push.",
-        "profile_no_tts": "Profile ｛profile｝: the announcement needs a TTS service and a text.",
-        "profile_no_ringtone": "Profile ｛profile｝: select an audio file for the ringtone."
+        "profile_no_weekday": "Profile {profile}: select at least one weekday.",
+        "profile_no_output": "Profile {profile} needs at least one media player or app push.",
+        "profile_no_targets": "Profile {profile}: select at least one target for app push.",
+        "profile_no_tts": "Profile {profile}: the announcement needs a TTS service and a text.",
+        "profile_no_ringtone": "Profile {profile}: select an audio file for the ringtone."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",
@@ -1438,104 +1445,201 @@
             "timeout_minutes": "After this time an update counts as failed and the run continues.",
             "name": "Optional. Empty = “Home Assistant Updater”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
           },
-          "description": "This instance holds several schedules; you add them afterwards via the gear icon (Reconfigure). Notifications are set per schedule."
+          "description": "You set up the groups (action, trigger and notification methods) afterwards via the gear icon."
         },
-        "upd_menu": {
+        "upd_settings": {
           "title": "Home Assistant Updater",
-          "description": "Schedules and settings of the updater.",
-          "menu_options": {
-            "upd_general": "Settings",
-            "add_schedule": "Add schedule",
-            "edit_schedule": "Edit schedule",
-            "delete_schedule": "Delete schedule",
-            "rename": "Rename"
-          }
-        },
-        "upd_general": {
-          "title": "Settings",
-          "data": {
-            "timeout_minutes": "Time limit per update (minutes)"
-          },
-          "data_description": {
-            "timeout_minutes": "After this time an update counts as failed and the run continues."
-          }
-        },
-        "edit_schedule": {
-          "title": "Edit schedule",
-          "data": {
-            "schedule": "Schedule"
-          }
-        },
-        "delete_schedule": {
-          "title": "Delete schedule",
-          "data": {
-            "schedule": "Schedule"
-          }
-        },
-        "schedule_edit": {
-          "title": "Schedule",
-          "description": "Time, actions and notification of this schedule. At the set time on the selected weekdays the selected components and updates are reported or installed if an update is available.",
           "sections": {
-            "timing": {
-              "name": "Time",
-              "description": "When the schedule runs.",
+            "general": {
+              "name": "General",
+              "description": "Name, time limit and time window.",
               "data": {
-                "name": "Name",
-                "enabled": "Enabled",
-                "time": "Time",
-                "weekdays": "Weekdays",
-                "trigger": "Trigger",
-                "window_start": "Window from",
-                "window_end": "Window until"
+                "name": "Name (shown as “Home Assistant Updater: Name”)",
+                "timeout_minutes": "Time limit per update (minutes)",
+                "window_start": "Time window from",
+                "window_end": "Time window until"
               },
               "data_description": {
-                "trigger": "“At a set time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update is reported for one of the selected targets; time and weekdays are then ignored.",
-                "time": "Only for “At a set time”.",
-                "weekdays": "Only for “At a set time”.",
-                "window_start": "Only for “As soon as an update becomes available”, optional. Outside the window the run waits and is made up when it opens (also across midnight). Both fields empty = any time.",
-                "window_end": "End of the window (see “Window from”)."
+                "name": "Optional. Empty = “Home Assistant Updater”.",
+                "timeout_minutes": "After this time an update counts as failed; the run then continues.",
+                "window_start": "Only for “As soon as an update becomes available”, optional and for all groups. Outside the window the run waits and catches up when it begins (also across midnight). Both empty = any time.",
+                "window_end": "End of the time window (see “Time window from”)."
               }
             },
-            "actions": {
-              "name": "Actions",
-              "description": "What this schedule does.",
+            "system": {
+              "name": "System",
+              "description": "Home Assistant Core, Supervisor and OS. They are always installed last; after an error they are skipped, and at most one restart (Core or OS) runs per run.",
               "data": {
-                "mode": "Action",
-                "components": "Components",
-                "targets": "Individual updates",
-                "backup": "Create a backup before installing"
+                "system_mode": "Action",
+                "system_components": "Components",
+                "system_trigger": "Trigger",
+                "system_time": "Time",
+                "system_weekdays": "Weekdays",
+                "system_backup": "Create a backup before installing"
               },
               "data_description": {
-                "components": "Whole components to update. They are determined anew on every run, so an add-on installed later is included automatically. Supervisor, Core and OS are always installed last; after a failure they are skipped, and at most one restart (Core or OS) is performed per run.",
-                "targets": "Additionally individual update entities, e.g. a specific add-on or an ESPHome device. Select at least components or individual updates.",
-                "backup": "Only for updates that support a backup."
+                "system_mode": "Off = this group is ignored.",
+                "system_trigger": "“At a time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update notice; time and weekdays are then ignored.",
+                "system_time": "Only for “At a time”.",
+                "system_weekdays": "Only for “At a time”.",
+                "system_backup": "Only for updates that support a backup."
               }
             },
-            "notifications": {
-              "name": "Notifications",
-              "description": "How and with what this schedule reports.",
+            "system_notify": {
+              "name": "System: Notifications",
+              "description": "How and with what this group reports.",
               "data": {
-                "mobile_enabled": "Enable app push",
-                "mobile_targets": "Push targets (companion app devices)",
-                "tts_enabled": "Enable voice announcement",
-                "tts_entity": "TTS service",
-                "tts_player": "Speaker (media_player)",
-                "persistent_enabled": "Persistent notification in Home Assistant"
+                "system_mobile_enabled": "Enable app push",
+                "system_mobile_targets": "Push targets (companion app devices)",
+                "system_tts_enabled": "Enable voice announcement",
+                "system_tts_entity": "TTS service",
+                "system_tts_player": "Speaker (media_player)",
+                "system_persistent_enabled": "Persistent notification in Home Assistant"
               },
               "data_description": {
-                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+                "system_mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible."
+              }
+            },
+            "addons": {
+              "name": "Add-ons",
+              "description": "All add-ons. They are determined on every run, so an add-on installed later is included automatically.",
+              "data": {
+                "addons_mode": "Action",
+                "addons_trigger": "Trigger",
+                "addons_time": "Time",
+                "addons_weekdays": "Weekdays",
+                "addons_backup": "Create a backup before installing"
+              },
+              "data_description": {
+                "addons_mode": "Off = this group is ignored.",
+                "addons_trigger": "“At a time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update notice; time and weekdays are then ignored.",
+                "addons_time": "Only for “At a time”.",
+                "addons_weekdays": "Only for “At a time”.",
+                "addons_backup": "Only for updates that support a backup."
+              }
+            },
+            "addons_notify": {
+              "name": "Add-ons: Notifications",
+              "description": "How and with what this group reports.",
+              "data": {
+                "addons_mobile_enabled": "Enable app push",
+                "addons_mobile_targets": "Push targets (companion app devices)",
+                "addons_tts_enabled": "Enable voice announcement",
+                "addons_tts_entity": "TTS service",
+                "addons_tts_player": "Speaker (media_player)",
+                "addons_persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "addons_mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible."
+              }
+            },
+            "esphome": {
+              "name": "ESPHome devices",
+              "description": "All ESPHome devices (firmware updates).",
+              "data": {
+                "esphome_mode": "Action",
+                "esphome_trigger": "Trigger",
+                "esphome_time": "Time",
+                "esphome_weekdays": "Weekdays",
+                "esphome_backup": "Create a backup before installing"
+              },
+              "data_description": {
+                "esphome_mode": "Off = this group is ignored.",
+                "esphome_trigger": "“At a time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update notice; time and weekdays are then ignored.",
+                "esphome_time": "Only for “At a time”.",
+                "esphome_weekdays": "Only for “At a time”.",
+                "esphome_backup": "Only for updates that support a backup."
+              }
+            },
+            "esphome_notify": {
+              "name": "ESPHome devices: Notifications",
+              "description": "How and with what this group reports.",
+              "data": {
+                "esphome_mobile_enabled": "Enable app push",
+                "esphome_mobile_targets": "Push targets (companion app devices)",
+                "esphome_tts_enabled": "Enable voice announcement",
+                "esphome_tts_entity": "TTS service",
+                "esphome_tts_player": "Speaker (media_player)",
+                "esphome_persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "esphome_mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible."
+              }
+            },
+            "other": {
+              "name": "Other updates",
+              "description": "All remaining updates, e.g. integrations and HACS.",
+              "data": {
+                "other_mode": "Action",
+                "other_trigger": "Trigger",
+                "other_time": "Time",
+                "other_weekdays": "Weekdays",
+                "other_backup": "Create a backup before installing"
+              },
+              "data_description": {
+                "other_mode": "Off = this group is ignored.",
+                "other_trigger": "“At a time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update notice; time and weekdays are then ignored.",
+                "other_time": "Only for “At a time”.",
+                "other_weekdays": "Only for “At a time”.",
+                "other_backup": "Only for updates that support a backup."
+              }
+            },
+            "other_notify": {
+              "name": "Other updates: Notifications",
+              "description": "How and with what this group reports.",
+              "data": {
+                "other_mobile_enabled": "Enable app push",
+                "other_mobile_targets": "Push targets (companion app devices)",
+                "other_tts_enabled": "Enable voice announcement",
+                "other_tts_entity": "TTS service",
+                "other_tts_player": "Speaker (media_player)",
+                "other_persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "other_mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible."
+              }
+            },
+            "single": {
+              "name": "Selected updates",
+              "description": "Selected update entities in addition to the groups above, e.g. a specific device.",
+              "data": {
+                "single_mode": "Action",
+                "single_targets": "Updates",
+                "single_trigger": "Trigger",
+                "single_time": "Time",
+                "single_weekdays": "Weekdays",
+                "single_backup": "Create a backup before installing"
+              },
+              "data_description": {
+                "single_mode": "Off = this group is ignored.",
+                "single_trigger": "“At a time” runs on the selected weekdays. “As soon as an update becomes available” runs shortly after a new update notice; time and weekdays are then ignored.",
+                "single_time": "Only for “At a time”.",
+                "single_weekdays": "Only for “At a time”.",
+                "single_backup": "Only for updates that support a backup."
+              }
+            },
+            "single_notify": {
+              "name": "Selected updates: Notifications",
+              "description": "How and with what this group reports.",
+              "data": {
+                "single_mobile_enabled": "Enable app push",
+                "single_mobile_targets": "Push targets (companion app devices)",
+                "single_tts_enabled": "Enable voice announcement",
+                "single_tts_entity": "TTS service",
+                "single_tts_player": "Speaker (media_player)",
+                "single_persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "single_mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible."
+              }
+            },
+            "legacy": {
+              "name": "Older schedules",
+              "description": "Schedules from an earlier version keep running next to the groups above, with their own notification methods.",
+              "data": {
+                "clear_legacy_rules": "Delete older schedules"
               }
             }
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “Home Assistant Updater: Name”)"
-          },
-          "data_description": {
-            "name": "Only the name, e.g. “Office”; the title then reads “Home Assistant Updater: Office”. A leading function name is removed."
           }
         }
       },
@@ -1568,7 +1672,13 @@
         "in_past": "The time is in the past.",
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
-        "no_media": "Select an audio file."
+        "no_media": "Select an audio file.",
+        "group_no_time": "{group}: “At a time” needs a time.",
+        "group_no_weekday": "{group}: select at least one weekday.",
+        "group_no_update_selected": "{group}: select at least one update.",
+        "group_no_targets": "{group}: select at least one target for app push.",
+        "group_no_method": "{group}: at least one notification method with a target must be enabled.",
+        "group_tts_incomplete": "{group}: voice announcement needs a TTS service and a speaker."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",

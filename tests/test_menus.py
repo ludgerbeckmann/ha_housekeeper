@@ -14,8 +14,6 @@ COMPONENT = Path(__file__).parent.parent / "custom_components" / "ha_housekeeper
 
 ENTRIES = {
     "pool_pump": {"function_type": "pool_pump", "name": "Pool", "pump_entity": "switch.p"},
-    "updater": {"function_type": "updater", "name": "Updater", "schedules": [],
-                "persistent_enabled": True},
     "alarm_clock": {"function_type": "alarm_clock", "name": "Wecker", "alarms": [],
                     "mobile_enabled": False},
     "task_planner": {"function_type": "task_planner", "name": "Planer", "tasks": [],
@@ -44,10 +42,10 @@ async def test_menu_is_native_without_done_entry(hass: HomeAssistant, function) 
 
 
 async def test_menu_selection_dispatches(hass: HomeAssistant) -> None:
-    entry, result = await _open(hass, ENTRIES["updater"])
+    entry, result = await _open(hass, ENTRIES["alarm_clock"])
     flow = hass.config_entries.subentries
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_schedule"})
-    assert result["step_id"] == "schedule_edit" and not is_menu(result)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_alarm"})
+    assert result["step_id"] == "alarm_edit" and not is_menu(result)
     # ungültige Auswahl wird abgelehnt
     _, menu = await _open(
         hass, {**ENTRIES["task_planner"], "name": "Planer 2"}
@@ -67,7 +65,7 @@ def test_translations_cover_all_menu_options() -> None:
             for step_id, step in sub["step"].items()
         }
         menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
-        assert set(menus) == {"pool_menu", "upd_menu", "tp_menu",
+        assert set(menus) == {"pool_menu", "tp_menu",
                               "task_triggers", "alarm_menu", "llm_menu", "ir_menu"}, name
         assert not any("done" in labels for labels in menus.values()), name
         # jeder Eintrag, den ein Menü anbieten kann, hat in seinem Menü eine Beschriftung
@@ -75,7 +73,7 @@ def test_translations_cover_all_menu_options() -> None:
         source = (COMPONENT / "config_flow.py").read_text(encoding="utf-8") + "".join(
             path.read_text(encoding="utf-8") for path in (COMPONENT / "flows").glob("*.py")
         )
-        for option in ("pool_general", "add_window", "dry_run", "heater", "upd_general", "add_schedule",
+        for option in ("pool_general", "add_window", "dry_run", "heater",
                        "tp_general", "add_task", "add_trigger", "delete_trigger", "task_save",
                        "alarm_general", "add_alarm", "edit_alarm", "delete_alarm"):
             assert option in labels and f'"{option}"' in source, (name, option)

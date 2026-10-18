@@ -109,6 +109,13 @@
         "whitelist": "Whitelist (nur diese)",
         "blacklist": "Blacklist (alle außer diesen)"
       }
+    },
+    "update_group_mode": {
+      "options": {
+        "off": "Aus",
+        "notify": "Nur melden",
+        "install": "Automatisch installieren"
+      }
     }
   },
   "entity": {
@@ -902,11 +909,11 @@
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
         "no_media": "Wähle eine Audiodatei.",
-        "profile_no_weekday": "Profil ｛profile｝: Mindestens ein Wochentag muss gewählt sein.",
-        "profile_no_output": "Profil ｛profile｝ braucht mindestens einen Media Player oder App-Push.",
-        "profile_no_targets": "Profil ｛profile｝: Für den App-Push muss mindestens ein Ziel gewählt sein.",
-        "profile_no_tts": "Profil ｛profile｝: Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
-        "profile_no_ringtone": "Profil ｛profile｝: Für den Klingelton muss eine Audiodatei gewählt sein."
+        "profile_no_weekday": "Profil {profile}: Mindestens ein Wochentag muss gewählt sein.",
+        "profile_no_output": "Profil {profile} braucht mindestens einen Media Player oder App-Push.",
+        "profile_no_targets": "Profil {profile}: Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "profile_no_tts": "Profil {profile}: Für die Ansage müssen TTS-Dienst und Text gesetzt sein.",
+        "profile_no_ringtone": "Profil {profile}: Für den Klingelton muss eine Audiodatei gewählt sein."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
@@ -1438,104 +1445,201 @@
             "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter.",
             "name": "Optional. Leer = „Home Assistant Updater“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
           },
-          "description": "Diese Instanz enthält mehrere Zeitpläne; du legst sie danach über das Zahnrad (Neu konfigurieren) an. Benachrichtigungen stellst du je Zeitplan ein."
+          "description": "Die Einstellungen (Gruppen mit Aktion, Auslöser und Meldewegen) nimmst du danach über das Zahnrad vor."
         },
-        "upd_menu": {
+        "upd_settings": {
           "title": "Home Assistant Updater",
-          "description": "Zeitpläne und Einstellungen des Updaters.",
-          "menu_options": {
-            "upd_general": "Einstellungen",
-            "add_schedule": "Zeitplan hinzufügen",
-            "edit_schedule": "Zeitplan bearbeiten",
-            "delete_schedule": "Zeitplan löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "upd_general": {
-          "title": "Einstellungen",
-          "data": {
-            "timeout_minutes": "Zeitlimit pro Update (Minuten)"
-          },
-          "data_description": {
-            "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter."
-          }
-        },
-        "edit_schedule": {
-          "title": "Zeitplan bearbeiten",
-          "data": {
-            "schedule": "Zeitplan"
-          }
-        },
-        "delete_schedule": {
-          "title": "Zeitplan löschen",
-          "data": {
-            "schedule": "Zeitplan"
-          }
-        },
-        "schedule_edit": {
-          "title": "Zeitplan",
-          "description": "Zeitpunkt, Aktionen und Benachrichtigung dieses Zeitplans. Zur eingestellten Uhrzeit an den gewählten Wochentagen werden die ausgewählten Komponenten und Updates gemeldet oder installiert, sofern gerade ein Update bereitsteht.",
           "sections": {
-            "timing": {
-              "name": "Zeitpunkt",
-              "description": "Wann der Zeitplan läuft.",
+            "general": {
+              "name": "Allgemein",
+              "description": "Name, Zeitlimit und Zeitfenster.",
               "data": {
-                "name": "Name",
-                "enabled": "Aktiv",
-                "time": "Uhrzeit",
-                "weekdays": "Wochentage",
-                "trigger": "Auslöser",
+                "name": "Name (erscheint als „Home Assistant Updater: Name“)",
+                "timeout_minutes": "Zeitlimit pro Update (Minuten)",
                 "window_start": "Zeitfenster ab",
                 "window_end": "Zeitfenster bis"
               },
               "data_description": {
-                "trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung eines der gewählten Ziele; Uhrzeit und Wochentage werden dann ignoriert.",
-                "time": "Nur bei „Zu einer Uhrzeit“.",
-                "weekdays": "Nur bei „Zu einer Uhrzeit“.",
-                "window_start": "Nur bei „Sobald ein Update verfügbar wird“, optional. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt (auch über Mitternacht). Beide Felder leer = jederzeit.",
+                "name": "Optional. Leer = „Home Assistant Updater“.",
+                "timeout_minutes": "Nach dieser Zeit gilt ein Update als fehlgeschlagen; der Lauf geht dann weiter.",
+                "window_start": "Nur für „Sobald ein Update verfügbar wird“, optional und für alle Gruppen. Außerhalb des Fensters wird gewartet und zu dessen Beginn nachgeholt (auch über Mitternacht). Beide Felder leer = jederzeit.",
                 "window_end": "Ende des Zeitfensters (siehe „Zeitfenster ab“)."
               }
             },
-            "actions": {
-              "name": "Aktionen",
-              "description": "Was bei diesem Zeitplan geschieht.",
+            "system": {
+              "name": "System",
+              "description": "Home Assistant Core, Supervisor und OS. Sie werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
               "data": {
-                "mode": "Aktion",
-                "components": "Komponenten",
-                "targets": "Einzelne Updates",
-                "backup": "Vor dem Installieren Sicherung anlegen"
+                "system_mode": "Aktion",
+                "system_components": "Komponenten",
+                "system_trigger": "Auslöser",
+                "system_time": "Uhrzeit",
+                "system_weekdays": "Wochentage",
+                "system_backup": "Vor dem Installieren Sicherung anlegen"
               },
               "data_description": {
-                "components": "Ganze Komponenten, die aktualisiert werden sollen. Sie werden bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei. Supervisor, Core und OS werden immer zuletzt installiert; nach einem Fehler werden sie ausgelassen, und pro Lauf wird höchstens ein Neustart (Core oder OS) ausgeführt.",
-                "targets": "Zusätzlich einzelne Update-Entitäten, z. B. ein bestimmtes Add-on oder ein ESPHome-Gerät. Mindestens Komponenten oder einzelne Updates müssen gewählt sein.",
-                "backup": "Nur bei Updates, die eine Sicherung unterstützen."
+                "system_mode": "Aus = diese Gruppe wird nicht beachtet.",
+                "system_trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung; Uhrzeit und Wochentage werden dann ignoriert.",
+                "system_time": "Nur bei „Zu einer Uhrzeit“.",
+                "system_weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "system_backup": "Nur bei Updates, die eine Sicherung unterstützen."
               }
             },
-            "notifications": {
-              "name": "Benachrichtigungen",
-              "description": "Wie und womit dieser Zeitplan meldet.",
+            "system_notify": {
+              "name": "System: Meldewege",
+              "description": "Wie und womit diese Gruppe meldet.",
               "data": {
-                "mobile_enabled": "App-Push aktivieren",
-                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-                "tts_enabled": "Sprachausgabe aktivieren",
-                "tts_entity": "TTS-Dienst",
-                "tts_player": "Lautsprecher (media_player)",
-                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+                "system_mobile_enabled": "App-Push aktivieren",
+                "system_mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "system_tts_enabled": "Sprachausgabe aktivieren",
+                "system_tts_entity": "TTS-Dienst",
+                "system_tts_player": "Lautsprecher (media_player)",
+                "system_persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
               },
               "data_description": {
-                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+                "system_mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich."
+              }
+            },
+            "addons": {
+              "name": "Add-ons",
+              "description": "Alle Add-ons. Die Auswahl wird bei jedem Lauf neu ermittelt, ein später installiertes Add-on ist also automatisch dabei.",
+              "data": {
+                "addons_mode": "Aktion",
+                "addons_trigger": "Auslöser",
+                "addons_time": "Uhrzeit",
+                "addons_weekdays": "Wochentage",
+                "addons_backup": "Vor dem Installieren Sicherung anlegen"
+              },
+              "data_description": {
+                "addons_mode": "Aus = diese Gruppe wird nicht beachtet.",
+                "addons_trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung; Uhrzeit und Wochentage werden dann ignoriert.",
+                "addons_time": "Nur bei „Zu einer Uhrzeit“.",
+                "addons_weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "addons_backup": "Nur bei Updates, die eine Sicherung unterstützen."
+              }
+            },
+            "addons_notify": {
+              "name": "Add-ons: Meldewege",
+              "description": "Wie und womit diese Gruppe meldet.",
+              "data": {
+                "addons_mobile_enabled": "App-Push aktivieren",
+                "addons_mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "addons_tts_enabled": "Sprachausgabe aktivieren",
+                "addons_tts_entity": "TTS-Dienst",
+                "addons_tts_player": "Lautsprecher (media_player)",
+                "addons_persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "addons_mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich."
+              }
+            },
+            "esphome": {
+              "name": "ESPHome-Geräte",
+              "description": "Alle ESPHome-Geräte (Firmware-Updates).",
+              "data": {
+                "esphome_mode": "Aktion",
+                "esphome_trigger": "Auslöser",
+                "esphome_time": "Uhrzeit",
+                "esphome_weekdays": "Wochentage",
+                "esphome_backup": "Vor dem Installieren Sicherung anlegen"
+              },
+              "data_description": {
+                "esphome_mode": "Aus = diese Gruppe wird nicht beachtet.",
+                "esphome_trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung; Uhrzeit und Wochentage werden dann ignoriert.",
+                "esphome_time": "Nur bei „Zu einer Uhrzeit“.",
+                "esphome_weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "esphome_backup": "Nur bei Updates, die eine Sicherung unterstützen."
+              }
+            },
+            "esphome_notify": {
+              "name": "ESPHome-Geräte: Meldewege",
+              "description": "Wie und womit diese Gruppe meldet.",
+              "data": {
+                "esphome_mobile_enabled": "App-Push aktivieren",
+                "esphome_mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "esphome_tts_enabled": "Sprachausgabe aktivieren",
+                "esphome_tts_entity": "TTS-Dienst",
+                "esphome_tts_player": "Lautsprecher (media_player)",
+                "esphome_persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "esphome_mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich."
+              }
+            },
+            "other": {
+              "name": "Weitere Updates",
+              "description": "Alle übrigen Updates, z. B. Integrationen und HACS.",
+              "data": {
+                "other_mode": "Aktion",
+                "other_trigger": "Auslöser",
+                "other_time": "Uhrzeit",
+                "other_weekdays": "Wochentage",
+                "other_backup": "Vor dem Installieren Sicherung anlegen"
+              },
+              "data_description": {
+                "other_mode": "Aus = diese Gruppe wird nicht beachtet.",
+                "other_trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung; Uhrzeit und Wochentage werden dann ignoriert.",
+                "other_time": "Nur bei „Zu einer Uhrzeit“.",
+                "other_weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "other_backup": "Nur bei Updates, die eine Sicherung unterstützen."
+              }
+            },
+            "other_notify": {
+              "name": "Weitere Updates: Meldewege",
+              "description": "Wie und womit diese Gruppe meldet.",
+              "data": {
+                "other_mobile_enabled": "App-Push aktivieren",
+                "other_mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "other_tts_enabled": "Sprachausgabe aktivieren",
+                "other_tts_entity": "TTS-Dienst",
+                "other_tts_player": "Lautsprecher (media_player)",
+                "other_persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "other_mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich."
+              }
+            },
+            "single": {
+              "name": "Einzelne Updates",
+              "description": "Ausgewählte Update-Entitäten, zusätzlich zu den Gruppen oben, z. B. ein bestimmtes Gerät.",
+              "data": {
+                "single_mode": "Aktion",
+                "single_targets": "Updates",
+                "single_trigger": "Auslöser",
+                "single_time": "Uhrzeit",
+                "single_weekdays": "Wochentage",
+                "single_backup": "Vor dem Installieren Sicherung anlegen"
+              },
+              "data_description": {
+                "single_mode": "Aus = diese Gruppe wird nicht beachtet.",
+                "single_trigger": "„Zu einer Uhrzeit“ läuft an den gewählten Wochentagen. „Sobald ein Update verfügbar wird“ läuft kurz nach einer neuen Update-Meldung; Uhrzeit und Wochentage werden dann ignoriert.",
+                "single_time": "Nur bei „Zu einer Uhrzeit“.",
+                "single_weekdays": "Nur bei „Zu einer Uhrzeit“.",
+                "single_backup": "Nur bei Updates, die eine Sicherung unterstützen."
+              }
+            },
+            "single_notify": {
+              "name": "Einzelne Updates: Meldewege",
+              "description": "Wie und womit diese Gruppe meldet.",
+              "data": {
+                "single_mobile_enabled": "App-Push aktivieren",
+                "single_mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "single_tts_enabled": "Sprachausgabe aktivieren",
+                "single_tts_entity": "TTS-Dienst",
+                "single_tts_player": "Lautsprecher (media_player)",
+                "single_persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "single_mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich."
+              }
+            },
+            "legacy": {
+              "name": "Ältere Zeitpläne",
+              "description": "Zeitpläne aus einer früheren Version laufen neben den Gruppen oben weiter, mit ihren eigenen Meldewegen.",
+              "data": {
+                "clear_legacy_rules": "Ältere Zeitpläne löschen"
               }
             }
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Home Assistant Updater: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Home Assistant Updater: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
@@ -1568,7 +1672,13 @@
         "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "no_media": "Wähle eine Audiodatei.",
+        "group_no_time": "{group}: Für „Zu einer Uhrzeit“ muss eine Uhrzeit gewählt sein.",
+        "group_no_weekday": "{group}: Mindestens ein Wochentag muss gewählt sein.",
+        "group_no_update_selected": "{group}: Mindestens ein Update muss gewählt sein.",
+        "group_no_targets": "{group}: Für den App-Push muss mindestens ein Ziel gewählt sein.",
+        "group_no_method": "{group}: Mindestens ein Meldeweg mit Ziel muss aktiv sein.",
+        "group_tts_incomplete": "{group}: Für die Sprachausgabe werden TTS-Dienst und Lautsprecher benötigt."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
