@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from .helpers import is_menu, make_entry, new_instance, reconfigure
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.energy_monitor import (
-    persons_share_b, settle, share_a, split_interval, utility_cost_b,
+    common_part, persons_share_b, settle, share_a, split_interval, utility_cost_b,
 )
 from custom_components.ha_housekeeper.flows.energy import pv_price_value
 from custom_components.ha_housekeeper.issues import collect_references
@@ -152,7 +152,10 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
         gas.update({k: v for k, v in over.items() if k == "gas_meter"})
         for group in (units, water, gas):
             group.update({k: v for k, v in over.items() if k in group})
-        return {"meters": meters, "units": units, "prices": prices, "water": water, "gas": gas}
+        common = {"common_power": 0, "common_key": "area"}
+        common.update({k: v for k, v in over.items() if k in common or k == "common_meter"})
+        return {"meters": meters, "units": units, "prices": prices, "water": water, "gas": gas,
+                "common": common}
 
     bad = await flow.async_configure(result["flow_id"], page(meter_b_energy=A))
     assert bad["errors"] == {"base": "duplicate_meter"}
@@ -160,6 +163,11 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
     assert bad["errors"] == {"base": "no_persons"}
     bad = await flow.async_configure(result["flow_id"], page(gas_meter=GAS, area_a=0, area_b=0))
     assert bad["errors"] == {"base": "no_area"}
+    bad = await flow.async_configure(result["flow_id"], page(common_power=40, area_a=0, area_b=0))
+    assert bad["errors"] == {"base": "no_area"}
+    bad = await flow.async_configure(
+        result["flow_id"], page(common_power=40, common_key="persons", persons_a=0, persons_b=0))
+    assert bad["errors"] == {"base": "no_persons"}
     bad = await flow.async_configure(result["flow_id"], page(pv_price="viel"))
     assert bad["errors"] == {"base": "invalid_price"}
     ok = await flow.async_configure(result["flow_id"], page(pv_price="12,5"))
@@ -171,7 +179,7 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
     page_result = await reconfigure(hass, entry)
     assert page_result["step_id"] == "em_settings" and not is_menu(page_result)
     sections = {str(k): v for k, v in page_result["data_schema"].schema.items()}
-    assert list(sections) == ["meters", "units", "prices", "water", "gas"]
+    assert list(sections) == ["meters", "units", "prices", "water", "gas", "common"]
     assert [name for name, sec in sections.items() if not sec.options["collapsed"]] == ["meters"]
     done = await flow.async_configure(page_result["flow_id"], page(pv_price="0", grid_price=30, name="Gesamt"))
     assert done["reason"] == "reconfigure_successful"
@@ -226,3 +234,53 @@ async def test_gas_by_persons_and_no_meter(hass: HomeAssistant) -> None:
     assert controller.share_b("gas") == pytest.approx(0.75)
     plain, other = await _setup(hass)
     assert not other.configured("water") and _entity(hass, "energy_water_month", plain) is None
+
+
+def test_common_electricity_is_moved_from_a_to_b() -> None:
+    # A zählt 6 kWh (davon 2 Allgemeinstrom), B 2 kWh; B trägt 1/3 des Allgemeinstroms
+    common, shift = common_part(d_a=6, meter_delta=2, power_w=0, hours=0, share_b=1 / 3)
+    assert common == 2 and shift == pytest.approx(2 / 3)
+    part = split_interval(d_grid=8, d_feed=0, d_pv=0, d_a=6, d_b=2, shift=shift)
+    assert part["cons_a"] == pytest.approx(6 - 2 / 3) and part["cons_b"] == pytest.approx(2 + 2 / 3)
+    assert part["grid_a"] + part["grid_b"] == pytest.approx(8)
+    # ohne Zähler: feste Leistung × Zeit, begrenzt durch den Verbrauch von A
+    assert common_part(6, None, 200, 5, 0.5) == (1.0, 0.5)
+    assert common_part(0.4, None, 200, 5, 0.5) == (0.4, 0.2)
+    assert common_part(6, None, 0, 5, 0.5) == (0.0, 0.0)
+
+
+async def test_constant_power_shifts_consumption(hass: HomeAssistant, freezer) -> None:
+    freezer.move_to("2026-10-10 12:00:00+00:00")
+    entry, controller = await _setup(
+        hass, common_power=1000.0, common_key="half", area_a=100.0, area_b=50.0)
+    freezer.move_to("2026-10-10 13:59:00+00:00")              # nach dem Tick (+1 Minute) sind es 2 Stunden: 2 kWh
+    _set(hass, grid=8, a=6, b=2)
+    await _tick(hass, freezer)
+    assert controller.month()["common"] == pytest.approx(2) and controller.month()["common_b"] == pytest.approx(1)
+    assert controller.totals["cons_a"] == pytest.approx(5) and controller.totals["cons_b"] == pytest.approx(3)
+    month = hass.states.get(_entity(hass, "energy_settlement_month", entry))
+    assert month.attributes["common_kwh"] == pytest.approx(2) and month.attributes["common_kwh_b"] == pytest.approx(1)
+
+
+async def test_common_meter_wins_over_power_and_key_by_area(hass: HomeAssistant, freezer) -> None:
+    hass.states.async_set("sensor.common", "10")
+    entry, controller = await _setup(
+        hass, common_meter="sensor.common", common_power=5000.0, common_key="area",
+        area_a=100.0, area_b=50.0)
+    freezer.tick(timedelta(hours=1))
+    hass.states.async_set("sensor.common", "12")                # 2 kWh laut Zähler
+    _set(hass, grid=8, a=6, b=2)
+    await _tick(hass, freezer)
+    assert controller.month()["common"] == pytest.approx(2)
+    assert controller.month()["common_b"] == pytest.approx(2 * 50 / 150)
+    hass.states.async_set("sensor.common", "unavailable")      # Zähler unklar: Zeitraum wächst weiter
+    _set(hass, grid=16, a=12, b=4)
+    before = dict(controller.totals)
+    await _tick(hass, freezer)
+    assert controller.totals == before
+
+
+def test_common_references() -> None:
+    entry = make_entry(domain=DOMAIN, title="Haus", data={**BASE, "common_meter": "sensor.common"})
+    entities, _ = collect_references(entry.sub)
+    assert "sensor.common" in set(entities)

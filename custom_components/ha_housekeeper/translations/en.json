@@ -116,6 +116,13 @@
         "notify": "Report only",
         "install": "Install automatically"
       }
+    },
+    "common_key": {
+      "options": {
+        "area": "Living area",
+        "persons": "Persons",
+        "half": "Half each"
+      }
     }
   },
   "entity": {
@@ -2744,6 +2751,20 @@
                 "gas_price": "Price per m³ as invoiced (use the price per m³, not per kWh).",
                 "gas_base_fee": "Split by the same key."
               }
+            },
+            "common": {
+              "name": "Common electricity (optional)",
+              "description": "Gas boiler, outdoor lighting, router and similar run through unit A's sub-meter. This part is moved to unit B according to the key before grid import and PV are split. Without a meter, enter a constant power; with a meter the power is ignored. Empty and 0 = no correction.",
+              "data": {
+                "common_meter": "Common electricity meter (kWh)",
+                "common_power": "Constant power (W)",
+                "common_key": "Split by"
+              },
+              "data_description": {
+                "common_meter": "Optional energy sensor (kWh, counting up) of these consumers, e.g. a plug with measurement on the boiler and router. It must be part of unit A's consumption.",
+                "common_power": "Average power of the common consumers, counted per elapsed time. It is limited by the consumption of unit A.",
+                "common_key": "Living area (default), persons or half each."
+              }
             }
           }
         },
@@ -2823,6 +2844,20 @@
                 "gas_meter": "Sensor in m³ that keeps counting up. Empty = no gas settlement.",
                 "gas_price": "Price per m³ as invoiced (use the price per m³, not per kWh).",
                 "gas_base_fee": "Split by the same key."
+              }
+            },
+            "common": {
+              "name": "Common electricity (optional)",
+              "description": "Gas boiler, outdoor lighting, router and similar run through unit A's sub-meter. This part is moved to unit B according to the key before grid import and PV are split. Without a meter, enter a constant power; with a meter the power is ignored. Empty and 0 = no correction.",
+              "data": {
+                "common_meter": "Common electricity meter (kWh)",
+                "common_power": "Constant power (W)",
+                "common_key": "Split by"
+              },
+              "data_description": {
+                "common_meter": "Optional energy sensor (kWh, counting up) of these consumers, e.g. a plug with measurement on the boiler and router. It must be part of unit A's consumption.",
+                "common_power": "Average power of the common consumers, counted per elapsed time. It is limited by the consumption of unit A.",
+                "common_key": "Living area (default), persons or half each."
               }
             }
           }

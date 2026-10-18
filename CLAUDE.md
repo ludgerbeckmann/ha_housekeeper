@@ -305,6 +305,11 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`months`, `YYYY-MM`, höchstens 36) und gesamt (`totals`, Schlüssel `KEYS`). `settle()`: B schuldet A = Netzkosten B + Grundpreis-Anteil B
   (je Monat) − PV-kWh A × Preis je PV-kWh. Sensoren mit Namens-Platzhalter `{unit}` (`_attr_translation_placeholders`):
   `energy_grid`/`energy_pv` je Einheit (`total_increasing`), `energy_share`, `energy_settlement_month`/`_year` (monetär, Attribute).
+  **Allgemeinstrom** (`common_meter` optional, `common_power` in W, `common_key` `area` (Standard)/`persons`/`half`; Abschnitt `common`): läuft über
+  Zähler A; `common_part()` bestimmt je Zeitraum den Allgemeinstrom (Zähler-Differenz, sonst Leistung × Zeit seit `baseline_time` im `Store`,
+  höchstens `d_a`) und den Anteil von B (`share_b("common")`); `split_interval(..., shift)` verschiebt ihn von A nach B, bevor Netzbezug und PV
+  verteilt werden (`cons_a/cons_b` sind dann die bereinigten Werte, `common`/`common_b` in `KEYS`). Der Zähler gehört wie die anderen zu `_read()`
+  (unklar = Zeitraum wächst weiter).
   **Wasser/Gas** (`water_meter`, `gas_meter`, jeweils mit `*_price` €/m³ und `*_base_fee`; ein gemeinsamer Zähler in m³): der Verbrauch seit
   dem letzten Stand (`util_baseline` im `Store`, getrennt vom Strom, Zählerrückgang = überspringen) wird ohne Verteilen im Monat/gesamt
   (`water`, `gas` in `KEYS`) gesammelt; `utility_cost_b()` verteilt Kosten + Grundpreis nach `share_b(kind)`: Wasser nach Personen
