@@ -220,8 +220,9 @@ Eine **Sperrzeit** (Standard 10 s) ignoriert weiteres Klingeln.
 
 ### Zeitfenster-Profile (Ton und Push)
 
-Unter *Konfigurieren* legst du beliebig viele **Profile** an (Menü: Einstellungen,
-Profil hinzufügen/bearbeiten/löschen). Ein Profil hat **ein** Formular mit drei Abschnitten:
+Die Einstellungen stehen auf **einer Seite** (der Name ist ein Feld). „Allgemein“ (Name, Auslöser, Sperrzeit) ist aufgeklappt,
+darunter folgen **drei Profilplätze** (*Profil 1* bis *Profil 3*, eingeklappt). Ein Platz gilt nur, wenn er **aktiv** ist; ein
+ausgeschalteter Platz wird nicht geprüft und nicht verwendet. Jeder Platz hat dieselben Felder:
 
 **Zeitfenster**
 
@@ -241,6 +242,10 @@ Profil hinzufügen/bearbeiten/löschen). Ein Profil hat **ein** Formular mit dre
 - **App-Push** an ein oder mehrere Companion-App-Geräte, Push-Text und **„Push nach X
   Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über denselben
   Tag, ein erneutes Klingeln ersetzt die Meldung und startet die Löschfrist neu.
+
+Bestehende Profile werden der Reihe nach in die Plätze übernommen. Profile ab dem vierten laufen unverändert weiter und werden
+nur über den Schalter im Abschnitt „Ältere Profile“ (sichtbar, wenn es welche gibt) gelöscht. Ein Platz, der ausgeschaltet ist
+und nichts enthält, wird nicht gespeichert; eine Lücke vor einem benutzten Platz bleibt als ausgeschaltetes Profil erhalten.
 
 Ein Profil braucht mindestens Ton **oder** Push; ein Profil nur mit Push (z. B. nachts
 „nur aufs Handy, kein Ton“) ist möglich. Beim Klingeln werden **alle** Profile

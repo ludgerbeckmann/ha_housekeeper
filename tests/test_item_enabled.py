@@ -11,7 +11,7 @@ from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import assign_players, profile_summary
 from custom_components.ha_housekeeper.door_guard import rule_summary
 
-from .helpers import is_menu, make_entry, reconfigure, update_entry
+from .helpers import make_entry, reconfigure, update_entry
 
 ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -138,17 +138,16 @@ async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None
     await hass.async_block_till_done()
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
     sections = result["data_schema"].schema
-    timing = next(v for k, v in sections.items() if str(k) == "timing")
-    assert "enabled" in {str(k) for k in timing.schema.schema}
+    slot = next(v for k, v in sections.items() if str(k) == "profile_1")
+    assert "enabled" in {str(k) for k in slot.schema.schema}
     result = await flow.async_configure(result["flow_id"], {
-        "timing": {"name": "Nacht", "enabled": False, "from": "22:00:00", "to": "06:00:00",
-                   "weekdays": ALL},
-        "sound": {"players": ["media_player.a"], "mode": "ringtone", "volume": 10,
-                  "media": {"media_content_id": "x", "media_content_type": "audio/mpeg"}},
-        "notifications": {"mobile_enabled": False, "message": "x", "clear_after_hours": 0}})
-    assert is_menu(result) and entry.options["profiles"][0]["enabled"] is False
+        "general": {"trigger_entity": "binary_sensor.bell", "debounce_seconds": 0},
+        "profile_1": {"name": "Nacht", "enabled": False, "from": "22:00:00", "to": "06:00:00",
+                      "weekdays": ALL, "players": ["media_player.a"], "mode": "ringtone", "volume": 10,
+                      "media": {"media_content_id": "x", "media_content_type": "audio/mpeg"}},
+        "profile_2": {}, "profile_3": {}})
+    assert result["reason"] == "reconfigure_successful" and entry.options["profiles"][0]["enabled"] is False
 
 
 # --- KNX/Sonos-Profile -------------------------------------------------------------------------------------

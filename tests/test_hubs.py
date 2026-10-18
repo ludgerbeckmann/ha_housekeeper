@@ -127,7 +127,15 @@ async def test_add_instance_creates_subentry_and_reloads_hub(hass: HomeAssistant
     assert hass.states.get("switch.garten_doorbell_active") is not None
 
 
-async def test_reconfigure_opens_the_menu_of_that_instance(hass: HomeAssistant) -> None:
+def bell_page(general=None, **slots):
+    """Eingaben der Einstellungsseite der Türklingel (Profilplätze ohne Angabe = Vorgaben)."""
+    return {
+        "general": {"trigger_entity": "binary_sensor.front", "debounce_seconds": 0, **(general or {})},
+        **{f"profile_{n}": slots.get(f"p{n}") or {} for n in (1, 2, 3)},
+    }
+
+
+async def test_reconfigure_opens_the_page_of_that_instance(hass: HomeAssistant) -> None:
     hass.states.async_set("binary_sensor.front", "off")
     hass.states.async_set("binary_sensor.garden", "off")
     hub = _hub_with_two_bells()
@@ -135,12 +143,10 @@ async def test_reconfigure_opens_the_menu_of_that_instance(hass: HomeAssistant) 
     garden_id = next(s.subentry_id for s in hub.subentries.values() if "Garten" in s.title)
     result = await hass.config_entries.subentries.async_init(
         (hub.entry_id, "doorbell"), context={"source": "reconfigure", "subentry_id": garden_id})
-    assert is_menu(result) and result["step_id"] == "bell_menu"
-    assert "rename" in result["menu_options"]
+    assert not is_menu(result) and result["step_id"] == "bell_settings"
     flow = hass.config_entries.subentries
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "bell_general"})
     await flow.async_configure(
-        result["flow_id"], {"general": {"trigger_entity": "binary_sensor.front", "debounce_seconds": 99}})
+        result["flow_id"], bell_page({"trigger_entity": "binary_sensor.front", "debounce_seconds": 99}))
     assert hub.subentries[garden_id].data["debounce_seconds"] == 99
     other = next(s for s in hub.subentries.values() if "Haustür" in s.title)
     assert other.data["debounce_seconds"] == 0               # die andere Instanz bleibt unverändert
@@ -155,12 +161,12 @@ async def test_rename_keeps_the_function_prefix(hass: HomeAssistant) -> None:
     flow = hass.config_entries.subentries
     result = await flow.async_init(
         (hub.entry_id, "doorbell"), context={"source": "reconfigure", "subentry_id": garden_id})
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "rename"})
-    assert result["step_id"] == "rename"
-    name = next(k for k in result["data_schema"].schema if str(k) == "name")
-    assert name.default() == "Garten"
-    result = await flow.async_configure(result["flow_id"], {"name": "Terrasse"})
-    assert is_menu(result)
+    assert result["step_id"] == "bell_settings"
+    general = next(v for k, v in result["data_schema"].schema.items() if str(k) == "general")
+    name = next(k for k in general.schema.schema if str(k) == "name")
+    assert name.description == {"suggested_value": "Garten"}
+    result = await flow.async_configure(result["flow_id"], bell_page({"name": "Terrasse"}))
+    assert result["reason"] == "reconfigure_successful"
     assert hub.subentries[garden_id].title == "Doorbell: Terrasse"
     await hass.async_block_till_done()
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), hub.entry_id)
@@ -176,8 +182,7 @@ async def test_rename_removes_a_duplicated_function_name(hass: HomeAssistant) ->
     flow = hass.config_entries.subentries
     result = await flow.async_init(
         (hub.entry_id, "doorbell"), context={"source": "reconfigure", "subentry_id": garden_id})
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "rename"})
-    await flow.async_configure(result["flow_id"], {"name": "Doorbell: Doorbell Terrasse"})
+    await flow.async_configure(result["flow_id"], bell_page({"name": "Doorbell: Doorbell Terrasse"}))
     assert hub.subentries[garden_id].title == "Doorbell: Terrasse"
 
 

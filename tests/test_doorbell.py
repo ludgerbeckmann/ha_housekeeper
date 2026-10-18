@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, make_entry, reconfigure, new_instance
+from .helpers import is_menu, make_entry, reconfigure, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import (
     assign_players,
@@ -242,78 +242,99 @@ async def test_test_button_bypasses_switch_and_debounce(hass: HomeAssistant) -> 
 # --- Options-Flow ------------------------------------------------------------------
 
 
-async def test_options_flow_profiles(hass: HomeAssistant) -> None:
+def bell_page(general=None, **slots):
+    """Eingaben der Einstellungsseite (Profilplätze ohne Angabe = Vorgaben, also ausgeschaltet)."""
+    return {
+        "general": {"trigger_entity": "binary_sensor.bell", "debounce_seconds": 0, **(general or {})},
+        **{f"profile_{n}": slots.get(f"p{n}") or {} for n in (1, 2, 3)},
+    }
+
+
+def slot(**over):
+    return {"name": "Tag", "enabled": True, "from": "07:00:00", "to": "22:00:00",
+            "weekdays": ALL_DAYS, "mode": "tts", "volume": 0, "mobile_enabled": False,
+            "message": "Ding", "clear_after_hours": 1, **over}
+
+
+async def test_settings_page_has_three_profile_slots(hass: HomeAssistant) -> None:
+    _mocks(hass)
+    entry = await _setup(hass, profiles=[])
+    result = await reconfigure(hass, entry)
+    assert not is_menu(result) and result["step_id"] == "bell_settings"
+    schema = {str(k): v for k, v in result["data_schema"].schema.items()}
+    assert list(schema) == ["general", "profile_1", "profile_2", "profile_3"]
+    assert [n for n, sec in schema.items() if not sec.options["collapsed"]] == ["general"]
+    general = {str(k) for k in schema["general"].schema.schema}
+    assert general == {"name", "trigger_entity", "debounce_seconds"}
+
+
+async def test_profile_slots_validation_and_saving(hass: HomeAssistant) -> None:
     _mocks(hass)
     entry = await _setup(hass, profiles=[])
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    assert is_menu(result) and result["step_id"] == "bell_menu"
-    assert "edit_profile" not in menu_options(result)
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
-    schema = result["data_schema"].schema
-    assert [str(k) for k in schema] == ["timing", "sound", "notifications"]
-
-    def form(timing=None, sound=None, notifications=None):
-        return {
-            "timing": {"name": "Tag", "enabled": True, "from": "07:00:00", "to": "22:00:00",
-                       "weekdays": ALL_DAYS, **(timing or {})},
-            "sound": {"mode": "tts", "volume": 0, **(sound or {})},
-            "notifications": {"mobile_enabled": False, "message": "Ding",
-                              "clear_after_hours": 1, **(notifications or {})},
-        }
-
-    bad = await flow.async_configure(result["flow_id"], form())
-    assert bad["errors"] == {"base": "no_output"}
+    bad = await flow.async_configure(result["flow_id"], bell_page(p1=slot()))
+    assert bad["errors"] == {"base": "profile_no_output"}
+    assert bad["description_placeholders"] == {"profile": "Tag"}
     bad = await flow.async_configure(
-        bad["flow_id"], form(notifications={"mobile_enabled": True}))
-    assert bad["errors"] == {"base": "no_targets"}
+        bad["flow_id"], bell_page(p1=slot(mobile_enabled=True)))
+    assert bad["errors"] == {"base": "profile_no_targets"}
     bad = await flow.async_configure(
-        bad["flow_id"], form(sound={"players": ["media_player.kitchen"]}))
-    assert bad["errors"] == {"base": "no_tts"}
+        bad["flow_id"], bell_page(p1=slot(players=["media_player.kitchen"])))
+    assert bad["errors"] == {"base": "profile_no_tts"}
     bad = await flow.async_configure(
-        bad["flow_id"], form(sound={"players": ["media_player.kitchen"], "mode": "ringtone"}))
-    assert bad["errors"] == {"base": "no_ringtone"}
+        bad["flow_id"], bell_page(p1=slot(players=["media_player.kitchen"], mode="ringtone")))
+    assert bad["errors"] == {"base": "profile_no_ringtone"}
     result = await flow.async_configure(
         bad["flow_id"],
-        form(sound={"players": ["media_player.kitchen"], "tts_entity": "tts.home",
-                    "text": "Hallo", "volume": 20},
-             notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
-    assert is_menu(result)
+        bell_page(p1=slot(players=["media_player.kitchen"], tts_entity="tts.home", text="Hallo",
+                          volume=20, mobile_enabled=True, mobile_targets=["mobile_app_phone"])))
+    assert result["reason"] == "reconfigure_successful"
     assert len(entry.options["profiles"]) == 1
     tts_profile = entry.options["profiles"][0]
     assert tts_profile["text"] == "Hallo" and tts_profile["mode"] == "tts"
-    assert tts_profile["mobile_enabled"] is True
-    assert tts_profile["mobile_targets"] == ["mobile_app_phone"]
+    assert tts_profile["mobile_enabled"] is True and tts_profile["mobile_targets"] == ["mobile_app_phone"]
     assert tts_profile["message"] == "Ding" and tts_profile["clear_after_hours"] == 1
 
-    # Profil auf Klingelton umstellen: alte TTS-Schlüssel verschwinden
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_profile"})
-    result = await flow.async_configure(result["flow_id"], {"profile": tts_profile["id"]})
+    # Profil auf Klingelton umstellen: Platz bleibt, die ID bleibt, alte TTS-Schlüssel verschwinden
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(
         result["flow_id"],
-        form(sound={"players": ["media_player.kitchen"], "mode": "ringtone", "media": MEDIA}))
+        bell_page(p1=slot(players=["media_player.kitchen"], mode="ringtone", media=MEDIA)))
     profile = entry.options["profiles"][0]
     assert profile["id"] == tts_profile["id"] and profile["mode"] == "ringtone"
     assert "text" not in profile and "tts_entity" not in profile
     assert profile["media"]["media_content_id"] == MEDIA["media_content_id"]
     assert "Tag" in profile_summary(hass, profile)
 
-    # Profil nur mit Push: kein Ton, keine Player
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_profile"})
+    # Profil 3 nur mit Push, Platz 2 bleibt als ausgeschaltete Lücke
+    result = await reconfigure(hass, entry)
     result = await flow.async_configure(
         result["flow_id"],
-        form(timing={"name": "Nur Push"},
-             notifications={"mobile_enabled": True, "mobile_targets": ["mobile_app_phone"]}))
-    push_only = entry.options["profiles"][1]
+        bell_page(p1=slot(players=["media_player.kitchen"], mode="ringtone", media=MEDIA),
+                  p3=slot(name="Nur Push", mobile_enabled=True, mobile_targets=["mobile_app_phone"])))
+    profiles = entry.options["profiles"]
+    assert len(profiles) == 3 and profiles[1]["enabled"] is False and profiles[0]["id"] == tts_profile["id"]
+    push_only = profiles[2]
     assert push_only["players"] == [] and "mode" not in push_only
     assert "Push" in profile_summary(hass, push_only)
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_profile"})
-    result = await flow.async_configure(result["flow_id"], {"profile": profile["id"]})
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_profile"})
-    result = await flow.async_configure(result["flow_id"], {"profile": push_only["id"]})
-    assert entry.options["profiles"] == []
+
+async def test_older_profiles_beyond_the_slots_keep_running_until_cleared(hass: HomeAssistant) -> None:
+    _mocks(hass)
+    extra = [{**PUSH_ALL, "id": f"p{n}", "name": f"P{n}"} for n in range(1, 5)]
+    entry = await _setup(hass, profiles=extra)
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    assert "legacy" in {str(k) for k in result["data_schema"].schema}
+    page = bell_page(p1=slot(name="P1", mobile_enabled=True, mobile_targets=["mobile_app_phone"]),
+                     p2=slot(name="P2", mobile_enabled=True, mobile_targets=["mobile_app_phone"]),
+                     p3=slot(name="P3", mobile_enabled=True, mobile_targets=["mobile_app_phone"]))
+    await flow.async_configure(result["flow_id"], {**page, "legacy": {"clear_legacy_rules": False}})
+    assert [p["id"] for p in entry.options["profiles"]] == ["p1", "p2", "p3", "p4"]
+    result = await reconfigure(hass, entry)
+    await flow.async_configure(result["flow_id"], {**page, "legacy": {"clear_legacy_rules": True}})
+    assert [p["id"] for p in entry.options["profiles"]] == ["p1", "p2", "p3"]
 
 
 # --- Push je Profil ------------------------------------------------------------------

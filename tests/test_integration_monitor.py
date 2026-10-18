@@ -3,7 +3,7 @@
 from datetime import timedelta
 from unittest.mock import AsyncMock
 
-import pytest
+
 from homeassistant.config_entries import ConfigEntryDisabler, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -11,7 +11,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
-from .helpers import is_menu, make_entry, menu_options, new_instance, reconfigure, sectioned
+from .helpers import is_menu, make_entry, new_instance, reconfigure
 from custom_components.ha_housekeeper import integration_monitor as mon
 from custom_components.ha_housekeeper.const import DOMAIN
 

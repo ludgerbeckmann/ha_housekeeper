@@ -46,8 +46,6 @@ async def test_doorbell_config_form_has_only_general_section(hass: HomeAssistant
 async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
     hass.states.async_set("switch.pump", "off")
     cases = [
-        ({"function_type": "doorbell", "name": "Klingel", "trigger_entity": "binary_sensor.k",
-          "profiles": [], "mobile_enabled": False}, "bell_general", "bell_general"),
         ({"function_type": "pool_pump", "name": "Pool", "pump_entity": "switch.pump"},
          "dry_run", "dry_run"),
     ]
@@ -61,9 +59,7 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
         result = await flow.async_configure(result["flow_id"], {"next_step_id": menu_item})
         assert result["step_id"] == step
         schema = result["data_schema"].schema
-        # Türklingel: Push steckt in den Profilen, daher nur „Allgemein“
-        assert [str(k) for k in schema] == (
-            ["general"] if step == "bell_general" else ["general", "notifications"])
+        assert [str(k) for k in schema] == ["general", "notifications"]
         assert "name" not in _fields(next(v for k, v in schema.items() if str(k) == "general"))
 
 
