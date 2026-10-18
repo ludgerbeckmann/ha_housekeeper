@@ -398,13 +398,11 @@
                 "name": "Name (shown as “Mailbox notification: Name”)",
                 "vibration_sensor": "Vibration sensor",
                 "debounce_seconds": "Debounce time",
-                "auto_reset_hours": "Reset automatically after (0 = off)",
-                "sensitivity_entity": "Sensitivity entity (optional)"
+                "auto_reset_hours": "Reset automatically after (0 = off)"
               },
               "data_description": {
                 "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
                 "debounce_seconds": "Further vibrations within this time are ignored.",
-                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first).",
                 "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
               }
             },
@@ -430,22 +428,34 @@
             }
           }
         },
-        "mailbox": {
+        "mailbox_settings": {
           "title": "Mailbox notification",
           "sections": {
             "general": {
               "name": "General",
               "description": "Sensor, lockout time and automatic reset.",
               "data": {
+                "name": "Name (shown as “Mailbox notification: Name”)",
                 "vibration_sensor": "Vibration sensor",
                 "debounce_seconds": "Debounce time",
-                "auto_reset_hours": "Reset automatically after (0 = off)",
-                "sensitivity_entity": "Sensitivity entity (optional)"
+                "auto_reset_hours": "Reset automatically after (0 = off)"
               },
               "data_description": {
                 "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
                 "debounce_seconds": "Further vibrations within this time are ignored.",
-                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity. The value is never sent automatically, only via the \"Send sensitivity\" button (wake the sensor on the device first)."
+                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+              }
+            },
+            "sensitivity": {
+              "name": "Sensitivity (optional)",
+              "description": "The value is never sent automatically, only via the “Send sensitivity” button (wake the sensor on the device first). To pick or change the entity, save once and open this page again to set the value.",
+              "data": {
+                "sensitivity_entity": "Sensitivity entity",
+                "sensitivity_value": "Sensitivity"
+              },
+              "data_description": {
+                "sensitivity_entity": "Entity of the sensor, e.g. number.vibrationssensor_sensitivity.",
+                "sensitivity_value": "Value for the saved entity. It appears once an entity is saved."
               }
             },
             "notifications": {
@@ -468,32 +478,6 @@
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
             }
-          }
-        },
-        "mailbox_menu": {
-          "title": "Mailbox",
-          "description": "Settings of the mailbox. The sensitivity is only set here, after an entity has been stored for it.",
-          "menu_options": {
-            "mailbox": "Settings",
-            "mailbox_sensitivity": "Set sensitivity",
-            "rename": "Rename"
-          }
-        },
-        "mailbox_sensitivity": {
-          "title": "Sensitivity",
-          "description": "Value for {entity}. It is not sent automatically: wake the sensor on the device, then press the \"Send sensitivity\" button.",
-          "data": {
-            "sensitivity_value": "Sensitivity"
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “Mailbox notification: Name”)"
-          },
-          "data_description": {
-            "name": "Only the name, e.g. “Office”; the title then reads “Mailbox notification: Office”. A leading function name is removed."
           }
         }
       },
