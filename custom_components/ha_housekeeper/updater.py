@@ -10,7 +10,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_STATE_CHANGED, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
@@ -407,10 +407,16 @@ class UpdaterController(ReloadWhenIdle):
         )
         self._notify()
 
-    @staticmethod
-    def _name(state) -> str:
+    def _name(self, state) -> str:
+        """Titel der Update-Entität, bei Geräten mit Gerätename davor (z. B. „Wohnzimmer (ESPHome)“)."""
         attrs = state.attributes
-        return str(attrs.get("title") or attrs.get("friendly_name") or state.entity_id)
+        title = str(attrs.get("title") or attrs.get("friendly_name") or state.entity_id)
+        entity = er.async_get(self.hass).async_get(state.entity_id)
+        device = dr.async_get(self.hass).async_get(entity.device_id) if entity and entity.device_id else None
+        name = (device.name_by_user or device.name) if device else None
+        if name and name.lower() not in title.lower():
+            return f"{name} ({title})"
+        return title
 
     @staticmethod
     def _version_text(state) -> str:

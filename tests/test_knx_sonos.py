@@ -521,6 +521,9 @@ async def test_page_layout_and_obsolete_scenes(hass: HomeAssistant) -> None:
     assert [name for name in schema if name.startswith("scene_")] == [f"scene_{n}" for n in range(1, 6)]
     assert {"status_play", "status_level", "status_text"} <= set(schema) and "status" not in schema
     assert [name for name, sec in schema.items() if not sec.options["collapsed"]] == ["speaker"]
+    # die Szenen stehen ganz am Ende, hinter den Rückmeldungen
+    names = list(schema)
+    assert names.index("status_text") < names.index("scenes") < names.index("scene_1") == len(names) - 5
     # frühere Szenen 6 bis 8 werden nicht mehr ausgewertet
     await _telegram(hass, "2/0/1", (5,))             # Szene 6
     await _telegram(hass, "2/1/7", 1)

@@ -750,3 +750,19 @@ async def test_available_trigger_needs_no_time_or_weekdays(hass: HomeAssistant) 
     assert created["trigger"] == "on_available" and created["time"] is None
     assert created["weekdays"] == []
     assert upd.schedule_summary(hass, created).startswith("Sonntag: when available")
+
+
+async def test_name_adds_device_name(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import device_registry as dr, entity_registry as er
+
+    entry, controller, _ = await _setup(hass, [schedule()])
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.hub_id, identifiers={("test", "wohnzimmer")}, name="Wohnzimmer")
+    er.async_get(hass).async_get_or_create(
+        "update", "test", "wz", suggested_object_id="wz_firmware", device_id=device.id)
+    hass.states.async_set("update.wz_firmware", "on", {"title": "ESPHome"})
+    assert controller._name(hass.states.get("update.wz_firmware")) == "Wohnzimmer (ESPHome)"
+    hass.states.async_set("update.wz_firmware", "on", {"title": "Wohnzimmer Sensor"})
+    assert controller._name(hass.states.get("update.wz_firmware")) == "Wohnzimmer Sensor"   # Name steckt im Titel
+    hass.states.async_set("update.ohne_geraet", "on", {"title": "ESPHome"})
+    assert controller._name(hass.states.get("update.ohne_geraet")) == "ESPHome"

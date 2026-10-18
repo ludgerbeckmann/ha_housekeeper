@@ -165,12 +165,24 @@ def _knx_schema(
         vol.Required(SECTION_VOLUME): _section(
             dict(_address(key, defaults, project) for key in _VOLUME_FIELDS)
         ),
-        vol.Required(SECTION_SCENES): _section(dict([_address(CONF_ADDR_SCENE, defaults, project)])),
     }
     favorite = selector.SelectSelector(
         selector.SelectSelectorConfig(
             options=sources, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN
         )
+    )
+    sections[vol.Required(SECTION_STATUS_PLAY)] = _section(
+        dict(_address(key, defaults, project) for key in _STATUS_PLAY_FIELDS)
+    )
+    sections[vol.Required(SECTION_STATUS_LEVEL)] = _section(
+        dict(_address(key, defaults, project) for key in _STATUS_LEVEL_FIELDS)
+    )
+    text: dict[Any, Any] = dict(_address(key, defaults, project) for key in _STATUS_TEXT_FIELDS)
+    text[vol.Optional(CONF_IDLE_TEXT, description=_suggest(CONF_IDLE_TEXT, defaults))] = str
+    sections[vol.Required(SECTION_STATUS_TEXT)] = _section(text)
+    # die Szenen stehen ganz am Ende der Seite (vor dem Hinweis auf ältere Listen)
+    sections[vol.Required(SECTION_SCENES)] = _section(
+        dict([_address(CONF_ADDR_SCENE, defaults, project)])
     )
     for number in range(1, SCENE_COUNT + 1):
         fav, vol_key, addr = (scene_key(number, f) for f in ("favorite", "volume", "address"))
@@ -183,15 +195,6 @@ def _knx_schema(
                 **dict([_address(addr, defaults, project)]),
             }
         )
-    sections[vol.Required(SECTION_STATUS_PLAY)] = _section(
-        dict(_address(key, defaults, project) for key in _STATUS_PLAY_FIELDS)
-    )
-    sections[vol.Required(SECTION_STATUS_LEVEL)] = _section(
-        dict(_address(key, defaults, project) for key in _STATUS_LEVEL_FIELDS)
-    )
-    text: dict[Any, Any] = dict(_address(key, defaults, project) for key in _STATUS_TEXT_FIELDS)
-    text[vol.Optional(CONF_IDLE_TEXT, description=_suggest(CONF_IDLE_TEXT, defaults))] = str
-    sections[vol.Required(SECTION_STATUS_TEXT)] = _section(text)
     if with_legacy:
         sections[vol.Required(SECTION_LEGACY)] = _section(
             {vol.Required(CONF_CLEAR_LEGACY, default=False): bool}
