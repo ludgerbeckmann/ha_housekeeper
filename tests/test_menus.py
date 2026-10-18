@@ -70,7 +70,7 @@ def test_translations_cover_all_menu_options() -> None:
         }
         menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
         assert set(menus) == {"bell_menu", "pool_menu", "upd_menu", "tp_menu",
-                              "task_triggers", "alarm_menu", "mailbox_menu", "llm_menu", "ir_menu"}, name
+                              "task_triggers", "alarm_menu", "llm_menu", "ir_menu"}, name
         assert not any("done" in labels for labels in menus.values()), name
         # jeder Eintrag, den ein Menü anbieten kann, hat in seinem Menü eine Beschriftung
         labels = {option for options in menus.values() for option in options}
@@ -80,6 +80,5 @@ def test_translations_cover_all_menu_options() -> None:
         for option in ("bell_general", "add_profile",
                        "pool_general", "add_window", "dry_run", "heater", "upd_general", "add_schedule",
                        "tp_general", "add_task", "add_trigger", "delete_trigger", "task_save",
-                       "alarm_general", "add_alarm", "edit_alarm", "delete_alarm", "mailbox",
-                       "mailbox_sensitivity"):
+                       "alarm_general", "add_alarm", "edit_alarm", "delete_alarm"):
             assert option in labels and f'"{option}"' in source, (name, option)

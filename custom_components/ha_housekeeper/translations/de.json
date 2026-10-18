@@ -398,13 +398,11 @@
                 "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)",
                 "vibration_sensor": "Vibrationssensor",
                 "debounce_seconds": "Entprellzeit",
-                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
-                "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
               },
               "data_description": {
                 "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
                 "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken).",
                 "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
               }
             },
@@ -430,22 +428,34 @@
             }
           }
         },
-        "mailbox": {
+        "mailbox_settings": {
           "title": "Benachrichtigung Briefkasten",
           "sections": {
             "general": {
               "name": "Allgemein",
               "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
               "data": {
+                "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)",
                 "vibration_sensor": "Vibrationssensor",
                 "debounce_seconds": "Entprellzeit",
-                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
-                "sensitivity_entity": "Empfindlichkeits-Entität (optional)"
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
               },
               "data_description": {
                 "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
                 "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity. Der Wert wird nie automatisch gesendet, sondern nur über den Button „Empfindlichkeit senden“ (Sensor vorher am Gerät aufwecken)."
+                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+              }
+            },
+            "sensitivity": {
+              "name": "Empfindlichkeit (optional)",
+              "description": "Der Wert wird nie automatisch gesendet, nur über den Button „Empfindlichkeit senden“ (den Sensor vorher am Gerät aufwecken). Zum Wählen oder Ändern der Entität einmal speichern und die Seite erneut öffnen, um den Wert einzustellen.",
+              "data": {
+                "sensitivity_entity": "Entität der Empfindlichkeit",
+                "sensitivity_value": "Empfindlichkeit"
+              },
+              "data_description": {
+                "sensitivity_entity": "Entität des Sensors, z. B. number.vibrationssensor_sensitivity.",
+                "sensitivity_value": "Wert für die gespeicherte Entität. Erscheint, sobald eine Entität gespeichert ist."
               }
             },
             "notifications": {
@@ -468,32 +478,6 @@
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
             }
-          }
-        },
-        "mailbox_menu": {
-          "title": "Briefkasten",
-          "description": "Einstellungen des Briefkastens. Die Empfindlichkeit wird erst hier eingestellt, nachdem eine Entität dafür hinterlegt wurde.",
-          "menu_options": {
-            "mailbox": "Einstellungen",
-            "mailbox_sensitivity": "Empfindlichkeit einstellen",
-            "rename": "Umbenennen"
-          }
-        },
-        "mailbox_sensitivity": {
-          "title": "Empfindlichkeit",
-          "description": "Wert für {entity}. Er wird nicht automatisch gesendet: Wecke den Sensor am Gerät auf und drücke dann den Button „Empfindlichkeit senden“.",
-          "data": {
-            "sensitivity_value": "Empfindlichkeit"
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Benachrichtigung Briefkasten: Büro“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },

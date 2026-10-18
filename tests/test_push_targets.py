@@ -99,8 +99,7 @@ async def test_form_prefills_legacy_targets_as_devices(hass: HomeAssistant) -> N
     assert await hass.config_entries.async_setup(entry.hub_id)
     await hass.async_block_till_done()
     result = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"next_step_id": "mailbox"})
+    assert result["step_id"] == "mailbox_settings"
     notifications = next(v for k, v in result["data_schema"].schema.items() if str(k) == "notifications")
     key = next(k for k in notifications.schema.schema if str(k) == "mobile_targets")
     assert key.description == {"suggested_value": [ludger]}

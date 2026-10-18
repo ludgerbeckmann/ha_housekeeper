@@ -205,15 +205,14 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `only_if_on` als erfüllt (fail-open) und blockiert bei `skip_if_on` nie. Eine Umkehr-Option gibt es nicht: ein
   Sensor „arbeitsfrei“ gehört in `skip_if_on`. Übersprungen wird in `last_skipped` (im `Store`) festgehalten.
   „Nächster Wecker“ ignoriert die Bedingungen.
-- Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Der Options-Flow des Briefkastens
-  ist ein Menü (`mailbox_menu`: `mailbox`, `mailbox_sensitivity` nur mit Entität, `done`). Die Entität steht nur
-  in den Einstellungen (nicht beim Anlegen) und wird dort **nur hinterlegt**; der Wert wird im eigenen
-  Menüschritt `mailbox_sensitivity` (nicht automatisch nach dem Speichern) passend zur Entität abgefragt;
-  beim Speichern der Einstellungen bleibt er bei gleicher Entität erhalten, bei anderer/leerer Entität wird er verworfen (`number` → Zahl mit Grenzen der Entität, `select` → deren
-  Stufen). Gesendet wird **ausschließlich** über den Button `send_sensitivity`
-  (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren
-  müssen am Gerät aufgeweckt werden). Der Button wird per `remove_unconfigured()` entfernt, wenn
-  nichts eingestellt ist.
+- Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Die Einstellungen sind **eine Seite** (`mailbox_settings`,
+  kein Menü, Name als Feld, Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `general` (offen),
+  `sensitivity` (eingeklappt, nur in den Einstellungen) und `notifications` (offen)). Die Entität wird dort **nur hinterlegt**; das Feld
+  für den Wert erscheint erst, wenn eine Entität **gespeichert** ist (`_value_selector()`: `number` → Zahl mit Grenzen der Entität,
+  `select` → deren Stufen), also einmal speichern und die Seite erneut öffnen. Beim Speichern bleibt der Wert bei gleicher Entität
+  erhalten, bei anderer/leerer Entität wird er verworfen. Gesendet wird **ausschließlich** über den Button `send_sensitivity`
+  (`async_send_sensitivity()`, Fehler nicht verschlucken); **nie automatisch** (Batteriesensoren müssen am Gerät aufgeweckt
+  werden). Der Button wird per `remove_unconfigured()` entfernt, wenn nichts eingestellt ist.
 - `integration_monitor.py`: Der Monitor prüft **alle** Config-Entries außer der eigenen Domain (`entry_status()`:
   Fehlerstatus `ERROR_STATES` oder alle aktiven Entitäten der Registry `unavailable`, erst ab `min_entities`;
   deaktivierte/ladende Einträge sind „nicht beurteilbar“ = `None`). Eine Störung gilt erst nach der Wartezeit
