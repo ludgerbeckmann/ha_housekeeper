@@ -19,7 +19,6 @@ from homeassistant.data_entry_flow import AbortFlow
 from .const import (
     CONF_ALARMS,
     CONF_FUNCTION_TYPE,
-    CONF_MONITOR_RULES,
     CONF_NAME,
     CONF_PROFILES,
     CONF_PUMP_ENTITY,
@@ -91,7 +90,7 @@ _MENU_STEPS = {
     FUNCTION_UPDATER: "upd_menu",
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
-    FUNCTION_MONITOR: "mon_menu",
+    FUNCTION_MONITOR: "mon_settings",
     FUNCTION_LLM: "llm_menu",
     FUNCTION_IR: "ir_menu",
     FUNCTION_CONSUMPTION: "cg_settings",
@@ -268,15 +267,12 @@ class NewInstanceSteps:
             if not errors:
                 return await self._finish_new(
                     flat.get(CONF_NAME),
-                    {
-                        CONF_MONITOR_RULES: [],
-                        **monitor_data(flat),
-                    },
+                    {key: value for key, value in monitor_data(flat).items() if value is not None},
                 )
             defaults = flat
         return self.async_show_form(
             step_id="new_integration_monitor",
-            data_schema=_monitor_schema(self.hass, defaults, with_name=True),
+            data_schema=_monitor_schema(self.hass, defaults, new=True),
             errors=errors,
         )
 

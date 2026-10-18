@@ -311,121 +311,126 @@ async def test_entities(hass: HomeAssistant) -> None:
 # --- Einstellungsdialoge -------------------------------------------------------------------------
 
 
+def mon_page(**over):
+    """Eingaben der Seite: flache Felder auf die Abschnitte verteilen."""
+    sections = {
+        "general": {"name": "Integration monitor", "grace_minutes": 5, "min_entities": 2, "check_minutes": 1},
+        "report": {"report_mode": "blacklist", "report_entries": []},
+        "reload": {"reload_mode": "whitelist", "reload_entries": [], "reload_on_error": True,
+                   "reload_on_unavailable": True},
+        "disable": {"disable_mode": "whitelist", "disable_entries": [], "disable_on_error": True,
+                    "disable_on_unavailable": True, "disable_reenable": False},
+        "notifications": {"notify_errors": True, "notify_unavailable": False, "summary_minutes": 10,
+                          "mobile_enabled": False, "persistent_enabled": True, "tts_enabled": False},
+    }
+    for key, value in over.items():
+        if key == "disable_presence":
+            sections["disable"][key] = value
+            continue
+        for fields in sections.values():
+            if key in fields:
+                fields[key] = value
+                break
+        else:
+            sections.setdefault("legacy", {})[key] = value
+    return sections
+
+
 async def test_create_instance_flow(hass: HomeAssistant) -> None:
     result = await new_instance(hass, "integration_monitor")
     assert result["step_id"] == "new_integration_monitor"
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        sectioned({"name": "Integration monitor", "grace_minutes": 5, "min_entities": 2,
-                   "check_minutes": 1, "notify_errors": True, "notify_unavailable": False,
-                   "summary_minutes": 10, "excluded": [],
-                   "mobile_enabled": False, "persistent_enabled": True,
-                   "tts_enabled": False}))
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], mon_page())
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Integration monitor"
-    assert result["data"]["monitor_rules"] == [] and result["data"]["notify_errors"] is True
-    assert result["data"]["notify_unavailable"] is False and result["data"]["notify_all"] is None
+    assert result["data"]["notify_errors"] is True and result["data"]["report_mode"] == "blacklist"
+    assert result["data"]["notify_unavailable"] is False and "notify_all" not in result["data"]
 
 
 async def test_create_needs_a_method_when_reporting_all(hass: HomeAssistant) -> None:
     result = await new_instance(hass, "integration_monitor")
     result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        sectioned({"name": "M", "grace_minutes": 5, "min_entities": 2, "check_minutes": 1,
-                   "notify_errors": True, "notify_unavailable": False, "summary_minutes": 10,
-                   "excluded": [], "mobile_enabled": False,
-                   "persistent_enabled": False, "tts_enabled": False}))
+        result["flow_id"], mon_page(persistent_enabled=False))
     assert result["type"] is FlowResultType.FORM and result["errors"] == {"base": "no_method"}
 
 
-async def _rule_form(hass, entry):
-    menu = await reconfigure(hass, entry)
-    assert is_menu(menu) and menu["step_id"] == "mon_menu"
-    assert menu_options(menu) == ["mon_general", "add_monitor_rule", "rename"]
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "add_monitor_rule"})
-    assert result["step_id"] == "monitor_rule_edit"
-    return result
-
-
-def rule_input(entry_ids, **over):
-    values = {"name": "Drucker", "enabled": True, "entries": list(entry_ids), "on_error": True,
-              "on_unavailable": True, "action": "disable", "notify": True,
-              "presence_entity": "binary_sensor.drucker_da", "reenable": True}
-    values.update(over)
-    return {"general": {k: values[k] for k in ("name", "enabled")},
-            "condition": {k: values[k] for k in ("entries", "on_error", "on_unavailable")},
-            "action": {k: values[k] for k in ("action", "notify", "presence_entity", "reenable")}}
-
-
-async def test_add_rule_flow(hass: HomeAssistant) -> None:
+async def test_settings_page_layout_and_validation(hass: HomeAssistant) -> None:
     printer = foreign(hass)
     entry, _, _ = await _setup(hass)
-    result = await _rule_form(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], rule_input([printer.entry_id]))
-    assert is_menu(result)
-    saved = entry.options["monitor_rules"]
-    assert len(saved) == 1 and saved[0]["entries"] == [printer.entry_id]
-    assert saved[0]["action"] == "disable" and saved[0]["reenable"] is True
+    page = await reconfigure(hass, entry)
+    assert page["step_id"] == "mon_settings" and not is_menu(page)
+    sections = {str(k): v for k, v in page["data_schema"].schema.items()}
+    assert list(sections) == ["general", "report", "reload", "disable", "notifications"]
+    assert [n for n, sec in sections.items() if not sec.options["collapsed"]] == ["general"]
+    flow = hass.config_entries.subentries
+    bad = await flow.async_configure(page["flow_id"], mon_page(disable_reenable=True))
+    assert bad["errors"] == {"base": "no_presence"}
+    done = await flow.async_configure(
+        page["flow_id"],
+        mon_page(name="Zentrale", reload_entries=[printer.entry_id], disable_mode="blacklist",
+                 disable_presence="binary_sensor.da", disable_reenable=True, mobile_enabled=False))
+    assert done["reason"] == "reconfigure_successful"
+    assert entry.options["reload_entries"] == [printer.entry_id] and entry.title.endswith("Zentrale")
+    assert entry.options["disable_presence"] == "binary_sensor.da" and entry.options["mobile_targets"] is None
 
 
-@pytest.mark.parametrize("over,error", [
-    ({"entries": []}, "no_integration"),
-    ({"on_error": False, "on_unavailable": False}, "no_condition"),
-    ({"action": "none", "notify": False, "reenable": False}, "nothing_to_do"),
-    ({"presence_entity": None}, "no_presence"),
-    ({"action": "reload"}, "reenable_needs_disable"),
-])
-async def test_rule_validation(hass: HomeAssistant, over, error) -> None:
-    printer = foreign(hass)
-    entry, _, _ = await _setup(hass)
-    result = await _rule_form(hass, entry)
-    data = rule_input([printer.entry_id], **over)
-    if over.get("presence_entity", 1) is None:
-        del data["action"]["presence_entity"]
-    result = await hass.config_entries.subentries.async_configure(result["flow_id"], data)
-    assert result["type"] is FlowResultType.FORM and result["errors"] == {"base": error}
-
-
-async def test_rule_notify_needs_a_method(hass: HomeAssistant) -> None:
+async def test_old_exclusions_become_the_blacklist_and_legacy_can_be_cleared(
+    hass: HomeAssistant
+) -> None:
     printer = foreign(hass)
     entry, _, _ = await _setup(
-        hass, notify_errors=False, notify_unavailable=False, mobile_enabled=False,
-        persistent_enabled=False)
-    result = await _rule_form(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], rule_input([printer.entry_id]))
-    assert result["errors"] == {"base": "no_method"}
+        hass, excluded=[printer.entry_id], monitor_rules=[rule([printer.entry_id])])
+    page = await reconfigure(hass, entry)
+    sections = {str(k): v for k, v in page["data_schema"].schema.items()}
+    assert "legacy" in sections                                  # nur mit älteren Regeln
+    report = {str(k): k for k in sections["report"].schema.schema}
+    assert report["report_entries"].default() == [printer.entry_id]
+    done = await hass.config_entries.subentries.async_configure(
+        page["flow_id"], mon_page(clear_legacy_rules=True))
+    assert done["reason"] == "reconfigure_successful"
+    assert entry.options["monitor_rules"] is None and entry.options["excluded"] is None
 
 
-async def test_edit_and_delete_rule(hass: HomeAssistant) -> None:
-    printer = foreign(hass)
-    entry, _, _ = await _setup(hass, monitor_rules=[rule([printer.entry_id])])
-    menu = await reconfigure(hass, entry)
-    assert menu_options(menu) == [
-        "mon_general", "add_monitor_rule", "edit_monitor_rule", "delete_monitor_rule", "rename"]
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "delete_monitor_rule"})
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {"rule": "r1"})
-    assert is_menu(result) and entry.options["monitor_rules"] == []
+# --- feste Felder: Regeln, Listen und Bereich der Meldungen ---------------------------------------
 
 
-async def test_general_settings_clear_optional_fields(hass: HomeAssistant) -> None:
-    entry, _, _ = await _setup(hass)
-    menu = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "mon_general"})
-    assert result["step_id"] == "mon_general"
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        sectioned({"grace_minutes": 10, "min_entities": 1, "check_minutes": 2,
-                   "notify_errors": True, "notify_unavailable": False, "summary_minutes": 10,
-                   "excluded": [], "mobile_enabled": False,
-                   "persistent_enabled": True, "tts_enabled": False}))
-    assert is_menu(result)
-    assert entry.options["grace_minutes"] == 10 and entry.options["mobile_targets"] is None
+def test_settings_rules_and_list_modes() -> None:
+    assert mon.settings_rules(lambda key, default=None: default) == []     # nichts gewählt
+    values = {"reload_entries": ["a"], "disable_mode": "blacklist", "disable_entries": ["b"],
+              "disable_presence": "binary_sensor.da", "disable_reenable": True}
+    rules = mon.settings_rules(lambda key, default=None: values.get(key, default))
+    assert [r["id"] for r in rules] == ["basic:reload", "basic:disable"]
+    assert mon.rule_matches(rules[0], "a", "error") and not mon.rule_matches(rules[0], "x", "error")
+    assert mon.rule_matches(rules[1], "x", "error") and not mon.rule_matches(rules[1], "b", "error")
+    assert rules[1]["reenable"] is True and rules[1]["presence_entity"] == "binary_sensor.da"
+
+
+async def test_fields_reload_only_the_whitelist(hass: HomeAssistant, monkeypatch) -> None:
+    printer = foreign(hass, state=ConfigEntryState.SETUP_RETRY)
+    other = foreign(hass, "Lampe", ConfigEntryState.SETUP_RETRY, "lamp_x")
+    reload = AsyncMock(return_value=True)
+    monkeypatch.setattr(hass.config_entries, "async_reload", reload)
+    _, ctrl, _ = await _setup(hass, reload_mode="whitelist", reload_entries=[printer.entry_id])
+    await check(ctrl)
+    assert [c.args[0] for c in reload.call_args_list] == [printer.entry_id] and other
+
+
+async def test_fields_disable_with_a_blacklist(hass: HomeAssistant) -> None:
+    printer = foreign(hass, state=ConfigEntryState.SETUP_RETRY)
+    lamp = foreign(hass, "Lampe", ConfigEntryState.SETUP_RETRY, "lamp_x")
+    _, ctrl, _ = await _setup(hass, disable_mode="blacklist", disable_entries=[lamp.entry_id])
+    await check(ctrl)
+    assert printer.disabled_by is ConfigEntryDisabler.USER and lamp.disabled_by is None
+    assert ctrl.disabled == {printer.entry_id: "basic:disable"}
+
+
+async def test_report_whitelist_limits_the_summary(hass: HomeAssistant) -> None:
+    printer = foreign(hass, state=ConfigEntryState.SETUP_RETRY)
+    lamp = foreign(hass, "Lampe", ConfigEntryState.SETUP_RETRY, "lamp_x")
+    _, ctrl, push = await _setup(
+        hass, report_mode="whitelist", report_entries=[printer.entry_id])
+    await check(ctrl)
+    text = " ".join(messages(push))
+    assert "Drucker" in text and "Lampe" not in text and lamp
 
 
 # --- Sammelmeldung ------------------------------------------------------------------------------------

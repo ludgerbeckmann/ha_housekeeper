@@ -23,6 +23,22 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_CHECK_MINUTES,
     CONF_EXCLUDED,
+    CONF_MON_DISABLE,
+    CONF_MON_DISABLE_ERROR,
+    CONF_MON_DISABLE_MODE,
+    CONF_MON_DISABLE_PRESENCE,
+    CONF_MON_DISABLE_REENABLE,
+    CONF_MON_DISABLE_UNAVAILABLE,
+    CONF_MON_RELOAD,
+    CONF_MON_RELOAD_ERROR,
+    CONF_MON_RELOAD_MODE,
+    CONF_MON_RELOAD_UNAVAILABLE,
+    CONF_MON_REPORT,
+    CONF_MON_REPORT_MODE,
+    LIST_BLACKLIST,
+    LIST_WHITELIST,
+    M_MODE,
+    M_NAME,
     CONF_GRACE_MINUTES,
     CONF_MIN_ENTITIES,
     CONF_MONITOR_RULES,
@@ -127,9 +143,49 @@ def count_entities(hass: HomeAssistant, entry: ConfigEntry) -> int:
     )
 
 
+def in_scope(mode: str | None, entries: list[str], entry_id: str) -> bool:
+    """Whitelist: nur die genannten Integrationen; Blacklist: alle außer den genannten."""
+    listed = entry_id in entries
+    return not listed if mode == LIST_BLACKLIST else listed
+
+
+def settings_rules(get: Any) -> list[dict[str, Any]]:
+    """Interne Regeln aus den festen Feldern „Neu laden“ und „Deaktivieren“ (IDs `basic:<aktion>`)."""
+    rules: list[dict[str, Any]] = []
+    for action, mode_key, entries_key, error_key, unavailable_key in (
+        (MON_ACTION_RELOAD, CONF_MON_RELOAD_MODE, CONF_MON_RELOAD, CONF_MON_RELOAD_ERROR,
+         CONF_MON_RELOAD_UNAVAILABLE),
+        (MON_ACTION_DISABLE, CONF_MON_DISABLE_MODE, CONF_MON_DISABLE, CONF_MON_DISABLE_ERROR,
+         CONF_MON_DISABLE_UNAVAILABLE),
+    ):
+        mode = get(mode_key, LIST_WHITELIST) or LIST_WHITELIST
+        entries = list(get(entries_key, []) or [])
+        if mode == LIST_WHITELIST and not entries:
+            continue                            # nichts gewählt: nichts zu tun
+        rule: dict[str, Any] = {
+            M_ID: f"basic:{action}",
+            M_NAME: action,
+            M_ENABLED: True,
+            M_MODE: mode,
+            M_ENTRIES: entries,
+            M_ON_ERROR: bool(get(error_key, True)),
+            M_ON_UNAVAILABLE: bool(get(unavailable_key, True)),
+            M_ACTION: action,
+            M_NOTIFY: False,
+        }
+        if action == MON_ACTION_DISABLE:
+            presence = get(CONF_MON_DISABLE_PRESENCE)
+            rule[M_PRESENCE] = presence or None
+            rule[M_REENABLE] = bool(get(CONF_MON_DISABLE_REENABLE)) and bool(presence)
+        rules.append(rule)
+    return rules
+
+
 def rule_matches(rule: dict[str, Any], entry_id: str, kind: str) -> bool:
     """Gilt die (aktive) Regel für diese Integration und Fehlerart?"""
-    if not rule.get(M_ENABLED, True) or entry_id not in (rule.get(M_ENTRIES) or []):
+    if not rule.get(M_ENABLED, True) or not in_scope(
+        rule.get(M_MODE), list(rule.get(M_ENTRIES) or []), entry_id
+    ):
         return False
     key = M_ON_ERROR if kind == KIND_ERROR else M_ON_UNAVAILABLE
     return bool(rule.get(key, True))
@@ -165,7 +221,8 @@ class IntegrationMonitorController:
 
     @property
     def rules(self) -> list[dict[str, Any]]:
-        return list(self._opt(CONF_MONITOR_RULES, []) or [])
+        """Ältere Regeln aus `monitor_rules` plus die aus den festen Feldern."""
+        return [*(self._opt(CONF_MONITOR_RULES, []) or []), *settings_rules(self._get)]
 
     @property
     def grace(self) -> timedelta:
@@ -201,7 +258,16 @@ class IntegrationMonitorController:
         value = self._opt(key)
         if value is None:  # ältere Einstellung: ein Schalter für beide Arten
             value = self._opt(CONF_NOTIFY_ALL, True)
-        return bool((value and eid not in self.excluded) or any(r.get(M_NOTIFY) for r in matching))
+        # Bereich von „Nur melden“; ältere Ausnahmenliste, solange die neue Liste nicht gesetzt ist
+        if self._opt(CONF_MON_REPORT_MODE) is None and self._opt(CONF_MON_REPORT) is None:
+            scoped = eid not in self.excluded
+        else:
+            scoped = in_scope(
+                self._opt(CONF_MON_REPORT_MODE, LIST_BLACKLIST),
+                list(self._opt(CONF_MON_REPORT, []) or []),
+                eid,
+            )
+        return bool((value and scoped) or any(r.get(M_NOTIFY) for r in matching))
 
     @property
     def faulty_titles(self) -> list[str]:
