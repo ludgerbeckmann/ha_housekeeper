@@ -123,6 +123,12 @@
         "persons": "Persons",
         "half": "Half each"
       }
+    },
+    "price_unit": {
+      "options": {
+        "eur": "€/kWh",
+        "ct": "ct/kWh"
+      }
     }
   },
   "entity": {
@@ -272,6 +278,21 @@
       },
       "energy_gas_cost_year": {
         "name": "Gas share {unit} (year)"
+      },
+      "cost_energy": {
+        "name": "Energy"
+      },
+      "cost_today": {
+        "name": "Cost today"
+      },
+      "cost_month": {
+        "name": "Cost this month"
+      },
+      "cost_year": {
+        "name": "Cost this year"
+      },
+      "cost_total": {
+        "name": "Cost total"
       }
     },
     "button": {
@@ -2868,6 +2889,85 @@
         "invalid_price": "The price per PV kWh must be a number from 0 up, for example 16.26.",
         "no_persons": "Enter the number of persons for at least one unit.",
         "no_area": "Enter the living area for at least one unit."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved."
+      }
+    },
+    "energy_cost": {
+      "initiate_flow": {
+        "user": "Energy cost"
+      },
+      "entry_type": "Energy cost",
+      "step": {
+        "new_energy_cost": {
+          "title": "Energy cost",
+          "description": "Counts the energy and cost of an existing device, for example a plug that measures power. Counting starts when it is set up.",
+          "sections": {
+            "source": {
+              "name": "Device",
+              "description": "The sensor that measures the device’s consumption.",
+              "data": {
+                "name": "Name (shown as “Energy cost: Name”)",
+                "source_entity": "Power or energy sensor"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Energy cost”. Best use the device name, e.g. “Freezer”.",
+                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit."
+              }
+            },
+            "price": {
+              "name": "Price",
+              "description": "What the consumption is valued at. A price entity (e.g. a dynamic tariff) replaces the fixed price; if it fails, the last valid price applies first, otherwise the fixed one.",
+              "data": {
+                "price_ct": "Fixed price (ct/kWh)",
+                "price_entity": "Price entity (optional)",
+                "price_unit": "Unit of the price entity"
+              },
+              "data_description": {
+                "price_ct": "Total price per kWh, e.g. 34. Required without a price entity.",
+                "price_entity": "Sensor, input_number or number with the current price per kWh.",
+                "price_unit": "€/kWh or ct/kWh, depending on what the price entity provides."
+              }
+            }
+          }
+        },
+        "ec_settings": {
+          "title": "Energy cost",
+          "description": "Counts the energy and cost of an existing device, for example a plug that measures power. Counting starts when it is set up.",
+          "sections": {
+            "source": {
+              "name": "Device",
+              "description": "The sensor that measures the device’s consumption.",
+              "data": {
+                "name": "Name (shown as “Energy cost: Name”)",
+                "source_entity": "Power or energy sensor"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Energy cost”. Best use the device name, e.g. “Freezer”.",
+                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit."
+              }
+            },
+            "price": {
+              "name": "Price",
+              "description": "What the consumption is valued at. A price entity (e.g. a dynamic tariff) replaces the fixed price; if it fails, the last valid price applies first, otherwise the fixed one.",
+              "data": {
+                "price_ct": "Fixed price (ct/kWh)",
+                "price_entity": "Price entity (optional)",
+                "price_unit": "Unit of the price entity"
+              },
+              "data_description": {
+                "price_ct": "Total price per kWh, e.g. 34. Required without a price entity.",
+                "price_entity": "Sensor, input_number or number with the current price per kWh.",
+                "price_unit": "€/kWh or ct/kWh, depending on what the price entity provides."
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "no_price": "Enter a fixed price or a price entity.",
+        "unsupported_unit": "The sensor must measure power (W, kW) or energy (Wh, kWh, MWh)."
       },
       "abort": {
         "reconfigure_successful": "Saved."

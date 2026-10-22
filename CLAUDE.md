@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) `consumption_guard` („Verbrauchswächter“) und `energy_monitor` („Energiemonitor“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) `consumption_guard` („Verbrauchswächter“) `energy_monitor` („Energiemonitor“) und `energy_cost` („Stromkosten“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -38,7 +38,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
   je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
-  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`, `energy.py`) mit Formularen, Prüfungen und einer Options-Klasse
+  `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`, `energy.py`, `cost.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
   (`async_get_supported_subentry_types`): Schritt `user` = Instanz hinzufügen (`NewInstanceSteps`, Anlege-Formulare
@@ -316,6 +316,15 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`persons_a/b`), Gas nach `gas_key` `area` (Standard, `area_a/b`) oder `persons`. Der Anteil von B fließt in `settle`-Ergebnis `owed`
   (`water_cost_b`, `gas_cost_b`). Sensoren `energy_<water|gas>_<month|year>` und `energy_<…>_cost_<…>` nur mit Zähler (sonst
   `remove_unconfigured()`); leere Felder stehen als `None` in den Daten. Keine Eigenverbrauchsvergütung im Modell (bleibt beim Anlagenbetreiber, nur über den PV-Preis). Tests mit `freezer`.
+- `energy_cost.py`: Je Instanz ein Gerät (`source_entity`: Leistungssensor W/kW/MW **oder** Energiesensor Wh/kWh/MWh, die Art kommt aus der Einheit,
+  `source_kind()`) und ein Preis (`price_ct` fest in ct/kWh und/oder `price_entity` mit `price_unit` `eur`/`ct`; die Entität gewinnt, bei Ausfall gilt
+  der letzte gültige Preis `price`, sonst der feste, ohne Preis wird nur die Energie gezählt). Eine **Konfigurationsseite** (`ec_settings`, kein Menü,
+  Name als Feld; Abschnitte `source`, `price`; Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`; Prüfung `no_price`,
+  `unsupported_unit`). `async_update()` läuft bei jeder Änderung von Quelle/Preis und minütlich: Leistung wird als Trapez über die Zeit aufsummiert
+  (`power_energy()`, Lücken über `MAX_GAP` = 15 min und ungültige Werte zählen nicht), ein Energiezähler als Differenz zu `energy_baseline`
+  (Rückgang = Baseline neu, Zeitraum übersprungen). Summen `total_kwh`/`total_cost` und Tage (`days`, `YYYY-MM-DD`, höchstens `KEEP_DAYS`) liegen im `Store`
+  (verzögert gespeichert); heute/Monat/Jahr = `sum_days()` mit Präfix. Sensoren `cost_energy` (`total_increasing`, Energie-Dashboard) und
+  `cost_today/month/year/total` (monetär, Attribut `kwh`). Tests mit `freezer`, Leistung Minute für Minute vorrücken (`_advance()`).
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.

@@ -22,6 +22,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 | LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
 | Verbrauchswächter | Meldet, wenn ein Durchfluss oder eine Leistung (z. B. Wasser, Strom) länger als eine eingestellte Zeit am Stück über einer Schwelle liegt |
 | Energiemonitor | Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Wohneinheiten auf und rechnet die Verrechnung aus |
+| Stromkosten | Zählt Energie und Kosten eines vorhandenen Geräts (Steckdose mit Leistungsmessung oder Energiezähler) mit, mit festem Preis oder dynamischem Tarif |
 | IR-Fernbedienung | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
 | Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
 
@@ -61,7 +62,7 @@ Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Hom
 Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
 „Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“**. Jede Instanz hat ihr Zahnrad
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“, „Stromkosten hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
 **Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
@@ -842,6 +843,34 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
 - `button` **Warnung quittieren** (schaltet die Warnung ab und unterdrückt die Wiederholung, bis der Verbrauch einmal
   unter die Schwelle gefallen ist)
 - `switch` **Wächter aktiv** (aus = keine Überwachung; beim Einschalten beginnt die Dauer neu)
+
+## Stromkosten
+
+Zählt **Energie und Kosten eines vorhandenen Geräts** mit, zum Beispiel einer Zigbee-Steckdose mit Leistungsmessung. Pro Gerät
+eine Instanz. Es wird **nichts geschätzt** (anders als PowerCalc): Das Gerät braucht einen eigenen Leistungs- oder Energiesensor.
+Gezählt wird ab dem Einrichten.
+
+### Einstellungen
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
+
+- **Gerät:** ein Sensor in **W/kW** (Leistung) oder in **Wh/kWh/MWh** (Energiezähler); die Art wird an der Einheit erkannt, eine andere
+  Einheit wird beim Speichern abgelehnt.
+- **Preis:** ein **fester Preis** in ct/kWh und/oder eine **Preis-Entität** (Sensor, `input_number` oder `number`, z. B. ein dynamischer
+  Tarif) mit Einheit €/kWh oder ct/kWh. Die Preis-Entität ersetzt den festen Preis; fällt sie aus, gilt zuerst der letzte gültige
+  Preis, sonst der feste. Mindestens eines von beiden ist nötig. Gerechnet wird nur der Verbrauchspreis, ohne Grundgebühr.
+
+### Rechenweg
+
+- **Leistungssensor:** Die Leistung wird bei jeder Änderung und jede Minute über die Zeit aufsummiert (Trapez). Lücken über 15 Minuten
+  (z. B. ein Neustart) und nicht verfügbare Werte werden nicht aufgerechnet.
+- **Energiezähler:** Gezählt wird die Differenz; fällt der Zähler zurück (Zählertausch), wird der Zeitraum übersprungen.
+- Kosten = Energie im Zeitraum × Preis zu diesem Zeitpunkt. Summen und Tage (400) liegen im Speicher und überstehen Neustarts.
+
+### Entitäten
+
+- `sensor` **Energie** (kWh, steigend, im Energie-Dashboard als einzelnes Gerät nutzbar)
+- `sensor` **Kosten heute**, **Kosten Monat**, **Kosten Jahr** und **Kosten gesamt** (Währung von Home Assistant, Attribut `kwh`)
 
 ## Energiemonitor
 

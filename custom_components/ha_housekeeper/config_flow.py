@@ -29,6 +29,7 @@ from .const import (
     FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
     FUNCTION_KNX_SONOS,
@@ -61,6 +62,12 @@ from .flows.consumption import (
 )
 from .flows.doorbell import DoorbellOptions, _bell_schema, _validate_bell
 from .flows.ir import IrOptions, _ir_schema, _validate_ir, new_instance_data as new_ir_data
+from .flows.cost import (
+    EnergyCostOptions,
+    _cost_schema,
+    _validate_cost,
+    new_instance_data as new_cost_data,
+)
 from .flows.energy import (
     EnergyMonitorOptions,
     _em_schema,
@@ -95,6 +102,7 @@ _MENU_STEPS = {
     FUNCTION_IR: "ir_menu",
     FUNCTION_CONSUMPTION: "cg_settings",
     FUNCTION_ENERGY: "em_settings",
+    FUNCTION_COST: "ec_settings",
 }
 
 
@@ -329,6 +337,23 @@ class NewInstanceSteps:
             errors=errors,
         )
 
+    async def async_step_new_energy_cost(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        defaults: dict[str, Any] = {}
+        if user_input is not None:
+            flat = _flatten_sections(user_input)
+            errors = _validate_cost(self.hass, flat)
+            if not errors:
+                return await self._finish_new(flat.get(CONF_NAME), new_cost_data(flat))
+            defaults = flat
+        return self.async_show_form(
+            step_id="new_energy_cost",
+            data_schema=_cost_schema(self.hass, defaults),
+            errors=errors,
+        )
+
     async def async_step_new_energy_monitor(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -413,6 +438,7 @@ class HousekeeperSubentryFlow(
     IrOptions,
     ConsumptionGuardOptions,
     EnergyMonitorOptions,
+    EnergyCostOptions,
     NewInstanceSteps,
     OptionsBase,
     ConfigSubentryFlow,

@@ -22,6 +22,7 @@ from homeassistant.util import dt as dt_util
 from .alarm_clock import AlarmClockController
 from .consumption_guard import ConsumptionGuardController
 from .door_guard import DoorGuardController
+from .energy_cost import EnergyCostController
 from .energy_monitor import EnergyMonitorController, share_a
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
@@ -75,6 +76,11 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities(
             [MonitorFaultySensor(controller), MonitorDisabledSensor(controller)]
+        )
+    elif isinstance(controller, EnergyCostController):
+        async_add_entities(
+            [CostEnergySensor(controller)]
+            + [CostSensor(controller, kind) for kind in ("today", "month", "year", "total")]
         )
     elif isinstance(controller, EnergyMonitorController):
         async_add_entities(
@@ -578,6 +584,51 @@ class ConsumptionSinceSensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self._controller.since
+
+
+class CostEnergySensor(FunctionEntity, SensorEntity):
+    """Gezählte Energie des Geräts (kWh, steigend; im Energie-Dashboard als einzelnes Gerät nutzbar)."""
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = "kWh"
+    _attr_suggested_display_precision = 3
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "cost_energy")
+
+    @property
+    def native_value(self) -> float:
+        return round(self._controller.total_kwh, 4)
+
+
+class CostSensor(FunctionEntity, SensorEntity):
+    """Kosten des Geräts: heute, im Monat, im Jahr oder gesamt (Währung von Home Assistant)."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, controller, kind: str) -> None:
+        super().__init__(controller, f"cost_{kind}")
+        self._kind = kind
+        if kind == "total":
+            self._attr_state_class = SensorStateClass.TOTAL
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        return self._controller.currency
+
+    @property
+    def native_value(self) -> float:
+        if self._kind == "total":
+            return round(self._controller.total_cost, 4)
+        return round(self._controller.period(self._kind)["cost"], 4)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if self._kind == "total":
+            return {"kwh": round(self._controller.total_kwh, 4)}
+        return {"kwh": round(self._controller.period(self._kind)["kwh"], 4)}
 
 
 class EnergyTotalSensor(FunctionEntity, SensorEntity):

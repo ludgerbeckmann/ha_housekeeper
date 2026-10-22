@@ -30,6 +30,8 @@ from .const import (
     CONF_EM_GRID,
     CONF_EM_METER_A,
     CONF_EM_METER_B,
+    CONF_COST_PRICE_ENTITY,
+    CONF_COST_SOURCE,
     CONF_EM_COMMON_METER,
     CONF_EM_GAS,
     CONF_EM_WATER,
@@ -67,6 +69,7 @@ from .const import (
     FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
     FUNCTION_KNX_SONOS,
@@ -146,6 +149,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
             opt(CONF_EM_METER_A), opt(CONF_EM_METER_B),
         ]
         entities += [e for e in (opt(CONF_EM_WATER), opt(CONF_EM_GAS), opt(CONF_EM_COMMON_METER)) if e]
+    elif function == FUNCTION_COST:
+        entities += [opt(CONF_COST_SOURCE), opt(CONF_COST_PRICE_ENTITY)]
     elif function == FUNCTION_CONSUMPTION:
         entities.append(opt(CONF_CG_SENSOR))
     elif function == FUNCTION_IR:
