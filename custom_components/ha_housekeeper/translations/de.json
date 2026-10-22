@@ -2945,6 +2945,20 @@
                 "price_entity": "Sensor, input_number oder number mit dem aktuellen Preis je kWh.",
                 "price_unit": "€/kWh oder ct/kWh, je nachdem, was die Preis-Entität liefert."
               }
+            },
+            "history": {
+              "name": "Vorhandene Werte (optional)",
+              "description": "Damit die Summen nicht bei null beginnen: Entweder rückwirkend aus der Langzeitstatistik oder mit eigenen Startwerten, oder beides.",
+              "data": {
+                "history_from": "Rückwirkend ab (Datum)",
+                "start_kwh": "Startwert Energie (kWh)",
+                "start_cost": "Startwert Kosten"
+              },
+              "data_description": {
+                "history_from": "Rechnet Energie und Kosten ab diesem Tag aus den stündlichen Statistiken des Sensors bis zum Beginn der Zählung nach (nur mit Messsensor, der eine Zustandsklasse hat). Preise stammen aus der Statistik der Preis-Entität, sonst gilt der feste bzw. heutige Preis. Läuft einmal je Datum; ein neues Datum ersetzt die Rückrechnung.",
+                "start_kwh": "Wird zur Energie-Summe addiert (Tag, Monat und Jahr bleiben unverändert).",
+                "start_cost": "Wird zur Kosten-Summe addiert (Tag, Monat und Jahr bleiben unverändert)."
+              }
             }
           }
         },
@@ -2993,6 +3007,20 @@
                 "price_entity": "Sensor, input_number oder number mit dem aktuellen Preis je kWh.",
                 "price_unit": "€/kWh oder ct/kWh, je nachdem, was die Preis-Entität liefert."
               }
+            },
+            "history": {
+              "name": "Vorhandene Werte (optional)",
+              "description": "Damit die Summen nicht bei null beginnen: Entweder rückwirkend aus der Langzeitstatistik oder mit eigenen Startwerten, oder beides.",
+              "data": {
+                "history_from": "Rückwirkend ab (Datum)",
+                "start_kwh": "Startwert Energie (kWh)",
+                "start_cost": "Startwert Kosten"
+              },
+              "data_description": {
+                "history_from": "Rechnet Energie und Kosten ab diesem Tag aus den stündlichen Statistiken des Sensors bis zum Beginn der Zählung nach (nur mit Messsensor, der eine Zustandsklasse hat). Preise stammen aus der Statistik der Preis-Entität, sonst gilt der feste bzw. heutige Preis. Läuft einmal je Datum; ein neues Datum ersetzt die Rückrechnung.",
+                "start_kwh": "Wird zur Energie-Summe addiert (Tag, Monat und Jahr bleiben unverändert).",
+                "start_cost": "Wird zur Kosten-Summe addiert (Tag, Monat und Jahr bleiben unverändert)."
+              }
             }
           }
         }
@@ -3001,7 +3029,9 @@
         "no_price": "Trage einen festen Preis oder eine Preis-Entität ein.",
         "unsupported_unit": "Der Sensor muss eine Leistung (W, kW) oder Energie (Wh, kWh, MWh) messen.",
         "source_or_fixed": "Wähle entweder einen Messsensor oder eine Entität mit fester Leistung, nicht beides und nicht keines.",
-        "no_power": "Trage die Leistung des Geräts in W ein."
+        "no_power": "Trage die Leistung des Geräts in W ein.",
+        "history_needs_source": "Die Rückrechnung braucht einen Messsensor, nicht die feste Leistung.",
+        "history_in_future": "Das Datum für die Rückrechnung darf nicht in der Zukunft liegen."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert."

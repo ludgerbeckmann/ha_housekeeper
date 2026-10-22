@@ -327,6 +327,12 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (Rückgang = Baseline neu, Zeitraum übersprungen). Summen `total_kwh`/`total_cost` und Tage (`days`, `YYYY-MM-DD`, höchstens `KEEP_DAYS`) liegen im `Store`
   (verzögert gespeichert); heute/Monat/Jahr = `sum_days()` mit Präfix. Sensoren `cost_energy` (`total_increasing`, Energie-Dashboard) und
   `cost_today/month/year/total` (monetär, Attribut `kwh`). Tests mit `freezer`, Leistung Minute für Minute vorrücken (`_advance()`).
+  **Vorhandene Werte:** `start_kwh`/`start_cost` (Offset, nur in den Summen `total_kwh`/`total_cost`, die jetzt Properties aus `live_*` + `history` + Startwert
+  sind; im `Store` bleiben `total_kwh`/`total_cost` die gezählten Werte) und `history_from` (Datum, `DateSelector`, Prüfung `history_in_future`, `history_needs_source`):
+  `async_backfill()` (Hintergrundtask in `async_start`) holt über `async_fetch_statistics()` (Recorder `statistics_during_period`, `hour`, Einheiten kWh/kW)
+  die Statistik des Quellsensors (Leistung `mean`, Energie `change`) und optional der Preis-Entität (`mean`) von `history_from` bis `since` (Beginn der Zählung, im
+  `Store`, volle Stunde) und legt `build_history()` (lokaler Tag, Preis wird weitergetragen) in `history` ab; `history_done` verhindert Wiederholung je Datum, ein
+  neues Datum ersetzt `history`. `period()` summiert `days` und `history`. Tests ersetzen `async_fetch_statistics` und setzen die Zeitzone auf UTC; `manifest` hat `after_dependencies` `recorder`.
 - `issues.py`: Reparaturhinweise (Issue-Registry; abgeglichen werden nur `<id>_entity_…`/`<id>_device_…`, andere gehören dem jeweiligen Controller). `collect_references(entry)` sammelt je Funktion alle
   Entitäten/Geräte aus den Einstellungen, `async_check_entry` legt je fehlender Referenz ein Issue
   `<entry_id>_<…>` an (nicht behebbar, Warnung) und löscht veraltete; nur bei geladenem Eintrag.
