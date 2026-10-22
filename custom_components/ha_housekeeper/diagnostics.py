@@ -15,6 +15,7 @@ from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
 from .knx_sonos import KnxSonosController
 from .consumption_guard import ConsumptionGuardController
+from .energy_cost import EnergyCostController
 from .energy_monitor import EnergyMonitorController
 from .ir_remote import IrRemoteController
 from .llm_usage import LlmUsageController
@@ -138,6 +139,15 @@ async def async_get_config_entry_diagnostics(
             "warning": controller.warning,
             "since": controller.since.isoformat() if controller.since else None,
             "sensor": controller.sensor,
+        }
+    if isinstance(controller, EnergyCostController):
+        result["state"] = {
+            "source": controller.source,
+            "total_kwh": controller.total_kwh,
+            "total_cost": controller.total_cost,
+            "price": controller.price,
+            "today": controller.period("today"),
+            "month": controller.period("month"),
         }
     if isinstance(controller, EnergyMonitorController):
         result["state"] = {

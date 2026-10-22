@@ -25,6 +25,7 @@ from .const import (
     FUNCTION_CONSUMPTION,
     FUNCTION_DOOR_GUARD,
     FUNCTION_DOORBELL,
+    FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
     FUNCTION_KNX_SONOS,
@@ -42,6 +43,7 @@ from .const import (
 from .alarm_clock import AlarmClockController
 from .issues import async_remove_issues_with_prefix, async_setup_checks
 from .consumption_guard import ConsumptionGuardController
+from .energy_cost import EnergyCostController
 from .door_guard import DoorGuardController
 from .doorbell import DoorbellController
 from .energy_monitor import EnergyMonitorController
@@ -74,6 +76,7 @@ CONTROLLERS = {
     FUNCTION_IR: IrRemoteController,
     FUNCTION_CONSUMPTION: ConsumptionGuardController,
     FUNCTION_ENERGY: EnergyMonitorController,
+    FUNCTION_COST: EnergyCostController,
 }
 
 RUN_PUMP_SCHEMA = vol.Schema(

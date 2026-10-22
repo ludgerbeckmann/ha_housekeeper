@@ -244,7 +244,7 @@ async def test_all_functions_are_subentry_types(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     assert set(hub.supported_subentry_types) == {
         "mailbox", "door_guard", "doorbell", "pool_pump", "knx_sonos",
-        "updater", "task_planner", "alarm_clock", "integration_monitor", "llm_usage", "ir_remote", "consumption_guard", "energy_monitor"}
+        "updater", "task_planner", "alarm_clock", "integration_monitor", "llm_usage", "ir_remote", "consumption_guard", "energy_monitor", "energy_cost"}
 
 
 async def _new_updater(hass, data):

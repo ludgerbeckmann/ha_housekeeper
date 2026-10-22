@@ -23,6 +23,7 @@ FUNCTION_LLM = "llm_usage"
 FUNCTION_IR = "ir_remote"
 FUNCTION_CONSUMPTION = "consumption_guard"
 FUNCTION_ENERGY = "energy_monitor"
+FUNCTION_COST = "energy_cost"
 
 CONF_HUB = "hub"  # Marker im Hub-Eintrag (neues Format: Hub + Untereinträge)
 
@@ -41,6 +42,7 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_IR: ("IR-Fernbedienung", "IR remote"),
     FUNCTION_CONSUMPTION: ("Verbrauchswächter", "Consumption guard"),
     FUNCTION_ENERGY: ("Energiemonitor", "Energy monitor"),
+    FUNCTION_COST: ("Stromkosten", "Energy cost"),
 }
 
 HUB_TITLE = ("Funktionen", "Functions")
@@ -138,6 +140,7 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
         Platform.SWITCH,
     ],
     FUNCTION_ENERGY: [Platform.SENSOR],
+    FUNCTION_COST: [Platform.SENSOR],
 }
 
 # --- Benachrichtigung Briefkasten ---
@@ -654,6 +657,13 @@ CONF_EM_AREA_A = "area_a"             # Wohnfläche Einheit A (m²), Schlüssel 
 CONF_EM_AREA_B = "area_b"
 CONF_EM_GAS_KEY = "gas_key"           # Verteilung des Gases: "area" (Standard) oder "persons"
 EM_GAS_KEYS = ["area", "persons"]
+# --- Stromkosten ---
+CONF_COST_SOURCE = "source_entity"        # Leistungssensor (W, kW) oder Energiesensor (Wh, kWh, MWh)
+CONF_COST_PRICE = "price_ct"              # fester Preis in ct/kWh
+CONF_COST_PRICE_ENTITY = "price_entity"   # optionale Preis-Entität (dynamischer Tarif)
+CONF_COST_PRICE_UNIT = "price_unit"       # Einheit der Preis-Entität: "eur" (€/kWh) oder "ct" (ct/kWh)
+COST_PRICE_UNITS = ["eur", "ct"]
+
 CONF_EM_COMMON_METER = "common_meter"  # optionaler Zähler Allgemeinstrom (kWh, steigend), hängt hinter dem Zwischenzähler A
 CONF_EM_COMMON_POWER = "common_power"  # ersatzweise feste Leistung des Allgemeinstroms in W
 CONF_EM_COMMON_KEY = "common_key"      # Verteilung: "area" (Standard), "persons" oder "half"
