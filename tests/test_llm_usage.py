@@ -10,7 +10,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from .helpers import is_menu, make_entry, menu_options, new_instance, reconfigure, sectioned
+from .helpers import make_entry, new_instance, reconfigure, sectioned
 from custom_components.ha_housekeeper import llm_providers as prov
 from custom_components.ha_housekeeper import llm_usage as llm
 from custom_components.ha_housekeeper.const import DOMAIN
@@ -321,12 +321,23 @@ async def test_refresh_button(hass: HomeAssistant, monkeypatch) -> None:
 # --- Einstellungsdialoge -----------------------------------------------------------------------------
 
 
+LIMIT_KEYS = ("low_balance", "daily_limit", "monthly_limit", "forecast_warning")
+
+
+def llm_page(values: dict) -> dict:
+    """Eingaben der Seite: Konto, Grenzen und Benachrichtigung."""
+    page = sectioned(values)
+    page["limits"] = {k: v for k, v in page["general"].items() if k in LIMIT_KEYS}
+    page["general"] = {k: v for k, v in page["general"].items() if k not in LIMIT_KEYS}
+    return page
+
+
 def new_form(**over):
     values = {"name": "", "provider": "anthropic", "api_key": "sk-ant-admin-x", "mode": "balance",
               "amount": 42.5, "poll_minutes": 60, "mobile_enabled": False,
               "persistent_enabled": True, "tts_enabled": False, **over}
     values = {k: v for k, v in values.items() if v not in ("", None)}
-    return sectioned(values)
+    return llm_page(values)
 
 
 async def test_create_balance_instance(hass: HomeAssistant, monkeypatch) -> None:
@@ -361,43 +372,55 @@ async def test_create_checks_the_key(hass: HomeAssistant, monkeypatch, error, ke
     assert result["type"] is FlowResultType.FORM and result["errors"] == {"base": key}
 
 
-async def test_menu_depends_on_the_mode(hass: HomeAssistant, monkeypatch) -> None:
+async def test_settings_page_layout_depends_on_the_mode(hass: HomeAssistant, monkeypatch) -> None:
     fake_costs(monkeypatch, {})
     entry, _, _ = await _setup(hass)
-    assert menu_options(await reconfigure(hass, entry)) == ["llm_general", "llm_calibrate", "rename"]
-
-
-async def test_budget_mode_has_no_calibration(hass: HomeAssistant, monkeypatch) -> None:
-    fake_costs(monkeypatch, {})
-    entry, _, _ = await _setup(hass, mode="budget", baseline_time=None)
-    assert menu_options(await reconfigure(hass, entry)) == ["llm_general", "rename"]
+    result = await reconfigure(hass, entry)
+    assert result["step_id"] == "llm_settings"
+    schema = {str(k): v for k, v in result["data_schema"].schema.items()}
+    assert list(schema) == ["general", "limits", "notifications"]
+    assert [n for n, sec in schema.items() if not sec.options["collapsed"]] == ["general"]
+    general = {str(k) for k in schema["general"].schema.schema}
+    assert general == {"name", "api_key", "calibrate_amount", "poll_minutes", "track_usage"}   # Guthaben-Modus
+    assert {str(k) for k in schema["limits"].schema.schema} == set(LIMIT_KEYS)
+    budget, _, _ = await _setup(hass, mode="budget", baseline_time=None, name="Budget")
+    result = await reconfigure(hass, budget)
+    general = {str(k) for k in next(
+        v for k, v in result["data_schema"].schema.items() if str(k) == "general").schema.schema}
+    assert "amount" in general and "calibrate_amount" not in general
 
 
 async def test_calibrate_sets_amount_and_time(hass: HomeAssistant, monkeypatch) -> None:
     fake_costs(monkeypatch, {})
     entry, _, _ = await _setup(hass, baseline_time="2026-01-01T00:00:00+00:00")
-    menu = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "llm_calibrate"})
-    assert result["step_id"] == "llm_calibrate"
-    result = await hass.config_entries.subentries.async_configure(result["flow_id"], {"amount": 99.5})
-    assert is_menu(result)
-    assert entry.options["amount"] == 99.5
+    result = await reconfigure(hass, entry)
+    page = llm_page({"calibrate_amount": 99.5, "poll_minutes": 60, "mobile_enabled": False,
+                     "persistent_enabled": True, "tts_enabled": False})
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], page)
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.options["amount"] == 99.5 and "calibrate_amount" not in entry.options
     assert dt_util.parse_datetime(entry.options["baseline_time"]) > datetime(2026, 6, 1, tzinfo=UTC)
 
 
-async def test_settings_keep_key_when_empty_and_clear_limits(hass: HomeAssistant, monkeypatch) -> None:
+async def test_empty_calibration_keeps_amount_and_baseline(hass: HomeAssistant, monkeypatch) -> None:
+    fake_costs(monkeypatch, {})
+    entry, _, _ = await _setup(hass, baseline_time="2026-01-01T00:00:00+00:00")
+    result = await reconfigure(hass, entry)
+    page = llm_page({"poll_minutes": 60, "mobile_enabled": False, "persistent_enabled": True,
+                     "tts_enabled": False})
+    await hass.config_entries.subentries.async_configure(result["flow_id"], page)
+    assert entry.options["amount"] == 50.0 and entry.options["baseline_time"] == "2026-01-01T00:00:00+00:00"
+
+
+async def test_settings_keep_key_when_empty_clear_limits_and_rename(hass: HomeAssistant, monkeypatch) -> None:
     mock = fake_costs(monkeypatch, {})
     entry, _, _ = await _setup(hass, daily_limit=5.0)
-    menu = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "llm_general"})
-    assert result["step_id"] == "llm_general"
+    result = await reconfigure(hass, entry)
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        sectioned({"poll_minutes": 30, "mobile_enabled": False, "persistent_enabled": True,
-                   "tts_enabled": False}))
-    assert is_menu(result)
+        llm_page({"name": "Privat", "poll_minutes": 30, "mobile_enabled": False,
+                  "persistent_enabled": True, "tts_enabled": False}))
+    assert result["reason"] == "reconfigure_successful" and entry.title.endswith("Privat")
     assert entry.options["api_key"] == "sk-ant-admin-test"          # unverändert
     assert entry.options["poll_minutes"] == 30
     assert entry.options["daily_limit"] is None and entry.options["low_balance"] is None
@@ -407,13 +430,11 @@ async def test_settings_keep_key_when_empty_and_clear_limits(hass: HomeAssistant
 async def test_settings_new_key_is_checked(hass: HomeAssistant, monkeypatch) -> None:
     fake_costs(monkeypatch, error=prov.ProviderAuthError("HTTP 401"))
     entry, _, _ = await _setup(hass)
-    menu = await reconfigure(hass, entry)
-    result = await hass.config_entries.subentries.async_configure(
-        menu["flow_id"], {"next_step_id": "llm_general"})
+    result = await reconfigure(hass, entry)
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        sectioned({"api_key": "bad", "poll_minutes": 60, "mobile_enabled": False,
-                   "persistent_enabled": True, "tts_enabled": False}))
+        llm_page({"api_key": "bad", "poll_minutes": 60, "mobile_enabled": False,
+                  "persistent_enabled": True, "tts_enabled": False}))
     assert result["errors"] == {"base": "invalid_auth"}
     assert entry.options["api_key"] == "sk-ant-admin-test"
 

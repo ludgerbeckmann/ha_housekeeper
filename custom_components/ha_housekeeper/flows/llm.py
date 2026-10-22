@@ -8,8 +8,9 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import SubentryFlowResult
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import dt as dt_util
@@ -21,6 +22,7 @@ from ..const import (
     CONF_FORECAST_WARNING,
     CONF_LLM_AMOUNT,
     CONF_LLM_BASELINE,
+    CONF_LLM_CALIBRATE,
     CONF_LLM_MODE,
     CONF_LOW_BALANCE,
     CONF_MOBILE_TARGETS,
@@ -36,13 +38,17 @@ from ..const import (
     LLM_MODE_BUDGET,
     LLM_MODES,
     PROVIDERS,
+    clean_instance_name,
+    instance_name,
+    instance_title,
 )
 from .common import (
+    SECTION_GENERAL,
+    SECTION_NOTIFICATIONS,
     _POOL_NOTIFY_DEFAULTS,
     _flatten_sections,
     _notify_fields,
     _number,
-    _sections_schema,
     _select,
     _suggest,
     _validate_notify,
@@ -59,6 +65,7 @@ _CLEARABLE = (
     CONF_MONTHLY_LIMIT,
 )
 _MAX_AMOUNT = 1_000_000
+SECTION_LIMITS = "limits"
 
 
 def _key_selector() -> selector.TextSelector:
@@ -100,8 +107,27 @@ def _poll_field(defaults: dict[str, Any]) -> dict[Any, Any]:
     }
 
 
+def _llm_sections(
+    hass: HomeAssistant, general: dict[Any, Any], limits: dict[Any, Any], defaults: dict[str, Any]
+) -> vol.Schema:
+    """Seite in drei Abschnitte: Konto, Grenzen und Benachrichtigung (nur „Konto“ ist aufgeklappt)."""
+
+    def _section(fields: dict[Any, Any], collapsed: bool = True) -> Any:
+        return section(vol.Schema(fields), {"collapsed": collapsed})
+
+    return vol.Schema(
+        {
+            vol.Required(SECTION_GENERAL): _section(general, collapsed=False),
+            vol.Required(SECTION_LIMITS): _section(limits),
+            vol.Required(SECTION_NOTIFICATIONS): _section(
+                _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+            ),
+        }
+    )
+
+
 def _llm_new_schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema:
-    """Anlegen: Name, Anbieter, Key, Modus mit Betrag, Grenzen und Benachrichtigung."""
+    """Anlegen: Konto (Name, Anbieter, Key, Modus mit Betrag, Intervall), Grenzen und Benachrichtigung."""
     general: dict[Any, Any] = {
         vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults)): str,
         vol.Required(
@@ -116,25 +142,25 @@ def _llm_new_schema(hass: HomeAssistant, defaults: dict[str, Any]) -> vol.Schema
         ): _amount(),
     }
     general.update(_poll_field(defaults))
-    general.update(_limit_fields(defaults))
-    return _sections_schema(
-        general,
-        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False),
-    )
+    return _llm_sections(hass, general, _limit_fields(defaults), defaults)
 
 
 def _llm_settings_schema(
     hass: HomeAssistant, defaults: dict[str, Any], mode: str
 ) -> vol.Schema:
-    """Einstellungen: Key (leer = unverändert), Intervall, Budget (nur Monatsbudget), Grenzen."""
-    general: dict[Any, Any] = {vol.Optional(CONF_API_KEY): _key_selector()}
+    """Einstellungen: Name, Key (leer = unverändert), Budget bzw. Abgleich, Intervall, Grenzen, Benachrichtigung."""
+    general: dict[Any, Any] = {
+        vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults)): str,
+        vol.Optional(CONF_API_KEY): _key_selector(),
+    }
     if mode == LLM_MODE_BUDGET:
         general[
             vol.Required(CONF_LLM_AMOUNT, default=defaults.get(CONF_LLM_AMOUNT, 0))
         ] = _amount()
+    else:
+        general[vol.Optional(CONF_LLM_CALIBRATE)] = _amount()
     general.update(_poll_field(defaults))
-    general.update(_limit_fields(defaults))
-    return _sections_schema(general, _notify_fields(hass, defaults, with_action=False))
+    return _llm_sections(hass, general, _limit_fields(defaults), defaults)
 
 
 def llm_data(flat: dict[str, Any]) -> dict[str, Any]:
@@ -184,23 +210,15 @@ def new_instance_data(flat: dict[str, Any]) -> dict[str, Any]:
 
 
 class LlmOptions:
-    """Options-Flow-Schritte: LLM-Verbrauch."""
+    """Konfigurationsseite des LLM-Verbrauchs (kein Menü, der Name ist ein Feld)."""
 
-    async def async_step_llm_menu(
+    async def async_step_llm_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        options = ["llm_general"]
-        if self._current.get(CONF_LLM_MODE, LLM_MODE_BALANCE) == LLM_MODE_BALANCE:
-            options.append("llm_calibrate")
-        options.append("rename")
-        return await self._menu("llm_menu", options, user_input)
-
-    async def async_step_llm_general(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         errors: dict[str, str] = {}
         detail = ""
-        defaults = self._current
+        subentry = self._get_reconfigure_subentry()
+        defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
         mode = defaults.get(CONF_LLM_MODE, LLM_MODE_BALANCE)
         if user_input is not None:
             flat = _flatten_sections(user_input)
@@ -214,36 +232,25 @@ class LlmOptions:
                     else:
                         flat[CONF_API_KEY] = key
             if not errors:
-                self._save(llm_data(flat))
-                return await self.async_step_llm_menu()
+                data = llm_data(flat)
+                name = (data.pop(CONF_NAME, None) or "").strip()
+                calibrate = data.pop(CONF_LLM_CALIBRATE, None)
+                if calibrate is not None:               # Guthaben abgleichen: Betrag und Zeitpunkt
+                    data[CONF_LLM_AMOUNT] = calibrate
+                    data[CONF_LLM_BASELINE] = dt_util.utcnow().isoformat()
+                self.hass.config_entries.async_update_subentry(
+                    self._get_entry(),
+                    subentry,
+                    title=instance_title(
+                        self.hass, self.function_type, clean_instance_name(self.function_type, name)
+                    ),
+                    data={**subentry.data, **data},
+                )
+                return self.async_abort(reason="reconfigure_successful")
             defaults = {**defaults, **flat}
         return self.async_show_form(
-            step_id="llm_general",
+            step_id="llm_settings",
             data_schema=_llm_settings_schema(self.hass, defaults, mode),
             errors=errors,
             description_placeholders={"detail": detail},
-        )
-
-    async def async_step_llm_calibrate(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Guthaben abgleichen: den in der Konsole des Anbieters gezeigten Betrag eintragen."""
-        if user_input is not None:
-            self._save(
-                {
-                    CONF_LLM_AMOUNT: user_input[CONF_LLM_AMOUNT],
-                    CONF_LLM_BASELINE: dt_util.utcnow().isoformat(),
-                }
-            )
-            return await self.async_step_llm_menu()
-        return self.async_show_form(
-            step_id="llm_calibrate",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_LLM_AMOUNT,
-                        description=_suggest(CONF_LLM_AMOUNT, self._current),
-                    ): _amount()
-                }
-            ),
         )

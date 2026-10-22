@@ -2298,11 +2298,7 @@
                 "mode": "Mode",
                 "amount": "Amount",
                 "poll_minutes": "Query interval (minutes)",
-                "low_balance": "Warn when the balance falls below …",
-                "daily_limit": "Daily limit (cost per day)",
-                "monthly_limit": "Monthly limit (cost per month)",
-                "track_usage": "Query tokens and requests",
-                "forecast_warning": "Warn when the forecast exceeds the limit"
+                "track_usage": "Query tokens and requests"
               },
               "data_description": {
                 "name": "Optional. Empty = “LLM usage”. Enter only the name of the instance, e.g. “Anthropic”; the function name is prepended automatically.",
@@ -2310,10 +2306,22 @@
                 "mode": "“Balance”: you enter the current balance from the console (and again after every top-up via “Calibrate balance”); the remaining balance is the amount minus the costs since then. “Monthly budget”: the remaining budget is the amount minus the costs of the current month. With automatic top-up choose “Monthly budget”, otherwise the remaining balance is wrong.",
                 "amount": "Balance mode: your current balance according to the provider's console. Monthly budget: the amount you want to spend per month. In the provider's currency (currently USD).",
                 "poll_minutes": "How often the costs are queried. The providers' reports are delayed by a few hours.",
+                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval."
+              }
+            },
+            "limits": {
+              "name": "Limits",
+              "description": "When warnings are sent. Empty fields do not warn.",
+              "data": {
+                "low_balance": "Warn when the balance falls below …",
+                "daily_limit": "Daily limit (cost per day)",
+                "monthly_limit": "Monthly limit (cost per month)",
+                "forecast_warning": "Warn when the forecast exceeds the limit"
+              },
+              "data_description": {
                 "low_balance": "Empty = no warning. Applies to the remaining balance or budget; pointless with automatic top-up.",
                 "daily_limit": "Empty = no warning. Warns once a day when the cost of the day (UTC) exceeds the limit.",
                 "monthly_limit": "Empty = no warning. Warns once a month when the cost of the month (UTC) exceeds the limit.",
-                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval.",
                 "forecast_warning": "Warns once a month when the forecast of the monthly cost exceeds the monthly limit (or the budget in monthly budget mode) before it is actually exceeded."
               }
             },
@@ -2334,39 +2342,42 @@
             }
           }
         },
-        "llm_menu": {
-          "title": "LLM usage",
-          "description": "Settings and calibration of the LLM usage.",
-          "menu_options": {
-            "llm_general": "Settings",
-            "llm_calibrate": "Calibrate balance",
-            "rename": "Rename"
-          }
-        },
-        "llm_general": {
+        "llm_settings": {
           "title": "Settings",
           "sections": {
             "general": {
               "name": "Account and limits",
               "description": "Access, amount and warning limits.",
               "data": {
+                "name": "Name (shown as “LLM usage: Name”)",
                 "api_key": "New admin key",
                 "amount": "Monthly budget",
+                "calibrate_amount": "Calibrate balance (current amount)",
                 "poll_minutes": "Query interval (minutes)",
+                "track_usage": "Query tokens and requests"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “LLM usage”.",
+                "api_key": "Leave empty to keep the current key.",
+                "amount": "The amount you want to spend per month.",
+                "calibrate_amount": "Leave empty if nothing changes. If you enter the amount shown by the provider’s console (also after every top-up), it counts as the starting value from now on and the costs are deducted from this point on.",
+                "poll_minutes": "How often the costs are queried.",
+                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval."
+              }
+            },
+            "limits": {
+              "name": "Limits",
+              "description": "When warnings are sent. Empty fields do not warn.",
+              "data": {
                 "low_balance": "Warn when the balance falls below …",
                 "daily_limit": "Daily limit (cost per day)",
                 "monthly_limit": "Monthly limit (cost per month)",
-                "track_usage": "Query tokens and requests",
                 "forecast_warning": "Warn when the forecast exceeds the limit"
               },
               "data_description": {
-                "api_key": "Leave empty to keep the current key.",
-                "amount": "The amount you want to spend per month.",
-                "poll_minutes": "How often the costs are queried.",
-                "low_balance": "Empty = no warning.",
-                "daily_limit": "Empty = no warning.",
-                "monthly_limit": "Empty = no warning.",
-                "track_usage": "In addition to the costs, query tokens (and requests for OpenAI) for today and the month. Needs one more query per interval.",
+                "low_balance": "Empty = no warning. Applies to the remaining balance or budget; pointless with automatic top-up.",
+                "daily_limit": "Empty = no warning. Warns once a day when the cost of the day (UTC) exceeds the limit.",
+                "monthly_limit": "Empty = no warning. Warns once a month when the cost of the month (UTC) exceeds the limit.",
                 "forecast_warning": "Warns once a month when the forecast of the monthly cost exceeds the monthly limit (or the budget in monthly budget mode) before it is actually exceeded."
               }
             },
@@ -2385,23 +2396,6 @@
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
             }
-          }
-        },
-        "llm_calibrate": {
-          "title": "Calibrate balance",
-          "description": "Enter the current balance shown by the provider's console (and again after every top-up). From now on the remaining balance is calculated from this amount minus the costs since then.",
-          "data": {
-            "amount": "Current balance"
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “LLM usage: Name”)"
-          },
-          "data_description": {
-            "name": "Only the name, e.g. “Anthropic”; the title then reads “LLM usage: Anthropic”. A leading function name is removed."
           }
         }
       },

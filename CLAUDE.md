@@ -266,7 +266,10 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (Datum bzw. Monat der letzten Meldung = einmal je Zeitraum; `forecast` gegen das Monatslimit bzw. das Budget, nur
   solange es noch nicht überschritten ist), `error` (nach `FAILURES_BEFORE_ALERT`, Key-Fehler
   sofort, dann zusätzlich der Reparaturhinweis `<id>_llm_auth`, den der Controller selbst anlegt und löscht). Die Sensoren sind `state_class: measurement` ohne Geräteklasse (Verlauf über die Recorder-Statistiken).
-  Der Modus lässt sich nach dem Anlegen nicht ändern; Betrag im Guthaben-Modus nur über `llm_calibrate`.
+  Der Modus lässt sich nach dem Anlegen nicht ändern. Die Einstellungen sind **eine Seite** (`llm_settings`, kein Menü, Name als Feld, Speichern =
+  `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `general` (offen: Name, Key (leer = unverändert), Budget bzw. `calibrate_amount`, Intervall,
+  `track_usage`), `limits`, `notifications`; das Anlegen nutzt dieselben Abschnitte). Im Guthaben-Modus setzt ein eingetragenes `calibrate_amount` Betrag und
+  `baseline_time` neu (nur im Formular, wird nicht gespeichert), leer ändert nichts.
   Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key` liefert Fehlerschlüssel und Ursache; die Ursache steht als `{detail}` in den Fehlertexten und im Log; `_get()` meldet HTTP-Status plus `error.message` des Anbieters), Leerraum um den Key wird entfernt, `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
 - `ir_remote.py`: Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht

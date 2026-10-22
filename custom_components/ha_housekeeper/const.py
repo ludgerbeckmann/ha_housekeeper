@@ -615,6 +615,7 @@ CONF_API_KEY = "api_key"
 CONF_LLM_MODE = "mode"
 CONF_LLM_AMOUNT = "amount"
 CONF_LLM_BASELINE = "baseline_time"
+CONF_LLM_CALIBRATE = "calibrate_amount"   # nur im Formular: Guthaben auf diesen Betrag abgleichen
 CONF_POLL_MINUTES = "poll_minutes"
 CONF_LOW_BALANCE = "low_balance"
 CONF_DAILY_LIMIT = "daily_limit"
