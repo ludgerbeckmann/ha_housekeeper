@@ -15,10 +15,14 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_COST_FIXED_ENTITY,
+    CONF_COST_FIXED_POWER,
     CONF_COST_PRICE,
     CONF_COST_PRICE_ENTITY,
     CONF_COST_PRICE_UNIT,
+    CONF_COST_SCALE,
     CONF_COST_SOURCE,
+    CONF_COST_STANDBY,
     DOMAIN,
     signal_update,
 )
@@ -47,6 +51,26 @@ def source_kind(unit: str | None) -> str | None:
     if unit in ENERGY_UNITS:
         return "energy"
     return None
+
+
+OFF_STATES = ("off", "idle", "standby", "paused")
+
+
+def fixed_power_kw(
+    state: Any, power_w: float, standby_w: float = 0.0, scale: bool = False
+) -> float | None:
+    """Leistung eines Geräts ohne Messung in kW aus dem Zustand seiner Entität (`None` = unbekannt).
+
+    An (alles außer `off`, `idle`, `standby`, `paused`): feste Leistung, bei Leuchten mit `scale` nach der Helligkeit
+    (0 bis 255) skaliert; sonst die Standby-Leistung."""
+    if state is None or state.state in _UNKNOWN:
+        return None
+    if state.state in OFF_STATES:
+        return standby_w / 1000
+    brightness = state.attributes.get("brightness")
+    if scale and brightness is not None:
+        return power_w * max(0.0, min(float(brightness), 255.0)) / 255 / 1000
+    return power_w / 1000
 
 
 def price_per_kwh(value: float, unit: str) -> float:
@@ -112,6 +136,10 @@ class EnergyCostController:
         return self._get(CONF_COST_SOURCE, "") or ""
 
     @property
+    def fixed_entity(self) -> str:
+        return self._get(CONF_COST_FIXED_ENTITY, "") or ""
+
+    @property
     def currency(self) -> str:
         return self.hass.config.currency
 
@@ -149,7 +177,9 @@ class EnergyCostController:
         self.days = stored.get("days") or {}
         self.energy_baseline = stored.get("energy_baseline")
         self.price = stored.get("price")
-        watched = [e for e in (self.source, self._get(CONF_COST_PRICE_ENTITY)) if e]
+        watched = [
+            e for e in (self.source, self.fixed_entity, self._get(CONF_COST_PRICE_ENTITY)) if e
+        ]
         self._unsubs.append(async_track_state_change_event(self.hass, watched, self._on_change))
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, CHECK_INTERVAL))
         await self.async_update()
@@ -182,6 +212,20 @@ class EnergyCostController:
 
     def _delta_kwh(self, now: datetime) -> float:
         """Energie seit dem letzten Aufruf in kWh (0, wenn nichts zu zählen ist)."""
+        if self.fixed_entity:                       # Gerät ohne Messung: feste Leistung nach dem Zustand
+            kw = fixed_power_kw(
+                self.hass.states.get(self.fixed_entity),
+                float(self._get(CONF_COST_FIXED_POWER, 0) or 0),
+                float(self._get(CONF_COST_STANDBY, 0) or 0),
+                bool(self._get(CONF_COST_SCALE, False)),
+            )
+            kwh = 0.0
+            if kw is not None and self._last_power is not None and self._last_time is not None:
+                gap = now - self._last_time
+                if gap <= MAX_GAP:
+                    kwh = self._last_power * gap.total_seconds() / 3600   # mit dem Zustand des vorigen Zeitpunkts
+            self._last_power, self._last_time = kw, now
+            return kwh
         state = self.hass.states.get(self.source)
         value = _number(state)
         unit = state.attributes.get("unit_of_measurement") if state else None
