@@ -272,7 +272,10 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `baseline_time` neu (nur im Formular, wird nicht gespeichert), leer ändert nichts.
   Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key` liefert Fehlerschlüssel und Ursache; die Ursache steht als `{detail}` in den Fehlertexten und im Log; `_get()` meldet HTTP-Status plus `error.message` des Anbieters), Leerraum um den Key wird entfernt, `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
-- `ir_remote.py`: Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht
+- `ir_remote.py` (Einstellungen: Menü `ir_menu` mit `ir_settings` = **eine Seite** (Abschnitte `general` mit Name, Sender, Wiederholungen;
+  `commands` mit `active_commands`/`delete_commands`/`delete_codes`, nur im Formular; `switch`; `notifications`; Speichern =
+  `async_update_subentry` + Abbruch `reconfigure_successful`) plus den interaktiven Schritten `add_ir_command`, `learn_ir_command`,
+  `import_ir_commands`; Umbenennen und Test-Dialog gibt es nicht mehr): Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht
   änderbar) und Befehle in `ir_commands` (Schlüssel `IC_*`: `id`, `name` = Anzeige, `code` = Name beim Sender aus
   `command_code()`, `type` ir/rf, `enabled`, `remotes` = Sender, an denen angelernt). Die Codes liegen im Speicher
   des Senders (Broadlink: `.storage/broadlink_remote_<unique_id>_codes`, `{gerät: {befehl: code}}`); Anlernen/Senden/

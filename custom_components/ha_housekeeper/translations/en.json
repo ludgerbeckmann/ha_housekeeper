@@ -2452,47 +2452,10 @@
           "title": "IR remote",
           "description": "Commands of the remote (senders learned / all senders):\n{commands}",
           "menu_options": {
-            "ir_general": "Settings",
+            "ir_settings": "Settings",
             "add_ir_command": "Learn command",
-            "import_ir_commands": "Import existing commands",
-            "learn_ir_command": "Learn command on senders (again)",
-            "test_ir_command": "Test command",
-            "edit_ir_command": "Edit command",
-            "delete_ir_command": "Delete command",
-            "ir_switch": "Switch (on/off)",
-            "rename": "Rename"
-          }
-        },
-        "ir_general": {
-          "title": "IR remote",
-          "sections": {
-            "general": {
-              "name": "Senders and repeats",
-              "description": "Senders, device name and sending settings.",
-              "data": {
-                "remotes": "Senders (remote entities)",
-                "num_repeats": "Repeats",
-                "delay_secs": "Delay between repeats (seconds)"
-              },
-              "data_description": {
-                "remotes": "All selected senders send at the same time. When learning, each sender is learned separately."
-              }
-            },
-            "notifications": {
-              "name": "Notifications",
-              "description": "How and where problems with sending are reported.",
-              "data": {
-                "mobile_enabled": "Enable app push",
-                "mobile_targets": "Push targets (companion app devices)",
-                "tts_enabled": "Enable voice announcement",
-                "tts_entity": "TTS service",
-                "tts_player": "Speaker (media_player)",
-                "persistent_enabled": "Persistent notification in Home Assistant"
-              },
-              "data_description": {
-                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
-              }
-            }
+            "learn_ir_command": "Learn command on remotes (again)",
+            "import_ir_commands": "Import existing commands"
           }
         },
         "add_ir_command": {
@@ -2526,49 +2489,60 @@
             "codes": "Commands"
           }
         },
-        "test_ir_command": {
-          "title": "Test command",
-          "data": {
-            "command": "Command"
-          }
-        },
-        "edit_ir_command": {
-          "title": "Edit command",
-          "data": {
-            "command": "Command"
-          }
-        },
-        "ir_command_edit": {
-          "title": "Edit command",
-          "description": "Command name on the sender: {code}",
-          "data": {
-            "name": "Name",
-            "enabled": "Enabled"
-          }
-        },
-        "delete_ir_command": {
-          "title": "Delete command",
-          "data": {
-            "command": "Command",
-            "delete_codes": "Also delete the code on the sender"
-          }
-        },
-        "ir_switch": {
-          "title": "Switch (on/off)",
-          "description": "Optional: a switch made of two commands, e.g. for voice assistants. The state is only assumed because the devices report nothing back.",
-          "data": {
-            "ir_on_command": "“On” command",
-            "ir_off_command": "“Off” command"
-          }
-        },
-        "rename": {
-          "title": "Rename",
-          "description": "The name of the instance. It appears in the list as “Function: Name”, the device is just called “Name”.",
-          "data": {
-            "name": "Name (shown as “Task planner: Name”)"
-          },
-          "data_description": {
-            "name": "Only the name, e.g. “Office”; the title then reads “Task planner: Office”. A leading function name is removed."
+        "ir_settings": {
+          "title": "IR remote",
+          "sections": {
+            "general": {
+              "name": "Senders and repeats",
+              "description": "Senders, device name and sending settings.",
+              "data": {
+                "name": "Name (shown as “IR remote: Name”)",
+                "remotes": "Senders (remote entities)",
+                "num_repeats": "Repeats",
+                "delay_secs": "Delay between repeats (seconds)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “IR remote”.",
+                "remotes": "All selected senders send at the same time. When learning, each sender is learned separately."
+              }
+            },
+            "commands": {
+              "name": "Commands",
+              "description": "Active commands have a button (and count for the switch). Deleted commands disappear together with their button.",
+              "data": {
+                "active_commands": "Active commands",
+                "delete_commands": "Delete commands",
+                "delete_codes": "Also delete the codes on the remote"
+              },
+              "data_description": {
+                "active_commands": "Only ticked commands count as active.",
+                "delete_commands": "Deleted on saving. A command used by the switch cannot be deleted.",
+                "delete_codes": "Also deletes the learned code in the remote’s memory."
+              }
+            },
+            "switch": {
+              "name": "Switch (on/off)",
+              "description": "Optional: a switch made of two commands, e.g. for voice assistants. The state is only assumed because the devices do not report back.",
+              "data": {
+                "ir_on_command": "“On” command",
+                "ir_off_command": "“Off” command"
+              }
+            },
+            "notifications": {
+              "name": "Notifications",
+              "description": "How and where problems with sending are reported.",
+              "data": {
+                "mobile_enabled": "Enable app push",
+                "mobile_targets": "Push targets (companion app devices)",
+                "tts_enabled": "Enable voice announcement",
+                "tts_entity": "TTS service",
+                "tts_player": "Speaker (media_player)",
+                "persistent_enabled": "Persistent notification in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
+              }
+            }
           }
         }
       },
@@ -2577,7 +2551,6 @@
         "no_device": "The device name must not be empty.",
         "command_exists": "This command already exists.",
         "learn_failed": "Learning failed: {detail}",
-        "send_failed": "Sending failed: {detail}",
         "command_in_use": "The command is used by the switch. Change the switch first.",
         "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
         "switch_same": "“On” and “off” must be different commands."

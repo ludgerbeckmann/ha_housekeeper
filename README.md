@@ -785,7 +785,11 @@ Beim Anlegen: Name, **Sender** (mehrere möglich, gesendet wird an alle gleichze
 Sender** (bei vorhandenen Skripten der Wert von `device`, lässt sich später nicht ändern), Wiederholungen und
 Pause sowie die Benachrichtigung bei Sendefehlern.
 
-### Befehle (Menü)
+### Einstellungen und Menü
+
+Das Zahnrad öffnet ein kleines Menü: **Einstellungen** (eine Seite mit den Abschnitten *Allgemein* mit Name, Sender,
+Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *Schalter* mit An-/Aus-Befehl;
+*Benachrichtigungen*) sowie die Schritte, die ein Gerät brauchen und deshalb keine Formularfelder sein können:
 
 - **Befehl anlernen:** Name (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`, `light_plus`), Art (Infrarot/Funk)
   und die Sender. Je Sender erscheint ein Fortschrittsdialog: Taste der Original-Fernbedienung auf den Sender
@@ -797,8 +801,10 @@ Pause sowie die Benachrichtigung bei Sendefehlern.
   interne Datei der Broadlink-Integration; bei anderen Sendern oder geändertem Format entfällt die Liste, die
   Handeingabe bleibt.
 - **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
-  gespeichert und lassen sich nicht kopieren), **Befehl testen**, **bearbeiten** (Anzeigename, aktiv) und
-  **löschen** (auf Wunsch auch der Code beim Sender).
+  gespeichert und lassen sich nicht kopieren). Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog
+  entfällt, jeder aktive Befehl hat eine Taste.
+- **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
+  genutzter Befehl lässt sich nicht löschen.
 - **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
   Sprachassistenten (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
 
