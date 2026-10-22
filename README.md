@@ -724,7 +724,7 @@ werden entfernt.
 **Wie das Guthaben entsteht:** Die Anbieter liefern nur die **Kosten je Tag** (UTC, mit einigen Stunden
 Verzögerung), kein Guthaben. Zwei Modi:
 
-- **Guthaben (mit Abgleich):** Du trägst das aktuelle Guthaben aus der Konsole des Anbieters ein, im Menü
+- **Guthaben (mit Abgleich):** Du trägst das aktuelle Guthaben aus der Konsole des Anbieters ein, in den Einstellungen im Feld
   *Guthaben abgleichen* auch nach jedem Aufladen. Restguthaben = Betrag − Kosten seit dem Abgleich.
 - **Monatsbudget:** Restbudget = Betrag − Kosten im laufenden Monat (UTC), am Monatsersten beginnt es neu.
 
@@ -735,13 +735,16 @@ Tages-/Monatslimit arbeiten.
 
 ### Einstellungen
 
-- **Anbieter**, **Admin-Key**, **Modus** und **Betrag** (nur beim Anlegen wählbar; später Betrag über
-  *Guthaben abgleichen* bzw. das Monatsbudget in den Einstellungen)
-- **Abfrageintervall** (Standard 60 Minuten)
-- **Warnungen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit**
-  für die Kosten; dazu **Warnen, wenn die Prognose das Limit übersteigt** (Standard an)
-- **Tokens und Anfragen abfragen** (Standard aus; eine weitere Abfrage je Intervall)
-- die **Benachrichtigungswege** (App-Push, Sprachausgabe, persistente Meldung)
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld) mit drei Abschnitten; nur „Konto“ ist aufgeklappt:
+
+- **Konto:** Name, **Anbieter**, **Admin-Key** und **Modus** mit **Betrag** (Anbieter und Modus nur beim Anlegen wählbar; in den
+  Einstellungen steht der Key als „neuer Key“, leer = unverändert). Dazu **Abfrageintervall** (Standard 60 Minuten) und **Tokens und
+  Anfragen abfragen** (Standard aus; eine weitere Abfrage je Intervall). Im **Guthaben-Modus** gibt es das Feld **Guthaben abgleichen
+  (aktueller Betrag)**, leer vorbelegt: Ein eingetragener Betrag gilt ab jetzt als Ausgangswert (auch nach jedem Aufladen), leer ändert nichts.
+  Im **Budget-Modus** steht dort das Monatsbudget.
+- **Grenzen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit** für die Kosten; dazu **Warnen, wenn
+  die Prognose das Limit übersteigt** (Standard an)
+- **Benachrichtigung:** die Wege (App-Push, Sprachausgabe, persistente Meldung)
 
 Jede Warnung kommt **einmal je Überschreitung** (Tageslimit einmal pro Tag, Monatslimit einmal pro
 Monat); die Guthabenwarnung meldet eine Entwarnung, sobald das Guthaben wieder über der Grenze liegt.

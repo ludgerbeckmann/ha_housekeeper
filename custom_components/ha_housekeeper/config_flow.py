@@ -98,7 +98,7 @@ _MENU_STEPS = {
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
     FUNCTION_MONITOR: "mon_settings",
-    FUNCTION_LLM: "llm_menu",
+    FUNCTION_LLM: "llm_settings",
     FUNCTION_IR: "ir_menu",
     FUNCTION_CONSUMPTION: "cg_settings",
     FUNCTION_ENERGY: "em_settings",

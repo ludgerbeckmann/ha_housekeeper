@@ -2298,11 +2298,7 @@
                 "mode": "Modus",
                 "amount": "Betrag",
                 "poll_minutes": "Abfrageintervall (Minuten)",
-                "low_balance": "Warnen, wenn das Guthaben unter … fällt",
-                "daily_limit": "Tageslimit (Kosten pro Tag)",
-                "monthly_limit": "Monatslimit (Kosten pro Monat)",
-                "track_usage": "Tokens und Anfragen abfragen",
-                "forecast_warning": "Warnen, wenn die Prognose das Limit übersteigt"
+                "track_usage": "Tokens und Anfragen abfragen"
               },
               "data_description": {
                 "name": "Optional. Leer = „LLM-Verbrauch“. Gib nur den Namen der Instanz ein, z. B. „Anthropic“; der Funktionsname wird automatisch vorangestellt.",
@@ -2310,10 +2306,22 @@
                 "mode": "„Guthaben“: du trägst das aktuelle Guthaben aus der Konsole ein (und nach jedem Aufladen erneut über „Guthaben abgleichen“), das Restguthaben ist der Betrag minus die Kosten seitdem. „Monatsbudget“: das Restbudget ist der Betrag minus die Kosten im laufenden Monat. Bei automatischem Aufladen den Modus „Monatsbudget“ wählen, sonst stimmt das Restguthaben nicht.",
                 "amount": "Guthaben-Modus: dein aktuelles Guthaben laut Konsole des Anbieters. Monatsbudget: der Betrag, den du pro Monat ausgeben willst. In der Währung des Anbieters (derzeit USD).",
                 "poll_minutes": "Wie oft die Kosten abgefragt werden. Die Berichte der Anbieter kommen mit einigen Stunden Verzögerung.",
+                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall."
+              }
+            },
+            "limits": {
+              "name": "Grenzen",
+              "description": "Wann gewarnt wird. Leere Felder warnen nicht.",
+              "data": {
+                "low_balance": "Warnen, wenn das Guthaben unter … fällt",
+                "daily_limit": "Tageslimit (Kosten pro Tag)",
+                "monthly_limit": "Monatslimit (Kosten pro Monat)",
+                "forecast_warning": "Warnen, wenn die Prognose das Limit übersteigt"
+              },
+              "data_description": {
                 "low_balance": "Leer = keine Warnung. Gilt für das Restguthaben bzw. Restbudget; entfällt sinnvollerweise bei automatischem Aufladen.",
                 "daily_limit": "Leer = keine Warnung. Warnt einmal pro Tag, wenn die Kosten des Tages (UTC) das Limit überschreiten.",
                 "monthly_limit": "Leer = keine Warnung. Warnt einmal pro Monat, wenn die Kosten des Monats (UTC) das Limit überschreiten.",
-                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall.",
                 "forecast_warning": "Warnt einmal pro Monat, wenn die Prognose der Monatskosten das Monatslimit (bzw. im Modus Monatsbudget das Budget) übersteigt, bevor es tatsächlich überschritten ist."
               }
             },
@@ -2334,39 +2342,42 @@
             }
           }
         },
-        "llm_menu": {
-          "title": "LLM-Verbrauch",
-          "description": "Einstellungen und Abgleich des LLM-Verbrauchs.",
-          "menu_options": {
-            "llm_general": "Einstellungen",
-            "llm_calibrate": "Guthaben abgleichen",
-            "rename": "Umbenennen"
-          }
-        },
-        "llm_general": {
+        "llm_settings": {
           "title": "Einstellungen",
           "sections": {
             "general": {
               "name": "Konto und Grenzen",
               "description": "Zugang, Betrag und Warngrenzen.",
               "data": {
+                "name": "Name (erscheint als „LLM-Verbrauch: Name“)",
                 "api_key": "Neuer Admin-Key",
                 "amount": "Monatsbudget",
+                "calibrate_amount": "Guthaben abgleichen (aktueller Betrag)",
                 "poll_minutes": "Abfrageintervall (Minuten)",
+                "track_usage": "Tokens und Anfragen abfragen"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „LLM-Verbrauch“.",
+                "api_key": "Leer lassen, um den bisherigen Key zu behalten.",
+                "amount": "Der Betrag, den du pro Monat ausgeben willst.",
+                "calibrate_amount": "Leer lassen, wenn sich nichts ändert. Trägst du den in der Konsole des Anbieters angezeigten Betrag ein (auch nach jedem Aufladen), gilt er ab jetzt als Ausgangswert, und die Kosten werden ab diesem Zeitpunkt abgezogen.",
+                "poll_minutes": "Wie oft die Kosten abgefragt werden.",
+                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall."
+              }
+            },
+            "limits": {
+              "name": "Grenzen",
+              "description": "Wann gewarnt wird. Leere Felder warnen nicht.",
+              "data": {
                 "low_balance": "Warnen, wenn das Guthaben unter … fällt",
                 "daily_limit": "Tageslimit (Kosten pro Tag)",
                 "monthly_limit": "Monatslimit (Kosten pro Monat)",
-                "track_usage": "Tokens und Anfragen abfragen",
                 "forecast_warning": "Warnen, wenn die Prognose das Limit übersteigt"
               },
               "data_description": {
-                "api_key": "Leer lassen, um den bisherigen Key zu behalten.",
-                "amount": "Der Betrag, den du pro Monat ausgeben willst.",
-                "poll_minutes": "Wie oft die Kosten abgefragt werden.",
-                "low_balance": "Leer = keine Warnung.",
-                "daily_limit": "Leer = keine Warnung.",
-                "monthly_limit": "Leer = keine Warnung.",
-                "track_usage": "Zusätzlich zu den Kosten Tokens (und bei OpenAI Anfragen) für heute und den Monat abfragen. Braucht eine weitere Abfrage je Intervall.",
+                "low_balance": "Leer = keine Warnung. Gilt für das Restguthaben bzw. Restbudget; entfällt sinnvollerweise bei automatischem Aufladen.",
+                "daily_limit": "Leer = keine Warnung. Warnt einmal pro Tag, wenn die Kosten des Tages (UTC) das Limit überschreiten.",
+                "monthly_limit": "Leer = keine Warnung. Warnt einmal pro Monat, wenn die Kosten des Monats (UTC) das Limit überschreiten.",
                 "forecast_warning": "Warnt einmal pro Monat, wenn die Prognose der Monatskosten das Monatslimit (bzw. im Modus Monatsbudget das Budget) übersteigt, bevor es tatsächlich überschritten ist."
               }
             },
@@ -2385,23 +2396,6 @@
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
             }
-          }
-        },
-        "llm_calibrate": {
-          "title": "Guthaben abgleichen",
-          "description": "Trage das aktuelle Guthaben ein, das die Konsole des Anbieters zeigt (und nach jedem Aufladen erneut). Ab jetzt wird das Restguthaben aus diesem Betrag minus den Kosten seitdem berechnet.",
-          "data": {
-            "amount": "Aktuelles Guthaben"
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „LLM-Verbrauch: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Anthropic“; der Titel lautet dann „LLM-Verbrauch: Anthropic“. Ein vorangestellter Funktionsname wird entfernt."
           }
         }
       },
