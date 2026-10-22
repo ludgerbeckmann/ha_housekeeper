@@ -847,7 +847,7 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
 ## Stromkosten
 
 Zählt **Energie und Kosten eines vorhandenen Geräts** mit, zum Beispiel einer Zigbee-Steckdose mit Leistungsmessung. Pro Gerät
-eine Instanz. Es wird **nichts geschätzt** (anders als PowerCalc): Das Gerät braucht einen eigenen Leistungs- oder Energiesensor.
+eine Instanz. Das Gerät braucht entweder einen eigenen Leistungs- oder Energiesensor, oder (wie bei PowerCalc „fest“) eine Entität mit einer festen Leistung.
 Gezählt wird ab dem Einrichten.
 
 ### Einstellungen
@@ -856,6 +856,9 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
 
 - **Gerät:** ein Sensor in **W/kW** (Leistung) oder in **Wh/kWh/MWh** (Energiezähler); die Art wird an der Einheit erkannt, eine andere
   Einheit wird beim Speichern abgelehnt.
+- **Gerät ohne Messung** (statt des Sensors, nicht beides): eine **Entität** (Leuchte, Schalter, Binärsensor, Mediaplayer, Klima …) und
+  eine **feste Leistung** in W. Solange die Entität an ist (alles außer `off`, `idle`, `standby`, `paused`), zählt diese Leistung, sonst die
+  optionale **Standby-Leistung**; bei Leuchten lässt sich die Leistung **nach der Helligkeit skalieren** (0 bis 255). Nicht verfügbar zählt nicht.
 - **Preis:** ein **fester Preis** in ct/kWh und/oder eine **Preis-Entität** (Sensor, `input_number` oder `number`, z. B. ein dynamischer
   Tarif) mit Einheit €/kWh oder ct/kWh. Die Preis-Entität ersetzt den festen Preis; fällt sie aus, gilt zuerst der letzte gültige
   Preis, sonst der feste. Mindestens eines von beiden ist nötig. Gerechnet wird nur der Verbrauchspreis, ohne Grundgebühr.
@@ -864,6 +867,7 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
 
 - **Leistungssensor:** Die Leistung wird bei jeder Änderung und jede Minute über die Zeit aufsummiert (Trapez). Lücken über 15 Minuten
   (z. B. ein Neustart) und nicht verfügbare Werte werden nicht aufgerechnet.
+- **Feste Leistung:** Leistung × Zeit mit dem Zustand des vorigen Zeitpunkts, bei jeder Änderung der Entität und jede Minute; Lücken über 15 Minuten zählen nicht.
 - **Energiezähler:** Gezählt wird die Differenz; fällt der Zähler zurück (Zählertausch), wird der Zeitraum übersprungen.
 - Kosten = Energie im Zeitraum × Preis zu diesem Zeitpunkt. Summen und Tage (400) liegen im Speicher und überstehen Neustarts.
 

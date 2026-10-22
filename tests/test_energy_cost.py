@@ -47,6 +47,24 @@ def _entity(hass, key, entry):
     return er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")
 
 
+def _state(hass, entity, state, **attrs):
+    hass.states.async_set(entity, state, attrs)
+    return hass.states.get(entity)
+
+
+def test_fixed_power_kw(hass: HomeAssistant) -> None:
+    on = _state(hass, "light.a", "on", brightness=128)
+    assert ec.fixed_power_kw(on, 10) == pytest.approx(0.01)
+    assert ec.fixed_power_kw(on, 10, scale=True) == pytest.approx(10 * 128 / 255 / 1000)
+    assert ec.fixed_power_kw(_state(hass, "light.b", "on"), 10, scale=True) == pytest.approx(0.01)   # ohne Helligkeit
+    assert ec.fixed_power_kw(_state(hass, "light.c", "off"), 10, standby_w=2) == pytest.approx(0.002)
+    assert ec.fixed_power_kw(_state(hass, "media_player.x", "idle"), 50) == 0
+    assert ec.fixed_power_kw(_state(hass, "media_player.x", "playing"), 50) == pytest.approx(0.05)
+    assert ec.fixed_power_kw(_state(hass, "climate.k", "cool"), 800) == pytest.approx(0.8)
+    assert ec.fixed_power_kw(_state(hass, "light.d", "unavailable"), 10) is None
+    assert ec.fixed_power_kw(None, 10) is None
+
+
 def test_pure_helpers() -> None:
     assert ec.source_kind("W") == "power" and ec.source_kind("kWh") == "energy" and ec.source_kind("°C") is None
     assert ec.price_per_kwh(34, "ct") == pytest.approx(0.34) and ec.price_per_kwh(0.34, "eur") == 0.34
@@ -156,17 +174,32 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
 
     def page(**over):
         source = {"name": "Kühlschrank", "source_entity": SOURCE}
+        fixed = {"standby_power": 0, "scale_brightness": False}
         price = {"price_unit": "eur"}
         for key, value in over.items():
-            if value is not None:
-                (source if key in ("name", "source_entity") else price)[key] = value
-        return {"source": source, "price": price}
+            if value is None:
+                source.pop(key, None)
+                continue
+            if key in ("name", "source_entity"):
+                source[key] = value
+            elif key in ("fixed_entity", "fixed_power", "standby_power", "scale_brightness"):
+                fixed[key] = value
+            else:
+                price[key] = value
+        return {"source": source, "fixed": fixed, "price": price}
 
     bad = await flow.async_configure(result["flow_id"], page())
     assert bad["errors"] == {"base": "no_price"}
     hass.states.async_set("sensor.temp", "5", {"unit_of_measurement": "°C"})
     bad = await flow.async_configure(bad["flow_id"], page(source_entity="sensor.temp", price_ct=30))
     assert bad["errors"] == {"base": "unsupported_unit"}
+    bad = await flow.async_configure(bad["flow_id"], page(price_ct=30, fixed_entity="light.lampe"))
+    assert bad["errors"] == {"base": "source_or_fixed"}
+    bad = await flow.async_configure(bad["flow_id"], page(price_ct=30, source_entity=None))
+    assert bad["errors"] == {"base": "source_or_fixed"}
+    bad = await flow.async_configure(
+        bad["flow_id"], page(price_ct=30, source_entity=None, fixed_entity="light.lampe"))
+    assert bad["errors"] == {"base": "no_power"}
     ok = await flow.async_configure(bad["flow_id"], page(price_ct=30))
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"]["price_ct"] == 30 and "price_entity" not in ok["data"] and "name" not in ok["data"]
@@ -174,7 +207,7 @@ async def test_config_flow_and_settings_page(hass: HomeAssistant) -> None:
     entry, _ = await _setup(hass)
     result = await reconfigure(hass, entry)
     assert result["step_id"] == "ec_settings" and not is_menu(result)
-    assert [str(k) for k in result["data_schema"].schema] == ["source", "price"]
+    assert [str(k) for k in result["data_schema"].schema] == ["source", "fixed", "price"]
     done = await flow.async_configure(
         result["flow_id"], page(name="Gesamt", price_ct=None, price_entity=PRICE, price_unit="ct"))
     assert done["reason"] == "reconfigure_successful"
@@ -186,3 +219,43 @@ def test_references() -> None:
     entry = make_entry(domain=DOMAIN, title="G", data={**BASE, "price_entity": PRICE})
     entities, _ = collect_references(entry.sub)
     assert {SOURCE, PRICE} <= set(entities)
+
+
+FIXED = {"function_type": "energy_cost", "name": "Lampe", "fixed_entity": "light.lampe",
+         "fixed_power": 10.0, "standby_power": 1.0, "price_ct": 30.0}
+
+
+async def test_fixed_power_follows_the_entity_state(hass: HomeAssistant, freezer) -> None:
+    hass.states.async_set("light.lampe", "on")
+    entry = make_entry(domain=DOMAIN, title="Lampe", data=FIXED)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.hub_id)
+    await hass.async_block_till_done()
+    ctrl = hass.data[DOMAIN][entry.entry_id]
+    await _advance(hass, freezer, 60)                       # 1 Stunde an: 10 W = 0,01 kWh
+    assert ctrl.total_kwh == pytest.approx(0.01, abs=0.0003)
+    hass.states.async_set("light.lampe", "off")             # danach Standby: 1 W
+    await _advance(hass, freezer, 60)
+    assert ctrl.total_kwh == pytest.approx(0.011, abs=0.0004)
+    assert ctrl.total_cost == pytest.approx(0.011 * 0.30, abs=0.0002)
+    hass.states.async_set("light.lampe", "unavailable")     # unbekannt: nichts zählen
+    before = ctrl.total_kwh
+    await _advance(hass, freezer, 10)
+    assert ctrl.total_kwh == before
+
+
+async def test_fixed_power_scales_with_brightness(hass: HomeAssistant, freezer) -> None:
+    hass.states.async_set("light.lampe", "on", {"brightness": 128})
+    entry = make_entry(domain=DOMAIN, title="Lampe", data={**FIXED, "scale_brightness": True})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.hub_id)
+    await hass.async_block_till_done()
+    ctrl = hass.data[DOMAIN][entry.entry_id]
+    await _advance(hass, freezer, 60)
+    assert ctrl.total_kwh == pytest.approx(0.01 * 128 / 255, abs=0.0003)
+
+
+def test_fixed_entity_is_a_reference() -> None:
+    entry = make_entry(domain=DOMAIN, title="Lampe", data=FIXED)
+    entities, _ = collect_references(entry.sub)
+    assert "light.lampe" in set(entities)

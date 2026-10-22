@@ -2913,7 +2913,23 @@
               },
               "data_description": {
                 "name": "Optional. Empty = “Energy cost”. Best use the device name, e.g. “Freezer”.",
-                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit."
+                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit. Leave empty for a device without measurement (see below)."
+              }
+            },
+            "fixed": {
+              "name": "Device without measurement",
+              "description": "Instead of a measuring sensor: while the entity is on, the fixed power is counted. Either a measuring sensor or an entity, not both.",
+              "data": {
+                "fixed_entity": "Entity (shows whether the device is running)",
+                "fixed_power": "Power when on (W)",
+                "standby_power": "Standby power when off (W)",
+                "scale_brightness": "Scale by brightness for lights"
+              },
+              "data_description": {
+                "fixed_entity": "e.g. a light, a switch, a binary sensor, a media player or an air conditioner. Off means off, idle, standby and paused, everything else counts as on.",
+                "fixed_power": "The power of the device in operation, e.g. from the data sheet.",
+                "standby_power": "Power while switched off, 0 = none.",
+                "scale_brightness": "The power is then calculated from the light’s brightness (0 to 255) between 0 and the configured power."
               }
             },
             "price": {
@@ -2945,7 +2961,23 @@
               },
               "data_description": {
                 "name": "Optional. Empty = “Energy cost”. Best use the device name, e.g. “Freezer”.",
-                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit."
+                "source_entity": "A sensor in W or kW (power) or in Wh, kWh or MWh (energy meter). The kind is recognised by the unit. Leave empty for a device without measurement (see below)."
+              }
+            },
+            "fixed": {
+              "name": "Device without measurement",
+              "description": "Instead of a measuring sensor: while the entity is on, the fixed power is counted. Either a measuring sensor or an entity, not both.",
+              "data": {
+                "fixed_entity": "Entity (shows whether the device is running)",
+                "fixed_power": "Power when on (W)",
+                "standby_power": "Standby power when off (W)",
+                "scale_brightness": "Scale by brightness for lights"
+              },
+              "data_description": {
+                "fixed_entity": "e.g. a light, a switch, a binary sensor, a media player or an air conditioner. Off means off, idle, standby and paused, everything else counts as on.",
+                "fixed_power": "The power of the device in operation, e.g. from the data sheet.",
+                "standby_power": "Power while switched off, 0 = none.",
+                "scale_brightness": "The power is then calculated from the light’s brightness (0 to 255) between 0 and the configured power."
               }
             },
             "price": {
@@ -2967,7 +2999,9 @@
       },
       "error": {
         "no_price": "Enter a fixed price or a price entity.",
-        "unsupported_unit": "The sensor must measure power (W, kW) or energy (Wh, kWh, MWh)."
+        "unsupported_unit": "The sensor must measure power (W, kW) or energy (Wh, kWh, MWh).",
+        "source_or_fixed": "Choose either a measuring sensor or an entity with a fixed power, not both and not neither.",
+        "no_power": "Enter the power of the device in W."
       },
       "abort": {
         "reconfigure_successful": "Saved."

@@ -663,6 +663,10 @@ CONF_COST_PRICE = "price_ct"              # fester Preis in ct/kWh
 CONF_COST_PRICE_ENTITY = "price_entity"   # optionale Preis-Entität (dynamischer Tarif)
 CONF_COST_PRICE_UNIT = "price_unit"       # Einheit der Preis-Entität: "eur" (€/kWh) oder "ct" (ct/kWh)
 COST_PRICE_UNITS = ["eur", "ct"]
+CONF_COST_FIXED_ENTITY = "fixed_entity"     # statt eines Messsensors: Entität, die anzeigt, ob das Gerät läuft
+CONF_COST_FIXED_POWER = "fixed_power"       # feste Leistung in W, solange die Entität an ist
+CONF_COST_STANDBY = "standby_power"         # Leistung in W, solange sie aus ist
+CONF_COST_SCALE = "scale_brightness"        # bei Leuchten die Leistung nach der Helligkeit skalieren
 
 CONF_EM_COMMON_METER = "common_meter"  # optionaler Zähler Allgemeinstrom (kWh, steigend), hängt hinter dem Zwischenzähler A
 CONF_EM_COMMON_POWER = "common_power"  # ersatzweise feste Leistung des Allgemeinstroms in W

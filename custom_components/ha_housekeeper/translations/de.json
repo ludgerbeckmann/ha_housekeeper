@@ -2913,7 +2913,23 @@
               },
               "data_description": {
                 "name": "Optional. Leer = „Stromkosten“. Gib am besten den Gerätenamen ein, z. B. „Gefrierschrank“.",
-                "source_entity": "Ein Sensor in W oder kW (Leistung) oder in Wh, kWh oder MWh (Energiezähler). Die Art wird an der Einheit erkannt."
+                "source_entity": "Ein Sensor in W oder kW (Leistung) oder in Wh, kWh oder MWh (Energiezähler). Die Art wird an der Einheit erkannt. Leer lassen für ein Gerät ohne Messung (siehe unten)."
+              }
+            },
+            "fixed": {
+              "name": "Gerät ohne Messung",
+              "description": "Statt eines Messsensors: Solange die Entität an ist, zählt die feste Leistung. Entweder Messsensor oder Entität, nicht beides.",
+              "data": {
+                "fixed_entity": "Entität (zeigt, ob das Gerät läuft)",
+                "fixed_power": "Leistung, wenn an (W)",
+                "standby_power": "Standby-Leistung, wenn aus (W)",
+                "scale_brightness": "Bei Leuchten nach Helligkeit skalieren"
+              },
+              "data_description": {
+                "fixed_entity": "z. B. eine Leuchte, ein Schalter, ein Binärsensor, ein Mediaplayer oder eine Klimaanlage. Aus gilt bei off, idle, standby und paused, alles andere zählt als an.",
+                "fixed_power": "Die Leistung des Geräts im Betrieb, z. B. aus dem Datenblatt.",
+                "standby_power": "Leistung im ausgeschalteten Zustand, 0 = keine.",
+                "scale_brightness": "Die Leistung wird dann anhand der Helligkeit der Leuchte (0 bis 255) zwischen 0 und der eingestellten Leistung gerechnet."
               }
             },
             "price": {
@@ -2945,7 +2961,23 @@
               },
               "data_description": {
                 "name": "Optional. Leer = „Stromkosten“. Gib am besten den Gerätenamen ein, z. B. „Gefrierschrank“.",
-                "source_entity": "Ein Sensor in W oder kW (Leistung) oder in Wh, kWh oder MWh (Energiezähler). Die Art wird an der Einheit erkannt."
+                "source_entity": "Ein Sensor in W oder kW (Leistung) oder in Wh, kWh oder MWh (Energiezähler). Die Art wird an der Einheit erkannt. Leer lassen für ein Gerät ohne Messung (siehe unten)."
+              }
+            },
+            "fixed": {
+              "name": "Gerät ohne Messung",
+              "description": "Statt eines Messsensors: Solange die Entität an ist, zählt die feste Leistung. Entweder Messsensor oder Entität, nicht beides.",
+              "data": {
+                "fixed_entity": "Entität (zeigt, ob das Gerät läuft)",
+                "fixed_power": "Leistung, wenn an (W)",
+                "standby_power": "Standby-Leistung, wenn aus (W)",
+                "scale_brightness": "Bei Leuchten nach Helligkeit skalieren"
+              },
+              "data_description": {
+                "fixed_entity": "z. B. eine Leuchte, ein Schalter, ein Binärsensor, ein Mediaplayer oder eine Klimaanlage. Aus gilt bei off, idle, standby und paused, alles andere zählt als an.",
+                "fixed_power": "Die Leistung des Geräts im Betrieb, z. B. aus dem Datenblatt.",
+                "standby_power": "Leistung im ausgeschalteten Zustand, 0 = keine.",
+                "scale_brightness": "Die Leistung wird dann anhand der Helligkeit der Leuchte (0 bis 255) zwischen 0 und der eingestellten Leistung gerechnet."
               }
             },
             "price": {
@@ -2967,7 +2999,9 @@
       },
       "error": {
         "no_price": "Trage einen festen Preis oder eine Preis-Entität ein.",
-        "unsupported_unit": "Der Sensor muss eine Leistung (W, kW) oder Energie (Wh, kWh, MWh) messen."
+        "unsupported_unit": "Der Sensor muss eine Leistung (W, kW) oder Energie (Wh, kWh, MWh) messen.",
+        "source_or_fixed": "Wähle entweder einen Messsensor oder eine Entität mit fester Leistung, nicht beides und nicht keines.",
+        "no_power": "Trage die Leistung des Geräts in W ein."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert."

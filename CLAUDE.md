@@ -318,8 +318,10 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `remove_unconfigured()`); leere Felder stehen als `None` in den Daten. Keine Eigenverbrauchsvergütung im Modell (bleibt beim Anlagenbetreiber, nur über den PV-Preis). Tests mit `freezer`.
 - `energy_cost.py`: Je Instanz ein Gerät (`source_entity`: Leistungssensor W/kW/MW **oder** Energiesensor Wh/kWh/MWh, die Art kommt aus der Einheit,
   `source_kind()`) und ein Preis (`price_ct` fest in ct/kWh und/oder `price_entity` mit `price_unit` `eur`/`ct`; die Entität gewinnt, bei Ausfall gilt
-  der letzte gültige Preis `price`, sonst der feste, ohne Preis wird nur die Energie gezählt). Eine **Konfigurationsseite** (`ec_settings`, kein Menü,
-  Name als Feld; Abschnitte `source`, `price`; Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`; Prüfung `no_price`,
+  der letzte gültige Preis `price`, sonst der feste, ohne Preis wird nur die Energie gezählt). **Statt des Messsensors** (genau eines von beiden, `source_or_fixed`) `fixed_entity` mit `fixed_power` (W, Pflicht, `no_power`), `standby_power` und
+  `scale_brightness` (Leuchten, `brightness` 0–255): `fixed_power_kw()` liefert die Leistung aus dem Zustand (aus = `OFF_STATES`, nicht verfügbar = `None`),
+  gezählt wird mit dem Zustand des vorigen Zeitpunkts (`_last_power`, wie beim Messsensor mit `MAX_GAP`). Eine **Konfigurationsseite** (`ec_settings`, kein Menü,
+  Name als Feld; Abschnitte `source`, `fixed`, `price`; Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`; Prüfung `no_price`,
   `unsupported_unit`). `async_update()` läuft bei jeder Änderung von Quelle/Preis und minütlich: Leistung wird als Trapez über die Zeit aufsummiert
   (`power_energy()`, Lücken über `MAX_GAP` = 15 min und ungültige Werte zählen nicht), ein Energiezähler als Differenz zu `energy_baseline`
   (Rückgang = Baseline neu, Zeitraum übersprungen). Summen `total_kwh`/`total_cost` und Tage (`days`, `YYYY-MM-DD`, höchstens `KEEP_DAYS`) liegen im `Store`
