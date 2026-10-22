@@ -9,9 +9,11 @@ import voluptuous as vol
 from homeassistant.config_entries import SubentryFlowResult
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
+from homeassistant.util import dt as dt_util
 
 from ..const import (
     CONF_COST_FIXED_ENTITY,
+    CONF_COST_HISTORY_FROM,
     CONF_COST_FIXED_POWER,
     CONF_COST_PRICE,
     CONF_COST_PRICE_ENTITY,
@@ -19,6 +21,8 @@ from ..const import (
     CONF_COST_SCALE,
     CONF_COST_SOURCE,
     CONF_COST_STANDBY,
+    CONF_COST_START_COST,
+    CONF_COST_START_KWH,
     CONF_NAME,
     COST_PRICE_UNITS,
     clean_instance_name,
@@ -31,8 +35,10 @@ from .common import _flatten_sections, _number, _suggest
 SECTION_SOURCE = "source"
 SECTION_FIXED = "fixed"
 SECTION_PRICE = "price"
+SECTION_HISTORY = "history"
 _CLEARABLE = (
     CONF_COST_SOURCE, CONF_COST_PRICE, CONF_COST_PRICE_ENTITY, CONF_COST_FIXED_ENTITY,
+    CONF_COST_START_KWH, CONF_COST_START_COST, CONF_COST_HISTORY_FROM,
 )
 
 
@@ -73,11 +79,23 @@ def _cost_schema(hass, defaults: dict[str, Any]) -> vol.Schema:
             )
         ),
     }
+    history: dict[Any, Any] = {
+        vol.Optional(
+            CONF_COST_HISTORY_FROM, description=_suggest(CONF_COST_HISTORY_FROM, defaults)
+        ): selector.DateSelector(),
+        vol.Optional(CONF_COST_START_KWH, description=_suggest(CONF_COST_START_KWH, defaults)): _number(
+            0, 10_000_000, "kWh", step=0.001
+        ),
+        vol.Optional(CONF_COST_START_COST, description=_suggest(CONF_COST_START_COST, defaults)): _number(
+            0, 10_000_000, step=0.01
+        ),
+    }
     return vol.Schema(
         {
             vol.Required(SECTION_SOURCE): section(vol.Schema(source), {"collapsed": False}),
             vol.Required(SECTION_FIXED): section(vol.Schema(fixed), {"collapsed": False}),
             vol.Required(SECTION_PRICE): section(vol.Schema(price), {"collapsed": False}),
+            vol.Required(SECTION_HISTORY): section(vol.Schema(history), {"collapsed": True}),
         }
     )
 
@@ -86,6 +104,10 @@ def _validate_cost(hass, flat: dict[str, Any]) -> dict[str, str]:
     measured, fixed = bool(flat.get(CONF_COST_SOURCE)), bool(flat.get(CONF_COST_FIXED_ENTITY))
     if measured == fixed:                      # genau eines von beiden
         return {"base": "source_or_fixed"}
+    if fixed and flat.get(CONF_COST_HISTORY_FROM):
+        return {"base": "history_needs_source"}
+    if flat.get(CONF_COST_HISTORY_FROM) and flat[CONF_COST_HISTORY_FROM] > dt_util.now().strftime("%Y-%m-%d"):
+        return {"base": "history_in_future"}
     if fixed and float(flat.get(CONF_COST_FIXED_POWER) or 0) <= 0:
         return {"base": "no_power"}
     if flat.get(CONF_COST_PRICE) is None and not flat.get(CONF_COST_PRICE_ENTITY):

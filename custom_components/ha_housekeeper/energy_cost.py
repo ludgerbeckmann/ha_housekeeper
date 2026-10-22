@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import logging
 from typing import Any
 
@@ -17,12 +17,15 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_COST_FIXED_ENTITY,
     CONF_COST_FIXED_POWER,
+    CONF_COST_HISTORY_FROM,
     CONF_COST_PRICE,
     CONF_COST_PRICE_ENTITY,
     CONF_COST_PRICE_UNIT,
     CONF_COST_SCALE,
     CONF_COST_SOURCE,
     CONF_COST_STANDBY,
+    CONF_COST_START_COST,
+    CONF_COST_START_KWH,
     DOMAIN,
     signal_update,
 )
@@ -83,6 +86,52 @@ def power_energy(prev_kw: float, cur_kw: float, hours: float) -> float:
     return max((prev_kw + cur_kw) / 2 * hours, 0.0)
 
 
+def build_history(
+    hourly: list[tuple[float, float]], prices: dict[float, float], default_price: float | None
+) -> dict[str, dict[str, float]]:
+    """Tageswerte (lokaler Tag) aus stündlicher Energie `(Start als Zeitstempel, kWh)`.
+
+    `prices` sind stündliche Preise in €/kWh; fehlt eine Stunde, gilt der letzte bekannte Preis, davor `default_price`
+    (ohne jeden Preis kosten die Stunden nichts)."""
+    days: dict[str, dict[str, float]] = {}
+    price = default_price
+    for start, kwh in sorted(hourly):
+        if start in prices:
+            price = prices[start]
+        if kwh <= 0:
+            continue
+        day = dt_util.as_local(dt_util.utc_from_timestamp(start)).strftime("%Y-%m-%d")
+        entry = days.setdefault(day, {"kwh": 0.0, "cost": 0.0})
+        entry["kwh"] += kwh
+        entry["cost"] += kwh * price if price is not None else 0.0
+    return days
+
+
+async def async_fetch_statistics(
+    hass: HomeAssistant, start: datetime, end: datetime, statistic_id: str, types: set[str]
+) -> list[dict[str, Any]]:
+    """Stündliche Langzeitstatistik einer Entität (Energie in kWh, Leistung in kW umgerechnet)."""
+    from homeassistant.components.recorder import get_instance  # noqa: PLC0415
+    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
+
+    result = await get_instance(hass).async_add_executor_job(
+        statistics_during_period,
+        hass,
+        start,
+        end,
+        {statistic_id},
+        "hour",
+        {"energy": "kWh", "power": "kW"},
+        types,
+    )
+    return list(result.get(statistic_id, []))
+
+
+def _row_start(row: dict[str, Any]) -> float:
+    value = row["start"]
+    return value.timestamp() if isinstance(value, datetime) else float(value)
+
+
 def add_day(days: dict[str, dict[str, float]], key: str, kwh: float, cost: float) -> None:
     day = days.setdefault(key, {"kwh": 0.0, "cost": 0.0})
     day["kwh"] += kwh
@@ -118,9 +167,12 @@ class EnergyCostController:
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
         self.entry = entry
-        self.total_kwh = 0.0
-        self.total_cost = 0.0
-        self.days: dict[str, dict[str, float]] = {}
+        self.live_kwh = 0.0                            # seit dem Einrichten gezählt
+        self.live_cost = 0.0
+        self.days: dict[str, dict[str, float]] = {}    # gezählte Tage
+        self.history: dict[str, dict[str, float]] = {}  # rückwirkend aus der Statistik berechnete Tage
+        self.history_done: str | None = None           # Datum, für das die Rückrechnung zuletzt lief
+        self.since: datetime | None = None             # Beginn der Zählung (Ende der Rückrechnung)
         self.energy_baseline: float | None = None      # letzter Stand eines Energiezählers (kWh)
         self.price: float | None = None                # zuletzt gültiger Preis in €/kWh
         self._last_power: float | None = None          # kW beim letzten Aufruf
@@ -138,6 +190,14 @@ class EnergyCostController:
     @property
     def fixed_entity(self) -> str:
         return self._get(CONF_COST_FIXED_ENTITY, "") or ""
+
+    @property
+    def total_kwh(self) -> float:
+        return self.live_kwh + sum(v["kwh"] for v in self.history.values()) + float(self._get(CONF_COST_START_KWH, 0) or 0)
+
+    @property
+    def total_cost(self) -> float:
+        return self.live_cost + sum(v["cost"] for v in self.history.values()) + float(self._get(CONF_COST_START_COST, 0) or 0)
 
     @property
     def currency(self) -> str:
@@ -166,15 +226,22 @@ class EnergyCostController:
         """`today`, `month` oder `year` (Energie und Kosten)."""
         key = self.day_key()
         prefix = {"today": key, "month": key[:7], "year": key[:4]}[kind]
-        return sum_days(self.days, prefix)
+        live, past = sum_days(self.days, prefix), sum_days(self.history, prefix)
+        return {"kwh": live["kwh"] + past["kwh"], "cost": live["cost"] + past["cost"]}
 
     # --- Lebenszyklus --------------------------------------------------------
 
     async def async_start(self) -> None:
         stored = await self._store.async_load() or {}
-        self.total_kwh = float(stored.get("total_kwh", 0.0))
-        self.total_cost = float(stored.get("total_cost", 0.0))
+        self.live_kwh = float(stored.get("total_kwh", 0.0))
+        self.live_cost = float(stored.get("total_cost", 0.0))
         self.days = stored.get("days") or {}
+        self.history = stored.get("history") or {}
+        self.history_done = stored.get("history_done")
+        self.since = dt_util.parse_datetime(stored.get("since") or "")
+        if self.since is None:                       # Beginn der Zählung festhalten
+            self.since = self._guess_since()
+            self._async_save()
         self.energy_baseline = stored.get("energy_baseline")
         self.price = stored.get("price")
         watched = [
@@ -183,6 +250,14 @@ class EnergyCostController:
         self._unsubs.append(async_track_state_change_event(self.hass, watched, self._on_change))
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, CHECK_INTERVAL))
         await self.async_update()
+        if self._get(CONF_COST_HISTORY_FROM):
+            self.hass.async_create_task(self.async_backfill())
+
+    def _guess_since(self) -> datetime:
+        """Beginn der Zählung bei älteren Daten ohne Zeitstempel: der erste gezählte Tag, sonst jetzt."""
+        if self.days:
+            return dt_util.start_of_local_day(date.fromisoformat(min(self.days)))
+        return dt_util.utcnow()
 
     def async_stop(self) -> None:
         for unsub in self._unsubs:
@@ -197,9 +272,12 @@ class EnergyCostController:
 
     def _data(self) -> dict[str, Any]:
         return {
-            "total_kwh": self.total_kwh,
-            "total_cost": self.total_cost,
+            "total_kwh": self.live_kwh,
+            "total_cost": self.live_cost,
             "days": self.days,
+            "history": self.history,
+            "history_done": self.history_done,
+            "since": self.since.isoformat() if self.since else None,
             "energy_baseline": self.energy_baseline,
             "price": self.price,
         }
@@ -260,12 +338,57 @@ class EnergyCostController:
         changed = False
         if kwh > 0:
             cost = kwh * price if price is not None else 0.0
-            self.total_kwh += kwh
-            self.total_cost += cost
+            self.live_kwh += kwh
+            self.live_cost += cost
             add_day(self.days, self.day_key(), kwh, cost)
             changed = True
         elif self.energy_baseline is not None:
             changed = True                                  # Zählerstand mitschreiben
         if changed:
             self._async_save()
+        async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
+
+    # --- Rückrechnung aus der Langzeitstatistik ------------------------------------
+
+    async def async_backfill(self) -> None:
+        """Energie und Kosten ab `history_from` aus den stündlichen Statistiken des Quellsensors berechnen.
+
+        Gerechnet wird bis zum Beginn der Zählung (volle Stunden); das Ergebnis ersetzt frühere Rückrechnungen.
+        Der Preis kommt stündlich aus der Statistik der Preis-Entität, sonst gilt der feste bzw. heutige Preis."""
+        start_day = self._get(CONF_COST_HISTORY_FROM)
+        if not start_day or self.history_done == start_day or not self.source:
+            return
+        state = self.hass.states.get(self.source)
+        kind = source_kind(state.attributes.get("unit_of_measurement") if state else None)
+        if kind is None or self.since is None:
+            return
+        start = dt_util.start_of_local_day(date.fromisoformat(start_day))
+        end = self.since.replace(minute=0, second=0, microsecond=0)
+        history: dict[str, dict[str, float]] = {}
+        if end > start:
+            try:
+                rows = await async_fetch_statistics(
+                    self.hass, start, end, self.source, {"mean"} if kind == "power" else {"change"}
+                )
+                hourly = [
+                    (_row_start(row), float(row["mean"] if kind == "power" else row["change"]))
+                    for row in rows
+                    if (row.get("mean") if kind == "power" else row.get("change")) is not None
+                ]
+                prices: dict[float, float] = {}
+                entity = self._get(CONF_COST_PRICE_ENTITY)
+                if entity:
+                    unit = self._get(CONF_COST_PRICE_UNIT, "eur") or "eur"
+                    for row in await async_fetch_statistics(self.hass, start, end, entity, {"mean"}):
+                        if row.get("mean") is not None:
+                            prices[_row_start(row)] = price_per_kwh(float(row["mean"]), unit)
+                fixed = self._get(CONF_COST_PRICE)
+                default = None if fixed is None else float(fixed) / 100
+                history = build_history(hourly, prices, default if default is not None else self._current_price())
+            except Exception:  # noqa: BLE001
+                _LOGGER.warning("%s: Rückrechnung aus der Statistik fehlgeschlagen", self.entry.title, exc_info=True)
+                return
+        self.history = history
+        self.history_done = start_day
+        self._async_save()
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))

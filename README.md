@@ -863,6 +863,14 @@ Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
   Tarif) mit Einheit €/kWh oder ct/kWh. Die Preis-Entität ersetzt den festen Preis; fällt sie aus, gilt zuerst der letzte gültige
   Preis, sonst der feste. Mindestens eines von beiden ist nötig. Gerechnet wird nur der Verbrauchspreis, ohne Grundgebühr.
 
+- **Vorhandene Werte** (optional, eingeklappt), damit die Summen nicht bei null beginnen:
+  - **Rückwirkend ab (Datum):** rechnet Energie und Kosten ab diesem Tag aus den **stündlichen Langzeitstatistiken** des Messsensors bis
+    zum Beginn der Zählung nach (Leistung: mittlere Leistung × 1 Stunde, Energiezähler: Differenz). Das geht nur mit einem Messsensor
+    mit Zustandsklasse, den der Recorder nicht ausschließt. Der Preis kommt stündlich aus der Statistik der Preis-Entität, sonst gilt der
+    feste bzw. heutige Preis (ein früherer Preis ist nur so genau, wie du ihn aufgezeichnet hast). Die Rückrechnung läuft einmal je Datum
+    und ersetzt eine frühere; sie fließt in **Tag, Monat, Jahr und gesamt** ein. Nicht für Geräte mit fester Leistung.
+  - **Startwert Energie** und **Startwert Kosten:** werden nur zu den **Summen** (Energie, Kosten gesamt) addiert.
+
 ### Rechenweg
 
 - **Leistungssensor:** Die Leistung wird bei jeder Änderung und jede Minute über die Zeit aufsummiert (Trapez). Lücken über 15 Minuten

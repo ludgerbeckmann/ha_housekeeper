@@ -2945,6 +2945,20 @@
                 "price_entity": "Sensor, input_number or number with the current price per kWh.",
                 "price_unit": "€/kWh or ct/kWh, depending on what the price entity provides."
               }
+            },
+            "history": {
+              "name": "Existing values (optional)",
+              "description": "So the totals do not start at zero: either backfilled from the long-term statistics or with your own start values, or both.",
+              "data": {
+                "history_from": "Backfill from (date)",
+                "start_kwh": "Start value energy (kWh)",
+                "start_cost": "Start value cost"
+              },
+              "data_description": {
+                "history_from": "Calculates energy and cost from this day on from the sensor’s hourly statistics up to the start of counting (only with a measuring sensor that has a state class). Prices come from the price entity’s statistics, otherwise the fixed or current price applies. Runs once per date; a new date replaces the backfill.",
+                "start_kwh": "Added to the energy total (day, month and year stay unchanged).",
+                "start_cost": "Added to the cost total (day, month and year stay unchanged)."
+              }
             }
           }
         },
@@ -2993,6 +3007,20 @@
                 "price_entity": "Sensor, input_number or number with the current price per kWh.",
                 "price_unit": "€/kWh or ct/kWh, depending on what the price entity provides."
               }
+            },
+            "history": {
+              "name": "Existing values (optional)",
+              "description": "So the totals do not start at zero: either backfilled from the long-term statistics or with your own start values, or both.",
+              "data": {
+                "history_from": "Backfill from (date)",
+                "start_kwh": "Start value energy (kWh)",
+                "start_cost": "Start value cost"
+              },
+              "data_description": {
+                "history_from": "Calculates energy and cost from this day on from the sensor’s hourly statistics up to the start of counting (only with a measuring sensor that has a state class). Prices come from the price entity’s statistics, otherwise the fixed or current price applies. Runs once per date; a new date replaces the backfill.",
+                "start_kwh": "Added to the energy total (day, month and year stay unchanged).",
+                "start_cost": "Added to the cost total (day, month and year stay unchanged)."
+              }
             }
           }
         }
@@ -3001,7 +3029,9 @@
         "no_price": "Enter a fixed price or a price entity.",
         "unsupported_unit": "The sensor must measure power (W, kW) or energy (Wh, kWh, MWh).",
         "source_or_fixed": "Choose either a measuring sensor or an entity with a fixed power, not both and not neither.",
-        "no_power": "Enter the power of the device in W."
+        "no_power": "Enter the power of the device in W.",
+        "history_needs_source": "The backfill needs a measuring sensor, not the fixed power.",
+        "history_in_future": "The backfill date must not be in the future."
       },
       "abort": {
         "reconfigure_successful": "Saved."
