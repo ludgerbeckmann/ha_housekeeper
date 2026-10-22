@@ -8,13 +8,17 @@ import uuid
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import ConfigFlowResult, SubentryFlowResult
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
 from .. import ir_remote
 from ..const import (
+    CONF_IR_ACTIVE,
     CONF_IR_COMMANDS,
+    CONF_IR_DELETE,
+    CONF_IR_DELETE_CODES,
     CONF_IR_DELAY,
     CONF_IR_DEVICE,
     CONF_IR_OFF,
@@ -27,7 +31,6 @@ from ..const import (
     CONF_TTS_PLAYER,
     DEFAULT_IR_DELAY,
     DEFAULT_IR_REPEATS,
-    DOMAIN,
     IC_CODE,
     IC_ENABLED,
     IC_ID,
@@ -36,8 +39,13 @@ from ..const import (
     IC_TYPE,
     IR_TYPE_IR,
     IR_TYPES,
+    clean_instance_name,
+    instance_name,
+    instance_title,
 )
 from .common import (
+    SECTION_GENERAL,
+    SECTION_NOTIFICATIONS,
     _POOL_NOTIFY_DEFAULTS,
     _flatten_sections,
     _notify_fields,
@@ -49,6 +57,8 @@ from .common import (
 )
 
 _CLEARABLE = (CONF_MOBILE_TARGETS, CONF_TTS_ENTITY, CONF_TTS_PLAYER)
+SECTION_COMMANDS = "commands"
+SECTION_SWITCH = "switch"
 
 
 def _remote_selector() -> selector.EntitySelector:
@@ -80,6 +90,59 @@ def _ir_schema(
     return _sections_schema(
         general,
         _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False),
+    )
+
+
+def _ir_settings_schema(
+    hass: HomeAssistant, defaults: dict[str, Any], commands: list[dict[str, Any]]
+) -> vol.Schema:
+    """Die Seite: Allgemein (Name, Sender, Wiederholungen), Befehle, Schalter und Benachrichtigung (nur „Allgemein“ offen)."""
+
+    def _section(fields: dict[Any, Any], collapsed: bool = True) -> Any:
+        return section(vol.Schema(fields), {"collapsed": collapsed})
+
+    options = [selector.SelectOptionDict(value=c[IC_ID], label=c[IC_NAME]) for c in commands]
+
+    def _picker(multiple: bool) -> selector.SelectSelector:
+        return selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=options,
+                multiple=multiple,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    general: dict[Any, Any] = {
+        vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults)): str,
+        vol.Required(CONF_REMOTES, description=_suggest(CONF_REMOTES, defaults)): _remote_selector(),
+        vol.Required(
+            CONF_IR_REPEATS, default=defaults.get(CONF_IR_REPEATS, DEFAULT_IR_REPEATS)
+        ): _number(1, 20),
+        vol.Required(
+            CONF_IR_DELAY, default=defaults.get(CONF_IR_DELAY, DEFAULT_IR_DELAY)
+        ): _number(0, 10, "s", step=0.1),
+    }
+    active = defaults.get(CONF_IR_ACTIVE)
+    if active is None:
+        active = [c[IC_ID] for c in commands if c.get(IC_ENABLED, True)]
+    command_fields: dict[Any, Any] = {
+        vol.Optional(CONF_IR_ACTIVE, default=active): _picker(True),
+        vol.Optional(CONF_IR_DELETE): _picker(True),
+        vol.Required(CONF_IR_DELETE_CODES, default=True): bool,
+    }
+    switch_fields: dict[Any, Any] = {
+        vol.Optional(CONF_IR_ON, description=_suggest(CONF_IR_ON, defaults)): _picker(False),
+        vol.Optional(CONF_IR_OFF, description=_suggest(CONF_IR_OFF, defaults)): _picker(False),
+    }
+    return vol.Schema(
+        {
+            vol.Required(SECTION_GENERAL): _section(general, collapsed=False),
+            vol.Required(SECTION_COMMANDS): _section(command_fields),
+            vol.Required(SECTION_SWITCH): _section(switch_fields),
+            vol.Required(SECTION_NOTIFICATIONS): _section(
+                _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
+            ),
+        }
     )
 
 
@@ -178,35 +241,64 @@ class IrOptions:
     async def async_step_ir_menu(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        options = ["ir_general", "add_ir_command", "import_ir_commands"]
+        """Kleines Menü: Einstellungen (eine Seite) sowie Anlernen und Übernehmen von Befehlen."""
+        options = ["ir_settings", "add_ir_command"]
         if self._ir_commands():
-            options += [
-                "learn_ir_command",
-                "test_ir_command",
-                "edit_ir_command",
-                "delete_ir_command",
-                "ir_switch",
-            ]
-        options.append("rename")
+            options.append("learn_ir_command")
+        options.append("import_ir_commands")
         return await self._menu(
             "ir_menu", options, user_input, {"commands": self._ir_listing()}
         )
 
-    async def async_step_ir_general(
+    async def async_step_ir_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
+        """Alle Einstellungen auf einer Seite: Name, Sender, Wiederholungen, Befehle, Schalter, Meldungen."""
         errors: dict[str, str] = {}
-        defaults = self._current
+        subentry = self._get_reconfigure_subentry()
+        defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
+        commands = self._ir_commands()
         if user_input is not None:
             flat = _flatten_sections(user_input)
             errors = _validate_ir(flat, with_device=False)
+            active = set(flat.pop(CONF_IR_ACTIVE, None) or [])
+            delete = set(flat.pop(CONF_IR_DELETE, None) or [])
+            delete_codes = bool(flat.pop(CONF_IR_DELETE_CODES, True))
+            on, off = flat.get(CONF_IR_ON), flat.get(CONF_IR_OFF)
             if not errors:
-                self._save(ir_data(flat))
-                return await self.async_step_ir_menu()
-            defaults = flat
+                if bool(on) != bool(off):
+                    errors["base"] = "switch_incomplete"
+                elif on and on == off:
+                    errors["base"] = "switch_same"
+                elif {on, off} & delete:
+                    errors["base"] = "command_in_use"
+            if not errors:
+                for command in commands:
+                    if command[IC_ID] in delete and delete_codes:
+                        for remote in command.get(IC_REMOTES) or []:
+                            await ir_remote.async_delete(
+                                self.hass, remote, self._current[CONF_IR_DEVICE], command[IC_CODE]
+                            )
+                kept = [
+                    {**c, IC_ENABLED: c[IC_ID] in active}
+                    for c in commands
+                    if c[IC_ID] not in delete
+                ]
+                name = (flat.pop(CONF_NAME, None) or "").strip()
+                data = {**ir_data(flat), CONF_IR_COMMANDS: kept, CONF_IR_ON: on or None, CONF_IR_OFF: off or None}
+                self.hass.config_entries.async_update_subentry(
+                    self._get_entry(),
+                    subentry,
+                    title=instance_title(
+                        self.hass, self.function_type, clean_instance_name(self.function_type, name)
+                    ),
+                    data={**subentry.data, **data},
+                )
+                return self.async_abort(reason="reconfigure_successful")
+            defaults = {**defaults, **flat, CONF_IR_ACTIVE: list(active), CONF_IR_ON: on, CONF_IR_OFF: off}
         return self.async_show_form(
-            step_id="ir_general",
-            data_schema=_ir_schema(self.hass, defaults, with_name=False),
+            step_id="ir_settings",
+            data_schema=_ir_settings_schema(self.hass, defaults, commands),
             errors=errors,
         )
 
@@ -384,140 +476,3 @@ class IrOptions:
             description_placeholders={"device": device, "found": str(len(options))},
         )
 
-    # --- Testen, bearbeiten, löschen, Schalter ----------------------------------------
-
-    async def async_step_test_ir_command(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        detail = ""
-        if user_input is not None:
-            command = next(c for c in self._ir_commands() if c[IC_ID] == user_input["command"])
-            remotes = [r for r in self._ir_remotes() if r in (command.get(IC_REMOTES) or [])]
-            controller = self.hass.data.get(DOMAIN, {}).get(self._get_reconfigure_subentry().subentry_id)
-            if controller is not None:
-                result = await controller.async_send(command[IC_ID])
-                detail = ""
-                failed = result != "ok"
-            else:
-                sent = await ir_remote.async_send(
-                    self.hass,
-                    remotes,
-                    self._current[CONF_IR_DEVICE],
-                    command[IC_CODE],
-                    int(self._current.get(CONF_IR_REPEATS) or DEFAULT_IR_REPEATS),
-                    float(self._current.get(CONF_IR_DELAY) or DEFAULT_IR_DELAY),
-                )
-                failed = ir_remote.outcome(sent) != "ok"
-                detail = "; ".join(f"{r}: {e}" for r, e in sent.items() if e)
-            if not failed:
-                return await self.async_step_ir_menu()
-            errors["base"] = "send_failed"
-            if controller is not None and controller.last_sent:
-                detail = "; ".join(
-                    f"{r}: {e}" for r, e in (controller.last_sent.get("errors") or {}).items()
-                ) or (controller.last_sent.get("result") or "")
-        return self.async_show_form(
-            step_id="test_ir_command",
-            data_schema=self._command_picker(),
-            errors=errors,
-            description_placeholders={"detail": detail},
-        )
-
-    async def async_step_edit_ir_command(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            command = next(c for c in self._ir_commands() if c[IC_ID] == user_input["command"])
-            self._edit_id = command[IC_ID]
-            self._draft = command
-            return await self.async_step_ir_command_edit()
-        return self.async_show_form(
-            step_id="edit_ir_command", data_schema=self._command_picker()
-        )
-
-    async def async_step_ir_command_edit(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        d = self._draft
-        if user_input is not None:
-            self._save_command(
-                {**d, IC_NAME: user_input[IC_NAME].strip(), IC_ENABLED: user_input[IC_ENABLED]}
-            )
-            return await self.async_step_ir_menu()
-        return self.async_show_form(
-            step_id="ir_command_edit",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(IC_NAME, description=_suggest(IC_NAME, d)): str,
-                    vol.Required(IC_ENABLED, default=d.get(IC_ENABLED, True)): bool,
-                }
-            ),
-            description_placeholders={"code": d[IC_CODE]},
-        )
-
-    async def async_step_delete_ir_command(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            command_id = user_input["command"]
-            command = next(c for c in self._ir_commands() if c[IC_ID] == command_id)
-            if command_id in (self._current.get(CONF_IR_ON), self._current.get(CONF_IR_OFF)):
-                errors["base"] = "command_in_use"
-            else:
-                if user_input["delete_codes"]:
-                    for remote in command.get(IC_REMOTES) or []:
-                        await ir_remote.async_delete(
-                            self.hass, remote, self._current[CONF_IR_DEVICE], command[IC_CODE]
-                        )
-                self._save(
-                    {
-                        CONF_IR_COMMANDS: [
-                            c for c in self._ir_commands() if c[IC_ID] != command_id
-                        ]
-                    }
-                )
-                return await self.async_step_ir_menu()
-        return self.async_show_form(
-            step_id="delete_ir_command",
-            data_schema=self._command_picker(
-                {vol.Required("delete_codes", default=True): bool}
-            ),
-            errors=errors,
-        )
-
-    async def async_step_ir_switch(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        defaults = self._current
-        if user_input is not None:
-            on, off = user_input.get(CONF_IR_ON), user_input.get(CONF_IR_OFF)
-            if bool(on) != bool(off):
-                errors["base"] = "switch_incomplete"
-            elif on and on == off:
-                errors["base"] = "switch_same"
-            else:
-                self._save({CONF_IR_ON: on, CONF_IR_OFF: off})
-                return await self.async_step_ir_menu()
-            defaults = user_input
-        picker = selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=[
-                    selector.SelectOptionDict(value=c[IC_ID], label=c[IC_NAME])
-                    for c in self._ir_commands()
-                ],
-                mode=selector.SelectSelectorMode.DROPDOWN,
-            )
-        )
-        return self.async_show_form(
-            step_id="ir_switch",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_IR_ON, description=_suggest(CONF_IR_ON, defaults)): picker,
-                    vol.Optional(CONF_IR_OFF, description=_suggest(CONF_IR_OFF, defaults)): picker,
-                }
-            ),
-            errors=errors,
-        )

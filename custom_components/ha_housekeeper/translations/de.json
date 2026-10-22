@@ -2452,47 +2452,10 @@
           "title": "IR-Fernbedienung",
           "description": "Befehle der Fernbedienung (angelernte Sender / alle Sender):\n{commands}",
           "menu_options": {
-            "ir_general": "Einstellungen",
+            "ir_settings": "Einstellungen",
             "add_ir_command": "Befehl anlernen",
-            "import_ir_commands": "Vorhandene Befehle übernehmen",
             "learn_ir_command": "Befehl an Sendern (neu) anlernen",
-            "test_ir_command": "Befehl testen",
-            "edit_ir_command": "Befehl bearbeiten",
-            "delete_ir_command": "Befehl löschen",
-            "ir_switch": "Schalter (An/Aus)",
-            "rename": "Umbenennen"
-          }
-        },
-        "ir_general": {
-          "title": "IR-Fernbedienung",
-          "sections": {
-            "general": {
-              "name": "Sender und Wiederholungen",
-              "description": "Sender, Gerätename und Sendeeinstellungen.",
-              "data": {
-                "remotes": "Sender (remote-Entitäten)",
-                "num_repeats": "Wiederholungen",
-                "delay_secs": "Pause zwischen Wiederholungen (Sekunden)"
-              },
-              "data_description": {
-                "remotes": "Alle gewählten Sender senden gleichzeitig. Beim Anlernen wird jeder Sender einzeln angelernt."
-              }
-            },
-            "notifications": {
-              "name": "Benachrichtigungen",
-              "description": "Wie und womit Probleme beim Senden gemeldet werden.",
-              "data": {
-                "mobile_enabled": "App-Push aktivieren",
-                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
-                "tts_enabled": "Sprachausgabe aktivieren",
-                "tts_entity": "TTS-Dienst",
-                "tts_player": "Lautsprecher (media_player)",
-                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
-              },
-              "data_description": {
-                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
-              }
-            }
+            "import_ir_commands": "Vorhandene Befehle übernehmen"
           }
         },
         "add_ir_command": {
@@ -2526,49 +2489,60 @@
             "codes": "Befehle"
           }
         },
-        "test_ir_command": {
-          "title": "Befehl testen",
-          "data": {
-            "command": "Befehl"
-          }
-        },
-        "edit_ir_command": {
-          "title": "Befehl bearbeiten",
-          "data": {
-            "command": "Befehl"
-          }
-        },
-        "ir_command_edit": {
-          "title": "Befehl bearbeiten",
-          "description": "Befehlsname beim Sender: {code}",
-          "data": {
-            "name": "Name",
-            "enabled": "Aktiv"
-          }
-        },
-        "delete_ir_command": {
-          "title": "Befehl löschen",
-          "data": {
-            "command": "Befehl",
-            "delete_codes": "Code auch beim Sender löschen"
-          }
-        },
-        "ir_switch": {
-          "title": "Schalter (An/Aus)",
-          "description": "Optional: ein Schalter aus zwei Befehlen, z. B. für Sprachassistenten. Der Zustand ist nur angenommen, weil die Geräte nichts zurückmelden.",
-          "data": {
-            "ir_on_command": "Befehl „An“",
-            "ir_off_command": "Befehl „Aus“"
-          }
-        },
-        "rename": {
-          "title": "Umbenennen",
-          "description": "Der Name der Instanz. In der Liste erscheint sie als „Funktion: Name“, das Gerät heißt nur „Name“.",
-          "data": {
-            "name": "Name (erscheint als „Aufgabenplaner: Name“)"
-          },
-          "data_description": {
-            "name": "Nur der Name, z. B. „Büro“; der Titel lautet dann „Aufgabenplaner: Büro“. Ein vorangestellter Funktionsname wird entfernt."
+        "ir_settings": {
+          "title": "IR-Fernbedienung",
+          "sections": {
+            "general": {
+              "name": "Sender und Wiederholungen",
+              "description": "Name, Sender und Sendeeinstellungen.",
+              "data": {
+                "name": "Name (erscheint als „IR-Fernbedienung: Name“)",
+                "remotes": "Sender (remote-Entitäten)",
+                "num_repeats": "Wiederholungen",
+                "delay_secs": "Pause zwischen Wiederholungen (Sekunden)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „IR-Fernbedienung“.",
+                "remotes": "Alle gewählten Sender senden gleichzeitig. Beim Anlernen wird jeder Sender einzeln angelernt."
+              }
+            },
+            "commands": {
+              "name": "Befehle",
+              "description": "Aktive Befehle haben eine Taste (und gelten für den Schalter). Gelöschte Befehle verschwinden samt Taste.",
+              "data": {
+                "active_commands": "Aktive Befehle",
+                "delete_commands": "Befehle löschen",
+                "delete_codes": "Codes auch beim Sender löschen"
+              },
+              "data_description": {
+                "active_commands": "Nur angehakte Befehle gelten als aktiv.",
+                "delete_commands": "Wird beim Speichern gelöscht. Ein Befehl, den der Schalter verwendet, lässt sich nicht löschen.",
+                "delete_codes": "Löscht den angelernten Code auch im Speicher des Senders."
+              }
+            },
+            "switch": {
+              "name": "Schalter (An/Aus)",
+              "description": "Optional: ein Schalter aus zwei Befehlen, z. B. für Sprachassistenten. Der Zustand ist nur angenommen, weil die Geräte nichts zurückmelden.",
+              "data": {
+                "ir_on_command": "Befehl „An“",
+                "ir_off_command": "Befehl „Aus“"
+              }
+            },
+            "notifications": {
+              "name": "Benachrichtigungen",
+              "description": "Wie und womit Probleme beim Senden gemeldet werden.",
+              "data": {
+                "mobile_enabled": "App-Push aktivieren",
+                "mobile_targets": "Push-Ziele (Companion-App-Geräte)",
+                "tts_enabled": "Sprachausgabe aktivieren",
+                "tts_entity": "TTS-Dienst",
+                "tts_player": "Lautsprecher (media_player)",
+                "persistent_enabled": "Persistente Benachrichtigung in Home Assistant"
+              },
+              "data_description": {
+                "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
+              }
+            }
           }
         }
       },
@@ -2577,7 +2551,6 @@
         "no_device": "Der Gerätename darf nicht leer sein.",
         "command_exists": "Diesen Befehl gibt es schon.",
         "learn_failed": "Anlernen fehlgeschlagen: {detail}",
-        "send_failed": "Senden fehlgeschlagen: {detail}",
         "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
         "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
         "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein."

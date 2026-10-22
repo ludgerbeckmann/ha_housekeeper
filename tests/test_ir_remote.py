@@ -251,53 +251,68 @@ async def test_import_from_broadlink_storage(hass: HomeAssistant, hass_storage) 
     assert by_code["mode_candle"]["remotes"] == [R1, R2]        # von Hand: an allen Sendern angenommen
 
 
-async def test_delete_and_switch_dialogs(hass: HomeAssistant) -> None:
+def _page(**over):
+    """Eingaben der Einstellungsseite, verteilt auf die Abschnitte."""
+    commands = {"active_commands": ["c1", "c2", "c3"], "delete_commands": [], "delete_codes": True}
+    switch = {}
+    general = {"name": "Kerze", "remotes": [R1, R2], "num_repeats": 1, "delay_secs": 0.5}
+    for key, value in over.items():
+        if key in commands:
+            commands[key] = value
+        elif key in ("ir_on_command", "ir_off_command"):
+            switch[key] = value
+        else:
+            general[key] = value
+    return {"general": general, "commands": commands, "switch": switch,
+            "notifications": {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": False}}
+
+
+async def _open_page(hass, entry):
+    result = await _flow_menu(hass, entry)
+    return await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "ir_settings"}
+    )
+
+
+async def test_settings_page_switch_and_delete(hass: HomeAssistant) -> None:
     entry, *_ = await _setup(hass)
     deleted = async_mock_service(hass, "remote", "delete_command")
     flow = hass.config_entries.subentries
-    result = await _flow_menu(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_switch"})
-    bad = await flow.async_configure(result["flow_id"], {"ir_on_command": "c1"})
+    result = await _open_page(hass, entry)
+    assert result["step_id"] == "ir_settings"
+    assert list(result["data_schema"].schema) == ["general", "commands", "switch", "notifications"]
+    bad = await flow.async_configure(result["flow_id"], _page(ir_on_command="c1"))
     assert bad["errors"] == {"base": "switch_incomplete"}
-    bad = await flow.async_configure(result["flow_id"], {"ir_on_command": "c1", "ir_off_command": "c1"})
+    result = await _open_page(hass, entry)
+    bad = await flow.async_configure(result["flow_id"], _page(ir_on_command="c1", ir_off_command="c1"))
     assert bad["errors"] == {"base": "switch_same"}
-    result = await flow.async_configure(result["flow_id"], {"ir_on_command": "c1", "ir_off_command": "c2"})
-    assert is_menu(result) and entry.options["ir_on_command"] == "c1"
-
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_ir_command"})
-    bad = await flow.async_configure(result["flow_id"], {"command": "c1", "delete_codes": True})
+    result = await _open_page(hass, entry)
+    bad = await flow.async_configure(
+        result["flow_id"],
+        _page(ir_on_command="c1", ir_off_command="c2", delete_commands=["c1"]),
+    )
     assert bad["errors"] == {"base": "command_in_use"}
-    result = await flow.async_configure(result["flow_id"], {"command": "c3", "delete_codes": True})
-    assert is_menu(result)
+    result = await _open_page(hass, entry)
+    done = await flow.async_configure(
+        result["flow_id"],
+        _page(ir_on_command="c1", ir_off_command="c2", delete_commands=["c3"], active_commands=["c1", "c2"]),
+    )
+    assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
+    assert entry.options["ir_on_command"] == "c1"
     assert [c["id"] for c in entry.options["ir_commands"]] == ["c1", "c2"]
     assert [(c.data["entity_id"], c.data["command"]) for c in deleted] == [(R1, ["timer_2h"])]
 
 
-async def test_edit_command_and_disabled_button_removed(hass: HomeAssistant) -> None:
+async def test_settings_page_deactivates_command_and_removes_button(hass: HomeAssistant) -> None:
     entry, *_ = await _setup(hass)
     assert _entity(hass, "button", "ir_c3", entry)
-    flow = hass.config_entries.subentries
-    result = await _flow_menu(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_ir_command"})
-    result = await flow.async_configure(result["flow_id"], {"command": "c3"})
-    assert result["step_id"] == "ir_command_edit"
-    result = await flow.async_configure(result["flow_id"], {"name": "Timer 3h", "enabled": False})
-    assert is_menu(result)
+    result = await _open_page(hass, entry)
+    done = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], _page(active_commands=["c1", "c2"], num_repeats=3)
+    )
+    assert done["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
-    saved = {c["id"]: c for c in entry.options["ir_commands"]}["c3"]
-    assert saved["name"] == "Timer 3h" and saved["enabled"] is False and saved["code"] == "timer_2h"
+    saved = {c["id"]: c for c in entry.options["ir_commands"]}
+    assert saved["c3"]["enabled"] is False and saved["c1"]["enabled"] is True
+    assert entry.options["num_repeats"] == 3
     assert _entity(hass, "button", "ir_c3", entry) is None
-
-
-async def test_test_command_step(hass: HomeAssistant) -> None:
-    entry, controller, sent, push = await _setup(hass)
-    flow = hass.config_entries.subentries
-    result = await _flow_menu(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "test_ir_command"})
-    result = await flow.async_configure(result["flow_id"], {"command": "c1"})
-    assert is_menu(result) and len(sent) == 2
-    hass.states.async_set(R1, "unavailable")
-    hass.states.async_set(R2, "unavailable")
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "test_ir_command"})
-    result = await flow.async_configure(result["flow_id"], {"command": "c1"})
-    assert result["errors"] == {"base": "send_failed"}
