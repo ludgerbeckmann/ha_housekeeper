@@ -14,6 +14,8 @@ from homeassistant.helpers import selector
 from ..const import (
     CONF_AUTO_RESET_HOURS,
     CONF_DEBOUNCE,
+    CONF_DELIVERY_CONTACT,
+    CONF_EMPTY_CONTACT,
     CONF_MESSAGE,
     CONF_NAME,
     CONF_REPEAT_MESSAGE,
@@ -41,6 +43,22 @@ from .common import (
 
 
 SECTION_SENSITIVITY = "sensitivity"
+
+SENSOR_KEYS = (CONF_VIBRATION_SENSOR, CONF_DELIVERY_CONTACT, CONF_EMPTY_CONTACT)
+
+
+def validate_mailbox(flat: dict[str, Any]) -> dict[str, str]:
+    """Entweder der Vibrationssensor oder beide Türkontakte (Einwurf und Entnahme), nie beides."""
+    vibration = bool(flat.get(CONF_VIBRATION_SENSOR))
+    delivery = bool(flat.get(CONF_DELIVERY_CONTACT))
+    empty = bool(flat.get(CONF_EMPTY_CONTACT))
+    if vibration and (delivery or empty):
+        return {"base": "sensor_either_or"}
+    if not vibration and not (delivery or empty):
+        return {"base": "no_sensor"}
+    if not vibration and not (delivery and empty):
+        return {"base": "contacts_incomplete"}
+    return {}
 
 
 def _value_selector(hass: HomeAssistant, entity_id: str) -> Any:
@@ -77,8 +95,14 @@ def _mailbox_schema(
     Der Wert der Empfindlichkeit erscheint erst, wenn eine Entität gespeichert ist (sein Typ hängt von ihr ab)."""
     general: dict[Any, Any] = {
         vol.Optional(CONF_NAME, description=_suggest(CONF_NAME, defaults)): str,
-        vol.Required(
+        vol.Optional(
             CONF_VIBRATION_SENSOR, description=_suggest(CONF_VIBRATION_SENSOR, defaults)
+        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor")),
+        vol.Optional(
+            CONF_DELIVERY_CONTACT, description=_suggest(CONF_DELIVERY_CONTACT, defaults)
+        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor")),
+        vol.Optional(
+            CONF_EMPTY_CONTACT, description=_suggest(CONF_EMPTY_CONTACT, defaults)
         ): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor")),
         vol.Required(
             CONF_DEBOUNCE, default=defaults.get(CONF_DEBOUNCE, DEFAULT_DEBOUNCE)
@@ -133,9 +157,9 @@ class MailboxOptions:
         defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
         if user_input is not None:
             flat = _flatten_sections(user_input)
-            errors = _validate_notify(flat, require_method=True)
+            errors = validate_mailbox(flat) or _validate_notify(flat, require_method=True)
             if not errors:
-                data = _with_cleared(flat)
+                data = {**{key: None for key in SENSOR_KEYS}, **_with_cleared(flat)}
                 data.pop(CONF_NAME, None)
                 # Der Wert gilt nur für die gespeicherte Entität: bei anderer oder leerer Entität wird er verworfen
                 if flat.get(CONF_SENSITIVITY_ENTITY) != saved_entity:

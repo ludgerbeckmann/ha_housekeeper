@@ -64,6 +64,8 @@ from .const import (
     CONF_TRIGGER_ENTITY,
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,
+    CONF_DELIVERY_CONTACT,
+    CONF_EMPTY_CONTACT,
     CONF_VIBRATION_SENSOR,
     DOMAIN,
     FUNCTION_ALARM,
@@ -110,7 +112,12 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
     function = entry.data.get(CONF_FUNCTION_TYPE)
     entities: list[str] = [str(opt(CONF_TTS_ENTITY) or ""), str(opt(CONF_TTS_PLAYER) or "")]
     if function == FUNCTION_MAILBOX:
-        entities += [opt(CONF_VIBRATION_SENSOR), opt(CONF_SENSITIVITY_ENTITY)]
+        entities += [
+            opt(CONF_VIBRATION_SENSOR),
+            opt(CONF_DELIVERY_CONTACT),
+            opt(CONF_EMPTY_CONTACT),
+            opt(CONF_SENSITIVITY_ENTITY),
+        ]
     elif function == FUNCTION_DOOR_GUARD:
         entities += [opt(CONF_LOCK), opt(CONF_CONTACT)]
         entities += _listed(opt(CONF_RULES, []), "entity_id")

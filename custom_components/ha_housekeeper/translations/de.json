@@ -293,6 +293,9 @@
       },
       "cost_total": {
         "name": "Kosten gesamt"
+      },
+      "last_emptied": {
+        "name": "Zuletzt geleert"
       }
     },
     "button": {
@@ -428,17 +431,21 @@
           "sections": {
             "general": {
               "name": "Allgemein",
-              "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+              "description": "Sensor (Vibrationssensor oder die beiden Türkontakte), Sperrzeit und automatisches Zurücksetzen.",
               "data": {
                 "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)",
                 "vibration_sensor": "Vibrationssensor",
                 "debounce_seconds": "Entprellzeit",
-                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+                "delivery_contact": "Einwurf-Kontakt (Klappe)",
+                "empty_contact": "Entnahme-Kontakt (Tür)"
               },
               "data_description": {
-                "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-                "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+                "vibration_sensor": "Alternative zu den beiden Türkontakten: Binärsensor, der bei einem Posteinwurf auslöst. Entweder dieser oder die Kontakte, nicht beides.",
+                "debounce_seconds": "Weitere Auslösungen innerhalb dieser Zeit werden ignoriert; die Entnahmetür wird nach einem Einwurf ebenso lange ignoriert.",
+                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
+                "delivery_contact": "Türkontakt der Einwurfklappe; Öffnen gilt als Posteinwurf. Braucht auch den Entnahme-Kontakt, nicht mit dem Vibrationssensor kombinierbar.",
+                "empty_contact": "Türkontakt der Entnahmetür; Öffnen setzt den Briefkasten auf „geleert“ (nur wenn Post vermerkt ist)."
               }
             },
             "notifications": {
@@ -468,17 +475,21 @@
           "sections": {
             "general": {
               "name": "Allgemein",
-              "description": "Sensor, Sperrzeit und automatisches Zurücksetzen.",
+              "description": "Sensor (Vibrationssensor oder die beiden Türkontakte), Sperrzeit und automatisches Zurücksetzen.",
               "data": {
                 "name": "Name (erscheint als „Benachrichtigung Briefkasten: Name“)",
                 "vibration_sensor": "Vibrationssensor",
                 "debounce_seconds": "Entprellzeit",
-                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)"
+                "auto_reset_hours": "Automatisch zurücksetzen nach (0 = aus)",
+                "delivery_contact": "Einwurf-Kontakt (Klappe)",
+                "empty_contact": "Entnahme-Kontakt (Tür)"
               },
               "data_description": {
-                "vibration_sensor": "Binärsensor, der bei einem Posteinwurf auslöst.",
-                "debounce_seconds": "Weitere Vibrationen innerhalb dieser Zeit werden ignoriert.",
-                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+                "vibration_sensor": "Alternative zu den beiden Türkontakten: Binärsensor, der bei einem Posteinwurf auslöst. Entweder dieser oder die Kontakte, nicht beides.",
+                "debounce_seconds": "Weitere Auslösungen innerhalb dieser Zeit werden ignoriert; die Entnahmetür wird nach einem Einwurf ebenso lange ignoriert.",
+                "name": "Optional. Leer = „Benachrichtigung Briefkasten“. Gib nur den Namen der Instanz ein, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt.",
+                "delivery_contact": "Türkontakt der Einwurfklappe; Öffnen gilt als Posteinwurf. Braucht auch den Entnahme-Kontakt, nicht mit dem Vibrationssensor kombinierbar.",
+                "empty_contact": "Türkontakt der Entnahmetür; Öffnen setzt den Briefkasten auf „geleert“ (nur wenn Post vermerkt ist)."
               }
             },
             "sensitivity": {
@@ -544,7 +555,10 @@
         "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "no_media": "Wähle eine Audiodatei.",
+        "no_sensor": "Wähle einen Vibrationssensor oder die beiden Türkontakte.",
+        "sensor_either_or": "Entweder den Vibrationssensor oder die Türkontakte verwenden, nicht beides.",
+        "contacts_incomplete": "Die Türkontakte brauchen Einwurf-Kontakt und Entnahme-Kontakt."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",

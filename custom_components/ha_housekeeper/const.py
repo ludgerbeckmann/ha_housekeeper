@@ -146,6 +146,8 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
 # --- Benachrichtigung Briefkasten ---
 CONF_NAME = "name"
 CONF_VIBRATION_SENSOR = "vibration_sensor"
+CONF_DELIVERY_CONTACT = "delivery_contact"      # Kontakt der Einwurfklappe (statt Vibrationssensor)
+CONF_EMPTY_CONTACT = "empty_contact"            # Kontakt der Entnahmetür (statt Vibrationssensor)
 CONF_MOBILE_ENABLED = "mobile_enabled"
 CONF_MOBILE_TARGETS = "mobile_targets"
 CONF_MOBILE_ACTION = "mobile_action"

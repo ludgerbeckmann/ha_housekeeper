@@ -26,7 +26,8 @@ DATA = {
 }
 
 
-GENERAL_KEYS = ("name", "vibration_sensor", "debounce_seconds", "auto_reset_hours")
+GENERAL_KEYS = ("name", "vibration_sensor", "delivery_contact", "empty_contact",
+                "debounce_seconds", "auto_reset_hours")
 
 
 def _sections(flat: dict) -> dict:
@@ -72,7 +73,8 @@ async def test_form_has_two_expanded_sections(hass: HomeAssistant) -> None:
     for sect in schema.values():
         assert sect.options["collapsed"] is False
     fields = {str(k) for k in schema[next(k for k in schema if str(k) == "general")].schema.schema}
-    assert fields == {"name", "vibration_sensor", "debounce_seconds", "auto_reset_hours"}
+    assert fields == {"name", "vibration_sensor", "delivery_contact", "empty_contact",
+                      "debounce_seconds", "auto_reset_hours"}
     notify = {str(k) for k in schema[next(k for k in schema if str(k) == "notifications")].schema.schema}
     assert {"mobile_enabled", "mobile_targets", "mobile_action", "tts_enabled", "tts_entity",
             "tts_player", "persistent_enabled", "message", "repeat_message"} == notify
@@ -195,3 +197,82 @@ async def test_push_targets_in_flow_schema(hass: HomeAssistant) -> None:
         _sections({**DATA, "mobile_targets": ["mobile_app_iphone_ludger"]}),
     )
     assert ok["data"]["mobile_targets"] == ["mobile_app_iphone_ludger"]
+
+
+DELIVERY = "binary_sensor.briefkasten_klappe"
+EMPTY = "binary_sensor.briefkasten_tuer"
+CONTACTS = {"vibration_sensor": None, "delivery_contact": DELIVERY, "empty_contact": EMPTY}
+
+
+async def test_sensor_either_or_validation(hass: HomeAssistant) -> None:
+    flow = hass.config_entries.subentries
+    cases = {
+        "sensor_either_or": {"vibration_sensor": SENSOR, "delivery_contact": DELIVERY, "empty_contact": EMPTY},
+        "no_sensor": {"vibration_sensor": None},
+        "contacts_incomplete": {"vibration_sensor": None, "delivery_contact": DELIVERY},
+    }
+    for error, over in cases.items():
+        result = await new_instance(hass, "mailbox")
+        data = {k: v for k, v in {**DATA, **over}.items() if v is not None}
+        bad = await flow.async_configure(result["flow_id"], _sections(data))
+        assert bad["errors"] == {"base": error}, error
+    result = await new_instance(hass, "mailbox")
+    data = {k: v for k, v in {**DATA, **CONTACTS}.items() if v is not None}
+    ok = await flow.async_configure(result["flow_id"], _sections(data))
+    assert ok["type"] is FlowResultType.CREATE_ENTRY
+    assert ok["data"]["delivery_contact"] == DELIVERY and "vibration_sensor" not in ok["data"]
+
+
+async def test_settings_switch_to_contacts_clears_vibration(hass: HomeAssistant) -> None:
+    entry = await _setup(hass)
+    result = await reconfigure(hass, entry)
+    flat = {k: v for k, v in {**DATA, **CONTACTS}.items() if v is not None}
+    flat.update(mobile_enabled=False, persistent_enabled=True)
+    done = await hass.config_entries.subentries.async_configure(result["flow_id"], _settings_sections(flat))
+    assert done["reason"] == "reconfigure_successful"
+    assert entry.options["vibration_sensor"] is None and entry.options["empty_contact"] == EMPTY
+
+
+async def test_contacts_delivery_and_emptied(hass: HomeAssistant) -> None:
+    notify = async_mock_service(hass, "notify", "mobile_app_iphone")
+    async_mock_service(hass, "persistent_notification", "create")
+    async_mock_service(hass, "persistent_notification", "dismiss")
+    hass.states.async_set(DELIVERY, "off")
+    hass.states.async_set(EMPTY, "off")
+    entry = await _setup(hass, **CONTACTS)
+    mail = "binary_sensor.briefkasten_mail_present"
+    last = er_entity(hass, "sensor", "last_emptied", entry)
+
+    hass.states.async_set(EMPTY, "on")            # Tür auf ohne Post: nichts
+    await hass.async_block_till_done()
+    assert hass.states.get(mail).state == "off" and hass.states.get(last).state == "unknown"
+    hass.states.async_set(EMPTY, "off")
+
+    hass.states.async_set(DELIVERY, "on")         # Einwurf
+    await hass.async_block_till_done()
+    assert hass.states.get(mail).state == "on" and len(notify) == 1
+    hass.states.async_set(DELIVERY, "off")
+
+    hass.states.async_set(EMPTY, "on")            # Entnahme
+    await hass.async_block_till_done()
+    assert hass.states.get(mail).state == "off"
+    assert hass.states.get(last).state not in ("unknown", "unavailable")
+
+
+async def test_empty_contact_ignored_within_debounce(hass: HomeAssistant) -> None:
+    async_mock_service(hass, "notify", "mobile_app_iphone")
+    async_mock_service(hass, "persistent_notification", "create")
+    hass.states.async_set(DELIVERY, "off")
+    hass.states.async_set(EMPTY, "off")
+    await _setup(hass, **CONTACTS, debounce_seconds=60)
+    hass.states.async_set(DELIVERY, "on")
+    await hass.async_block_till_done()
+    hass.states.async_set(EMPTY, "on")            # kurz nach dem Einwurf: ignoriert
+    await hass.async_block_till_done()
+    assert hass.states.get("binary_sensor.briefkasten_mail_present").state == "on"
+
+
+def er_entity(hass, platform, key, entry):
+    from homeassistant.helpers import entity_registry as er
+
+    return er.async_get(hass).async_get_entity_id(platform, DOMAIN, f"{entry.entry_id}_{key}")

@@ -36,13 +36,22 @@ async def async_get_config_entry_diagnostics(
     }
     controller = hass.data.get(DOMAIN, {}).get(entry.entry_id)
     if isinstance(controller, MailboxController):
-        sensor = hass.states.get(controller._opt("vibration_sensor"))  # noqa: SLF001
+        def _state(key: str) -> str | None:
+            entity = controller._opt(key)  # noqa: SLF001
+            found = hass.states.get(entity) if entity else None
+            return found.state if found else None
+
         result["state"] = {
             "has_mail": controller.has_mail,
             "last_delivery": controller.last_delivery.isoformat()
             if controller.last_delivery
             else None,
-            "vibration_sensor_state": sensor.state if sensor else None,
+            "last_emptied": controller.last_emptied.isoformat()
+            if controller.last_emptied
+            else None,
+            "vibration_sensor_state": _state("vibration_sensor"),
+            "delivery_contact_state": _state("delivery_contact"),
+            "empty_contact_state": _state("empty_contact"),
         }
     if isinstance(controller, DoorGuardController):
         contact = controller._opt("contact")  # noqa: SLF001

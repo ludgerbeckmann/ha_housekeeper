@@ -130,7 +130,7 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
                 remove_unconfigured(hass, "sensor", controller, key)
         async_add_entities(entities)
     else:
-        async_add_entities([MailboxLastDeliverySensor(controller)])
+        async_add_entities([MailboxLastDeliverySensor(controller), MailboxLastEmptiedSensor(controller)])
 
 
 class MailboxLastDeliverySensor(FunctionEntity, SensorEntity):
@@ -143,6 +143,18 @@ class MailboxLastDeliverySensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self._controller.last_delivery
+
+
+class MailboxLastEmptiedSensor(FunctionEntity, SensorEntity):
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:mailbox-open-outline"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "last_emptied")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self._controller.last_emptied
 
 
 class DoorLastActionSensor(FunctionEntity, SensorEntity):

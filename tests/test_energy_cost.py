@@ -78,6 +78,7 @@ def test_pure_helpers() -> None:
 
 
 async def test_power_sensor_is_integrated(hass: HomeAssistant, freezer) -> None:
+    freezer.move_to("2026-06-15 20:00:00+00:00")             # feste Tageszeit: nicht über die Tagesgrenze
     _power(hass, 1000)
     entry, ctrl = await _setup(hass)
     await _advance(hass, freezer, 30)                       # 1 kW über 30 Minuten
