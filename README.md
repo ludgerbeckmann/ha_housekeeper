@@ -11,7 +11,7 @@ Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
 
 | Typ | Beschreibung |
 | --- | --- |
-| Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor |
+| Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor oder zwei Türkontakte (Einwurf und Entnahme) |
 | Türwächter | Schließt eine Tür zu festen Zeiten, bei Anwesenheit und nach dem Schließen automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 | Poolsteuerung | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
@@ -80,7 +80,7 @@ den alten Eintrag, lege den Hub „Funktionen“ an und füge die Instanzen neu 
 
 ## Benachrichtigung Briefkasten
 
-Bei einer Vibration (Sensor wechselt auf `on`) gilt der Briefkasten als
+Bei einer Vibration (Sensor wechselt auf `on`) oder beim Öffnen der Einwurfklappe gilt der Briefkasten als
 gefüllt. Es wird benachrichtigt, danach bleibt der Zustand „Post vorhanden“,
 bis er zurückgesetzt wird. Löst der Sensor erneut aus, obwohl noch Post
 vorhanden ist, gibt es einen erneuten Hinweis (eigener Text, gleiche Meldung
@@ -95,8 +95,15 @@ aufgeklappt, „Empfindlichkeit“ (nur in den Einstellungen) ist eingeklappt.
 **Allgemein**
 
 - **Name** (leer = „Benachrichtigung Briefkasten“)
-- **Vibrationssensor** (`binary_sensor`)
-- **Entprellzeit** (Standard 60 s; weitere Vibrationen in dieser Zeit werden ignoriert)
+- **Sensorart – entweder oder, nie beides:**
+  - **Vibrationssensor** (`binary_sensor`): löst beim Wechsel auf `on` den Einwurf aus; geleert wird per Button, Push-Aktion
+    oder Auto-Reset.
+  - **Oder zwei Türkontakte** (`binary_sensor`, `on` = offen): **Einwurf-Kontakt** (Klappe) meldet den Einwurf, **Entnahme-Kontakt**
+    (Tür) setzt den Briefkasten auf „geleert“ (nur wenn Post vermerkt ist) und entfernt die Meldung. Beide Kontakte sind nötig.
+    Button, Push-Aktion und Auto-Reset funktionieren weiter. Wird die Entnahmetür innerhalb der Entprellzeit nach einem Einwurf
+    geöffnet, wird sie ignoriert.
+  - Beides zusammen oder keins wird beim Speichern abgelehnt.
+- **Entprellzeit** (Standard 60 s; weitere Auslösungen in dieser Zeit werden ignoriert)
 - **Auto-Reset** nach X Stunden (0 = aus)
 
 **Empfindlichkeit** (optional, nur in den Einstellungen)
@@ -138,7 +145,7 @@ im Dialog dem passenden Gerät zugeordnet.
 - `switch` **Briefkasten-Benachrichtigung aktiv** (aus = Vibrationen werden ignoriert; „Briefkasten
   geleert“ funktioniert weiter)
 - `binary_sensor` **Post vorhanden**
-- `sensor` **Letzter Posteinwurf** (Zeitstempel)
+- `sensor` **Letzter Posteinwurf** und **Zuletzt geleert** (Zeitstempel)
 - `button` **Briefkasten geleert**
 
 Der Zustand bleibt über Neustarts erhalten.

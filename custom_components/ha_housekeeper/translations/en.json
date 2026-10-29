@@ -293,6 +293,9 @@
       },
       "cost_total": {
         "name": "Cost total"
+      },
+      "last_emptied": {
+        "name": "Last emptied"
       }
     },
     "button": {
@@ -428,17 +431,21 @@
           "sections": {
             "general": {
               "name": "General",
-              "description": "Sensor, lockout time and automatic reset.",
+              "description": "Sensor (vibration sensor or the two door contacts), lockout time and automatic reset.",
               "data": {
                 "name": "Name (shown as “Mailbox notification: Name”)",
                 "vibration_sensor": "Vibration sensor",
                 "debounce_seconds": "Debounce time",
-                "auto_reset_hours": "Reset automatically after (0 = off)"
+                "auto_reset_hours": "Reset automatically after (0 = off)",
+                "delivery_contact": "Delivery contact (flap)",
+                "empty_contact": "Removal contact (door)"
               },
               "data_description": {
-                "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-                "debounce_seconds": "Further vibrations within this time are ignored.",
-                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+                "vibration_sensor": "Alternative to the two door contacts: binary sensor that triggers when mail is dropped in. Use either this or the contacts, not both.",
+                "debounce_seconds": "Further triggers within this time are ignored; the removal door is also ignored this long after a delivery.",
+                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically.",
+                "delivery_contact": "Door contact of the delivery flap; opening it counts as mail dropped in. Requires the removal contact, not combined with the vibration sensor.",
+                "empty_contact": "Door contact of the removal door; opening it marks the mailbox as emptied (only if mail is recorded)."
               }
             },
             "notifications": {
@@ -468,17 +475,21 @@
           "sections": {
             "general": {
               "name": "General",
-              "description": "Sensor, lockout time and automatic reset.",
+              "description": "Sensor (vibration sensor or the two door contacts), lockout time and automatic reset.",
               "data": {
                 "name": "Name (shown as “Mailbox notification: Name”)",
                 "vibration_sensor": "Vibration sensor",
                 "debounce_seconds": "Debounce time",
-                "auto_reset_hours": "Reset automatically after (0 = off)"
+                "auto_reset_hours": "Reset automatically after (0 = off)",
+                "delivery_contact": "Delivery contact (flap)",
+                "empty_contact": "Removal contact (door)"
               },
               "data_description": {
-                "vibration_sensor": "Binary sensor that triggers when mail is dropped in.",
-                "debounce_seconds": "Further vibrations within this time are ignored.",
-                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+                "vibration_sensor": "Alternative to the two door contacts: binary sensor that triggers when mail is dropped in. Use either this or the contacts, not both.",
+                "debounce_seconds": "Further triggers within this time are ignored; the removal door is also ignored this long after a delivery.",
+                "name": "Optional. Empty = “Mailbox notification”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically.",
+                "delivery_contact": "Door contact of the delivery flap; opening it counts as mail dropped in. Requires the removal contact, not combined with the vibration sensor.",
+                "empty_contact": "Door contact of the removal door; opening it marks the mailbox as emptied (only if mail is recorded)."
               }
             },
             "sensitivity": {
@@ -544,7 +555,10 @@
         "in_past": "The time is in the past.",
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
-        "no_media": "Select an audio file."
+        "no_media": "Select an audio file.",
+        "no_sensor": "Select a vibration sensor or the two door contacts.",
+        "sensor_either_or": "Use either the vibration sensor or the door contacts, not both.",
+        "contacts_incomplete": "The door contacts need both the delivery contact and the removal contact."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",

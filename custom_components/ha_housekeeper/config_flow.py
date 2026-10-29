@@ -77,7 +77,7 @@ from .flows.energy import (
 from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
 from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
 from .knx_project import async_project_addresses
-from .flows.mailbox import MailboxOptions, _mailbox_schema
+from .flows.mailbox import MailboxOptions, _mailbox_schema, validate_mailbox
 from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
 from .flows.planner import TaskPlannerOptions, _planner_schema, _validate_planner
 from .flows.pool import _PUMP_SELECTOR, PoolOptions
@@ -128,7 +128,7 @@ class NewInstanceSteps:
         defaults: dict[str, Any] = {}
         if user_input is not None:
             flat = _flatten_sections(user_input)
-            errors = _validate_notify(flat, require_method=True)
+            errors = validate_mailbox(flat) or _validate_notify(flat, require_method=True)
             if not errors:
                 return await self._finish_new(
                     flat.get(CONF_NAME),

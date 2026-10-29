@@ -21,6 +21,8 @@ from .const import (
     ACTION_TITLE,
     CONF_AUTO_RESET_HOURS,
     CONF_DEBOUNCE,
+    CONF_DELIVERY_CONTACT,
+    CONF_EMPTY_CONTACT,
     CONF_MESSAGE,
     CONF_MOBILE_ACTION,
     CONF_REPEAT_MESSAGE,
@@ -45,7 +47,7 @@ STORE_VERSION = 1
 
 
 class MailboxController:
-    """Wertet den Vibrationssensor aus und benachrichtigt."""
+    """Wertet Vibrationssensor oder Einwurf-/Entnahmekontakt aus und benachrichtigt."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
@@ -53,6 +55,7 @@ class MailboxController:
         self.has_mail = False
         self.enabled = True
         self.last_delivery: datetime | None = None
+        self.last_emptied: datetime | None = None
         self._last_trigger: float | None = None
         self._unsubs: list = []
         self._reset_unsub = None
@@ -82,16 +85,37 @@ class MailboxController:
             parsed := dt_util.parse_datetime(raw)
         ):
             self.last_delivery = parsed
+        if (raw := stored.get("last_emptied")) and (
+            parsed := dt_util.parse_datetime(raw)
+        ):
+            self.last_emptied = parsed
         self._schedule_auto_reset()
 
-        self._unsubs.append(
-            async_track_state_change_event(
-                self.hass, [self._opt(CONF_VIBRATION_SENSOR)], self._on_sensor_change
-            )
-        )
+        # entweder Vibrationssensor oder die beiden Türkontakte (Einwurf, Entnahme), nie beides
+        if self._opt(CONF_VIBRATION_SENSOR):
+            self._track(self._opt(CONF_VIBRATION_SENSOR), self.async_trigger)
+        else:
+            self._track(self._opt(CONF_DELIVERY_CONTACT), self.async_trigger)
+            self._track(self._opt(CONF_EMPTY_CONTACT), self._async_contact_emptied)
         self._unsubs.append(
             self.hass.bus.async_listen(MOBILE_ACTION_EVENT, self._on_mobile_action)
         )
+
+    def _track(self, entity_id: str | None, action) -> None:
+        """Bei Wechsel von „aus“ auf „an“ die Aktion ausführen."""
+        if not entity_id:
+            return
+
+        async def _changed(event: Event) -> None:
+            new = event.data.get("new_state")
+            old = event.data.get("old_state")
+            if new is None or new.state != STATE_ON:
+                return
+            if old is None or old.state == STATE_ON:
+                return
+            await action()
+
+        self._unsubs.append(async_track_state_change_event(self.hass, [entity_id], _changed))
 
     @callback
     def async_stop(self) -> None:
@@ -144,6 +168,9 @@ class MailboxController:
                 "last_delivery": self.last_delivery.isoformat()
                 if self.last_delivery
                 else None,
+                "last_emptied": self.last_emptied.isoformat()
+                if self.last_emptied
+                else None,
             }
         )
         async_dispatcher_send(self.hass, signal_update(self.entry.entry_id))
@@ -157,6 +184,8 @@ class MailboxController:
         """Briefkasten als geleert markieren."""
         was_full = self.has_mail
         self.has_mail = False
+        if was_full:
+            self.last_emptied = dt_util.utcnow()
         self._cancel_auto_reset()
         await self._async_save()
         if was_full:
@@ -184,14 +213,14 @@ class MailboxController:
 
     # --- Auslöser --------------------------------------------------------
 
-    async def _on_sensor_change(self, event: Event) -> None:
-        new = event.data.get("new_state")
-        old = event.data.get("old_state")
-        if new is None or new.state != STATE_ON:
+    async def _async_contact_emptied(self) -> None:
+        """Entnahmetür geöffnet: nur zurücksetzen, wenn Post vermerkt ist (nicht innerhalb der Sperrzeit nach dem Einwurf)."""
+        if not self.enabled or not self.has_mail:
             return
-        if old is None or old.state == STATE_ON:
+        debounce = float(self._opt(CONF_DEBOUNCE, DEFAULT_DEBOUNCE))
+        if self._last_trigger is not None and time.monotonic() - self._last_trigger < debounce:
             return
-        await self.async_trigger()
+        await self.async_reset()
 
     async def async_trigger(self) -> None:
         """Vibration erkannt: Post vermerken und benachrichtigen."""
