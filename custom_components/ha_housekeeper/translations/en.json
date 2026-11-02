@@ -159,6 +159,9 @@
       },
       "consumption_warning": {
         "name": "Consumption warning"
+      },
+      "battery_low": {
+        "name": "Battery low"
       }
     },
     "sensor": {
@@ -652,6 +655,24 @@
                 "manual_pause_minutes": "Only applies to \"Pause automation\"."
               }
             },
+            "battery": {
+              "name": "Battery",
+              "description": "Notifications about the battery of the lock, e.g. a Nuki with rechargeable battery. Leave the battery sensor empty to turn this off.",
+              "data": {
+                "battery_sensor": "Battery sensor (%)",
+                "battery_charging_sensor": "Charging sensor",
+                "battery_low_threshold": "Warn at or below (%, 0 = off)",
+                "battery_full_notify": "Notify when the battery is full",
+                "battery_full_threshold": "Full from (%)"
+              },
+              "data_description": {
+                "battery_sensor": "Sensor with the battery level in percent, e.g. the battery sensor of the Nuki.",
+                "battery_charging_sensor": "Optional binary sensor that is on while the charging cable is connected. With it, the full message is only sent while charging and the low warning pauses while charging.",
+                "battery_low_threshold": "One message at or below this level (not while charging). It ends when the level is 5 points above it or charging starts.",
+                "battery_full_notify": "Tells you to remove the charging cable. Sent once per charge.",
+                "battery_full_threshold": "Level from which the battery counts as full."
+              }
+            },
             "notifications": {
               "name": "Notifications",
               "description": "How and with what the door guard reports.",
@@ -747,6 +768,24 @@
                 "manual_pause_minutes": "Only applies to \"Pause automation\"."
               }
             },
+            "battery": {
+              "name": "Battery",
+              "description": "Notifications about the battery of the lock, e.g. a Nuki with rechargeable battery. Leave the battery sensor empty to turn this off.",
+              "data": {
+                "battery_sensor": "Battery sensor (%)",
+                "battery_charging_sensor": "Charging sensor",
+                "battery_low_threshold": "Warn at or below (%, 0 = off)",
+                "battery_full_notify": "Notify when the battery is full",
+                "battery_full_threshold": "Full from (%)"
+              },
+              "data_description": {
+                "battery_sensor": "Sensor with the battery level in percent, e.g. the battery sensor of the Nuki.",
+                "battery_charging_sensor": "Optional binary sensor that is on while the charging cable is connected. With it, the full message is only sent while charging and the low warning pauses while charging.",
+                "battery_low_threshold": "One message at or below this level (not while charging). It ends when the level is 5 points above it or charging starts.",
+                "battery_full_notify": "Tells you to remove the charging cable. Sent once per charge.",
+                "battery_full_threshold": "Level from which the battery counts as full."
+              }
+            },
             "notifications": {
               "name": "Notifications",
               "description": "How and with what the door guard reports.",
@@ -778,7 +817,9 @@
         "alert_needs_contact": "The \"door open too long\" warning needs a door contact (or set the warning to 0).",
         "no_contact": "This trigger needs a door contact in the settings.",
         "no_presence_entities": "Choose people for presence in the settings of this door first.",
-        "no_workday_sensor": "The time on days off needs the workday sensor."
+        "no_workday_sensor": "The time on days off needs the workday sensor.",
+        "battery_needs_sensor": "The charging sensor and the full message need a battery sensor.",
+        "battery_threshold_invalid": "“Full from” must be above the warning threshold."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",

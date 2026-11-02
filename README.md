@@ -199,6 +199,19 @@ Feldern. Auf der Seite erscheint dann ein eingeklappter Abschnitt „Ältere Reg
 - **Schloss prüfen:** Steht das Schloss nach der Aktion nicht im Zielzustand
   (z. B. klemmt), gibt es nach X Sekunden eine Meldung.
 
+### Batterie (z. B. Nuki)
+
+Eigener, eingeklappter Abschnitt **Batterie**; ohne Batteriesensor ist alles aus.
+
+- **Batteriesensor** (`sensor`, in %), z. B. `sensor.<schloss>_battery`, und optional ein **Ladesensor** (`binary_sensor`, an =
+  Ladekabel angeschlossen), z. B. `binary_sensor.<schloss>_battery_charging`.
+- **Warnschwelle** (Standard 20 %, 0 = aus): Bei oder unter der Schwelle gibt es **eine** Meldung „Batterie schwach“, nicht während des
+  Ladens. Die Warnung endet (Meldung wird entfernt), wenn der Stand 5 Prozentpunkte darüber liegt oder das Laden beginnt.
+- **Melden, wenn die Batterie voll ist** (aus) und **Voll ab** (Standard 100 %): erinnert daran, das Ladekabel zu entfernen bzw. das
+  Schloss wieder anzubringen. Mit Ladesensor kommt die Meldung nur beim Laden, **einmal je Ladevorgang** (neu scharf, wenn das Laden
+  endet). Ohne Ladesensor kommt sie, wenn der Stand die Schwelle von unten erreicht; ein schon voller Akku beim Einrichten wird nicht gemeldet.
+- Ein unklarer Sensor (nicht verfügbar, z. B. bei abgebautem Schloss) ändert nichts. Der Zustand bleibt über Neustarts erhalten.
+
 ### Manuelle Bedienung
 
 Auswahl *Bei manueller Bedienung des Schlosses*:
@@ -215,6 +228,7 @@ je nach Systemsprache.
 ### Entitäten
 
 - `binary_sensor` **Tür zu lange offen**
+- `binary_sensor` **Batterie schwach** (nur mit Batteriesensor)
 - `switch` **Automatik** (aus = alle Regeln pausieren; Attribut `paused_until`)
 - `sensor` **Letzte Aktion** (Zeitstempel; Attribute `action`, `reason`, `result`)
 

@@ -66,6 +66,8 @@ from .const import (
     CONF_TTS_PLAYER,
     CONF_DELIVERY_CONTACT,
     CONF_EMPTY_CONTACT,
+    CONF_BATTERY_CHARGING,
+    CONF_BATTERY_SENSOR,
     CONF_VIBRATION_SENSOR,
     DOMAIN,
     FUNCTION_ALARM,
@@ -119,7 +121,7 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
             opt(CONF_SENSITIVITY_ENTITY),
         ]
     elif function == FUNCTION_DOOR_GUARD:
-        entities += [opt(CONF_LOCK), opt(CONF_CONTACT)]
+        entities += [opt(CONF_LOCK), opt(CONF_CONTACT), opt(CONF_BATTERY_SENSOR), opt(CONF_BATTERY_CHARGING)]
         entities += _listed(opt(CONF_RULES, []), "entity_id")
         entities += _listed(opt(CONF_RULES, []), "only_if_on", "skip_if_on")
         entities += [str(e) for e in opt(CONF_PRESENCE, []) or []]
