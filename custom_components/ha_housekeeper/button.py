@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import slugify
 
 from .alarm_clock import AlarmClockController
 from .consumption_guard import ConsumptionGuardController
@@ -67,13 +68,21 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         entry = controller.entry
         prefix = f"{entry.entry_id}_ir_"
         commands = controller.active_commands
-        keep = {f"{prefix}{command[IC_ID]}" for command in commands}
+        # je Befehl eine Taste für alle Sender; bei mehreren Sendern zusätzlich eine je zugeordnetem Sender
+        buttons = [IrCommandButton(controller, command) for command in commands]
+        if len(controller.remotes) > 1:
+            buttons += [
+                IrCommandButton(controller, command, remote)
+                for command in commands
+                for remote in controller.remotes_for(command)
+            ]
+        keep = {button.unique_id for button in buttons}
         registry = er.async_get(hass)
         for entity in er.async_entries_for_config_entry(registry, entry.hub_entry_id):
             if entity.domain == "button" and entity.unique_id.startswith(prefix):
                 if entity.unique_id not in keep:
                     registry.async_remove(entity.entity_id)
-        async_add_entities([IrCommandButton(controller, command) for command in commands])
+        async_add_entities(buttons)
     elif isinstance(controller, IntegrationMonitorController):
         async_add_entities([MonitorCheckNowButton(controller), MonitorReenableButton(controller)])
     elif isinstance(controller, AlarmClockController):
@@ -238,22 +247,26 @@ class LlmRefreshButton(FunctionEntity, ButtonEntity):
 
 
 class IrCommandButton(FunctionEntity, ButtonEntity):
-    """Sendet einen angelernten IR-Befehl an alle Sender der Instanz."""
+    """Sendet einen IR-Befehl an alle zugeordneten Sender der Instanz oder nur an einen Sender."""
 
     _attr_icon = "mdi:remote"
 
-    def __init__(self, controller, command: dict) -> None:
+    def __init__(self, controller, command: dict, remote: str | None = None) -> None:
         super().__init__(controller, "ir_command")
         self._command_id = command[IC_ID]
+        self._remote = remote
         self._attr_translation_key = None
         self._attr_name = command[IC_NAME]
         self._attr_unique_id = f"{controller.entry.entry_id}_ir_{self._command_id}"
+        if remote:
+            self._attr_name = f"{command[IC_NAME]} – {controller.remote_name(remote)}"
+            self._attr_unique_id += f"_{slugify(remote)}"
 
     async def async_press(self) -> None:
         await self.async_send_ir(None)
 
     async def async_send_ir(self, repeats: int | None) -> None:
-        if await self._controller.async_send(self._command_id, repeats) == "failed":
+        if await self._controller.async_send(self._command_id, repeats, self._remote) == "failed":
             raise ServiceValidationError(f"{self._attr_name}: Senden fehlgeschlagen")
 
 

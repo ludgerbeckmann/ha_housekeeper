@@ -316,3 +316,108 @@ async def test_settings_page_deactivates_command_and_removes_button(hass: HomeAs
     assert saved["c3"]["enabled"] is False and saved["c1"]["enabled"] is True
     assert entry.options["num_repeats"] == 3
     assert _entity(hass, "button", "ir_c3", entry) is None
+
+
+async def test_b64_for_remotes_without_stored_code(hass: HomeAssistant) -> None:
+    cmds = [cmd("c1", "Power On", "power_on", remotes=[R1, R2], learned=[R1], b64="AAAA")]
+    entry, controller, sent, push = await _setup(hass, ir_commands=cmds)
+    assert await controller.async_send("c1") == "ok"
+    by_remote = {c.data["entity_id"]: c.data["command"] for c in sent}
+    assert by_remote == {R1: ["power_on"], R2: ["b64:AAAA"]}
+
+
+async def test_per_remote_buttons_and_switches(hass: HomeAssistant) -> None:
+    cmds = [cmd("c1", "Power On", "power_on"), cmd("c2", "Power Off", "power_off"),
+            cmd("c3", "Timer 2h", "timer_2h", remotes=[R1])]
+    entry, controller, sent, push = await _setup(
+        hass, ir_commands=cmds, ir_on_command="c1", ir_off_command="c2"
+    )
+    reg = er.async_get(hass)
+    uid = lambda c, r: f"{entry.entry_id}_ir_{c}_{r.replace('.', '_')}"        # noqa: E731
+    r1_button = reg.async_get_entity_id("button", DOMAIN, uid("c1", R1))
+    assert r1_button and reg.async_get_entity_id("button", DOMAIN, uid("c1", R2))
+    assert reg.async_get_entity_id("button", DOMAIN, uid("c3", R1))
+    assert reg.async_get_entity_id("button", DOMAIN, uid("c3", R2)) is None     # R2 hat den Befehl nicht
+    await hass.services.async_call("button", "press", {"entity_id": r1_button}, blocking=True)
+    assert [c.data["entity_id"] for c in sent] == [R1]                          # nur dieser Sender
+    sent.clear()
+    await hass.services.async_call("button", "press", {"entity_id": _entity(hass, "button", "ir_c1", entry)}, blocking=True)
+    assert {c.data["entity_id"] for c in sent} == {R1, R2}                      # Taste für alle
+    sent.clear()
+    sw2 = reg.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_ir_power_{R2.replace('.', '_')}")
+    assert sw2
+    await hass.services.async_call("switch", "turn_on", {"entity_id": sw2}, blocking=True)
+    assert [c.data["entity_id"] for c in sent] == [R2]
+    assert hass.states.get(sw2).state == "on"
+    sw1 = reg.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_ir_power_{R1.replace('.', '_')}")
+    assert hass.states.get(sw1).state == "unknown"                              # Sender getrennt
+
+
+async def _assign(hass, entry, remote, **form):
+    flow = hass.config_entries.subentries
+    result = await _flow_menu(hass, entry)
+    assert "ir_assign" in menu_options(result) and "ir_groups" in menu_options(result)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_assign"})
+    result = await flow.async_configure(result["flow_id"], {"remote": remote})
+    assert result["step_id"] == "ir_assign_edit"
+    return await flow.async_configure(result["flow_id"], form)
+
+
+async def test_assign_takes_code_from_broadlink_storage(hass: HomeAssistant, hass_storage) -> None:
+    er.async_get(hass).async_get_or_create("remote", "broadlink", "aabbcc", suggested_object_id="universal_remote")
+    hass_storage["broadlink_remote_aabbcc_codes"] = {
+        "version": 1, "minor_version": 1, "key": "broadlink_remote_aabbcc_codes",
+        "data": {"candle": {"timer_2h": "QkJC"}},
+    }
+    entry, controller, sent, push = await _setup(hass)
+    # c3 ist nur an R1 angelernt: R2 zuordnen, der Code wird aus dem Speicher von R1 gelesen
+    done = await _assign(hass, entry, R2, commands=["c1", "c2", "c3"])
+    assert is_menu(done)
+    await hass.async_block_till_done()
+    saved = {c["id"]: c for c in entry.options["ir_commands"]}
+    assert saved["c3"]["remotes"] == [R1, R2] and saved["c3"]["b64"] == "QkJC"
+    sent.clear()
+    controller = next(iter(hass.data[DOMAIN].values()))
+    assert await controller.async_send("c3") == "ok"
+    assert {c.data["entity_id"]: c.data["command"] for c in sent} == {R1: ["timer_2h"], R2: ["b64:QkJC"]}
+
+
+async def test_assign_without_readable_code_and_unassign(hass: HomeAssistant) -> None:
+    entry, *_ = await _setup(hass)
+    bad = await _assign(hass, entry, R2, commands=["c1", "c2", "c3"])           # kein Code lesbar
+    assert bad["errors"] == {"base": "code_unavailable"}
+    assert bad["description_placeholders"]["commands"] == "Timer 2h"
+    # Befehl dem Sender entziehen
+    done = await _assign(hass, entry, R2, commands=["c1"])
+    assert is_menu(done)
+    saved = {c["id"]: c for c in entry.options["ir_commands"]}
+    assert saved["c1"]["remotes"] == [R1, R2] and saved["c2"]["remotes"] == [R1]
+
+
+async def test_command_groups(hass: HomeAssistant) -> None:
+    entry, *_ = await _setup(hass, ir_commands=[
+        cmd("c1", "Power On", "power_on", remotes=[R1], b64="AA"),
+        cmd("c2", "Power Off", "power_off", remotes=[R1], b64="BB"),
+        cmd("c3", "Timer 2h", "timer_2h", remotes=[R1], b64="CC"),
+    ])
+    flow = hass.config_entries.subentries
+    result = await _flow_menu(hass, entry)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_groups"})
+    result = await flow.async_configure(result["flow_id"], {"group": "Kerze"})      # neuer Name
+    assert result["step_id"] == "ir_group_edit"
+    bad = await flow.async_configure(result["flow_id"], {"commands": []})
+    assert bad["errors"] == {"base": "group_empty"}
+    result = await flow.async_configure(result["flow_id"], {"commands": ["c1", "c2"]})
+    assert is_menu(result)
+    (group,) = entry.options["ir_groups"]
+    assert group["name"] == "Kerze" and group["commands"] == ["c1", "c2"]
+    # Gruppe dem zweiten Sender zuordnen
+    done = await _assign(hass, entry, R2, commands=[], groups=[group["id"]])
+    assert is_menu(done)
+    saved = {c["id"]: c for c in entry.options["ir_commands"]}
+    assert saved["c1"]["remotes"] == [R1, R2] and saved["c3"]["remotes"] == [R1]
+    # Gruppe löschen
+    result = await flow.async_configure(done["flow_id"], {"next_step_id": "ir_groups"})
+    result = await flow.async_configure(result["flow_id"], {"group": group["id"]})
+    result = await flow.async_configure(result["flow_id"], {"delete": True, "commands": ["c1"]})
+    assert is_menu(result) and entry.options["ir_groups"] == []
