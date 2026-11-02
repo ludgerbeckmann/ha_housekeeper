@@ -26,8 +26,10 @@ from .const import (
     DEFAULT_IR_REPEATS,
     DOMAIN,
     IC_CODE,
+    IC_B64,
     IC_ENABLED,
     IC_ID,
+    IC_LEARNED,
     IC_NAME,
     IC_REMOTES,
     signal_update,
@@ -98,12 +100,20 @@ async def async_send(
     code: str,
     repeats: int = DEFAULT_IR_REPEATS,
     delay: float = DEFAULT_IR_DELAY,
+    b64: str | None = None,
+    native: list[str] | None = None,
 ) -> dict[str, str | None]:
-    """Befehl gleichzeitig an alle Sender schicken; je Sender `None` oder der Fehler."""
+    """Befehl gleichzeitig an alle Sender schicken; je Sender `None` oder der Fehler.
+
+    Sender, bei denen der Code nicht unter seinem Namen gespeichert ist (nicht in `native`),
+    bekommen ihn als `b64:`-Code (nur wenn `b64` bekannt ist)."""
 
     async def _one(remote: str) -> str | None:
         if problem := _remote_problem(hass, remote):
             return problem
+        command = code
+        if b64 and native is not None and remote not in native:
+            command = f"b64:{b64}"
         try:
             await hass.services.async_call(
                 "remote",
@@ -111,7 +121,7 @@ async def async_send(
                 {
                     "entity_id": remote,
                     "device": device,
-                    "command": [code],
+                    "command": [command],
                     "num_repeats": repeats,
                     "delay_secs": delay,
                 },
@@ -156,17 +166,33 @@ async def async_delete(hass: HomeAssistant, remote: str, device: str, code: str)
         _LOGGER.warning("%s: Löschen von %s/%s fehlgeschlagen: %s", remote, device, code, err)
 
 
+async def _stored(hass: HomeAssistant, remote: str, device: str) -> dict[str, Any]:
+    """Codes eines Geräts aus dem Speicher der Broadlink-Integration (leer bei anderen Sendern)."""
+    entity = er.async_get(hass).async_get(remote)
+    if entity is None or entity.platform != BROADLINK:
+        return {}
+    data = await Store(hass, 1, f"broadlink_remote_{entity.unique_id}_codes").async_load()
+    codes = data.get(device) if isinstance(data, dict) else None
+    return codes if isinstance(codes, dict) else {}
+
+
 async def async_stored_codes(hass: HomeAssistant, remote: str, device: str) -> set[str]:
     """Bereits angelernte Befehle eines Geräts aus dem Speicher der Broadlink-Integration.
 
     Liest deren interne Datei (`broadlink_remote_<id>_codes`); bei anderen Sendern oder einem
     geänderten Format ist das Ergebnis leer (dann werden die Namen von Hand eingegeben)."""
-    entity = er.async_get(hass).async_get(remote)
-    if entity is None or entity.platform != BROADLINK:
-        return set()
-    data = await Store(hass, 1, f"broadlink_remote_{entity.unique_id}_codes").async_load()
-    codes = data.get(device) if isinstance(data, dict) else None
-    return set(codes) if isinstance(codes, dict) else set()
+    return set(await _stored(hass, remote, device))
+
+
+async def async_stored_code(
+    hass: HomeAssistant, remotes: list[str], device: str, code: str
+) -> str | None:
+    """Base64-Code eines Befehls vom ersten Sender, der ihn gespeichert hat (sonst `None`)."""
+    for remote in remotes:
+        value = (await _stored(hass, remote, device)).get(code)
+        if isinstance(value, str) and value:
+            return value
+    return None
 
 
 # --- Controller --------------------------------------------------------------------------------
@@ -182,6 +208,7 @@ class IrRemoteController:
         self.entry = entry
         self.last_sent: dict[str, Any] | None = None
         self.assumed_on: bool | None = None
+        self.assumed_remote: dict[str, bool] = {}
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._notifier = Notifier(
@@ -214,9 +241,18 @@ class IrRemoteController:
         return next((c for c in self.commands if c[IC_ID] == command_id), None)
 
     def remotes_for(self, command: dict[str, Any]) -> list[str]:
-        """Sender der Instanz, an denen der Befehl angelernt ist."""
+        """Sender der Instanz, denen der Befehl zugeordnet ist."""
         known = command.get(IC_REMOTES) or []
         return [r for r in self.remotes if r in known]
+
+    def native_remotes(self, command: dict[str, Any]) -> list[str]:
+        """Sender, bei denen der Code unter seinem Namen gespeichert ist (ältere Befehle: alle zugeordneten)."""
+        learned = command.get(IC_LEARNED)
+        return list(command.get(IC_REMOTES) or []) if learned is None else list(learned)
+
+    def remote_name(self, remote: str) -> str:
+        state = self.hass.states.get(remote)
+        return state.name if state else remote
 
     @property
     def power_configured(self) -> bool:
@@ -229,7 +265,11 @@ class IrRemoteController:
 
     async def _async_save(self) -> None:
         await self._store.async_save(
-            {"last_sent": self.last_sent, "assumed_on": self.assumed_on}
+            {
+                "last_sent": self.last_sent,
+                "assumed_on": self.assumed_on,
+                "assumed_remote": self.assumed_remote,
+            }
         )
 
     # --- Lebenszyklus --------------------------------------------------------
@@ -238,6 +278,7 @@ class IrRemoteController:
         stored = await self._store.async_load() or {}
         self.last_sent = stored.get("last_sent")
         self.assumed_on = stored.get("assumed_on")
+        self.assumed_remote = dict(stored.get("assumed_remote") or {})
 
     def async_stop(self) -> None:
         """Nichts zu beenden (kein Zustand im Speicher)."""
@@ -247,12 +288,16 @@ class IrRemoteController:
     def _reason(self, error: str) -> str:
         return _TEXT[self._lang].get(error, error)
 
-    async def async_send(self, command_id: str, repeats: int | None = None) -> str:
-        """Befehl senden; Ergebnis `ok`, `partial` oder `failed`."""
+    async def async_send(
+        self, command_id: str, repeats: int | None = None, remote: str | None = None
+    ) -> str:
+        """Befehl senden (an alle zugeordneten Sender oder nur an `remote`); Ergebnis `ok`, `partial` oder `failed`."""
         command = self.command(command_id)
         if command is None:
             return "failed"
         remotes = self.remotes_for(command)
+        if remote is not None:
+            remotes = [r for r in remotes if r == remote]
         if remotes:
             errors = await async_send(
                 self.hass,
@@ -261,6 +306,8 @@ class IrRemoteController:
                 command[IC_CODE],
                 int(repeats or self._get(CONF_IR_REPEATS, DEFAULT_IR_REPEATS)),
                 float(self._get(CONF_IR_DELAY, DEFAULT_IR_DELAY)),
+                command.get(IC_B64),
+                self.native_remotes(command),
             )
         else:
             errors = {"": "no_remote"}
@@ -289,10 +336,14 @@ class IrRemoteController:
             )
         return result
 
-    async def async_set_power(self, on: bool) -> None:
-        """Schalter: den Befehl „an“ bzw. „aus“ senden und den angenommenen Zustand merken."""
+    async def async_set_power(self, on: bool, remote: str | None = None) -> None:
+        """Schalter: den Befehl „an“ bzw. „aus“ senden (an alle oder nur an `remote`) und den angenommenen Zustand merken."""
         command_id = self._get(CONF_IR_ON if on else CONF_IR_OFF)
-        if await self.async_send(command_id) != "failed":
-            self.assumed_on = on
+        if await self.async_send(command_id, remote=remote) != "failed":
+            if remote is None:
+                self.assumed_on = on
+                self.assumed_remote = {r: on for r in self.remotes}
+            else:
+                self.assumed_remote[remote] = on
             await self._async_save()
             self._notify_dispatch()

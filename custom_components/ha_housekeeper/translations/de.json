@@ -372,6 +372,9 @@
       },
       "consumption_active": {
         "name": "Wächter aktiv"
+      },
+      "ir_power_sender": {
+        "name": "Schalter {sender}"
       }
     }
   },
@@ -2464,12 +2467,14 @@
         },
         "ir_menu": {
           "title": "IR-Fernbedienung",
-          "description": "Befehle der Fernbedienung (angelernte Sender / alle Sender):\n{commands}",
+          "description": "Befehle der Fernbedienung (zugeordnete Sender / alle Sender):\n{commands}",
           "menu_options": {
             "ir_settings": "Einstellungen",
             "add_ir_command": "Befehl anlernen",
             "learn_ir_command": "Befehl an Sendern (neu) anlernen",
-            "import_ir_commands": "Vorhandene Befehle übernehmen"
+            "import_ir_commands": "Vorhandene Befehle übernehmen",
+            "ir_assign": "Befehle einem Sender zuordnen",
+            "ir_groups": "Befehlsgruppen"
           }
         },
         "add_ir_command": {
@@ -2558,6 +2563,36 @@
               }
             }
           }
+        },
+        "ir_assign": {
+          "title": "Befehle zuordnen",
+          "description": "Wähle den Sender, dem Befehle zugeordnet werden sollen. Jeder Sender lässt sich danach einzeln bedienen.",
+          "data": {
+            "remote": "Sender"
+          }
+        },
+        "ir_assign_edit": {
+          "title": "Befehle von {remote}",
+          "description": "Befehle, die dieser Sender sendet. Eine Gruppe fügt alle ihre Befehle hinzu; nicht angekreuzte Befehle werden diesem Sender entzogen. Die Codes werden vom Sender übernommen, an dem der Befehl angelernt wurde (Broadlink).",
+          "data": {
+            "commands": "Befehle",
+            "groups": "Gruppen hinzufügen"
+          }
+        },
+        "ir_groups": {
+          "title": "Befehlsgruppen",
+          "description": "Wähle eine Gruppe oder tippe einen neuen Namen ein, um eine anzulegen. Eine Gruppe bündelt Befehle, die du einem Sender in einem Schritt zuordnen kannst.",
+          "data": {
+            "group": "Gruppe"
+          }
+        },
+        "ir_group_edit": {
+          "title": "Gruppe „{group}“",
+          "description": "Befehle der Gruppe.",
+          "data": {
+            "commands": "Befehle",
+            "delete": "Gruppe löschen"
+          }
         }
       },
       "error": {
@@ -2567,7 +2602,9 @@
         "learn_failed": "Anlernen fehlgeschlagen: {detail}",
         "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
         "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
-        "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein."
+        "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein.",
+        "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an.",
+        "group_empty": "Eine Gruppe braucht mindestens einen Befehl."
       },
       "abort": {},
       "progress": {

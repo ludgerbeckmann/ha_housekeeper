@@ -372,6 +372,9 @@
       },
       "consumption_active": {
         "name": "Guard active"
+      },
+      "ir_power_sender": {
+        "name": "Switch {sender}"
       }
     }
   },
@@ -2464,12 +2467,14 @@
         },
         "ir_menu": {
           "title": "IR remote",
-          "description": "Commands of the remote (senders learned / all senders):\n{commands}",
+          "description": "Commands of the remote (assigned remotes / all remotes):\n{commands}",
           "menu_options": {
             "ir_settings": "Settings",
             "add_ir_command": "Learn command",
             "learn_ir_command": "Learn command on remotes (again)",
-            "import_ir_commands": "Import existing commands"
+            "import_ir_commands": "Import existing commands",
+            "ir_assign": "Assign commands to a remote",
+            "ir_groups": "Command groups"
           }
         },
         "add_ir_command": {
@@ -2558,6 +2563,36 @@
               }
             }
           }
+        },
+        "ir_assign": {
+          "title": "Assign commands",
+          "description": "Choose the remote that should get commands. Each remote can then be operated separately.",
+          "data": {
+            "remote": "Remote"
+          }
+        },
+        "ir_assign_edit": {
+          "title": "Commands of {remote}",
+          "description": "Commands this remote sends. Add a group to include all its commands; unchecked commands are removed from this remote. Codes are taken over from the remote where the command was learned (Broadlink).",
+          "data": {
+            "commands": "Commands",
+            "groups": "Add groups"
+          }
+        },
+        "ir_groups": {
+          "title": "Command groups",
+          "description": "Choose a group or type a new name to create one. A group bundles commands that you can assign to a remote in one go.",
+          "data": {
+            "group": "Group"
+          }
+        },
+        "ir_group_edit": {
+          "title": "Group “{group}”",
+          "description": "Commands of the group.",
+          "data": {
+            "commands": "Commands",
+            "delete": "Delete group"
+          }
         }
       },
       "error": {
@@ -2567,7 +2602,9 @@
         "learn_failed": "Learning failed: {detail}",
         "command_in_use": "The command is used by the switch. Change the switch first.",
         "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
-        "switch_same": "“On” and “off” must be different commands."
+        "switch_same": "“On” and “off” must be different commands.",
+        "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead.",
+        "group_empty": "A group needs at least one command."
       },
       "abort": {},
       "progress": {

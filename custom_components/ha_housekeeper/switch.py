@@ -9,8 +9,9 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util import dt as dt_util
+from homeassistant.util import dt as dt_util, slugify
 
 from .alarm_clock import AlarmClockController
 from .consumption_guard import ConsumptionGuardController
@@ -66,10 +67,18 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     elif isinstance(controller, ConsumptionGuardController):
         async_add_entities([ConsumptionActiveSwitch(controller)])
     elif isinstance(controller, IrRemoteController):
+        switches: list[IrPowerSwitch] = []
         if controller.power_configured:
-            async_add_entities([IrPowerSwitch(controller)])
-        else:
-            remove_unconfigured(hass, "switch", controller, "ir_power")
+            switches.append(IrPowerSwitch(controller))
+            if len(controller.remotes) > 1:     # bei mehreren Sendern zusätzlich ein Schalter je Sender
+                switches += [IrPowerSwitch(controller, remote) for remote in controller.remotes]
+        keep = {switch.unique_id for switch in switches}
+        registry = er.async_get(hass)
+        prefix = f"{controller.entry.entry_id}_ir_power"
+        for entity in er.async_entries_for_config_entry(registry, controller.entry.hub_entry_id):
+            if entity.domain == "switch" and entity.unique_id.startswith(prefix) and entity.unique_id not in keep:
+                registry.async_remove(entity.entity_id)
+        async_add_entities(switches)
     else:
         async_add_entities([DoorAutomationSwitch(controller)])
 
@@ -297,18 +306,25 @@ class IrPowerSwitch(FunctionEntity, SwitchEntity):
     _attr_icon = "mdi:power"
     _attr_assumed_state = True
 
-    def __init__(self, controller) -> None:
+    def __init__(self, controller, remote: str | None = None) -> None:
         super().__init__(controller, "ir_power")
+        self._remote = remote
+        if remote:
+            self._attr_translation_key = "ir_power_sender"
+            self._attr_translation_placeholders = {"sender": controller.remote_name(remote)}
+            self._attr_unique_id = f"{controller.entry.entry_id}_ir_power_{slugify(remote)}"
 
     @property
     def is_on(self) -> bool | None:
+        if self._remote:
+            return self._controller.assumed_remote.get(self._remote)
         return self._controller.assumed_on
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self._controller.async_set_power(True)
+        await self._controller.async_set_power(True, self._remote)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self._controller.async_set_power(False)
+        await self._controller.async_set_power(False, self._remote)
 
 
 class ConsumptionActiveSwitch(FunctionEntity, SwitchEntity):

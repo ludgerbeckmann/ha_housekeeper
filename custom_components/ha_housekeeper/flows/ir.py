@@ -16,6 +16,7 @@ from homeassistant.helpers import selector
 from .. import ir_remote
 from ..const import (
     CONF_IR_ACTIVE,
+    CONF_IR_GROUPS,
     CONF_IR_COMMANDS,
     CONF_IR_DELETE,
     CONF_IR_DELETE_CODES,
@@ -31,12 +32,17 @@ from ..const import (
     CONF_TTS_PLAYER,
     DEFAULT_IR_DELAY,
     DEFAULT_IR_REPEATS,
+    IC_B64,
     IC_CODE,
     IC_ENABLED,
     IC_ID,
+    IC_LEARNED,
     IC_NAME,
     IC_REMOTES,
     IC_TYPE,
+    IG_COMMANDS,
+    IG_ID,
+    IG_NAME,
     IR_TYPE_IR,
     IR_TYPES,
     clean_instance_name,
@@ -173,6 +179,8 @@ class IrOptions:
     """Options-Flow-Schritte: IR-Fernbedienung."""
 
     _learn: dict[str, Any] | None = None
+    _assign_remote: str = ""
+    _group_edit: dict[str, Any] = {}
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -228,6 +236,35 @@ class IrOptions:
             lines.append(f"• {command[IC_NAME]}{off}: {len(known)}/{total}")
         return "\n".join(lines) or "–"
 
+    def _ir_groups(self) -> list[dict[str, Any]]:
+        return list(self._current.get(CONF_IR_GROUPS) or [])
+
+    def _picker(self, options: list[selector.SelectOptionDict], multiple: bool, **kwargs: Any) -> Any:
+        return selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=options,
+                multiple=multiple,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                **kwargs,
+            )
+        )
+
+    def _command_options(self) -> list[selector.SelectOptionDict]:
+        return [
+            selector.SelectOptionDict(value=c[IC_ID], label=c[IC_NAME]) for c in self._ir_commands()
+        ]
+
+    async def _ensure_b64(self, command: dict[str, Any]) -> dict[str, Any] | None:
+        """Befehl mit Base64-Code (aus den Daten oder dem Speicher eines Senders); `None`, wenn nicht lesbar."""
+        if command.get(IC_B64):
+            return command
+        learned = command.get(IC_LEARNED)
+        sources = list(command.get(IC_REMOTES) or []) if learned is None else list(learned)
+        code = await ir_remote.async_stored_code(
+            self.hass, sources, self._current[CONF_IR_DEVICE], command[IC_CODE]
+        )
+        return {**command, IC_B64: code} if code else None
+
     def _save_command(self, command: dict[str, Any]) -> None:
         commands = self._ir_commands()
         if any(c[IC_ID] == command[IC_ID] for c in commands):
@@ -246,6 +283,10 @@ class IrOptions:
         if self._ir_commands():
             options.append("learn_ir_command")
         options.append("import_ir_commands")
+        if self._ir_commands():
+            if len(self._ir_remotes()) > 1:
+                options.append("ir_assign")
+            options.append("ir_groups")
         return await self._menu(
             "ir_menu", options, user_input, {"commands": self._ir_listing()}
         )
@@ -275,7 +316,8 @@ class IrOptions:
             if not errors:
                 for command in commands:
                     if command[IC_ID] in delete and delete_codes:
-                        for remote in command.get(IC_REMOTES) or []:
+                        learned = command.get(IC_LEARNED)
+                        for remote in (command.get(IC_REMOTES) or []) if learned is None else learned:
                             await ir_remote.async_delete(
                                 self.hass, remote, self._current[CONF_IR_DEVICE], command[IC_CODE]
                             )
@@ -286,6 +328,11 @@ class IrOptions:
                 ]
                 name = (flat.pop(CONF_NAME, None) or "").strip()
                 data = {**ir_data(flat), CONF_IR_COMMANDS: kept, CONF_IR_ON: on or None, CONF_IR_OFF: off or None}
+                if delete:
+                    data[CONF_IR_GROUPS] = [
+                        {**g, IG_COMMANDS: [i for i in g[IG_COMMANDS] if i not in delete]}
+                        for g in self._ir_groups()
+                    ]
                 self.hass.config_entries.async_update_subentry(
                     self._get_entry(),
                     subentry,
@@ -414,6 +461,16 @@ class IrOptions:
         if learn["done"]:
             known = set(command.get(IC_REMOTES) or []) | set(learn["done"])
             command[IC_REMOTES] = [r for r in self._ir_remotes() if r in known]
+            learned = (
+                set(command.get(IC_REMOTES) or [])
+                if command.get(IC_LEARNED) is None and not learn["is_new"]
+                else set(command.get(IC_LEARNED) or [])
+            ) | set(learn["done"])
+            command[IC_LEARNED] = [r for r in self._ir_remotes() if r in learned]
+            if code := await ir_remote.async_stored_code(
+                self.hass, learn["done"], self._current[CONF_IR_DEVICE], command[IC_CODE]
+            ):
+                command[IC_B64] = code
             self._save_command(command)
         if not learn["failed"]:
             return await self.async_step_ir_menu()
@@ -455,6 +512,16 @@ class IrOptions:
                         IC_TYPE: IR_TYPE_IR,
                         IC_ENABLED: True,
                         IC_REMOTES: found.get(code) or self._ir_remotes(),
+                        IC_LEARNED: found.get(code) or self._ir_remotes(),
+                        **(
+                            {IC_B64: b64}
+                            if (
+                                b64 := await ir_remote.async_stored_code(
+                                    self.hass, found.get(code) or [], device, code
+                                )
+                            )
+                            else {}
+                        ),
                     }
                 )
             self._save({CONF_IR_COMMANDS: commands})
@@ -476,3 +543,138 @@ class IrOptions:
             description_placeholders={"device": device, "found": str(len(options))},
         )
 
+
+    # --- Sender zuordnen -------------------------------------------------------------
+
+    async def async_step_ir_assign(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Sender wählen, dem Befehle (einzeln oder als Gruppe) zugeordnet werden."""
+        if user_input is not None:
+            self._assign_remote = user_input["remote"]
+            return await self.async_step_ir_assign_edit()
+        return self.async_show_form(
+            step_id="ir_assign",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("remote"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=self._remote_options(),
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_ir_assign_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Befehle und Gruppen des gewählten Senders: nicht angekreuzte Befehle werden ihm entzogen."""
+        remote = self._assign_remote
+        commands = self._ir_commands()
+        errors: dict[str, str] = {}
+        placeholders = {"remote": self._remote_name(remote), "commands": ""}
+        assigned = [c[IC_ID] for c in commands if remote in (c.get(IC_REMOTES) or [])]
+        if user_input is not None:
+            selected = set(user_input.get("commands") or [])
+            for group in self._ir_groups():
+                if group[IG_ID] in (user_input.get("groups") or []):
+                    selected |= set(group[IG_COMMANDS])
+            updated: list[dict[str, Any]] = []
+            missing: list[str] = []
+            for command in commands:
+                known = list(command.get(IC_REMOTES) or [])
+                if command[IC_ID] in selected and remote not in known:
+                    resolved = await self._ensure_b64(command)
+                    if resolved is None:
+                        missing.append(command[IC_NAME])
+                        updated.append(command)
+                        continue
+                    # ältere Befehle: bisherige Sender merken, bei denen der Code unter seinem Namen liegt
+                    command = {**resolved, IC_LEARNED: command.get(IC_LEARNED, list(known))}
+                    known.append(remote)
+                elif command[IC_ID] not in selected and remote in known:
+                    known.remove(remote)
+                updated.append(
+                    {**command, IC_REMOTES: [r for r in self._ir_remotes() if r in known]}
+                )
+            if missing:
+                errors["base"] = "code_unavailable"
+                placeholders["commands"] = ", ".join(missing)
+                assigned = list(selected & {c[IC_ID] for c in commands})
+            else:
+                self._save({CONF_IR_COMMANDS: updated})
+                return await self.async_step_ir_menu()
+        fields: dict[Any, Any] = {
+            vol.Optional("commands", default=assigned): self._picker(self._command_options(), True)
+        }
+        if self._ir_groups():
+            fields[vol.Optional("groups")] = self._picker(
+                [selector.SelectOptionDict(value=g[IG_ID], label=g[IG_NAME]) for g in self._ir_groups()],
+                True,
+            )
+        return self.async_show_form(
+            step_id="ir_assign_edit",
+            data_schema=vol.Schema(fields),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    # --- Befehlsgruppen -----------------------------------------------------------------
+
+    async def async_step_ir_groups(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Gruppe wählen oder durch Eintippen eines neuen Namens anlegen."""
+        groups = self._ir_groups()
+        if user_input is not None:
+            value = (user_input["group"] or "").strip()
+            known = next((g for g in groups if g[IG_ID] == value), None)
+            if known is None and not value:
+                return await self.async_step_ir_menu()
+            self._group_edit = known or {IG_ID: uuid.uuid4().hex[:8], IG_NAME: value, IG_COMMANDS: []}
+            return await self.async_step_ir_group_edit()
+        return self.async_show_form(
+            step_id="ir_groups",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("group"): self._picker(
+                        [selector.SelectOptionDict(value=g[IG_ID], label=g[IG_NAME]) for g in groups],
+                        False,
+                        custom_value=True,
+                    )
+                }
+            ),
+        )
+
+    async def async_step_ir_group_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Befehle der Gruppe festlegen oder die Gruppe löschen."""
+        group = self._group_edit
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            others = [g for g in self._ir_groups() if g[IG_ID] != group[IG_ID]]
+            if user_input.get("delete"):
+                self._save({CONF_IR_GROUPS: others})
+                return await self.async_step_ir_menu()
+            if not user_input.get("commands"):
+                errors["base"] = "group_empty"
+            else:
+                saved = {**group, IG_COMMANDS: list(user_input["commands"])}
+                self._save({CONF_IR_GROUPS: [*others, saved]})
+                return await self.async_step_ir_menu()
+        return self.async_show_form(
+            step_id="ir_group_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional("commands", default=list(group[IG_COMMANDS])): self._picker(
+                        self._command_options(), True
+                    ),
+                    vol.Optional("delete", default=False): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders={"group": group[IG_NAME]},
+        )
