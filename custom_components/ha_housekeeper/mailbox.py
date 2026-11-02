@@ -180,15 +180,15 @@ class MailboxController:
         self.enabled = enabled
         await self._async_save()
 
-    async def async_reset(self) -> None:
-        """Briefkasten als geleert markieren."""
+    async def async_reset(self, always_clear: bool = False) -> None:
+        """Briefkasten als geleert markieren; Meldungen werden entfernt, wenn Post vermerkt war (oder immer mit `always_clear`)."""
         was_full = self.has_mail
         self.has_mail = False
         if was_full:
             self.last_emptied = dt_util.utcnow()
         self._cancel_auto_reset()
         await self._async_save()
-        if was_full:
+        if was_full or always_clear:
             await self._async_clear_notifications()
 
     def _cancel_auto_reset(self) -> None:
@@ -214,13 +214,8 @@ class MailboxController:
     # --- Auslöser --------------------------------------------------------
 
     async def _async_contact_emptied(self) -> None:
-        """Entnahmetür geöffnet: nur zurücksetzen, wenn Post vermerkt ist (nicht innerhalb der Sperrzeit nach dem Einwurf)."""
-        if not self.enabled or not self.has_mail:
-            return
-        debounce = float(self._opt(CONF_DEBOUNCE, DEFAULT_DEBOUNCE))
-        if self._last_trigger is not None and time.monotonic() - self._last_trigger < debounce:
-            return
-        await self.async_reset()
+        """Entnahmetür geöffnet: der Briefkasten ist geleert (immer, ohne Sperrzeit; Meldungen werden in jedem Fall entfernt)."""
+        await self.async_reset(always_clear=True)
 
     async def async_trigger(self) -> None:
         """Vibration erkannt: Post vermerken und benachrichtigen."""

@@ -99,11 +99,11 @@ aufgeklappt, „Empfindlichkeit“ (nur in den Einstellungen) ist eingeklappt.
   - **Vibrationssensor** (`binary_sensor`): löst beim Wechsel auf `on` den Einwurf aus; geleert wird per Button, Push-Aktion
     oder Auto-Reset.
   - **Oder zwei Türkontakte** (`binary_sensor`, `on` = offen): **Einwurf-Kontakt** (Klappe) meldet den Einwurf, **Entnahme-Kontakt**
-    (Tür) setzt den Briefkasten auf „geleert“ (nur wenn Post vermerkt ist) und entfernt die Meldung. Beide Kontakte sind nötig.
-    Button, Push-Aktion und Auto-Reset funktionieren weiter. Wird die Entnahmetür innerhalb der Entprellzeit nach einem Einwurf
-    geöffnet, wird sie ignoriert.
+    (Tür) setzt den Briefkasten sofort auf „geleert“ (ohne Sperrzeit, auch bei ausgeschalteter Benachrichtigung) und entfernt die
+    Push- und die persistente Meldung, auch wenn keine Post vermerkt war. Beide Kontakte sind nötig.
+    Button, Push-Aktion und Auto-Reset funktionieren weiter.
   - Beides zusammen oder keins wird beim Speichern abgelehnt.
-- **Entprellzeit** (Standard 60 s; weitere Auslösungen in dieser Zeit werden ignoriert)
+- **Entprellzeit** (Standard 60 s; weitere Einwürfe bzw. Vibrationen in dieser Zeit werden ignoriert, nicht die Entnahme)
 - **Auto-Reset** nach X Stunden (0 = aus)
 
 **Empfindlichkeit** (optional, nur in den Einstellungen)

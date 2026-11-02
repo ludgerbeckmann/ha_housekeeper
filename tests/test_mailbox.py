@@ -243,9 +243,10 @@ async def test_contacts_delivery_and_emptied(hass: HomeAssistant) -> None:
     mail = "binary_sensor.briefkasten_mail_present"
     last = er_entity(hass, "sensor", "last_emptied", entry)
 
-    hass.states.async_set(EMPTY, "on")            # Tür auf ohne Post: nichts
+    hass.states.async_set(EMPTY, "on")            # Tür auf ohne Post: nur aufräumen, nicht als geleert vermerken
     await hass.async_block_till_done()
     assert hass.states.get(mail).state == "off" and hass.states.get(last).state == "unknown"
+    notify.clear()
     hass.states.async_set(EMPTY, "off")
 
     hass.states.async_set(DELIVERY, "on")         # Einwurf
@@ -259,17 +260,27 @@ async def test_contacts_delivery_and_emptied(hass: HomeAssistant) -> None:
     assert hass.states.get(last).state not in ("unknown", "unavailable")
 
 
-async def test_empty_contact_ignored_within_debounce(hass: HomeAssistant) -> None:
-    async_mock_service(hass, "notify", "mobile_app_iphone")
+async def test_empty_contact_always_resets_and_clears(hass: HomeAssistant) -> None:
+    notify = async_mock_service(hass, "notify", "mobile_app_iphone")
     async_mock_service(hass, "persistent_notification", "create")
+    dismiss = async_mock_service(hass, "persistent_notification", "dismiss")
     hass.states.async_set(DELIVERY, "off")
     hass.states.async_set(EMPTY, "off")
     await _setup(hass, **CONTACTS, debounce_seconds=60)
+    mail = "binary_sensor.briefkasten_mail_present"
     hass.states.async_set(DELIVERY, "on")
     await hass.async_block_till_done()
-    hass.states.async_set(EMPTY, "on")            # kurz nach dem Einwurf: ignoriert
+    assert hass.states.get(mail).state == "on" and len(notify) == 1
+    hass.states.async_set(EMPTY, "on")            # sofort nach dem Einwurf: trotzdem geleert
     await hass.async_block_till_done()
-    assert hass.states.get("binary_sensor.briefkasten_mail_present").state == "on"
+    assert hass.states.get(mail).state == "off"
+    assert notify[-1].data["message"] == "clear_notification" and dismiss
+    # ohne vermerkte Post: Meldungen werden trotzdem entfernt (z. B. nach einem Neustart)
+    notify.clear()
+    hass.states.async_set(EMPTY, "off")
+    hass.states.async_set(EMPTY, "on")
+    await hass.async_block_till_done()
+    assert [c.data["message"] for c in notify] == ["clear_notification"]
 
 
 def er_entity(hass, platform, key, entry):

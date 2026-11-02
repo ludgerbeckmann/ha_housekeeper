@@ -226,7 +226,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Sensor „arbeitsfrei“ gehört in `skip_if_on`. Übersprungen wird in `last_skipped` (im `Store`) festgehalten.
   „Nächster Wecker“ ignoriert die Bedingungen.
 - Briefkasten-Auslöser sind **entweder** `vibration_sensor` **oder** die beiden Türkontakte `delivery_contact` (Einwurf → `async_trigger`) und
-  `empty_contact` (Entnahme → `_async_contact_emptied`, nur mit Post und außerhalb der Entprellzeit nach dem Einwurf → `async_reset`), nie beides
+  `empty_contact` (Entnahme → `_async_contact_emptied` → `async_reset(always_clear=True)`: immer, ohne Entprellzeit, auch bei ausgeschalteter Benachrichtigung, Meldungen werden in jedem Fall entfernt), nie beides
   (`validate_mailbox()` in `flows/mailbox.py`: `sensor_either_or`, `no_sensor`, `contacts_incomplete`; beim Speichern werden die drei Schlüssel auf
   `None` gesetzt, wenn leer). `last_emptied` (Store, Sensor `last_emptied`) wird in `async_reset()` gesetzt, wenn Post vermerkt war.
 - Briefkasten-Empfindlichkeit (`sensitivity_entity`, `sensitivity_value`): Die Einstellungen sind **eine Seite** (`mailbox_settings`,
