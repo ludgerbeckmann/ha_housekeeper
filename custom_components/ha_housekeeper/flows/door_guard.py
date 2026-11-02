@@ -13,6 +13,13 @@ from homeassistant.helpers import selector
 
 from ..const import (
     BLOCK_NOTIFY,
+    CONF_BATTERY_CHARGING,
+    CONF_BATTERY_FULL,
+    CONF_BATTERY_FULL_NOTIFY,
+    CONF_BATTERY_LOW,
+    CONF_BATTERY_SENSOR,
+    DEFAULT_BATTERY_FULL,
+    DEFAULT_BATTERY_LOW,
     BLOCK_RETRY,
     CONF_BLOCK_ACTION,
     CONF_CLEAR_RULES,
@@ -67,6 +74,7 @@ from .common import (
 
 SECTION_DOOR = "door"
 SECTION_CHECKS = "checks"
+SECTION_BATTERY = "battery"
 SECTION_UNLOCK = "unlock"
 SECTION_LOCK = "lock"
 SECTION_NOTIFICATIONS = "notifications"
@@ -84,6 +92,8 @@ _CONDITION_DOMAINS = [
 
 # Felder der Grundeinstellungen, die beim Leeren explizit auf None gesetzt werden müssen
 _CLEARABLE = (
+    CONF_BATTERY_SENSOR,
+    CONF_BATTERY_CHARGING,
     CONF_WORKDAY,
     CONF_UNLOCK_WORKDAY,
     CONF_UNLOCK_FREE,
@@ -202,11 +212,30 @@ def _dg_schema(
         )
     )
 
+    battery: dict[Any, Any] = {
+        vol.Optional(CONF_BATTERY_SENSOR, description=_suggest(CONF_BATTERY_SENSOR, defaults)): (
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
+        ),
+        vol.Optional(CONF_BATTERY_CHARGING, description=_suggest(CONF_BATTERY_CHARGING, defaults)): (
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor"))
+        ),
+        vol.Required(
+            CONF_BATTERY_LOW, default=defaults.get(CONF_BATTERY_LOW, DEFAULT_BATTERY_LOW)
+        ): _number(0, 100, "%"),
+        vol.Required(
+            CONF_BATTERY_FULL_NOTIFY, default=bool(defaults.get(CONF_BATTERY_FULL_NOTIFY, False))
+        ): bool,
+        vol.Required(
+            CONF_BATTERY_FULL, default=defaults.get(CONF_BATTERY_FULL, DEFAULT_BATTERY_FULL)
+        ): _number(1, 100, "%"),
+    }
+
     sections: dict[Any, Any] = {
         vol.Required(SECTION_DOOR): _section(door, collapsed=False),
         vol.Required(SECTION_UNLOCK): _section(unlock),
         vol.Required(SECTION_LOCK): _section(lock),
         vol.Required(SECTION_CHECKS): _section(checks),
+        vol.Required(SECTION_BATTERY): _section(battery),
         vol.Required(SECTION_NOTIFICATIONS): _section(
             _notify_fields(hass, defaults, with_action=False)
         ),
@@ -236,6 +265,13 @@ def _validate_dg(user_input: dict[str, Any]) -> dict[str, str]:
         return {"base": "no_presence_entities"}
     if user_input.get(CONF_UNLOCK_FREE) and not user_input.get(CONF_WORKDAY):
         return {"base": "no_workday_sensor"}
+    if not user_input.get(CONF_BATTERY_SENSOR):
+        if user_input.get(CONF_BATTERY_CHARGING) or user_input.get(CONF_BATTERY_FULL_NOTIFY):
+            return {"base": "battery_needs_sensor"}
+    elif user_input.get(CONF_BATTERY_FULL_NOTIFY) and float(
+        user_input.get(CONF_BATTERY_FULL, DEFAULT_BATTERY_FULL)
+    ) <= float(user_input.get(CONF_BATTERY_LOW, DEFAULT_BATTERY_LOW) or 0):
+        return {"base": "battery_threshold_invalid"}
     return {}
 
 
@@ -245,6 +281,9 @@ def dg_data(flat: dict[str, Any]) -> dict[str, Any]:
     data.pop(CONF_NAME, None)
     for key in (CONF_LOCK_CLOSED,):
         data[key] = int(data.get(key) or 0)
+    for key in (CONF_BATTERY_LOW, CONF_BATTERY_FULL):
+        if key in data:
+            data[key] = int(data[key])
     if data.pop(CONF_CLEAR_RULES, False):
         data[CONF_RULES] = None
     return data

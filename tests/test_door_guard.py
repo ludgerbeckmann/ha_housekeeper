@@ -68,9 +68,11 @@ def dg_page(**fields):
                  "lock_only_if_on", "lock_skip_if_on"),
         "checks": ("block_action", "retry_minutes", "open_alert_minutes", "open_alert_repeat_minutes",
                    "verify_seconds", "manual_override", "manual_pause_minutes"),
+        "battery": ("battery_sensor", "battery_charging_sensor", "battery_low_threshold",
+                    "battery_full_notify", "battery_full_threshold"),
         "legacy": ("clear_legacy_rules",),
     }
-    sections = {name: {} for name in ("door", "unlock", "lock", "checks", "notifications")}
+    sections = {name: {} for name in ("door", "unlock", "lock", "checks", "battery", "notifications")}
     for key, value in fields.items():
         for name, names in keys.items():
             if key in names:
@@ -483,7 +485,7 @@ async def test_settings_page(hass: HomeAssistant) -> None:
     result = await reconfigure(hass, entry)
     assert result["step_id"] == "door_settings" and not is_menu(result)
     sections = {str(k): v for k, v in result["data_schema"].schema.items()}
-    assert list(sections) == ["door", "unlock", "lock", "checks", "notifications", "legacy"]
+    assert list(sections) == ["door", "unlock", "lock", "checks", "battery", "notifications", "legacy"]
     assert [name for name, sec in sections.items() if not sec.options["collapsed"]] == ["door"]
     assert result["description_placeholders"]["legacy"] == "1"
     data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules", "name")}
@@ -494,3 +496,100 @@ async def test_settings_page(hass: HomeAssistant) -> None:
     assert entry.options["rules"] is None and entry.title.endswith("Garage")
     again = await reconfigure(hass, entry)
     assert "legacy" not in {str(k) for k in again["data_schema"].schema}
+
+
+BATTERY = "sensor.front_door_battery"
+CHARGING = "binary_sensor.front_door_charging"
+BATTERY_LOW = "binary_sensor.door_battery_low"
+
+
+async def _battery_setup(hass: HomeAssistant, level="80", charging=None, **over):
+    hass.states.async_set(BATTERY, level)
+    if charging is not None:
+        hass.states.async_set(CHARGING, charging)
+        over.setdefault("battery_charging_sensor", CHARGING)
+    over.setdefault("battery_sensor", BATTERY)
+    return await _setup(hass, **over)
+
+
+async def _set(hass: HomeAssistant, entity: str, state: str) -> None:
+    hass.states.async_set(entity, state)
+    await hass.async_block_till_done()
+
+
+async def test_battery_low_warning_and_hysteresis(hass: HomeAssistant) -> None:
+    push = async_mock_service(hass, "notify", "mobile_app_phone")
+    await _battery_setup(hass, "80", battery_low_threshold=20)
+    assert hass.states.get(BATTERY_LOW).state == "off" and not push
+    await _set(hass, BATTERY, "21")
+    assert not push
+    await _set(hass, BATTERY, "20")                     # an der Schwelle: Meldung
+    assert hass.states.get(BATTERY_LOW).state == "on"
+    assert len(push) == 1 and "20 %" in push[0].data["message"]
+    await _set(hass, BATTERY, "15")                     # weiter fallend: keine zweite Meldung
+    assert len(push) == 1
+    await _set(hass, BATTERY, "23")                     # noch innerhalb der Hysterese
+    assert hass.states.get(BATTERY_LOW).state == "on"
+    await _set(hass, BATTERY, "26")                     # darüber: Warnung endet, Meldung entfernt
+    assert hass.states.get(BATTERY_LOW).state == "off"
+    assert push[-1].data["message"] == "clear_notification"
+    await _set(hass, BATTERY, "unavailable")            # unklar: nichts
+    assert len(push) == 2
+
+
+async def test_battery_low_not_while_charging(hass: HomeAssistant) -> None:
+    push = async_mock_service(hass, "notify", "mobile_app_phone")
+    await _battery_setup(hass, "10", charging="on")
+    assert hass.states.get(BATTERY_LOW).state == "off" and not push
+    await _set(hass, CHARGING, "off")                   # Kabel ab bei 10 %: jetzt warnen
+    assert hass.states.get(BATTERY_LOW).state == "on" and len(push) == 1
+    await _set(hass, CHARGING, "on")                    # Laden beendet die Warnung
+    assert hass.states.get(BATTERY_LOW).state == "off"
+    assert push[-1].data["message"] == "clear_notification"
+
+
+async def test_battery_full_with_charging_sensor(hass: HomeAssistant) -> None:
+    push = async_mock_service(hass, "notify", "mobile_app_phone")
+    await _battery_setup(hass, "60", charging="off", battery_full_notify=True, battery_full_threshold=100)
+    await _set(hass, CHARGING, "on")
+    await _set(hass, BATTERY, "99")
+    assert not push
+    await _set(hass, BATTERY, "100")                    # voll beim Laden
+    assert len(push) == 1 and "charging cable" in push[0].data["message"]
+    await _set(hass, BATTERY, "99")                     # kein zweites Mal je Ladevorgang
+    await _set(hass, BATTERY, "100")
+    assert len(push) == 1
+    await _set(hass, CHARGING, "off")                   # Kabel ab: Meldung entfernt, neu scharf
+    assert push[-1].data["message"] == "clear_notification"
+    await _set(hass, CHARGING, "on")
+    await _set(hass, BATTERY, "100")
+    assert push[-1].data["message"] != "clear_notification" and len(push) == 3     # neuer Ladevorgang: erneut gemeldet
+
+
+async def test_battery_full_without_charging_sensor(hass: HomeAssistant) -> None:
+    push = async_mock_service(hass, "notify", "mobile_app_phone")
+    await _battery_setup(hass, "100", battery_full_notify=True, battery_full_threshold=95)
+    assert not push                                     # schon voll beim Start: still
+    await _set(hass, BATTERY, "90")
+    await _set(hass, BATTERY, "95")                     # von unten erreicht
+    sent = [c for c in push if c.data["message"] != "clear_notification"]
+    assert len(sent) == 1 and "full" in sent[0].data["message"]
+
+
+async def test_battery_without_sensor_has_no_entity(hass: HomeAssistant) -> None:
+    await _setup(hass)
+    assert hass.states.get(BATTERY_LOW) is None
+
+
+async def test_battery_validation(hass: HomeAssistant) -> None:
+    flow = hass.config_entries.subentries
+    data = {k: v for k, v in BASE.items() if k not in ("function_type", "rules")}
+    cases = {
+        "battery_needs_sensor": {"battery_full_notify": True},
+        "battery_threshold_invalid": {"battery_sensor": BATTERY, "battery_full_notify": True,
+                                      "battery_low_threshold": 50, "battery_full_threshold": 40},
+    }
+    for error, extra in cases.items():
+        result = await new_instance(hass, "door_guard")
+        bad = await flow.async_configure(result["flow_id"], dg_page(**{**data, **extra}))
+        assert bad["errors"] == {"base": error}, error

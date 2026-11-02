@@ -255,6 +255,14 @@ CONF_LOCK_AWAY_MINUTES = "lock_away_minutes"
 CONF_LOCK_CLOSED = "lock_closed_seconds"         # Abschließen, wenn die Tür so lange geschlossen ist (0 = aus)
 CONF_LOCK_ONLY_IF = "lock_only_if_on"
 CONF_LOCK_SKIP_IF = "lock_skip_if_on"
+CONF_BATTERY_SENSOR = "battery_sensor"              # Batteriestand des Schlosses in %
+CONF_BATTERY_CHARGING = "battery_charging_sensor"   # Binärsensor: Ladekabel angeschlossen
+CONF_BATTERY_LOW = "battery_low_threshold"          # Warnschwelle in % (0 = aus)
+CONF_BATTERY_FULL_NOTIFY = "battery_full_notify"    # Meldung, wenn die Batterie voll ist
+CONF_BATTERY_FULL = "battery_full_threshold"        # „voll“ ab diesem Stand in %
+DEFAULT_BATTERY_LOW = 20
+DEFAULT_BATTERY_FULL = 100
+BATTERY_HYSTERESIS = 5                              # Prozentpunkte über der Schwelle, bis die Warnung endet
 CONF_CLEAR_RULES = "clear_legacy_rules"          # nur im Formular: ältere Regeln entfernen
 
 

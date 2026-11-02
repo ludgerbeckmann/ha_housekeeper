@@ -38,6 +38,10 @@ async def async_setup_entry(
 def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
     if isinstance(controller, DoorGuardController):
         async_add_entities([DoorOpenTooLongSensor(controller)])
+        if controller._opt("battery_sensor"):       # noqa: SLF001
+            async_add_entities([DoorBatteryLowSensor(controller)])
+        else:
+            remove_unconfigured(hass, "binary_sensor", controller, "battery_low")
     elif isinstance(controller, AlarmClockController):
         async_add_entities([AlarmRingingSensor(controller)])
     elif isinstance(controller, IntegrationMonitorController):
@@ -91,6 +95,19 @@ class DoorOpenTooLongSensor(FunctionEntity, BinarySensorEntity):
     @property
     def icon(self) -> str:
         return "mdi:door-open" if self.is_on else "mdi:door-closed"
+
+
+class DoorBatteryLowSensor(FunctionEntity, BinarySensorEntity):
+    """on = Batterie des Schlosses schwach (laut Warnschwelle)."""
+
+    _attr_device_class = BinarySensorDeviceClass.BATTERY
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "battery_low")
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.battery_low
 
 
 class PumpShouldRunSensor(FunctionEntity, BinarySensorEntity):

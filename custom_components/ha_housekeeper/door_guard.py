@@ -20,7 +20,15 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    BATTERY_HYSTERESIS,
     BLOCK_RETRY,
+    CONF_BATTERY_CHARGING,
+    CONF_BATTERY_FULL,
+    CONF_BATTERY_FULL_NOTIFY,
+    CONF_BATTERY_LOW,
+    CONF_BATTERY_SENSOR,
+    DEFAULT_BATTERY_FULL,
+    DEFAULT_BATTERY_LOW,
     CONF_BLOCK_ACTION,
     CONF_CONTACT,
     CONF_LOCK,
@@ -99,6 +107,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "open_too_long": "{name} steht seit {minutes} Minuten offen.",
         "failed": "Das Schloss von {name} ist nicht {target} (Zustand: {state}).",
         "error": "Das Schloss von {name} konnte nicht bedient werden.",
+        "battery_low": "Die Batterie von {name} ist schwach ({level} %).",
+        "battery_full": "Die Batterie von {name} ist voll ({level} %), das Ladekabel kann entfernt werden.",
         LOCKED: "abgeschlossen",
         UNLOCKED: "aufgeschlossen",
         RULE_LOCK: "Abschließen",
@@ -117,6 +127,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "open_too_long": "{name} has been open for {minutes} minutes.",
         "failed": "The lock of {name} is not {target} (state: {state}).",
         "error": "The lock of {name} could not be operated.",
+        "battery_low": "The battery of {name} is low ({level} %).",
+        "battery_full": "The battery of {name} is full ({level} %), the charging cable can be removed.",
         LOCKED: "locked",
         UNLOCKED: "unlocked",
         RULE_LOCK: "Lock",
@@ -129,6 +141,16 @@ MESSAGES: dict[str, dict[str, str]] = {
         "any_home": "Presence: someone arrives",
     },
 }
+
+
+def battery_level(state: Any) -> float | None:
+    """Batteriestand in % aus dem Sensorzustand; `None` bei fehlend, nicht verfügbar oder keiner Zahl."""
+    if state is None or state.state in _IGNORED_STATES:
+        return None
+    try:
+        return float(state.state)
+    except ValueError:
+        return None
 
 
 def _lang(hass: HomeAssistant) -> dict[str, str]:
@@ -313,6 +335,8 @@ class DoorGuardController:
         self.paused_until: datetime | None = None
         self.last_action: dict[str, Any] | None = None
         self.open_too_long = False
+        self.battery_low = False
+        self._full_sent: bool | None = None     # None = noch nicht ausgewertet
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._notifier = Notifier(
@@ -393,6 +417,8 @@ class DoorGuardController:
                 if self.paused_until
                 else None,
                 "last_action": self.last_action,
+                "battery_low": self.battery_low,
+                "full_sent": self._full_sent,
             }
         )
         self._notify_dispatch()
@@ -414,6 +440,8 @@ class DoorGuardController:
         if raw := stored.get("paused_until"):
             self.paused_until = dt_util.parse_datetime(raw)
         self.last_action = stored.get("last_action")
+        self.battery_low = bool(stored.get("battery_low", False))
+        self._full_sent = stored.get("full_sent")
         self._schedule_pause_end()
 
         self._unsubs.append(
@@ -428,6 +456,12 @@ class DoorGuardController:
                 )
             )
             self._start_open_timer_from_current_state()
+        battery = [e for e in (self._opt(CONF_BATTERY_SENSOR), self._opt(CONF_BATTERY_CHARGING)) if e]
+        if battery:
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, battery, self._on_battery_change)
+            )
+        await self._async_check_battery()
         for rule in self._rules():
             self._setup_rule(rule)
 
@@ -721,6 +755,62 @@ class DoorGuardController:
             if self._pending_lock and dt_util.utcnow() < self._pending_lock:
                 self._pending_lock = None
                 await self.async_run_action(RULE_LOCK, "retry")
+
+    # --- Batterie ---------------------------------------------------------------
+
+    async def _on_battery_change(self, event: Event) -> None:
+        await self._async_check_battery()
+
+    async def _async_check_battery(self) -> None:
+        """Meldung „Batterie schwach“ (nicht beim Laden) und „Batterie voll“ (Ladekabel entfernen)."""
+        sensor = self._opt(CONF_BATTERY_SENSOR)
+        if not sensor:
+            if self.battery_low:
+                self.battery_low = False
+                await self._async_save()
+                await self._notifier.async_clear("battery_low")
+            return
+        level = battery_level(self.hass.states.get(sensor))
+        if level is None:
+            return                                  # unklar: nichts ändern, bestehende Meldung bleibt
+        charging_sensor = self._opt(CONF_BATTERY_CHARGING)
+        charging = entity_on(self.hass.states.get(charging_sensor)) if charging_sensor else None
+        lang = _lang(self.hass)
+        shown = f"{level:g}"
+        changed = False
+
+        low = float(self._opt(CONF_BATTERY_LOW, DEFAULT_BATTERY_LOW) or 0)
+        if self.battery_low:
+            if low <= 0 or charging is True or level > low + BATTERY_HYSTERESIS:
+                self.battery_low = False
+                changed = True
+                await self._notifier.async_clear("battery_low")
+        elif low > 0 and level <= low and charging is not True:
+            self.battery_low = True
+            changed = True
+            await self._notifier.async_send(
+                _fmt(lang["battery_low"], name=self._name, level=shown), kind="battery_low"
+            )
+
+        if self._opt(CONF_BATTERY_FULL_NOTIFY, False):
+            full = float(self._opt(CONF_BATTERY_FULL, DEFAULT_BATTERY_FULL))
+            if self._full_sent is None:
+                # erste Auswertung: ein schon voller Akku ohne Ladesensor wird nicht gemeldet
+                self._full_sent = level >= full and not charging_sensor
+                changed = True
+            elif self._full_sent:
+                if (charging is False) if charging_sensor else level < full:
+                    self._full_sent = False
+                    changed = True
+                    await self._notifier.async_clear("battery_full")
+            elif level >= full and (charging is True if charging_sensor else True):
+                self._full_sent = True
+                changed = True
+                await self._notifier.async_send(
+                    _fmt(lang["battery_full"], name=self._name, level=shown), kind="battery_full"
+                )
+        if changed:
+            await self._async_save()
 
     def _schedule_door_closed(self, rule: dict[str, Any]) -> None:
         async def _later() -> None:

@@ -76,7 +76,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   (`_validate_dg`): `alert_needs_contact`, `no_contact`, `no_presence_entities`, `no_workday_sensor`. **Ältere Einträge:** Regeln in
   `options["rules"]` laufen weiter; der Schalter `clear_legacy_rules` setzt sie auf `None`. Einen Regeldialog gibt es nicht mehr; Tests
   mit Regeln geben sie direkt in den Daten vor, Seiteneingaben über `dg_page()` in `tests/test_door_guard.py`. Manuelle Bedienung =
-  Schlosswechsel außerhalb des `OWN_ACTION_WINDOW` nach einem eigenen Befehl. `entity_on()`, `presence_met()`, `evaluate_conditions()` sind
+  Schlosswechsel außerhalb des `OWN_ACTION_WINDOW` nach einem eigenen Befehl. **Batterie** (Abschnitt `battery`, eingeklappt): `battery_sensor` (%),
+  optional `battery_charging_sensor`, `battery_low_threshold` (Standard 20, 0 = aus), `battery_full_notify` + `battery_full_threshold` (Standard 100);
+  `_async_check_battery()` (bei Start und jeder Änderung der beiden Sensoren): „schwach“ bei Stand ≤ Schwelle und nicht ladend, endet bei Stand >
+  Schwelle + `BATTERY_HYSTERESIS` oder beim Laden (`battery_low` im `Store`, Entität `battery_low` per `remove_unconfigured()`); „voll“ einmal je
+  Ladevorgang (`full_sent` im `Store`, `None` = erste Auswertung: voller Akku ohne Ladesensor still), neu scharf, wenn das Laden endet bzw. ohne
+  Ladesensor der Stand unter „voll“ fällt. Meldungen mit `kind` `battery_low`/`battery_full`; unklarer Sensor ändert nichts. Prüfung `battery_needs_sensor`,
+  `battery_threshold_invalid`. `entity_on()`, `presence_met()`, `evaluate_conditions()` sind
   reine Funktionen.
 - Türklingel-Profile liegen als Liste in `options["profiles"]` (Schlüssel `P_*`
   in `const.py`). `in_window()`/`assign_players()` in `doorbell.py` sind reine

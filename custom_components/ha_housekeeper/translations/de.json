@@ -159,6 +159,9 @@
       },
       "consumption_warning": {
         "name": "Verbrauchswarnung"
+      },
+      "battery_low": {
+        "name": "Batterie schwach"
       }
     },
     "sensor": {
@@ -652,6 +655,24 @@
                 "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
               }
             },
+            "battery": {
+              "name": "Batterie",
+              "description": "Meldungen zur Batterie des Schlosses, z. B. beim Nuki mit Akku. Ohne Batteriesensor ist das aus.",
+              "data": {
+                "battery_sensor": "Batteriesensor (%)",
+                "battery_charging_sensor": "Ladesensor",
+                "battery_low_threshold": "Warnen bei oder unter (%, 0 = aus)",
+                "battery_full_notify": "Melden, wenn die Batterie voll ist",
+                "battery_full_threshold": "Voll ab (%)"
+              },
+              "data_description": {
+                "battery_sensor": "Sensor mit dem Batteriestand in Prozent, z. B. der Batteriesensor des Nuki.",
+                "battery_charging_sensor": "Optionaler Binärsensor, der an ist, solange das Ladekabel angeschlossen ist. Mit ihm kommt die Voll-Meldung nur beim Laden, und die Warnung pausiert beim Laden.",
+                "battery_low_threshold": "Eine Meldung bei oder unter diesem Stand (nicht beim Laden). Sie endet, wenn der Stand 5 Punkte darüber liegt oder das Laden beginnt.",
+                "battery_full_notify": "Erinnert daran, das Ladekabel zu entfernen. Einmal je Ladevorgang.",
+                "battery_full_threshold": "Ab diesem Stand gilt die Batterie als voll."
+              }
+            },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit der Türwächter meldet.",
@@ -747,6 +768,24 @@
                 "manual_pause_minutes": "Gilt nur bei „Automatik pausieren“."
               }
             },
+            "battery": {
+              "name": "Batterie",
+              "description": "Meldungen zur Batterie des Schlosses, z. B. beim Nuki mit Akku. Ohne Batteriesensor ist das aus.",
+              "data": {
+                "battery_sensor": "Batteriesensor (%)",
+                "battery_charging_sensor": "Ladesensor",
+                "battery_low_threshold": "Warnen bei oder unter (%, 0 = aus)",
+                "battery_full_notify": "Melden, wenn die Batterie voll ist",
+                "battery_full_threshold": "Voll ab (%)"
+              },
+              "data_description": {
+                "battery_sensor": "Sensor mit dem Batteriestand in Prozent, z. B. der Batteriesensor des Nuki.",
+                "battery_charging_sensor": "Optionaler Binärsensor, der an ist, solange das Ladekabel angeschlossen ist. Mit ihm kommt die Voll-Meldung nur beim Laden, und die Warnung pausiert beim Laden.",
+                "battery_low_threshold": "Eine Meldung bei oder unter diesem Stand (nicht beim Laden). Sie endet, wenn der Stand 5 Punkte darüber liegt oder das Laden beginnt.",
+                "battery_full_notify": "Erinnert daran, das Ladekabel zu entfernen. Einmal je Ladevorgang.",
+                "battery_full_threshold": "Ab diesem Stand gilt die Batterie als voll."
+              }
+            },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit der Türwächter meldet.",
@@ -778,7 +817,9 @@
         "alert_needs_contact": "Für die Warnung „Tür zu lange offen“ wird ein Türkontakt benötigt (oder die Warnung auf 0 setzen).",
         "no_contact": "Dieser Auslöser benötigt einen Türkontakt in den Einstellungen.",
         "no_presence_entities": "Wähle zuerst in den Einstellungen dieser Tür Personen für die Anwesenheit.",
-        "no_workday_sensor": "Für die Uhrzeit an freien Tagen wird der Arbeitstag-Sensor benötigt."
+        "no_workday_sensor": "Für die Uhrzeit an freien Tagen wird der Arbeitstag-Sensor benötigt.",
+        "battery_needs_sensor": "Ladesensor und Voll-Meldung brauchen einen Batteriesensor.",
+        "battery_threshold_invalid": "„Voll ab“ muss über der Warnschwelle liegen."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet.",
