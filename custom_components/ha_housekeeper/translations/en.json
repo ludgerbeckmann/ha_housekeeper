@@ -372,6 +372,9 @@
       },
       "ir_power_sender": {
         "name": "Switch {sender}"
+      },
+      "ir_auto_sender": {
+        "name": "Automatic {sender}"
       }
     }
   },
@@ -2145,7 +2148,8 @@
             "add_ir_command": "Learn command",
             "learn_ir_command": "Learn command on remotes (again)",
             "import_ir_commands": "Import existing commands",
-            "ir_assign": "Assign commands to a remote"
+            "ir_assign": "Assign commands to a remote",
+            "ir_auto": "Automatic by light and sunset"
           }
         },
         "add_ir_command": {
@@ -2249,6 +2253,29 @@
             "commands": "Commands",
             "all_commands": "Assign all commands"
           }
+        },
+        "ir_auto": {
+          "title": "Automatic: choose remote",
+          "description": "Choose the remote (room) whose candles should be switched automatically.",
+          "data": {
+            "remote": "Remote"
+          }
+        },
+        "ir_auto_edit": {
+          "title": "Automatic for {remote}",
+          "description": "Power On is sent to this remote when a light of the room turns on after sunset (or sunset comes while a light is on). Power Off is sent when all lights have been off for the waiting time. Leave the lights empty to turn the automation off. Needs the “On” and “Off” commands of the switch in the settings.",
+          "data": {
+            "lights": "Lights in the room",
+            "sunset_offset": "Offset to sunset (minutes)",
+            "off_delay": "Waiting time before switching off (minutes)",
+            "latest_off": "Switch off at the latest at"
+          },
+          "data_description": {
+            "lights": "Lights or switches of the room. “On” as soon as one is on (after sunset).",
+            "sunset_offset": "Positive = later than sunset, negative = earlier.",
+            "off_delay": "All lights must stay off this long.",
+            "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
+          }
         }
       },
       "error": {
@@ -2259,7 +2286,8 @@
         "command_in_use": "The command is used by the switch. Change the switch first.",
         "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
         "switch_same": "“On” and “off” must be different commands.",
-        "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead."
+        "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead.",
+        "auto_needs_switch": "The automation needs the “On” and “Off” commands of the switch in the settings (“Switch” section)."
       },
       "abort": {},
       "progress": {

@@ -8,13 +8,23 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
+from datetime import datetime, timedelta
+
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import (
+    async_call_later,
+    async_track_state_change_event,
+    async_track_sunset,
+    async_track_time_change,
+)
 from homeassistant.helpers.storage import Store
+from homeassistant.helpers.sun import get_astral_event_date
 from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
+    CONF_IR_AUTO,
     CONF_IR_COMMANDS,
     CONF_IR_DELAY,
     CONF_IR_DEVICE,
@@ -22,9 +32,14 @@ from .const import (
     CONF_IR_ON,
     CONF_IR_REPEATS,
     CONF_REMOTES,
+    DEFAULT_IA_OFF_DELAY,
     DEFAULT_IR_DELAY,
     DEFAULT_IR_REPEATS,
     DOMAIN,
+    IA_LATEST_OFF,
+    IA_LIGHTS,
+    IA_OFF_DELAY,
+    IA_OFFSET,
     IC_CODE,
     IC_B64,
     IC_ENABLED,
@@ -209,6 +224,10 @@ class IrRemoteController:
         self.last_sent: dict[str, Any] | None = None
         self.assumed_on: bool | None = None
         self.assumed_remote: dict[str, bool] = {}
+        self.auto_off: set[str] = set()                   # Sender, deren Automatik ausgeschaltet ist
+        self._lights_on: dict[str, bool] = {}
+        self._off_timers: dict[str, Any] = {}
+        self._unsubs: list = []
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
         self._notifier = Notifier(
@@ -269,6 +288,7 @@ class IrRemoteController:
                 "last_sent": self.last_sent,
                 "assumed_on": self.assumed_on,
                 "assumed_remote": self.assumed_remote,
+                "auto_off": sorted(self.auto_off),
             }
         )
 
@@ -279,9 +299,133 @@ class IrRemoteController:
         self.last_sent = stored.get("last_sent")
         self.assumed_on = stored.get("assumed_on")
         self.assumed_remote = dict(stored.get("assumed_remote") or {})
+        self.auto_off = set(stored.get("auto_off") or [])
+        self._start_auto()
 
     def async_stop(self) -> None:
-        """Nichts zu beenden (kein Zustand im Speicher)."""
+        for unsub in self._unsubs:
+            unsub()
+        self._unsubs.clear()
+        for unsub in self._off_timers.values():
+            unsub()
+        self._off_timers.clear()
+
+    # --- Automatik: Kerzen nach Licht und Sonnenuntergang ---------------------------
+
+    def auto_rules(self) -> dict[str, dict[str, Any]]:
+        """Automatik je Sender (nur mit Lichtern und gesetzten An-/Aus-Befehlen)."""
+        if not self.power_configured:
+            return {}
+        rules = self._get(CONF_IR_AUTO, {}) or {}
+        return {
+            remote: rule
+            for remote, rule in rules.items()
+            if remote in self.remotes and rule.get(IA_LIGHTS)
+        }
+
+    def auto_enabled(self, remote: str) -> bool:
+        return remote not in self.auto_off
+
+    async def async_set_auto(self, remote: str, enabled: bool) -> None:
+        if enabled:
+            self.auto_off.discard(remote)
+        else:
+            self.auto_off.add(remote)
+        await self._async_save()
+        self._notify_dispatch()
+
+    def _lights_state(self, remote: str) -> bool | None:
+        """`True` = mindestens ein Licht an, `False` = alle eindeutig aus, `None` = unklar."""
+        states = [self.hass.states.get(e) for e in self.auto_rules()[remote][IA_LIGHTS]]
+        if any(s is not None and s.state == "on" for s in states):
+            return True
+        if all(s is not None and s.state == "off" for s in states):
+            return False
+        return None
+
+    def _is_dark(self, rule: dict[str, Any]) -> bool:
+        """Nach Sonnenuntergang (plus Versatz) oder vor Sonnenaufgang."""
+        now = dt_util.now()
+        sunset = get_astral_event_date(self.hass, "sunset", now.date())
+        sunrise = get_astral_event_date(self.hass, "sunrise", now.date())
+        if sunset is None or sunrise is None:
+            sun = self.hass.states.get("sun.sun")
+            return sun is not None and sun.state == "below_horizon"
+        offset = timedelta(minutes=float(rule.get(IA_OFFSET) or 0))
+        return now >= sunset + offset or now < sunrise
+
+    def _start_auto(self) -> None:
+        rules = self.auto_rules()
+        if not rules:
+            return
+        lights = sorted({e for rule in rules.values() for e in rule[IA_LIGHTS]})
+        for remote in rules:
+            self._lights_on[remote] = bool(self._lights_state(remote))     # beim Start: so wie die Lichter stehen
+        self._unsubs.append(async_track_state_change_event(self.hass, lights, self._on_light_change))
+        for remote, rule in rules.items():
+            async def _sunset(remote=remote) -> None:
+                if self.auto_enabled(remote) and self._lights_state(remote):
+                    self._lights_on[remote] = True
+                    await self.async_set_power(True, remote)
+
+            @callback
+            def _on_sunset(remote=remote, _sunset=_sunset) -> None:
+                self.hass.async_create_task(_sunset(remote))
+
+            self._unsubs.append(
+                async_track_sunset(
+                    self.hass, _on_sunset, timedelta(minutes=float(rule.get(IA_OFFSET) or 0))
+                )
+            )
+            if latest := dt_util.parse_time(str(rule.get(IA_LATEST_OFF) or "")):
+                async def _latest(_now: datetime, remote=remote) -> None:
+                    if self.auto_enabled(remote):
+                        self._cancel_off(remote)
+                        self._lights_on[remote] = False
+                        await self.async_set_power(False, remote)
+
+                self._unsubs.append(
+                    async_track_time_change(
+                        self.hass, _latest, hour=latest.hour, minute=latest.minute, second=0
+                    )
+                )
+
+    def _cancel_off(self, remote: str) -> None:
+        if unsub := self._off_timers.pop(remote, None):
+            unsub()
+
+    async def _on_light_change(self, event: Event) -> None:
+        entity_id = event.data["entity_id"]
+        for remote, rule in self.auto_rules().items():
+            if entity_id not in rule[IA_LIGHTS] or not self.auto_enabled(remote):
+                continue
+            state = self._lights_state(remote)
+            if state is None:
+                continue                                  # unklar: nichts ändern
+            on_now = self._lights_on.get(remote, False)     # die Automatik hat die Kerzen eingeschaltet
+            if state:
+                self._cancel_off(remote)
+                if not on_now and self._is_dark(rule):
+                    self._lights_on[remote] = True
+                    await self.async_set_power(True, remote)
+            elif on_now and remote not in self._off_timers:
+                delay = float(rule.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY) or 0)
+                if delay <= 0:
+                    self._lights_on[remote] = False
+                    await self.async_set_power(False, remote)
+                else:
+                    self._off_timers[remote] = async_call_later(
+                        self.hass, delay * 60, self._make_off(remote)
+                    )
+
+    def _make_off(self, remote: str):
+        async def _off(_now: datetime) -> None:
+            self._off_timers.pop(remote, None)
+            if self.auto_enabled(remote) and self._lights_state(remote) is False:
+                self._lights_on[remote] = False
+                await self.async_set_power(False, remote)
+
+        return _off
 
     # --- Senden --------------------------------------------------------------
 

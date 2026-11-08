@@ -422,6 +422,13 @@ Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *S
   Sender gelesen, an dem der Befehl angelernt wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes
   Anlernen ist nicht nötig. Ist der Code nicht lesbar, wird der Befehl dort angelernt. So bildet die Befehlsliste einer Instanz
   eine Bibliothek, aus der du jedem Sender (z. B. beim Umzug der Kerzen in einen anderen Raum) beliebige Befehle zuweist.
+- **Automatik nach Licht und Sonnenuntergang** (Menüpunkt, je Sender): Wähle die **Lichter im Raum** (`light`/`switch`). Geht nach
+  Sonnenuntergang (plus einstellbarem **Versatz**, auch negativ) ein Licht an, sendet die Funktion **Power On** nur an diesen
+  Sender; ist beim Sonnenuntergang schon ein Licht an, wird dann eingeschaltet. Sind **alle** Lichter für die **Wartezeit**
+  (Standard 2 Minuten) aus, kommt **Power Off**. Optional **Spätestens ausschalten um** (täglich, auch wenn noch ein Licht an ist).
+  Voraussetzung sind die Befehle „An“ und „Aus“ des Schalters. Je Sender gibt es einen Schalter **Automatik** zum Pausieren.
+  Sonnenstand und Zeiten stammen aus dem Standort von Home Assistant; unklare Lichtzustände (nicht verfügbar) ändern nichts, bei
+  Neustart wird nicht neu geschaltet. Von Hand geschaltete Kerzen überschreibt die Automatik erst beim nächsten Auslöser.
 - **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
   genutzter Befehl lässt sich nicht löschen.
 - **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
@@ -431,7 +438,7 @@ Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *S
 
 - `button` je aktivem Befehl (Name = Befehlsname), gesendet an alle zugeordneten Sender. Bei **mehreren Sendern** zusätzlich je
   zugeordnetem Sender eine Taste „Befehl – Sender“, die nur an diesen Sender sendet (so bleiben die Räume getrennt).
-- `switch` **Schalter** (nur mit gesetzten An-/Aus-Befehlen; bei mehreren Sendern zusätzlich ein Schalter je Sender mit eigenem angenommenem Zustand), `sensor` **Zuletzt gesendet** (Attribute: Befehl, Ergebnis
+- `switch` **Schalter** (nur mit gesetzten An-/Aus-Befehlen; bei mehreren Sendern zusätzlich ein Schalter je Sender mit eigenem angenommenem Zustand), je Sender mit Automatik ein `switch` **Automatik**, `sensor` **Zuletzt gesendet** (Attribute: Befehl, Ergebnis
   `ok`/`partial`/`failed`, Fehler je Sender).
 - Aktion `ha_housekeeper.send_ir_command` mit einer Befehlstaste als Ziel und optional abweichenden Wiederholungen.
 - Ein ausgeschalteter oder nicht verfügbarer Sender zählt als Fehler und wird gemeldet (die Meldung verschwindet,

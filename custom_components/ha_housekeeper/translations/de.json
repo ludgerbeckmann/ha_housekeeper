@@ -372,6 +372,9 @@
       },
       "ir_power_sender": {
         "name": "Schalter {sender}"
+      },
+      "ir_auto_sender": {
+        "name": "Automatik {sender}"
       }
     }
   },
@@ -2145,7 +2148,8 @@
             "add_ir_command": "Befehl anlernen",
             "learn_ir_command": "Befehl an Sendern (neu) anlernen",
             "import_ir_commands": "Vorhandene Befehle übernehmen",
-            "ir_assign": "Befehle einem Sender zuordnen"
+            "ir_assign": "Befehle einem Sender zuordnen",
+            "ir_auto": "Automatik nach Licht und Sonnenuntergang"
           }
         },
         "add_ir_command": {
@@ -2249,6 +2253,29 @@
             "commands": "Befehle",
             "all_commands": "Alle Befehle zuordnen"
           }
+        },
+        "ir_auto": {
+          "title": "Automatik: Sender wählen",
+          "description": "Wähle den Sender (Raum), dessen Kerzen automatisch geschaltet werden sollen.",
+          "data": {
+            "remote": "Sender"
+          }
+        },
+        "ir_auto_edit": {
+          "title": "Automatik für {remote}",
+          "description": "Power On geht an diesen Sender, wenn nach Sonnenuntergang ein Licht des Raums angeht (oder der Sonnenuntergang kommt, während schon ein Licht an ist). Power Off geht an den Sender, wenn alle Lichter für die Wartezeit aus waren. Ohne Lichter ist die Automatik aus. Sie braucht die Befehle „An“ und „Aus“ des Schalters in den Einstellungen.",
+          "data": {
+            "lights": "Lichter im Raum",
+            "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
+            "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
+            "latest_off": "Spätestens ausschalten um"
+          },
+          "data_description": {
+            "lights": "Lichter oder Schalter des Raums. „An“, sobald eines an ist (nach Sonnenuntergang).",
+            "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
+            "off_delay": "Alle Lichter müssen so lange aus bleiben.",
+            "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
+          }
         }
       },
       "error": {
@@ -2259,7 +2286,8 @@
         "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
         "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
         "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein.",
-        "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an."
+        "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an.",
+        "auto_needs_switch": "Die Automatik braucht die Befehle „An“ und „Aus“ des Schalters in den Einstellungen (Abschnitt „Schalter“)."
       },
       "abort": {},
       "progress": {

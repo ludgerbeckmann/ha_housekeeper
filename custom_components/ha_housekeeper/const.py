@@ -590,6 +590,12 @@ IC_ENABLED = "enabled"
 IC_REMOTES = "remotes"            # Sender, denen der Befehl zugeordnet ist
 IC_LEARNED = "learned"            # Sender, bei denen der Code unter seinem Namen gespeichert ist (fehlt = wie IC_REMOTES)
 IC_B64 = "b64"                    # Code als Base64-Text (Broadlink), für Sender ohne eigenen gespeicherten Code
+CONF_IR_AUTO = "ir_auto"          # Automatik je Sender: {sender: {lights, sunset_offset, off_delay, latest_off}}
+IA_LIGHTS = "lights"              # Lichter im Raum (light/switch)
+IA_OFFSET = "sunset_offset"       # Minuten nach Sonnenuntergang (auch negativ)
+IA_OFF_DELAY = "off_delay"        # Minuten, die alle Lichter aus sein müssen, bevor ausgeschaltet wird
+IA_LATEST_OFF = "latest_off"      # optional: spätestens zu dieser Uhrzeit ausschalten
+DEFAULT_IA_OFF_DELAY = 2
 CONF_IR_GROUPS = "ir_groups"      # frühere Befehlsgruppen (gibt es nicht mehr; wird beim Speichern geleert)
 IR_TYPE_IR = "ir"
 IR_TYPE_RF = "rf"

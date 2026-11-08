@@ -69,11 +69,16 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
             switches.append(IrPowerSwitch(controller))
             if len(controller.remotes) > 1:     # bei mehreren Sendern zusätzlich ein Schalter je Sender
                 switches += [IrPowerSwitch(controller, remote) for remote in controller.remotes]
+        switches += [IrAutoSwitch(controller, remote) for remote in controller.auto_rules()]
         keep = {switch.unique_id for switch in switches}
         registry = er.async_get(hass)
-        prefix = f"{controller.entry.entry_id}_ir_power"
+        prefixes = tuple(f"{controller.entry.entry_id}_ir_{kind}" for kind in ("power", "auto_"))
         for entity in er.async_entries_for_config_entry(registry, controller.entry.hub_entry_id):
-            if entity.domain == "switch" and entity.unique_id.startswith(prefix) and entity.unique_id not in keep:
+            if (
+                entity.domain == "switch"
+                and entity.unique_id.startswith(prefixes)
+                and entity.unique_id not in keep
+            ):
                 registry.async_remove(entity.entity_id)
         async_add_entities(switches)
     else:
@@ -303,6 +308,28 @@ class IrPowerSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_power(False, self._remote)
+
+
+class IrAutoSwitch(FunctionEntity, SwitchEntity):
+    """on = die Automatik (Licht und Sonnenuntergang) schaltet die Kerzen dieses Senders."""
+
+    _attr_icon = "mdi:candle"
+
+    def __init__(self, controller, remote: str) -> None:
+        super().__init__(controller, "ir_auto_sender")
+        self._remote = remote
+        self._attr_translation_placeholders = {"sender": controller.remote_name(remote)}
+        self._attr_unique_id = f"{controller.entry.entry_id}_ir_auto_{slugify(remote)}"
+
+    @property
+    def is_on(self) -> bool:
+        return self._controller.auto_enabled(self._remote)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._controller.async_set_auto(self._remote, True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._controller.async_set_auto(self._remote, False)
 
 
 class ConsumptionActiveSwitch(FunctionEntity, SwitchEntity):
