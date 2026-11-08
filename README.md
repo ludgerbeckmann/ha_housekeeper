@@ -5,7 +5,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-blue.svg)
 
-Eine Custom Integration mit **14 Smart-Home-Funktionen** in einer Installation: Briefkasten, Türwächter,
+Eine Custom Integration mit **13 Smart-Home-Funktionen** in einer Installation: Briefkasten, Türwächter,
 Türklingel, Pool, Wecker, Stromkosten und mehr. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine
 Klingel, ein Pool, ein Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät und eigenen Einstellungen.
 Alle Einstellungen sind Formulare in Home Assistant, es ist kein YAML nötig.
@@ -22,11 +22,10 @@ Jede Funktion ist ein eigener Abschnitt weiter unten (Link in der ersten Spalte)
 | [Türwächter](#türwächter) | Schließt eine Tür zu festen Zeiten, bei Anwesenheit und nach dem Schließen automatisch auf/ab und warnt, wenn sie zu lange offen steht |
 | [Türklingel](#türklingel) | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
 
-### Medien und Wecker
+### Wecker und Fernbedienung
 
 | Funktion | Beschreibung |
 | --- | --- |
-| [KNX/Sonos-Connector](#knxsonos-connector) | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
 | [Wecker](#wecker) | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
 | [IR-Fernbedienung](#ir-fernbedienung) | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
 
@@ -72,7 +71,7 @@ kopieren und neu starten.
 
 Der **Hub „Funktionen“** wird ohne weitere Abfrage angelegt (es gibt nur einen). **Instanzen** fügst du
 über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
-„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
+„Klingel hinzufügen“, „Pool hinzufügen“, „Updater hinzufügen“,
 „Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“, „Stromkosten hinzufügen“**. Jede Instanz hat ihr Zahnrad
 (*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
 
@@ -105,13 +104,10 @@ dieses Vorgangs.
 
 ## Einzelne Elemente ein- und ausschalten
 
-Wecker, Aufgaben, Updater-Zeitpläne, Türklingel-Profile, Türwächter-Regeln (und ältere
-KNX/Sonos-Lautsprecher-Profile) haben im Dialog ein Feld **Aktiv**. Ein ausgeschaltetes Element
+Wecker, Aufgaben, Updater-Zeitpläne, Türklingel-Profile und Türwächter-Regeln haben im Dialog ein Feld **Aktiv**. Ein ausgeschaltetes Element
 wird ignoriert (Standard: an, bestehende Elemente bleiben aktiv) und in den Listen mit „aus“
 markiert. Bei einem ausgeschalteten Updater-Zeitplan zählen auch seine Updates und
-Benachrichtigungswege nicht für „Verfügbare Updates“ und „Jetzt prüfen“; ein ausgeschaltetes
-älteres KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus (beim KNX/Sonos-Connector
-schaltet man sonst den Eintrag mit „Connector aktiv“ aus).
+Benachrichtigungswege nicht für „Verfügbare Updates“ und „Jetzt prüfen“.
 
 ## Benachrichtigung Briefkasten
 
@@ -320,73 +316,6 @@ beim Start automatisch übernommen: als ganztägiges Profil „Benachrichtigung�
 - `sensor` **Letztes Klingeln** (Zeitstempel)
 - `button` **Test-Klingeln** (spielt aus und sendet, was jetzt im Zeitfenster passt;
   umgeht Schalter und Sperrzeit)
-
-## KNX/Sonos-Connector
-
-Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
-Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
-(Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
-eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
-sonst bricht das Hinzufügen ab. **Jeder Lautsprecher ist ein eigener Eintrag** („KNX/Sonos-Connector
-hinzufügen“), mit eigenem Gerät, Schalter und Sensor.
-
-### Konfigurationsseite
-
-Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten; nur „Lautsprecher“ ist aufgeklappt, die übrigen sind eingeklappt. Jede
-Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es zählen nur eingehende
-**Schreibtelegramme**. Das Layout orientiert sich am Blueprint
-[KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935).
-
-| Abschnitt | Felder |
-|---|---|
-| **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
-| **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
-| **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
-| **Start** | **Lautstärke beim Start** (%) und **Favorit beim Start**, beide optional: Startet ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher, der **nicht spielt** (Pause, Leerlauf, Standby), wird zuerst die Lautstärke gesetzt (begrenzt durch die Lautstärkegrenze) und dann der Favorit gestartet, sonst nur fortgesetzt. Spielt er schon, pausiert der Taster wie bisher und ändert nichts. Damit wird nie eine alte hohe Lautstärke übernommen |
-| **Szenen** | Szenenadresse (17.001, Szenennummer 1–5); je **Szene 1–5**: Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
-| **Rückmeldungen** (drei Abschnitte) | *Wiedergabe:* Spielt, Pausiert (1 Bit). *Lautstärke:* Lautstärke (5.001), Stumm (1 Bit). *Text:* Titel, Interpret, Album, Quelle (auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
-
-**Gruppenadressen aus dem ETS-Projekt:** Hast du in der KNX-Integration ein **ETS-Projekt importiert**
-(KNX → Konfigurieren → ETS-Projekt importieren), bieten alle Adressfelder die Adressen des Projekts als Dropdown an
-(„1/2/3 – Name (Datentyp)“, durchsuchbar). Jedes Feld zeigt nur Adressen mit passendem Datentyp (1 Bit, 5.xxx,
-3.xxx, 17.xxx, 16.xxx), Adressen ohne hinterlegten Datentyp erscheinen überall. Die Felder bleiben frei beschreibbar,
-gespeichert wird nur die Adresse. Ohne importiertes Projekt sind es Textfelder. Die Liste wird beim Öffnen der Seite aus
-der Speicherdatei der KNX-Integration gelesen (eine interne Datei: ändert sich ihr Format, entfällt nur die Auswahl).
-
-Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** (GroupValueRead) auf der
-Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
-(3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit
-wird als Name gespeichert; bei einem umbenannten Favoriten muss er angepasst werden.
-
-**Frühere Szenen 6–8** werden nicht mehr ausgewertet und beim Speichern der Seite gelöscht.
-
-### Ältere Einträge
-
-Bestehende Einträge laufen unverändert weiter, auch mit mehreren Lautsprecher-Profilen und den früheren
-Listen für Befehle und Rückmeldungen. Die neue Seite zeigt dann die Werte des ersten Profils; **beim
-Speichern werden weitere Profile verworfen** (ein Hinweis steht auf der Seite), lege sie als eigene Einträge
-an. Die älteren Befehle und Rückmeldungen bleiben aktiv, bis du im eingeklappten Abschnitt „Ältere Einträge“
-das Löschen wählst (er erscheint nur, wenn es welche gibt).
-
-### Entitäten
-
-- `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
-  Einschalten werden die Rückmeldungen neu gesendet)
-- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name des Felds, Adresse, Aktion, Wert)
-
-### Hinweise
-
-- **Eigene Telegramme** (`direction: Outgoing`) werden nie ausgewertet, damit sich die
-  Rückmeldungen nicht selbst auslösen. Verwende für Befehl und Rückmeldung trotzdem
-  getrennte Gruppenadressen, wie in ETS üblich.
-- Die Anmeldung der Adressen bei der KNX-Integration gilt nur zur Laufzeit. Sie wird
-  beim Start, nach `event_knx_reloaded` und alle 5 Minuten wiederholt (idempotent),
-  damit ein Neuladen der KNX-Integration die Funktion nicht stilllegt. Nach einem
-  Neuladen über die Oberfläche kann es bis zu 5 Minuten dauern, bis Befehle wieder
-  ankommen.
-- Relatives Dimmen löst pro Telegramm **einen Schritt** aus (kein weiches Hoch- oder
-  Runterfahren über eine Zeit). Aus dem Blueprint nicht übernommen: Ein/Aus des Players sowie die
-  Erweiterungen für Music Assistant, Squeezebox und Denon.
 
 ## Wecker
 
@@ -1010,3 +939,8 @@ Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Co
 
 Tests: `pip install pytest-homeassistant-custom-component && pytest`
 (Python 3.14). CI: hassfest, HACS-Validierung und pytest.
+
+## Entfernte Funktionen
+
+Der **KNX/Sonos-Connector** (bis Version 0.52) wurde in eine eigene Integration ausgelagert. Ein vorhandener
+Eintrag dieser Funktion wird beim ersten Start mit Version 0.53 samt Gerät und Entitäten automatisch gelöscht.

@@ -32,7 +32,6 @@ from .const import (
     FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
-    FUNCTION_KNX_SONOS,
     FUNCTION_LLM,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
@@ -74,9 +73,7 @@ from .flows.energy import (
     _validate_em,
     em_data,
 )
-from .flows.knx import KnxSonosOptions, _knx_schema, _validate_knx, new_instance_data as new_knx_data
 from .flows.llm import LlmOptions, _llm_new_schema, async_validate_new, new_instance_data
-from .knx_project import async_project_addresses
 from .flows.mailbox import MailboxOptions, _mailbox_schema, validate_mailbox
 from .flows.monitor import MonitorOptions, _monitor_schema, _validate_monitor, monitor_data
 from .flows.planner import TaskPlannerOptions, _planner_schema, _validate_planner
@@ -93,7 +90,6 @@ _MENU_STEPS = {
     FUNCTION_DOOR_GUARD: "door_settings",
     FUNCTION_DOORBELL: "bell_settings",
     FUNCTION_POOL: "pool_menu",
-    FUNCTION_KNX_SONOS: "knx_settings",
     FUNCTION_UPDATER: "upd_settings",
     FUNCTION_TASK_PLANNER: "tp_menu",
     FUNCTION_ALARM: "alarm_menu",
@@ -200,29 +196,6 @@ class NewInstanceSteps:
                     vol.Required(CONF_PUMP_ENTITY): _PUMP_SELECTOR,
                 }
             ),
-        )
-
-    async def async_step_new_knx_sonos(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if not self.hass.services.has_service("knx", "event_register"):
-            return self.async_abort(reason="knx_missing")
-        errors: dict[str, str] = {}
-        detail = ""
-        defaults: dict[str, Any] = {}
-        if user_input is not None:
-            flat = _flatten_sections(user_input)
-            errors, detail = _validate_knx(self.hass.config.language or "", flat)
-            if not errors:
-                return await self._finish_new(flat.get(CONF_NAME), new_knx_data(flat))
-            defaults = flat
-        return self.async_show_form(
-            step_id="new_knx_sonos",
-            data_schema=_knx_schema(
-                defaults, [], with_legacy=False, project=await async_project_addresses(self.hass)
-            ),
-            errors=errors,
-            description_placeholders={"detail": detail, "legacy": ""},
         )
 
     async def async_step_new_updater(
@@ -429,7 +402,6 @@ class HousekeeperSubentryFlow(
     DoorGuardOptions,
     DoorbellOptions,
     PoolOptions,
-    KnxSonosOptions,
     UpdaterOptions,
     TaskPlannerOptions,
     AlarmOptions,

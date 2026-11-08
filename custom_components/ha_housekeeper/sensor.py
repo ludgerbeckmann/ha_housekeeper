@@ -27,7 +27,6 @@ from .energy_monitor import EnergyMonitorController, share_a
 from .doorbell import DoorbellController
 from .subentry import hub_controllers
 from .entity import FunctionEntity, remove_unconfigured
-from .knx_sonos import KnxSonosController
 from .pool_pump import PoolPumpController
 from .integration_monitor import IntegrationMonitorController
 from .ir_remote import IrRemoteController
@@ -57,8 +56,6 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         async_add_entities(
             [PoolNextStartSensor(controller), PoolRuntimeTodaySensor(controller)]
         )
-    elif isinstance(controller, KnxSonosController):
-        async_add_entities([KnxLastCommandSensor(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities(
             [
@@ -215,26 +212,6 @@ class PoolRuntimeTodaySensor(FunctionEntity, SensorEntity):
     @property
     def native_value(self) -> float:
         return self._controller.runtime_today_minutes()
-
-
-class KnxLastCommandSensor(FunctionEntity, SensorEntity):
-    """Zeitpunkt des letzten ausgeführten KNX-Befehls."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:knx"
-
-    def __init__(self, controller) -> None:
-        super().__init__(controller, "last_command")
-
-    @property
-    def native_value(self) -> datetime | None:
-        last = self._controller.last_command
-        return dt_util.parse_datetime(last["time"]) if last else None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        last = self._controller.last_command or {}
-        return {k: last.get(k) for k in ("profile", "name", "address", "action", "value")}
 
 
 class UpdaterLastRunSensor(FunctionEntity, SensorEntity):

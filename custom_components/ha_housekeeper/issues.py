@@ -48,7 +48,6 @@ from .const import (
     CONF_MON_DISABLE_PRESENCE,
     CONF_MONITOR_RULES,
     CONF_MOBILE_TARGETS,
-    CONF_PLAYER,
     CONF_POWER_ENTITY,
     CONF_PRESENCE,
     CONF_HEATER_ENTITY,
@@ -59,7 +58,6 @@ from .const import (
     CONF_SCHEDULES,
     CONF_SENSITIVITY_ENTITY,
     CONF_TEMP_ENTITY,
-    CONF_SPEAKERS,
     CONF_TASKS,
     CONF_TRIGGER_ENTITY,
     CONF_TTS_ENTITY,
@@ -77,7 +75,6 @@ from .const import (
     FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
-    FUNCTION_KNX_SONOS,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
     FUNCTION_POOL,
@@ -137,9 +134,6 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
             opt(CONF_PUMP_ENTITY), opt(CONF_POWER_ENTITY),
             opt(CONF_HEATER_ENTITY), opt(CONF_TEMP_ENTITY),
         ]
-    elif function == FUNCTION_KNX_SONOS:
-        speakers = opt(CONF_SPEAKERS, [])
-        entities += _listed(speakers, CONF_PLAYER) if speakers else [opt(CONF_PLAYER)]
     elif function == FUNCTION_UPDATER:
         entities += _listed(opt(CONF_SCHEDULES, []), "targets")
         entities += [str(e) for e in opt("single_targets", []) or []]

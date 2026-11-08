@@ -6,7 +6,7 @@ Einträge verloren): **ein einziger Hub** „Funktionen“ (Config-Entry, `data`
 Manifest `single_config_entry`, `integration_type: service`), alle Instanzen sind **Untereinträge**
 (Config-Subentries, Typ = Funktionstyp, eigenes Gerät). Aktuell: `mailbox` („Benachrichtigung Briefkasten“) und
 `door_guard` („Türwächter“), `doorbell` („Türklingel“), `pool_pump` („Poolsteuerung“,
-portiert aus `ludgerbeckmann/ha_pool_manager`) `knx_sonos` („KNX/Sonos-Connector“, ein Eintrag je Lautsprecher) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) `consumption_guard` („Verbrauchswächter“) `energy_monitor` („Energiemonitor“) und `energy_cost` („Stromkosten“).
+portiert aus `ludgerbeckmann/ha_pool_manager`) `updater` („Home Assistant Updater“) `task_planner` („Aufgabenplaner“) `alarm_clock` („Wecker“) `integration_monitor` („Integrationsmonitor“), `llm_usage` („LLM-Verbrauch“) `ir_remote` („IR-Fernbedienung“) `consumption_guard` („Verbrauchswächter“) `energy_monitor` („Energiemonitor“) und `energy_cost` („Stromkosten“).
 Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
 
 ## Feste Arbeitsanweisungen
@@ -37,7 +37,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   alle Controller mit `entry.hub_entry_id`.
 - **Einstellungsdialoge** liegen im Paket `flows/`: `common.py` (Hilfen wie `_notify_fields`,
   `_sections_schema`, `_mobile_selector`, Basisklasse `OptionsBase` mit `_menu`/`_save`) und
-  je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`, `knx.py`,
+  je Funktion ein Modul (`mailbox.py`, `door_guard.py`, `doorbell.py`, `pool.py`,
   `updater.py`, `planner.py`, `alarm.py`, `monitor.py`, `llm.py`, `ir.py`, `consumption.py`, `energy.py`, `cost.py`) mit Formularen, Prüfungen und einer Options-Klasse
   (`MailboxOptions` usw.) mit den Dialogschritten. `config_flow.py`: `HousekeeperConfigFlow` legt nur den Hub an
   (ohne Formular, `unique_id` `hub`); `HousekeeperSubentryFlow` gehört zu **allen** Funktionstypen
@@ -119,35 +119,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `heater_auto` (Store, Schalter `heater_auto`) ist die Automatik; beim Einschalten wird neu bewertet.
   Der Heizungsdialog darf nur die Heizungsfelder leeren (nicht `_with_cleared`, das würde Trockenlauf-
   und Push-Felder löschen). Entitäten `heater_auto`/`heater_should_run` per `remove_unconfigured()`.
-- `knx_sonos.py` / `knx_codec.py`: Der Connector nutzt die **offizielle KNX-Integration**
-  (kein eigener Bus): Eingang über das Ereignis `knx_event` (nur `direction: Incoming`,
-  `GroupValueWrite`; die Rohdaten aus `data` werden in `knx_codec.py` selbst dekodiert:
-  1.001 Integer, 5.001 Byte*100/255, 17.001 Byte+1, 3.007 Bit 3 = heller/lauter,
-  Schrittcode 0 = Stopp), Ausgang über `knx.send` mit `type` `1.001`/`5.001`/`16.001`
-  (Text wird vorher auf 14 Zeichen gekürzt, sonst lehnt xknx ab). Adressen werden per
-  `knx.event_register` angemeldet (gilt nur zur Laufzeit, daher beim Start, nach
-  `event_knx_reloaded` und alle 5 Minuten neu). Lesetelegramme auf Rückmeldeadressen
-  werden mit `response: true` beantwortet. Der Übersetzungsschlüssel des Schalters ist
-  `connector_active` (nicht `active`, der gehört zur Türklingel). **Ein Eintrag = ein Lautsprecher.**
-  Die Einstellungen sind **feste Felder auf einer Seite** (`async_step_knx_settings`, kein Menü; `_MENU_STEPS` zeigt
-  direkt darauf, Speichern = `async_update_subentry` + Abbruch `reconfigure_successful`, der Name steht als Feld im
-  Abschnitt `speaker`) mit den Abschnitten `speaker` (als einziger aufgeklappt), `playback`, `start` (`start_volume`, `start_favorite`: gelten bei Play/Play-Pause-Umschalten, wenn der Lautsprecher nicht `playing` ist, `_async_start()`: erst Lautstärke, dann `select_source`, sonst `media_play`), `volume`, `scenes`, `scene_1…5`
-  (`SCENE_COUNT` = 5; frühere Szenen 6–8 werden nicht mehr ausgewertet und beim Speichern auf `None` gesetzt, `OBSOLETE_SCENES`),
-  `status_play`/`status_level`/`status_text` (nach dem Blueprint „KNX Media Player“); alle Abschnitte außer `speaker` sind eingeklappt: Schlüssel `addr_*`, `scene_<n>_favorite/volume/address`,
-  `status_*`, `idle_text`, `player`/`max_volume`/`volume_step`/`stop_instead_of_pause`. Gruppenadressen sind optional,
-  geleerte Felder stehen als `None` in den Daten (`_CLEARABLE`). `knx_project.py` liest die Gruppenadressen des in der KNX-Integration importierten ETS-Projekts aus deren Speicherdatei
-  (`knx/knx_project.json`, `group_addresses` mit `address`, `name`, `dpt.main/sub`; Fehler/fehlend = leere Liste); `_address()`
-  macht daraus ein Dropdown (`custom_value`, frei beschreibbar), gefiltert nach dem Haupt-Datentyp des Felds (`_FIELD_DPT`,
-  Adressen ohne Datentyp passen überall), ohne Projekt ein Textfeld. Tests: `hass_storage["knx/knx_project.json"]`. `settings_commands()`/`settings_status()` bilden
-  daraus beim Start dieselben Befehls- und Rückmeldungslisten wie früher (Schlüssel `K_*`; z. B. Play/Pause = `play` bei
-  1 und `pause` bei 0, Szene = Favorit plus Lautstärke auf 17.001 und auf der eigenen 1-Bit-Adresse mit „0 = Pause“),
-  die Dekodierung bleibt unverändert; ältere Listen `commands`/`status` laufen daneben weiter. **Ältere Einträge:** mehrere
-  Lautsprecher = Profile in `speakers` (Schlüssel `id`, `name`, `player`, `max_volume`, `volume_step`,
-  `stop_instead_of_pause`, `enabled`; Befehle tragen `K_PROFILE`), `speaker_profiles()` bildet für Einträge mit nur
-  `player` und Co. ein Profil „Standard“, `profile_for()` löst auf (ohne Angabe das erste). Die Seite zeigt die Werte des
-  ersten Profils und setzt beim Speichern `speakers` auf `None` (weitere Profile gehen verloren, Hinweis in der
-  Beschreibung); alte Listen werden nur mit dem Schalter `clear_legacy` (Abschnitt `legacy`, nur wenn welche da sind)
-  gelöscht. Es gibt keine Menüeinträge `add/edit/delete_*` mehr für KNX.
+- **Entfernte Funktionen** (`REMOVED_FUNCTIONS` in `const.py`, derzeit `knx_sonos`: ausgelagert in eine eigene Integration): Untereinträge dieses
+  Typs löscht `__init__._async_remove_obsolete()` beim Hub-Start (`async_remove_subentry` samt Gerät und Entitäten, dazu der `Store`), damit ein
+  fehlender Controller den Hub nicht blockiert.
 - `updater.py`: Die Einstellungen sind **feste Felder auf einer Seite** (`upd_settings`, kein Menü, Name als Feld, Speichern =
   `async_update_subentry` + Abbruch `reconfigure_successful`; Abschnitte `general` (offen: `timeout_minutes`, `window_start`/`window_end`),
   je Gruppe `system`/`addons`/`esphome`/`other`/`single` ein Abschnitt (`<g>_mode` `off`/`notify`/`install`, `<g>_trigger`, `<g>_time`,
@@ -364,11 +338,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   mit Entitätsfeldern = Eintrag in `collect_references()`. Platzhalter `{entry}`, `{function}`,
   `{entity}` sind echte ASCII-Platzhalter.
 - **Einzelschalter „aktiv“** (`enabled`, Standard an) bei Updater-Zeitplänen (`U_ENABLED`),
-  Türklingel-Profilen (`P_ENABLED`), Türwächter-Regeln (`R_ENABLED`) und KNX-Lautsprecher-Profilen
-  (`S_ENABLED`), wie bei Weckern und Aufgaben: Der Controller ignoriert ausgeschaltete Elemente
-  (`UpdaterController.schedules` = nur aktive, `all_schedules` = alle; `DoorGuardController._rules()`
-  nur aktive; `assign_players()` überspringt ausgeschaltete Profile; beim KNX-Connector liefert
-  `_player_state()` für ein ausgeschaltetes Profil `None`, die Befehle/Rückmeldungen ruhen). Die
+  Türklingel-Profilen (`P_ENABLED`) und Türwächter-Regeln (`R_ENABLED`), wie bei Weckern und Aufgaben: Der Controller ignoriert ausgeschaltete
+  Elemente (`UpdaterController.schedules` = nur aktive, `all_schedules` = alle; `DoorGuardController._rules()` nur aktive; `assign_players()`
+  überspringt ausgeschaltete Profile). Die
   Dialoge (`flows/`) arbeiten dagegen mit **allen** Elementen. Beim Briefkasten gibt es den
   Schalter `mailbox_active` (im `Store`, aus = Vibrationen werden ignoriert).
 - Entity-IDs folgen den englischen Namen, z. B. `switch.<name>_doorbell_active`.

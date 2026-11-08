@@ -1,4 +1,4 @@
-"""Schalter der Funktionen (Türwächter, Türklingel, Poolpumpe, KNX/Sonos)."""
+"""Schalter der Funktionen (Türwächter, Türklingel, Poolpumpe usw.)."""
 
 from __future__ import annotations
 
@@ -21,7 +21,6 @@ from .entity import FunctionEntity, remove_unconfigured
 from .integration_monitor import IntegrationMonitorController
 from .ir_remote import IrRemoteController
 from .llm_usage import LlmUsageController
-from .knx_sonos import KnxSonosController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
 from .task_planner import TaskPlannerController
@@ -50,8 +49,6 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
         else:
             remove_unconfigured(hass, "switch", controller, "heater_auto")
         async_add_entities(entities)
-    elif isinstance(controller, KnxSonosController):
-        async_add_entities([KnxActiveSwitch(controller)])
     elif isinstance(controller, UpdaterController):
         async_add_entities([UpdaterActiveSwitch(controller)])
     elif isinstance(controller, AlarmClockController):
@@ -164,25 +161,6 @@ class HeaterAutoSwitch(FunctionEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._controller.async_set_heater_auto(False)
-
-
-class KnxActiveSwitch(FunctionEntity, SwitchEntity):
-    """on = Befehle und Rückmeldungen sind aktiv; off = Connector pausiert."""
-
-    _attr_icon = "mdi:connection"
-
-    def __init__(self, controller) -> None:
-        super().__init__(controller, "connector_active")
-
-    @property
-    def is_on(self) -> bool:
-        return self._controller.enabled
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        await self._controller.async_set_enabled(True)
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        await self._controller.async_set_enabled(False)
 
 
 class UpdaterActiveSwitch(FunctionEntity, SwitchEntity):

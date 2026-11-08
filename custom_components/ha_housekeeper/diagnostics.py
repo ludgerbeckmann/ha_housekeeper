@@ -13,7 +13,6 @@ from .door_guard import DoorGuardController
 from .alarm_clock import AlarmClockController
 from .doorbell import DoorbellController
 from .integration_monitor import IntegrationMonitorController
-from .knx_sonos import KnxSonosController
 from .consumption_guard import ConsumptionGuardController
 from .energy_cost import EnergyCostController
 from .energy_monitor import EnergyMonitorController
@@ -93,28 +92,6 @@ async def async_get_config_entry_diagnostics(
                 "schedule_paused": controller.dry_run_paused_schedule,
                 "power": controller.current_power(),
             },
-        }
-    if isinstance(controller, KnxSonosController):
-        result["state"] = {
-            "enabled": controller.enabled,
-            "knx_available": controller._knx_available,  # noqa: SLF001
-            "last_command": controller.last_command,
-            "profiles": [
-                {
-                    "id": profile.get("id"),
-                    "name": profile.get("name"),
-                    "player": profile.get("player"),
-                    "player_state": (
-                        state.state
-                        if (state := hass.states.get(profile.get("player", "")))
-                        else None
-                    ),
-                }
-                for profile in controller.profiles
-            ],
-            "registered_addresses": sorted(
-                {*controller._commands_by_ga, *controller._status_by_ga}  # noqa: SLF001
-            ),
         }
     if isinstance(controller, UpdaterController):
         result["state"] = {

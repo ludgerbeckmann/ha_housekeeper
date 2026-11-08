@@ -16,6 +16,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    REMOVED_FUNCTIONS,
     ATTR_DURATION,
     ATTR_ENTRY_ID,
     CONF_FUNCTION_TYPE,
@@ -28,7 +29,6 @@ from .const import (
     FUNCTION_COST,
     FUNCTION_ENERGY,
     FUNCTION_IR,
-    FUNCTION_KNX_SONOS,
     FUNCTION_LLM,
     FUNCTION_MAILBOX,
     FUNCTION_MONITOR,
@@ -49,7 +49,6 @@ from .doorbell import DoorbellController
 from .energy_monitor import EnergyMonitorController
 from .integration_monitor import IntegrationMonitorController
 from .ir_remote import IrRemoteController
-from .knx_sonos import KnxSonosController
 from .llm_usage import LlmUsageController
 from .mailbox import MailboxController
 from .pool_pump import PoolPumpController
@@ -67,7 +66,6 @@ CONTROLLERS = {
     FUNCTION_DOOR_GUARD: DoorGuardController,
     FUNCTION_DOORBELL: DoorbellController,
     FUNCTION_POOL: PoolPumpController,
-    FUNCTION_KNX_SONOS: KnxSonosController,
     FUNCTION_UPDATER: UpdaterController,
     FUNCTION_TASK_PLANNER: TaskPlannerController,
     FUNCTION_ALARM: AlarmClockController,
@@ -135,6 +133,19 @@ def _normalize_titles(hass: HomeAssistant, entry: ConfigEntry) -> None:
             hass.config_entries.async_update_subentry(entry, subentry, title=expected)
 
 
+async def _async_remove_obsolete(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Untereinträge entfernter Funktionen löschen (samt Gerät, Entitäten und gespeichertem Zustand)."""
+    for subentry in list(entry.subentries.values()):
+        if subentry.subentry_type in REMOVED_FUNCTIONS:
+            _LOGGER.warning(
+                "Die Funktion „%s“ gibt es nicht mehr, der Eintrag „%s“ wird entfernt",
+                subentry.subentry_type,
+                subentry.title,
+            )
+            await Store(hass, 1, f"{DOMAIN}.{subentry.subentry_id}").async_remove()
+            hass.config_entries.async_remove_subentry(entry, subentry.subentry_id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Hub einrichten: je Untereintrag ein Controller, dazu die Plattformen."""
     if not _is_hub(entry):
@@ -152,6 +163,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     ir.async_delete_issue(hass, DOMAIN, f"legacy_{entry.entry_id}")
 
+    await _async_remove_obsolete(hass, entry)
     _normalize_titles(hass, entry)
     controllers = hass.data.setdefault(DOMAIN, {})
     adapters: list[SubentryEntry] = []

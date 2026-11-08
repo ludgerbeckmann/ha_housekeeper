@@ -180,9 +180,6 @@
       "runtime_today": {
         "name": "Runtime today"
       },
-      "last_command": {
-        "name": "Last command"
-      },
       "updater_last_run": {
         "name": "Last update run"
       },
@@ -348,9 +345,6 @@
       },
       "schedule_enabled": {
         "name": "Schedule active"
-      },
-      "connector_active": {
-        "name": "Connector active"
       },
       "updater_active": {
         "name": "Updater active"
@@ -567,8 +561,7 @@
         "contacts_incomplete": "The door contacts need both the delivery contact and the removal contact."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "door_guard": {
@@ -823,7 +816,6 @@
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first.",
         "reconfigure_successful": "Saved."
       }
     },
@@ -1002,8 +994,7 @@
         "profile_no_ringtone": "Profile {profile}: select an audio file for the ringtone."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "pool_pump": {
@@ -1155,364 +1146,7 @@
         "no_media": "Select an audio file."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
-      }
-    },
-    "knx_sonos": {
-      "initiate_flow": {
-        "user": "KNX/Sonos connector"
-      },
-      "entry_type": "KNX/Sonos connector",
-      "step": {
-        "new_knx_sonos": {
-          "title": "KNX/Sonos connector",
-          "description": "One Sonos speaker with all settings on one page. Empty group addresses are not used; add more speakers as separate entries.",
-          "sections": {
-            "speaker": {
-              "name": "Speaker",
-              "description": "The Sonos speaker of this entry and its limits.",
-              "data": {
-                "name": "Name (shown as “KNX/Sonos connector: Name”)",
-                "player": "Sonos speaker",
-                "max_volume": "Volume limit",
-                "volume_step": "Volume step",
-                "stop_instead_of_pause": "Stop instead of pause"
-              },
-              "data_description": {
-                "max_volume": "Highest volume that can be set via KNX.",
-                "volume_step": "Step for “louder/quieter” and relative dimming.",
-                "stop_instead_of_pause": "“Pause” stops playback (e.g. for radio streams)."
-              }
-            },
-            "playback": {
-              "name": "Playback",
-              "description": "Group addresses for control. Empty fields are not used.",
-              "data": {
-                "addr_play_pause": "Play/Pause switch (1 bit)",
-                "addr_next_prev": "Next/previous track (1 bit)",
-                "addr_stop": "Stop (1 bit)",
-                "addr_toggle": "Play/Pause button (1 bit)"
-              },
-              "data_description": {
-                "addr_play_pause": "1 = play, 0 = pause.",
-                "addr_next_prev": "1 = next, 0 = previous track.",
-                "addr_stop": "1 = stop.",
-                "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
-              }
-            },
-            "start": {
-              "name": "Start of playback",
-              "description": "Applied when a play command (play/pause toggle or play/pause switch with 1) starts a speaker that is not playing, so an old high volume is never resumed. Empty = no change. Pausing and playback that is already running are not affected.",
-              "data": {
-                "start_volume": "Volume at start (%)",
-                "start_favorite": "Favorite at start"
-              },
-              "data_description": {
-                "start_volume": "Set before playback starts, limited by the volume limit.",
-                "start_favorite": "Plays this favorite instead of simply resuming."
-              }
-            },
-            "volume": {
-              "name": "Volume",
-              "description": "Group addresses for the volume.",
-              "data": {
-                "addr_volume": "Absolute volume (5.001)",
-                "addr_volume_step": "Louder/quieter (1 bit)",
-                "addr_volume_dim": "Relative dimming (3.007)",
-                "addr_mute": "Mute (1 bit)"
-              },
-              "data_description": {
-                "addr_volume": "0–100 %, limited by the volume limit.",
-                "addr_volume_step": "1 = one step louder, 0 = one step quieter.",
-                "addr_volume_dim": "One step per telegram, step code 0 = stop.",
-                "addr_mute": "1 = muted, 0 = unmuted."
-              }
-            },
-            "scenes": {
-              "name": "Scenes",
-              "description": "Scenes 1 to 5 are in the following sections.",
-              "data": {
-                "addr_scene": "Scene address (17.001)"
-              },
-              "data_description": {
-                "addr_scene": "Scene number 1 to 5 starts the scene with that number."
-              }
-            },
-            "scene_1": {
-              "name": "Scene 1",
-              "description": "Runs on scene number 1 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_1_favorite": "Favorite (Sonos source)",
-                "scene_1_volume": "Volume",
-                "scene_1_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_1_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_2": {
-              "name": "Scene 2",
-              "description": "Runs on scene number 2 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_2_favorite": "Favorite (Sonos source)",
-                "scene_2_volume": "Volume",
-                "scene_2_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_2_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_3": {
-              "name": "Scene 3",
-              "description": "Runs on scene number 3 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_3_favorite": "Favorite (Sonos source)",
-                "scene_3_volume": "Volume",
-                "scene_3_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_3_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_4": {
-              "name": "Scene 4",
-              "description": "Runs on scene number 4 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_4_favorite": "Favorite (Sonos source)",
-                "scene_4_volume": "Volume",
-                "scene_4_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_4_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_5": {
-              "name": "Scene 5",
-              "description": "Runs on scene number 5 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_5_favorite": "Favorite (Sonos source)",
-                "scene_5_volume": "Volume",
-                "scene_5_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_5_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "status_play": {
-              "name": "Feedback playback",
-              "description": "Group addresses that report whether the speaker plays or is paused (also as answer to read telegrams).",
-              "data": {
-                "status_playing": "Playing (1 bit)",
-                "status_paused": "Paused (1 bit)"
-              }
-            },
-            "status_level": {
-              "name": "Feedback volume",
-              "description": "Group addresses for volume and mute.",
-              "data": {
-                "status_volume": "Volume (5.001)",
-                "status_muted": "Muted (1 bit)"
-              }
-            },
-            "status_text": {
-              "name": "Feedback text",
-              "description": "Group addresses for title, artist, album and source (text, at most 14 characters).",
-              "data": {
-                "status_title": "Title (text)",
-                "status_artist": "Artist (text)",
-                "status_album": "Album (text)",
-                "status_source": "Source (text)",
-                "idle_text": "Text when nothing plays"
-              },
-              "data_description": {
-                "idle_text": "Sent instead of title, artist, album and source when nothing plays (at most 14 characters)."
-              }
-            }
-          }
-        },
-        "knx_settings": {
-          "title": "KNX/Sonos connector",
-          "description": "All settings of this speaker. Empty group addresses are not used.\n\n{legacy}",
-          "sections": {
-            "speaker": {
-              "name": "Speaker",
-              "description": "The Sonos speaker of this entry and its limits.",
-              "data": {
-                "name": "Name (shown as “KNX/Sonos connector: Name”)",
-                "player": "Sonos speaker",
-                "max_volume": "Volume limit",
-                "volume_step": "Volume step",
-                "stop_instead_of_pause": "Stop instead of pause"
-              },
-              "data_description": {
-                "max_volume": "Highest volume that can be set via KNX.",
-                "volume_step": "Step for “louder/quieter” and relative dimming.",
-                "stop_instead_of_pause": "“Pause” stops playback (e.g. for radio streams)."
-              }
-            },
-            "playback": {
-              "name": "Playback",
-              "description": "Group addresses for control. Empty fields are not used.",
-              "data": {
-                "addr_play_pause": "Play/Pause switch (1 bit)",
-                "addr_next_prev": "Next/previous track (1 bit)",
-                "addr_stop": "Stop (1 bit)",
-                "addr_toggle": "Play/Pause button (1 bit)"
-              },
-              "data_description": {
-                "addr_play_pause": "1 = play, 0 = pause.",
-                "addr_next_prev": "1 = next, 0 = previous track.",
-                "addr_stop": "1 = stop.",
-                "addr_toggle": "1 = toggle between play and pause. 0 is ignored."
-              }
-            },
-            "start": {
-              "name": "Start of playback",
-              "description": "Applied when a play command (play/pause toggle or play/pause switch with 1) starts a speaker that is not playing, so an old high volume is never resumed. Empty = no change. Pausing and playback that is already running are not affected.",
-              "data": {
-                "start_volume": "Volume at start (%)",
-                "start_favorite": "Favorite at start"
-              },
-              "data_description": {
-                "start_volume": "Set before playback starts, limited by the volume limit.",
-                "start_favorite": "Plays this favorite instead of simply resuming."
-              }
-            },
-            "volume": {
-              "name": "Volume",
-              "description": "Group addresses for the volume.",
-              "data": {
-                "addr_volume": "Absolute volume (5.001)",
-                "addr_volume_step": "Louder/quieter (1 bit)",
-                "addr_volume_dim": "Relative dimming (3.007)",
-                "addr_mute": "Mute (1 bit)"
-              },
-              "data_description": {
-                "addr_volume": "0–100 %, limited by the volume limit.",
-                "addr_volume_step": "1 = one step louder, 0 = one step quieter.",
-                "addr_volume_dim": "One step per telegram, step code 0 = stop.",
-                "addr_mute": "1 = muted, 0 = unmuted."
-              }
-            },
-            "scenes": {
-              "name": "Scenes",
-              "description": "Scenes 1 to 5 are in the following sections.",
-              "data": {
-                "addr_scene": "Scene address (17.001)"
-              },
-              "data_description": {
-                "addr_scene": "Scene number 1 to 5 starts the scene with that number."
-              }
-            },
-            "scene_1": {
-              "name": "Scene 1",
-              "description": "Runs on scene number 1 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_1_favorite": "Favorite (Sonos source)",
-                "scene_1_volume": "Volume",
-                "scene_1_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_1_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_2": {
-              "name": "Scene 2",
-              "description": "Runs on scene number 2 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_2_favorite": "Favorite (Sonos source)",
-                "scene_2_volume": "Volume",
-                "scene_2_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_2_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_3": {
-              "name": "Scene 3",
-              "description": "Runs on scene number 3 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_3_favorite": "Favorite (Sonos source)",
-                "scene_3_volume": "Volume",
-                "scene_3_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_3_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_4": {
-              "name": "Scene 4",
-              "description": "Runs on scene number 4 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_4_favorite": "Favorite (Sonos source)",
-                "scene_4_volume": "Volume",
-                "scene_4_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_4_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "scene_5": {
-              "name": "Scene 5",
-              "description": "Runs on scene number 5 or via its own 1-bit address (1 = start, 0 = pause).",
-              "data": {
-                "scene_5_favorite": "Favorite (Sonos source)",
-                "scene_5_volume": "Volume",
-                "scene_5_address": "1-bit address"
-              },
-              "data_description": {
-                "scene_5_favorite": "Choose from the speaker's sources or type the name."
-              }
-            },
-            "status_play": {
-              "name": "Feedback playback",
-              "description": "Group addresses that report whether the speaker plays or is paused (also as answer to read telegrams).",
-              "data": {
-                "status_playing": "Playing (1 bit)",
-                "status_paused": "Paused (1 bit)"
-              }
-            },
-            "status_level": {
-              "name": "Feedback volume",
-              "description": "Group addresses for volume and mute.",
-              "data": {
-                "status_volume": "Volume (5.001)",
-                "status_muted": "Muted (1 bit)"
-              }
-            },
-            "status_text": {
-              "name": "Feedback text",
-              "description": "Group addresses for title, artist, album and source (text, at most 14 characters).",
-              "data": {
-                "status_title": "Title (text)",
-                "status_artist": "Artist (text)",
-                "status_album": "Album (text)",
-                "status_source": "Source (text)",
-                "idle_text": "Text when nothing plays"
-              },
-              "data_description": {
-                "idle_text": "Sent instead of title, artist, album and source when nothing plays (at most 14 characters)."
-              }
-            },
-            "legacy": {
-              "name": "Older entries",
-              "description": "Commands and feedback from the earlier list configuration.",
-              "data": {
-                "clear_legacy": "Delete old commands and feedback"
-              }
-            }
-          }
-        }
-      },
-      "error": {
-        "invalid_address": "Invalid group address in: {detail}. Example of a valid one: 1/2/3.",
-        "scene_no_trigger": "Scenes without a trigger: {detail}. Enter the scene address or a 1-bit address for the scene."
-      },
-      "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first.",
-        "reconfigure_successful": "Saved."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "updater": {
@@ -1767,8 +1401,7 @@
         "group_tts_incomplete": "{group}: voice announcement needs a TTS service and a speaker."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "task_planner": {
@@ -1986,8 +1619,7 @@
         "no_media": "Select an audio file."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "alarm_clock": {
@@ -2136,8 +1768,7 @@
         "no_media": "Select an audio file."
       },
       "abort": {
-        "pump_configured": "This pump is already configured for another pool.",
-        "knx_missing": "The KNX integration is not set up or not loaded. Please set up the KNX integration first."
+        "pump_configured": "This pump is already configured for another pool."
       }
     },
     "integration_monitor": {

@@ -14,7 +14,7 @@ FUNCTION_MAILBOX = "mailbox"
 FUNCTION_DOOR_GUARD = "door_guard"
 FUNCTION_DOORBELL = "doorbell"
 FUNCTION_POOL = "pool_pump"
-FUNCTION_KNX_SONOS = "knx_sonos"
+REMOVED_FUNCTIONS = ("knx_sonos",)   # entfernte Funktionen: vorhandene Untereinträge werden beim Start gelöscht
 FUNCTION_UPDATER = "updater"
 FUNCTION_TASK_PLANNER = "task_planner"
 FUNCTION_ALARM = "alarm_clock"
@@ -33,7 +33,6 @@ FUNCTION_TITLES: dict[str, tuple[str, str]] = {
     FUNCTION_DOOR_GUARD: ("Türwächter", "Door guard"),
     FUNCTION_DOORBELL: ("Türklingel", "Doorbell"),
     FUNCTION_POOL: ("Poolsteuerung", "Pool control"),
-    FUNCTION_KNX_SONOS: ("KNX/Sonos-Connector", "KNX/Sonos connector"),
     FUNCTION_UPDATER: ("Home Assistant Updater", "Home Assistant Updater"),
     FUNCTION_TASK_PLANNER: ("Aufgabenplaner", "Task planner"),
     FUNCTION_ALARM: ("Wecker", "Alarm clock"),
@@ -105,7 +104,6 @@ FUNCTION_PLATFORMS: dict[str, list[Platform]] = {
     ],
     FUNCTION_DOOR_GUARD: [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH],
     FUNCTION_DOORBELL: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
-    FUNCTION_KNX_SONOS: [Platform.SENSOR, Platform.SWITCH],
     FUNCTION_UPDATER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_TASK_PLANNER: [Platform.SENSOR, Platform.SWITCH, Platform.BUTTON],
     FUNCTION_ALARM: [
@@ -331,134 +329,6 @@ MAX_WINDOWS = 8
 SERVICE_RUN_PUMP = "run_pump"
 ATTR_DURATION = "duration"
 ATTR_ENTRY_ID = "entry_id"
-
-# --- KNX/Sonos-Connector ---
-CONF_PLAYER = "player"
-CONF_START_VOLUME = "start_volume"          # Lautstärke (%), die beim Starten der Wiedergabe gesetzt wird
-CONF_START_FAVORITE = "start_favorite"      # Favorit, der beim Starten der Wiedergabe abgespielt wird
-CONF_MAX_VOLUME = "max_volume"
-CONF_VOLUME_STEP = "volume_step"
-CONF_STOP_INSTEAD = "stop_instead_of_pause"
-CONF_COMMANDS = "commands"
-CONF_STATUS = "status"
-CONF_SPEAKERS = "speakers"
-
-DEFAULT_MAX_VOLUME = 100
-DEFAULT_SPEAKER_ID = "default"
-DEFAULT_SPEAKER_NAME = "Standard"
-DEFAULT_VOLUME_STEP = 5
-
-# Feste Felder der Konfigurationsseite (Gruppenadressen, alle optional)
-CONF_ADDR_PLAY_PAUSE = "addr_play_pause"      # 1 Bit: 1 = Wiedergabe, 0 = Pause
-CONF_ADDR_NEXT_PREV = "addr_next_prev"        # 1 Bit: 1 = nächster, 0 = vorheriger Titel
-CONF_ADDR_STOP = "addr_stop"                  # 1 Bit: 1 = Stopp
-CONF_ADDR_TOGGLE = "addr_toggle"              # 1 Bit: 1 = Wiedergabe/Pause umschalten
-CONF_ADDR_VOLUME = "addr_volume"              # 5.001: Lautstärke absolut
-CONF_ADDR_VOLUME_STEP = "addr_volume_step"    # 1 Bit: 1 = lauter, 0 = leiser (ein Schritt)
-CONF_ADDR_VOLUME_DIM = "addr_volume_dim"      # 3.007: relatives Dimmen
-CONF_ADDR_MUTE = "addr_mute"                  # 1 Bit: folgt dem Wert
-CONF_ADDR_SCENE = "addr_scene"                # 17.001: Szenennummer
-SCENE_COUNT = 5
-OBSOLETE_SCENES = range(6, 9)  # frühere Szenen 6 bis 8: werden nicht mehr ausgewertet und beim Speichern gelöscht
-CONF_STATUS_PLAYING = "status_playing"
-CONF_STATUS_PAUSED = "status_paused"
-CONF_STATUS_VOLUME = "status_volume"
-CONF_STATUS_MUTED = "status_muted"
-CONF_STATUS_TITLE = "status_title"
-CONF_STATUS_ARTIST = "status_artist"
-CONF_STATUS_ALBUM = "status_album"
-CONF_STATUS_SOURCE = "status_source"
-CONF_IDLE_TEXT = "idle_text"                  # Text der Textrückmeldungen, wenn nichts läuft
-CONF_CLEAR_LEGACY = "clear_legacy"            # nur im Formular: alte Listen entfernen
-
-
-def scene_key(number: int, field: str) -> str:
-    """Schlüssel eines Szenenfelds: `scene_3_favorite`, `scene_3_volume`, `scene_3_address`."""
-    return f"scene_{number}_{field}"
-
-
-# Befehl (KNX -> Sonos) und Rückmeldung (Sonos -> KNX): Schlüssel
-K_ID = "id"
-K_NAME = "name"
-K_ADDRESS = "address"
-K_DPT = "dpt"
-K_ACTION = "action"
-K_WHEN = "when"
-K_SCENE = "scene"
-K_VOLUME = "volume"
-K_FAVORITE = "favorite"
-K_SOURCE = "source"
-K_IDLE_TEXT = "idle_text"
-K_PROFILE = "profile"
-S_ENABLED = "enabled"  # Lautsprecher-Profil aktiv
-
-# Datentypen der Befehle
-DPT_SWITCH = "switch"  # 1.001
-DPT_PERCENT = "percent"  # 5.001
-DPT_SCENE = "scene"  # 17.001
-DPT_DIMMING = "dimming"  # 3.007
-DPTS = [DPT_SWITCH, DPT_PERCENT, DPT_SCENE, DPT_DIMMING]
-
-# Bedingung bei Schalten (1 Bit)
-WHEN_ON = "on"
-WHEN_OFF = "off"
-WHEN_ANY = "any"
-WHENS = [WHEN_ON, WHEN_OFF, WHEN_ANY]
-
-# Aktionen der Befehle
-ACT_PLAY = "play"
-ACT_PAUSE = "pause"
-ACT_PLAY_PAUSE = "play_pause"
-ACT_STOP = "stop"
-ACT_NEXT = "next"
-ACT_PREVIOUS = "previous"
-ACT_VOLUME_SET = "volume_set"
-ACT_VOLUME_UP = "volume_up"
-ACT_VOLUME_DOWN = "volume_down"
-ACT_VOLUME_DIM = "volume_dim"
-ACT_MUTE = "mute"
-ACT_UNMUTE = "unmute"
-ACT_MUTE_TOGGLE = "mute_toggle"
-ACT_MUTE_SET = "mute_set"
-ACT_FAVORITE = "favorite"
-ACTIONS = [
-    ACT_PLAY,
-    ACT_PAUSE,
-    ACT_PLAY_PAUSE,
-    ACT_STOP,
-    ACT_NEXT,
-    ACT_PREVIOUS,
-    ACT_VOLUME_SET,
-    ACT_VOLUME_UP,
-    ACT_VOLUME_DOWN,
-    ACT_VOLUME_DIM,
-    ACT_MUTE,
-    ACT_UNMUTE,
-    ACT_MUTE_TOGGLE,
-    ACT_MUTE_SET,
-    ACT_FAVORITE,
-]
-
-# Quellen der Rückmeldungen
-SRC_PLAYING = "playing"
-SRC_PAUSED = "paused"
-SRC_VOLUME = "volume"
-SRC_MUTED = "muted"
-SRC_TITLE = "title"
-SRC_ARTIST = "artist"
-SRC_ALBUM = "album"
-SRC_SOURCE = "source"
-STATUS_SOURCES = [
-    SRC_PLAYING,
-    SRC_PAUSED,
-    SRC_VOLUME,
-    SRC_MUTED,
-    SRC_TITLE,
-    SRC_ARTIST,
-    SRC_ALBUM,
-    SRC_SOURCE,
-]
-TEXT_SOURCES = [SRC_TITLE, SRC_ARTIST, SRC_ALBUM, SRC_SOURCE]
 
 # --- Updater ---
 CONF_SCHEDULES = "schedules"
