@@ -52,7 +52,9 @@ from .const import (
     CONF_PRESENCE,
     CONF_HEATER_ENTITY,
     CONF_PROFILES,
+    CONF_IR_AUTO,
     CONF_REMOTES,
+    IA_LIGHTS,
     CONF_PUMP_ENTITY,
     CONF_RULES,
     CONF_SCHEDULES,
@@ -159,6 +161,8 @@ def collect_references(entry: ConfigEntry) -> tuple[list[str], list[str]]:
         entities.append(opt(CONF_CG_SENSOR))
     elif function == FUNCTION_IR:
         entities += [str(e) for e in opt(CONF_REMOTES, []) or []]
+        for rule in (opt(CONF_IR_AUTO, {}) or {}).values():
+            entities += [str(e) for e in rule.get(IA_LIGHTS) or []]
     devices = [str(t) for t in opt(CONF_MOBILE_TARGETS, []) or []]
     if function == FUNCTION_UPDATER:
         devices += _listed(opt(CONF_SCHEDULES, []), CONF_MOBILE_TARGETS)

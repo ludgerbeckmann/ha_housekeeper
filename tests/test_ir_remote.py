@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import async_mock_service
+from pytest_homeassistant_custom_component.common import async_fire_time_changed, async_mock_service
 
 from .helpers import is_menu, make_entry, menu_options, new_instance, reconfigure, sectioned
 from custom_components.ha_housekeeper import ir_remote
@@ -407,3 +407,119 @@ async def test_assign_all_commands_and_clear_old_groups(hass: HomeAssistant) -> 
     saved = {c["id"]: c for c in entry.options["ir_commands"]}
     assert all(c["remotes"] == [R1, R2] for c in saved.values())
     assert entry.options["ir_groups"] is None                    # frühere Gruppen werden entfernt
+
+
+# --- Automatik: Licht und Sonnenuntergang ------------------------------------------------------------------
+
+LIGHT = "light.wohnzimmer"
+AUTO = {R1: {"lights": [LIGHT], "sunset_offset": 0, "off_delay": 2, "latest_off": None}}
+NIGHT = "2026-06-15 05:00:00+00:00"     # 22:00 Ortszeit (US/Pacific): dunkel
+DAY = "2026-06-15 20:00:00+00:00"       # 13:00 Ortszeit: hell
+
+
+async def _auto_setup(hass, freezer, when, **over):
+    freezer.move_to(when)
+    hass.states.async_set(LIGHT, "off")
+    return await _setup(hass, ir_on_command="c1", ir_off_command="c2", ir_auto=AUTO, **over)
+
+
+async def _light(hass, state):
+    hass.states.async_set(LIGHT, state)
+    await hass.async_block_till_done()
+
+
+async def _later(hass, freezer, **delta):
+    from datetime import timedelta
+
+    freezer.tick(timedelta(**delta))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+async def test_auto_on_when_light_turns_on_after_dark_and_off_after_delay(hass: HomeAssistant, freezer) -> None:
+    entry, controller, sent, push = await _auto_setup(hass, freezer, NIGHT)
+    await _light(hass, "on")
+    assert [(c.data["entity_id"], c.data["command"]) for c in sent] == [(R1, ["power_on"])]   # nur dieser Raum
+    assert controller.assumed_remote[R1] is True
+    sent.clear()
+    await _light(hass, "off")
+    await _later(hass, freezer, minutes=1)
+    assert sent == []                                                  # Wartezeit läuft noch
+    await _light(hass, "on")                                           # kurz an: Wartezeit beginnt neu
+    await _light(hass, "off")
+    await _later(hass, freezer, minutes=1)
+    assert sent == []
+    await _later(hass, freezer, minutes=1, seconds=1)
+    assert [(c.data["entity_id"], c.data["command"]) for c in sent] == [(R1, ["power_off"])]
+    assert controller.assumed_remote[R1] is False
+
+
+async def test_auto_not_on_by_day_and_pausable(hass: HomeAssistant, freezer) -> None:
+    entry, controller, sent, push = await _auto_setup(hass, freezer, DAY)
+    await _light(hass, "on")
+    assert sent == []                                                  # hell: nicht einschalten
+    await _light(hass, "off")
+    reg = er.async_get(hass)
+    switch = reg.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_ir_auto_{R1.replace('.', '_')}")
+    assert switch and hass.states.get(switch).state == "on"
+    await hass.services.async_call("switch", "turn_off", {"entity_id": switch}, blocking=True)
+    freezer.move_to(NIGHT)
+    await _light(hass, "on")
+    assert sent == []                                                  # Automatik pausiert
+
+
+async def test_auto_on_at_sunset_when_light_is_on(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.helpers.sun import get_astral_event_date
+    from homeassistant.util import dt as dt_util
+
+    freezer.move_to(DAY)
+    hass.states.async_set(LIGHT, "on")
+    entry, controller, sent, push = await _setup(
+        hass, ir_on_command="c1", ir_off_command="c2", ir_auto=AUTO
+    )
+    assert sent == []
+    sunset = get_astral_event_date(hass, "sunset", dt_util.now().date())
+    from datetime import timedelta
+
+    freezer.move_to(sunset + timedelta(seconds=2))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert [(c.data["entity_id"], c.data["command"]) for c in sent] == [(R1, ["power_on"])]
+
+
+async def test_auto_latest_off(hass: HomeAssistant, freezer) -> None:
+    freezer.move_to("2026-06-15 05:00:00+00:00")
+    hass.states.async_set(LIGHT, "on")
+    auto = {R1: {**AUTO[R1], "latest_off": "23:30:00"}}
+    entry, controller, sent, push = await _setup(
+        hass, ir_on_command="c1", ir_off_command="c2", ir_auto=auto
+    )
+    await _later(hass, freezer, hours=1, minutes=31)                   # 23:31 Ortszeit
+    assert [(c.data["entity_id"], c.data["command"]) for c in sent] == [(R1, ["power_off"])]
+
+
+async def test_auto_dialog(hass: HomeAssistant, freezer) -> None:
+    entry, controller, sent, push = await _setup(hass)                 # ohne An-/Aus-Befehle des Schalters
+    flow = hass.config_entries.subentries
+    result = await _flow_menu(hass, entry)
+    assert "ir_auto" in menu_options(result)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_auto"})
+    result = await flow.async_configure(result["flow_id"], {"remote": R2})
+    assert result["step_id"] == "ir_auto_edit"
+    data = {"lights": [LIGHT], "sunset_offset": -15, "off_delay": 5}
+    bad = await flow.async_configure(result["flow_id"], data)
+    assert bad["errors"] == {"base": "auto_needs_switch"}
+    hass.config_entries.async_update_subentry(
+        next(iter(hass.config_entries.async_entries(DOMAIN))),
+        next(iter(next(iter(hass.config_entries.async_entries(DOMAIN))).subentries.values())),
+        data={**next(iter(next(iter(hass.config_entries.async_entries(DOMAIN))).subentries.values())).data,
+              "ir_on_command": "c1", "ir_off_command": "c2"},
+    )
+    await hass.async_block_till_done()
+    result = await _flow_menu(hass, entry)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_auto"})
+    result = await flow.async_configure(result["flow_id"], {"remote": R2})
+    done = await flow.async_configure(result["flow_id"], data)
+    assert is_menu(done)
+    assert entry.options["ir_auto"][R2] == {
+        "lights": [LIGHT], "sunset_offset": -15, "off_delay": 5, "latest_off": None}

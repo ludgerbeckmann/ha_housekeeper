@@ -16,6 +16,7 @@ from homeassistant.helpers import selector
 from .. import ir_remote
 from ..const import (
     CONF_IR_ACTIVE,
+    CONF_IR_AUTO,
     CONF_IR_GROUPS,
     CONF_IR_COMMANDS,
     CONF_IR_DELETE,
@@ -30,8 +31,13 @@ from ..const import (
     CONF_REMOTES,
     CONF_TTS_ENTITY,
     CONF_TTS_PLAYER,
+    DEFAULT_IA_OFF_DELAY,
     DEFAULT_IR_DELAY,
     DEFAULT_IR_REPEATS,
+    IA_LATEST_OFF,
+    IA_LIGHTS,
+    IA_OFF_DELAY,
+    IA_OFFSET,
     IC_B64,
     IC_CODE,
     IC_ENABLED,
@@ -177,6 +183,7 @@ class IrOptions:
 
     _learn: dict[str, Any] | None = None
     _assign_remote: str = ""
+    _auto_remote: str = ""
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -279,6 +286,7 @@ class IrOptions:
         if self._ir_commands():
             if len(self._ir_remotes()) > 1:
                 options.append("ir_assign")
+            options.append("ir_auto")
         return await self._menu(
             "ir_menu", options, user_input, {"commands": self._ir_listing()}
         )
@@ -602,4 +610,79 @@ class IrOptions:
             data_schema=vol.Schema(fields),
             errors=errors,
             description_placeholders=placeholders,
+        )
+
+    # --- Automatik: Kerzen nach Licht und Sonnenuntergang ---------------------------
+
+    async def async_step_ir_auto(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Sender wählen (bei nur einem Sender entfällt die Auswahl)."""
+        if user_input is None and len(self._ir_remotes()) == 1:
+            user_input = {"remote": self._ir_remotes()[0]}
+        if user_input is not None:
+            self._auto_remote = user_input["remote"]
+            return await self.async_step_ir_auto_edit()
+        return self.async_show_form(
+            step_id="ir_auto",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("remote"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=self._remote_options(),
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_ir_auto_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Lichter, Versatz zum Sonnenuntergang, Wartezeit und spätestes Ausschalten des gewählten Senders."""
+        remote = self._auto_remote
+        rules = dict(self._current.get(CONF_IR_AUTO) or {})
+        current = rules.get(remote) or {}
+        errors: dict[str, str] = {}
+        defaults = current
+        if user_input is not None:
+            lights = list(user_input.get(IA_LIGHTS) or [])
+            defaults = {**user_input}
+            if lights and not (self._current.get(CONF_IR_ON) and self._current.get(CONF_IR_OFF)):
+                errors["base"] = "auto_needs_switch"
+            else:
+                if lights:
+                    rules[remote] = {
+                        IA_LIGHTS: lights,
+                        IA_OFFSET: int(user_input.get(IA_OFFSET) or 0),
+                        IA_OFF_DELAY: int(user_input.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY) or 0),
+                        IA_LATEST_OFF: user_input.get(IA_LATEST_OFF) or None,
+                    }
+                else:
+                    rules.pop(remote, None)
+                self._save({CONF_IR_AUTO: rules})
+                return await self.async_step_ir_menu()
+        return self.async_show_form(
+            step_id="ir_auto_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(IA_LIGHTS, description=_suggest(IA_LIGHTS, defaults)): (
+                        selector.EntitySelector(
+                            selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)
+                        )
+                    ),
+                    vol.Required(IA_OFFSET, default=defaults.get(IA_OFFSET, 0)): _number(
+                        -240, 240, "min"
+                    ),
+                    vol.Required(
+                        IA_OFF_DELAY, default=defaults.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY)
+                    ): _number(0, 120, "min"),
+                    vol.Optional(IA_LATEST_OFF, description=_suggest(IA_LATEST_OFF, defaults)): (
+                        selector.TimeSelector()
+                    ),
+                }
+            ),
+            errors=errors,
+            description_placeholders={"remote": self._remote_name(remote)},
         )

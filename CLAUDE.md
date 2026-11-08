@@ -279,6 +279,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `native` als `b64:<Code>`. Menüschritte `ir_assign`/`ir_assign_edit` (Sender wählen, Befehle ankreuzen oder `all_commands` = alle; `code_unavailable`). Frühere Befehlsgruppen (`ir_groups`) gibt es nicht mehr, sie werden beim Speichern auf `None` gesetzt. Bei mehr als einem Sender gibt es
   zusätzlich Tasten (`<id>_ir_<befehl>_<sender-slug>`) und Schalter (`<id>_ir_power_<sender-slug>`, `assumed_remote` im `Store`) je
   Sender; veraltete werden anhand der Präfixe entfernt. `async_send(command_id, repeats, remote)` sendet nur an einen Sender.
+  **Automatik** (`ir_auto` = `{sender: {lights, sunset_offset, off_delay, latest_off}}`, Menüschritte `ir_auto`/`ir_auto_edit`, Prüfung `auto_needs_switch`: braucht
+  `ir_on_command`/`ir_off_command`): `auto_rules()` nur mit Lichtern und gesetztem Schalter; Listener auf die Lichter (`_on_light_change`), `async_track_sunset`
+  mit Versatz und optional `async_track_time_change` für `latest_off`. `_lights_on[sender]` = die Automatik hat eingeschaltet (nicht der Lichtzustand): Power On beim
+  ersten Licht an, wenn `_is_dark()` (nach Sonnenuntergang + Versatz oder vor Sonnenaufgang, `get_astral_event_date`); Power Off nach `off_delay`, wenn alle Lichter
+  eindeutig aus sind (neues Licht an bricht den Timer ab); unklare Lichter ändern nichts; kein Schalten beim Start. Pausieren je Sender über den Schalter
+  `<id>_ir_auto_<sender-slug>` (`auto_off` im `Store`). Gesendet wird über `async_set_power(on, remote)`. Callbacks für `async_track_sunset` brauchen `@callback`.
+  Tests mit `freezer` (US/Pacific: 05:00 UTC = dunkel, 20:00 UTC = hell).
 - `consumption_guard.py`: Je Instanz ein Sensor (`consumption_sensor`) mit Durchfluss/Leistung. Eine **Konfigurationsseite**
   (`cg_settings`, kein Menü, Name als Feld; Abschnitte `general`, `notifications`; Speichern = `async_update_subentry` +
   Abbruch `reconfigure_successful`) mit `threshold`, `duration_minutes` (Standard 15), `repeat_minutes` (0 = nie), optionalem
