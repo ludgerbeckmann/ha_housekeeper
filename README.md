@@ -1,30 +1,93 @@
 # Home Assistant Hausmeister
 
 [![Validate](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml/badge.svg)](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/ludgerbeckmann/ha_housekeeper)](https://github.com/ludgerbeckmann/ha_housekeeper/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-blue.svg)
 
-Eine Custom Integration, die verschiedene Smart-Home-Anwendungsfälle
-bündelt. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine Klingel, ein Pool, ein
-Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät.
+Eine Custom Integration mit **14 Smart-Home-Funktionen** in einer Installation: Briefkasten, Türwächter,
+Türklingel, Pool, Wecker, Stromkosten und mehr. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine
+Klingel, ein Pool, ein Wecker …) ist ein **Untereintrag** dieses Hubs mit eigenem Gerät und eigenen Einstellungen.
+Alle Einstellungen sind Formulare in Home Assistant, es ist kein YAML nötig.
 
 ## Funktionen
 
-| Typ | Beschreibung |
+Jede Funktion ist ein eigener Abschnitt weiter unten (Link in der ersten Spalte).
+
+### Zugang und Post
+
+| Funktion | Beschreibung |
 | --- | --- |
-| Benachrichtigung Briefkasten | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor oder zwei Türkontakte (Einwurf und Entnahme) |
-| Türwächter | Schließt eine Tür zu festen Zeiten, bei Anwesenheit und nach dem Schließen automatisch auf/ab und warnt, wenn sie zu lange offen steht |
-| Türklingel | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
-| Poolsteuerung | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
-| KNX/Sonos-Connector | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
-| Home Assistant Updater | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit oder sobald ein Update verfügbar wird |
-| Aufgabenplaner | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
-| Wecker | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
-| LLM-Verbrauch | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
-| Verbrauchswächter | Meldet, wenn ein Durchfluss oder eine Leistung (z. B. Wasser, Strom) länger als eine eingestellte Zeit am Stück über einer Schwelle liegt |
-| Energiemonitor | Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Wohneinheiten auf und rechnet die Verrechnung aus |
-| Stromkosten | Zählt Energie und Kosten eines vorhandenen Geräts (Steckdose mit Leistungsmessung oder Energiezähler) mit, mit festem Preis oder dynamischem Tarif |
-| IR-Fernbedienung | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
-| Integrationsmonitor | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
+| [Benachrichtigung Briefkasten](#benachrichtigung-briefkasten) | Meldet einen Posteinwurf, erkannt über einen Vibrationssensor oder zwei Türkontakte (Einwurf und Entnahme) |
+| [Türwächter](#türwächter) | Schließt eine Tür zu festen Zeiten, bei Anwesenheit und nach dem Schließen automatisch auf/ab und warnt, wenn sie zu lange offen steht |
+| [Türklingel](#türklingel) | Spielt beim Klingeln je nach Uhrzeit eine Ansage oder einen Klingelton auf gewählten Media Playern und sendet Push |
+
+### Medien und Wecker
+
+| Funktion | Beschreibung |
+| --- | --- |
+| [KNX/Sonos-Connector](#knxsonos-connector) | Steuert einen Sonos-Lautsprecher über KNX-Gruppenadressen und meldet seinen Zustand zurück an KNX |
+| [Wecker](#wecker) | Spielt zur Weckzeit eine Audiodatei auf Media Playern ab, mit kritischer Push-Meldung (Stoppen/Schlummern) |
+| [IR-Fernbedienung](#ir-fernbedienung) | Lernt Infrarot-/Funkbefehle an Sendern (z. B. Broadlink RM4 mini) an, übernimmt vorhandene Befehle und stellt sie als Tasten und optional als Schalter bereit |
+
+### Haus und Pool
+
+| Funktion | Beschreibung |
+| --- | --- |
+| [Poolsteuerung](#poolsteuerung) | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
+| [Aufgabenplaner](#aufgabenplaner) | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
+
+### Energie und Kosten
+
+| Funktion | Beschreibung |
+| --- | --- |
+| [Energiemonitor](#energiemonitor) | Teilt Netzbezug und PV-Eigenverbrauch zeitgleich anteilig auf zwei Wohneinheiten auf und rechnet die Verrechnung aus |
+| [Stromkosten](#stromkosten) | Zählt Energie und Kosten eines vorhandenen Geräts (Steckdose mit Leistungsmessung oder Energiezähler) mit, mit festem Preis oder dynamischem Tarif |
+| [Verbrauchswächter](#verbrauchswächter) | Meldet, wenn ein Durchfluss oder eine Leistung (z. B. Wasser, Strom) länger als eine eingestellte Zeit am Stück über einer Schwelle liegt |
+| [LLM-Verbrauch](#llm-verbrauch) | Überwacht Kosten und Restguthaben eines LLM-API-Kontos (Anthropic, OpenAI) mit Verlauf und Warnungen bei niedrigem Guthaben oder hohem Verbrauch |
+
+### Wartung
+
+| Funktion | Beschreibung |
+| --- | --- |
+| [Home Assistant Updater](#home-assistant-updater) | Meldet oder installiert Updates (Home Assistant, Add-ons, ESPHome und ESPHome-Geräte) nach Wochentag und Uhrzeit oder sobald ein Update verfügbar wird |
+| [Integrationsmonitor](#integrationsmonitor) | Überwacht alle Integrationen auf Fehler oder lauter nicht verfügbare Entitäten, meldet Störungen und lädt ausgewählte Integrationen neu oder deaktiviert/aktiviert sie |
+
+Dazu kommen die [Reparaturhinweise](#reparaturhinweise), die fehlende Entitäten und Geräte in den Einstellungen melden.
+
+## Installation
+
+**Schnellstart:**
+
+1. Per HACS oder manuell installieren (siehe unten) und Home Assistant neu starten.
+2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister* legt den Hub „Funktionen“ an.
+3. Am Hub über die Schaltfläche **„… hinzufügen“** eine Instanz einer Funktion anlegen, danach über ihr Zahnrad
+   (*Neu konfigurieren*) jederzeit ändern.
+
+**HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
+Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Home Assistant neu starten.
+
+**Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
+kopieren und neu starten.
+
+Der **Hub „Funktionen“** wird ohne weitere Abfrage angelegt (es gibt nur einen). **Instanzen** fügst du
+über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
+„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
+„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“, „Stromkosten hinzufügen“**. Jede Instanz hat ihr Zahnrad
+(*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
+
+**Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
+z. B. „Türwächter“). Die Feldbeschriftung zeigt den Präfix („Name (erscheint als „Türwächter: Name“)“); ein
+vorangestellter Funktionsname wird automatisch entfernt („Türwächter Garagentür“ wird zu „Türwächter:
+Garagentür“).
+In der Liste erscheint die Instanz als **„Funktion: Name“** (z. B. „Wecker: Zimmer Hannah“; so stehen
+gleiche Funktionen beieinander), das **Gerät** heißt nur „Name“. Im Menü hinter dem Zahnrad gibt es
+den Punkt **Umbenennen**; der Präfix bleibt dabei automatisch erhalten, auch eine Umbenennung über
+Home Assistant selbst wird beim nächsten Neuladen korrigiert.
+
+**Update von einer älteren Version:** Bisher war jede Instanz (oder später jede Funktion) ein
+eigener Eintrag. Diese Einträge werden nicht mehr geladen; es erscheint ein Reparaturhinweis. Lösche
+den alten Eintrag, lege den Hub „Funktionen“ an und füge die Instanzen neu hinzu.
 
 ## Bedienung der Einstellungen
 
@@ -49,34 +112,6 @@ markiert. Bei einem ausgeschalteten Updater-Zeitplan zählen auch seine Updates 
 Benachrichtigungswege nicht für „Verfügbare Updates“ und „Jetzt prüfen“; ein ausgeschaltetes
 älteres KNX/Sonos-Profil sendet keine Rückmeldungen und führt keine Befehle aus (beim KNX/Sonos-Connector
 schaltet man sonst den Eintrag mit „Connector aktiv“ aus).
-
-## Installation
-
-**HACS:** Menü (⋮) → *Benutzerdefinierte Repositories* → diese Repository-URL,
-Kategorie *Integration* → „Home Assistant Hausmeister“ installieren → Home Assistant neu starten.
-
-**Manuell:** `custom_components/ha_housekeeper` nach `<config>/custom_components/`
-kopieren und neu starten.
-
-Danach: *Einstellungen → Geräte & Dienste → Integration hinzufügen → Home Assistant Hausmeister*.
-Das legt den **Hub „Funktionen“** an (ohne weitere Abfrage; es gibt nur einen). **Instanzen** fügst du
-über die Schaltflächen am Hub hinzu: **„Briefkasten hinzufügen“, „Türwächter hinzufügen“,
-„Klingel hinzufügen“, „Pool hinzufügen“, „KNX/Sonos-Connector hinzufügen“, „Updater hinzufügen“,
-„Aufgabenplaner hinzufügen“, „Wecker hinzufügen“, „Integrationsmonitor hinzufügen“, „LLM-Verbrauch hinzufügen“, „IR-Fernbedienung hinzufügen“, „Verbrauchswächter hinzufügen“, „Energiemonitor hinzufügen“, „Stromkosten hinzufügen“**. Jede Instanz hat ihr Zahnrad
-(*Neu konfigurieren*) und ihr eigenes Gerät. Voraussetzung ist Home Assistant 2025.3 oder neuer.
-
-**Namen:** Beim Anlegen gibst du nur den Namen der Instanz ein (leer und optional; leer = Funktionsname,
-z. B. „Türwächter“). Die Feldbeschriftung zeigt den Präfix („Name (erscheint als „Türwächter: Name“)“); ein
-vorangestellter Funktionsname wird automatisch entfernt („Türwächter Garagentür“ wird zu „Türwächter:
-Garagentür“).
-In der Liste erscheint die Instanz als **„Funktion: Name“** (z. B. „Wecker: Zimmer Hannah“; so stehen
-gleiche Funktionen beieinander), das **Gerät** heißt nur „Name“. Im Menü hinter dem Zahnrad gibt es
-den Punkt **Umbenennen**; der Präfix bleibt dabei automatisch erhalten, auch eine Umbenennung über
-Home Assistant selbst wird beim nächsten Neuladen korrigiert.
-
-**Update von einer älteren Version:** Bisher war jede Instanz (oder später jede Funktion) ein
-eigener Eintrag. Diese Einträge werden nicht mehr geladen; es erscheint ein Reparaturhinweis. Lösche
-den alten Eintrag, lege den Hub „Funktionen“ an und füge die Instanzen neu hinzu.
 
 ## Benachrichtigung Briefkasten
 
@@ -286,6 +321,194 @@ beim Start automatisch übernommen: als ganztägiges Profil „Benachrichtigung�
 - `button` **Test-Klingeln** (spielt aus und sendet, was jetzt im Zeitfenster passt;
   umgeht Schalter und Sperrzeit)
 
+## KNX/Sonos-Connector
+
+Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
+Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
+(Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
+eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
+sonst bricht das Hinzufügen ab. **Jeder Lautsprecher ist ein eigener Eintrag** („KNX/Sonos-Connector
+hinzufügen“), mit eigenem Gerät, Schalter und Sensor.
+
+### Konfigurationsseite
+
+Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten; nur „Lautsprecher“ ist aufgeklappt, die übrigen sind eingeklappt. Jede
+Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es zählen nur eingehende
+**Schreibtelegramme**. Das Layout orientiert sich am Blueprint
+[KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935).
+
+| Abschnitt | Felder |
+|---|---|
+| **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
+| **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
+| **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
+| **Start** | **Lautstärke beim Start** (%) und **Favorit beim Start**, beide optional: Startet ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher, der **nicht spielt** (Pause, Leerlauf, Standby), wird zuerst die Lautstärke gesetzt (begrenzt durch die Lautstärkegrenze) und dann der Favorit gestartet, sonst nur fortgesetzt. Spielt er schon, pausiert der Taster wie bisher und ändert nichts. Damit wird nie eine alte hohe Lautstärke übernommen |
+| **Szenen** | Szenenadresse (17.001, Szenennummer 1–5); je **Szene 1–5**: Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
+| **Rückmeldungen** (drei Abschnitte) | *Wiedergabe:* Spielt, Pausiert (1 Bit). *Lautstärke:* Lautstärke (5.001), Stumm (1 Bit). *Text:* Titel, Interpret, Album, Quelle (auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
+
+**Gruppenadressen aus dem ETS-Projekt:** Hast du in der KNX-Integration ein **ETS-Projekt importiert**
+(KNX → Konfigurieren → ETS-Projekt importieren), bieten alle Adressfelder die Adressen des Projekts als Dropdown an
+(„1/2/3 – Name (Datentyp)“, durchsuchbar). Jedes Feld zeigt nur Adressen mit passendem Datentyp (1 Bit, 5.xxx,
+3.xxx, 17.xxx, 16.xxx), Adressen ohne hinterlegten Datentyp erscheinen überall. Die Felder bleiben frei beschreibbar,
+gespeichert wird nur die Adresse. Ohne importiertes Projekt sind es Textfelder. Die Liste wird beim Öffnen der Seite aus
+der Speicherdatei der KNX-Integration gelesen (eine interne Datei: ändert sich ihr Format, entfällt nur die Auswahl).
+
+Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** (GroupValueRead) auf der
+Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
+(3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit
+wird als Name gespeichert; bei einem umbenannten Favoriten muss er angepasst werden.
+
+**Frühere Szenen 6–8** werden nicht mehr ausgewertet und beim Speichern der Seite gelöscht.
+
+### Ältere Einträge
+
+Bestehende Einträge laufen unverändert weiter, auch mit mehreren Lautsprecher-Profilen und den früheren
+Listen für Befehle und Rückmeldungen. Die neue Seite zeigt dann die Werte des ersten Profils; **beim
+Speichern werden weitere Profile verworfen** (ein Hinweis steht auf der Seite), lege sie als eigene Einträge
+an. Die älteren Befehle und Rückmeldungen bleiben aktiv, bis du im eingeklappten Abschnitt „Ältere Einträge“
+das Löschen wählst (er erscheint nur, wenn es welche gibt).
+
+### Entitäten
+
+- `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
+  Einschalten werden die Rückmeldungen neu gesendet)
+- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name des Felds, Adresse, Aktion, Wert)
+
+### Hinweise
+
+- **Eigene Telegramme** (`direction: Outgoing`) werden nie ausgewertet, damit sich die
+  Rückmeldungen nicht selbst auslösen. Verwende für Befehl und Rückmeldung trotzdem
+  getrennte Gruppenadressen, wie in ETS üblich.
+- Die Anmeldung der Adressen bei der KNX-Integration gilt nur zur Laufzeit. Sie wird
+  beim Start, nach `event_knx_reloaded` und alle 5 Minuten wiederholt (idempotent),
+  damit ein Neuladen der KNX-Integration die Funktion nicht stilllegt. Nach einem
+  Neuladen über die Oberfläche kann es bis zu 5 Minuten dauern, bis Befehle wieder
+  ankommen.
+- Relatives Dimmen löst pro Telegramm **einen Schritt** aus (kein weiches Hoch- oder
+  Runterfahren über eine Zeit). Aus dem Blueprint nicht übernommen: Ein/Aus des Players sowie die
+  Erweiterungen für Music Assistant, Squeezebox und Denon.
+
+## Wecker
+
+Spielt zur Weckzeit eine **Audiodatei** auf einem oder mehreren **Media Playern** ab und
+sendet eine **kritische Push-Meldung** mit den Aktionen **Stoppen** und **Schlummern**. Ein
+Eintrag enthält **mehrere Wecker**; die Push-Ziele gelten für den ganzen Eintrag.
+
+### Wecker
+
+Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen). Ein Wecker hat:
+
+- **Name**, Schalter *Wecker aktiv*, **Uhrzeit** und **Wochentage**
+- einen oder mehrere **Media Player**
+- die **Audiodatei** aus der Medienauswahl von Home Assistant (lokale Medien, Medienbrowser, Streams)
+- die **Lautstärke** in Prozent (Standard 30)
+- die **Schlummerzeit** (Standard 9 Minuten)
+- **Automatisch stoppen nach** X Minuten (Standard 30, 0 = nie), jeweils pro Klingeln
+- optional **Werktags-/Feiertagsbedingungen** mit Binärsensoren (siehe unten)
+
+### Ablauf
+
+1. Zur Weckzeit wird die **ursprüngliche Lautstärke** jedes Players gemerkt, die
+   eingestellte Lautstärke gesetzt und die Datei abgespielt.
+2. Die Push-Meldung kommt gleichzeitig. **Stoppen** beendet die Wiedergabe und entfernt die
+   Meldung. **Schlummern** stoppt den Ton und startet ihn nach der Schlummerzeit erneut
+   (mit neuer Meldung); das geht beliebig oft.
+3. Bei jedem Ende des Tons (Stoppen, Schlummern, automatisches Stoppen, Wecker
+   ausschalten) wird die **ursprüngliche Lautstärke** der Player **wiederhergestellt**. Das
+   passiert auch nach einem Neustart von Home Assistant mitten im Wecken. Meldet ein Player
+   keine Lautstärke, wird sie nicht zurückgesetzt.
+4. Löst ein Wecker aus, während ein anderer klingelt, wird der laufende beendet.
+
+### Werktags- und Feiertagssensoren
+
+Zur Zeitplanung jedes Weckers (im Wecker-Dialog direkt bei Uhrzeit und Wochentagen) gehören zwei
+optionale Bedingungen mit beliebigen **Binärsensoren**, z. B. dem Sensor der Werktags-Integration
+von Home Assistant:
+
+- **Nur klingeln, wenn an:** mindestens **einer** der gewählten Sensoren muss an sein (ODER),
+  z. B. ein Werktagssensor.
+- **Nicht klingeln, wenn an:** sobald **einer** der gewählten Sensoren an ist (ODER), klingelt der
+  Wecker nicht, z. B. ein Feiertagssensor oder ein Sensor „arbeitsfrei“.
+
+Beide Felder sind UND-verknüpft und gelten zusätzlich zu den Wochentagen. Die Bedingungen
+werden **zur Weckzeit** geprüft. Ein **nicht verfügbarer oder unbekannter** Sensor zählt bei
+„Nur klingeln, wenn an“ als erfüllt und blockiert bei „Nicht klingeln, wenn an“ nie; der Wecker
+klingelt dann eher einmal zu viel als gar nicht. Ein übersprungener Wecker steht mit Grund und
+Sensoren im Attribut `skipped` des Sensors **Letzter Wecker**. Der Sensor **Nächster Wecker** kennt
+die Bedingungen nicht (er kann künftige Werktage nicht vorhersagen) und zeigt den nächsten Termin
+nach Wochentag und Uhrzeit.
+
+### Kritische Meldung
+
+Standardmäßig wird die Push-Meldung als **kritische Meldung** gesendet:
+
+- **iOS:** `interruption-level: critical` mit kritischem Ton, durchbricht „Nicht stören“ und
+  die Stummschaltung.
+- **Android:** Alarm-Kanal (`alarm_stream`) mit hoher Priorität.
+
+In der Companion-App müssen **kritische Hinweise erlaubt** sein. Die Option *Als kritische
+Meldung senden* lässt sich in den Einstellungen abschalten (dann normale Meldung mit den
+beiden Aktionen).
+
+### Entitäten
+
+- `switch` **Wecker aktiv** (aus = alle Wecker pausiert; ein klingelnder Wecker wird gestoppt)
+- `binary_sensor` **Wecker klingelt** (beim Schlummern aus, Attribute `snoozed`, `snooze_until`)
+- `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`; beim
+  letzten Wecker außerdem `skipped` mit dem zuletzt übersprungenen Wecker)
+- `button` **Wecker stoppen** und **Schlummern**
+
+## IR-Fernbedienung
+
+Sendet Infrarot- (oder Funk-)Befehle über einen oder mehrere **Sender** (`remote`-Entitäten, z. B. Broadlink
+RM4 mini) und ersetzt damit Lern- und Sende-Skripte. Die Codes bleiben im Speicher des Senders (bei Broadlink
+unter dem **Gerätenamen**, z. B. `candle`); die Funktion lernt sie an, übernimmt vorhandene und sendet sie.
+
+### Einrichtung
+
+Beim Anlegen: Name, **Sender** (mehrere möglich, gesendet wird an alle gleichzeitig), **Gerätename beim
+Sender** (bei vorhandenen Skripten der Wert von `device`, lässt sich später nicht ändern), Wiederholungen und
+Pause sowie die Benachrichtigung bei Sendefehlern.
+
+### Einstellungen und Menü
+
+Das Zahnrad öffnet ein kleines Menü: **Einstellungen** (eine Seite mit den Abschnitten *Allgemein* mit Name, Sender,
+Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *Schalter* mit An-/Aus-Befehl;
+*Benachrichtigungen*) sowie die Schritte, die ein Gerät brauchen und deshalb keine Formularfelder sein können:
+
+- **Befehl anlernen:** Name (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`, `light_plus`), Art (Infrarot/Funk)
+  und die Sender. Je Sender erscheint ein Fortschrittsdialog: Taste der Original-Fernbedienung auf den Sender
+  richten und drücken (Zeitlimit etwa 30 Sekunden). Schlägt es an einem Sender fehl, bleiben die erfolgreichen
+  gespeichert und die Ursache wird angezeigt.
+- **Vorhandene Befehle übernehmen:** Liest bei Broadlink-Sendern die dort schon gespeicherten Befehle des Geräts und
+  bietet sie zum Ankreuzen an; weitere Namen kannst du eintippen (dann gilt der Befehl an allen Sendern als
+  angelernt). Danach können die alten Lern- und Sende-Skripte gelöscht werden. Die Funktion liest dafür eine
+  interne Datei der Broadlink-Integration; bei anderen Sendern oder geändertem Format entfällt die Liste, die
+  Handeingabe bleibt.
+- **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
+  gespeichert und lassen sich nicht kopieren). Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog
+  entfällt, jeder aktive Befehl hat eine Taste.
+- **Befehle einem Sender zuordnen** (nur bei mehreren Sendern): Sender wählen, dann Befehle und/oder Gruppen ankreuzen.
+  Nicht angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom Sender gelesen, an dem der Befehl angelernt
+  wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes Anlernen ist nicht nötig. Ist der Code
+  nicht lesbar, wird der Befehl dort angelernt.
+- **Befehlsgruppen:** Eine Gruppe bündelt Befehle (z. B. „Kerze“ mit An, Aus, Timer), damit du sie einem Sender in einem
+  Schritt zuordnen kannst. Gruppe wählen oder einen neuen Namen eintippen, Befehle ankreuzen. Gruppen haben keine eigenen Entitäten.
+- **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
+  genutzter Befehl lässt sich nicht löschen.
+- **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
+  Sprachassistenten (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
+
+### Entitäten und Aktion
+
+- `button` je aktivem Befehl (Name = Befehlsname), gesendet an alle zugeordneten Sender. Bei **mehreren Sendern** zusätzlich je
+  zugeordnetem Sender eine Taste „Befehl – Sender“, die nur an diesen Sender sendet (so bleiben die Räume getrennt).
+- `switch` **Schalter** (nur mit gesetzten An-/Aus-Befehlen; bei mehreren Sendern zusätzlich ein Schalter je Sender mit eigenem angenommenem Zustand), `sensor` **Zuletzt gesendet** (Attribute: Befehl, Ergebnis
+  `ok`/`partial`/`failed`, Fehler je Sender).
+- Aktion `ha_housekeeper.send_ir_command` mit einer Befehlstaste als Ziel und optional abweichenden Wiederholungen.
+- Ein ausgeschalteter oder nicht verfügbarer Sender zählt als Fehler und wird gemeldet (die Meldung verschwindet,
+  sobald wieder alles gesendet wird). Gelöschte `remote`-Entitäten erzeugen einen Reparaturhinweis.
+
 ## Poolsteuerung
 
 Übernommen aus der Integration
@@ -387,72 +610,251 @@ die Poolpumpe hier neu an (Pumpe, Zeitfenster, Trockenlauf-Einstellungen), passe
 Automationen und Dashboards an die neuen Entity-IDs und die Aktion
 `ha_housekeeper.run_pump` an und entferne danach die alte Integration.
 
-## KNX/Sonos-Connector
+## Aufgabenplaner
 
-Verbindet KNX-Gruppenadressen mit einem Sonos-Lautsprecher, in beide Richtungen.
-Die Funktion setzt auf der **offiziellen KNX-Integration** von Home Assistant auf
-(Dienste `knx.event_register` und `knx.send`, Ereignis `knx_event`) und baut keine
-eigene Busverbindung auf. Die KNX-Integration muss eingerichtet und geladen sein,
-sonst bricht das Hinzufügen ab. **Jeder Lautsprecher ist ein eigener Eintrag** („KNX/Sonos-Connector
-hinzufügen“), mit eigenem Gerät, Schalter und Sensor.
+Führt **Aktionen** aus, sobald ein **Auslöser** eintritt. Ein Eintrag enthält **mehrere
+Aufgaben**; Benachrichtigungen gehen an die im Eintrag gewählten Wege (App-Push,
+Sprachausgabe, persistente Meldung).
 
-### Konfigurationsseite
+### Aufgaben
 
-Alle Einstellungen stehen auf **einer Seite** (Anlegen und Zahnrad), in Abschnitten; nur „Lautsprecher“ ist aufgeklappt, die übrigen sind eingeklappt. Jede
-Gruppenadresse ist optional, ein leeres Feld bedeutet „nicht verwendet“. Es zählen nur eingehende
-**Schreibtelegramme**. Das Layout orientiert sich am Blueprint
-[KNX Media Player](https://gist.github.com/torbenledermann/e20c6d9d86406529e9941b71fca82935).
+Unter *Konfigurieren* pflegst du die Aufgaben (hinzufügen, bearbeiten, löschen). Eine
+Aufgabe hat:
 
-| Abschnitt | Felder |
-|---|---|
-| **Lautsprecher** | Name, Sonos-Lautsprecher, **Lautstärkegrenze** (begrenzt jede per KNX gesetzte Lautstärke), **Lautstärkeschritt**, **Stoppen statt Pause** (z. B. für Radiostreams) |
-| **Wiedergabe** | Play/Pause (1 Bit: 1 = Wiedergabe, 0 = Pause), Nächster/Vorheriger Titel (1 = nächster, 0 = vorheriger), Stopp (1), Play/Pause umschalten (1) |
-| **Lautstärke** | absolut (5.001), Lauter/Leiser (1 Bit, ein Schritt), relatives Dimmen (3.007, ein Schritt je Telegramm, Schrittcode 0 = Stopp), Stumm (1 Bit, folgt dem Wert) |
-| **Start** | **Lautstärke beim Start** (%) und **Favorit beim Start**, beide optional: Startet ein Play-Befehl (Play/Pause umschalten oder Play/Pause-Schalter mit 1) einen Lautsprecher, der **nicht spielt** (Pause, Leerlauf, Standby), wird zuerst die Lautstärke gesetzt (begrenzt durch die Lautstärkegrenze) und dann der Favorit gestartet, sonst nur fortgesetzt. Spielt er schon, pausiert der Taster wie bisher und ändert nichts. Damit wird nie eine alte hohe Lautstärke übernommen |
-| **Szenen** | Szenenadresse (17.001, Szenennummer 1–5); je **Szene 1–5**: Favorit (Auswahl aus den Quellen des Lautsprechers oder Name eintippen), optional Lautstärke und optional eine eigene 1-Bit-Adresse (1 = starten, 0 = Pause) |
-| **Rückmeldungen** (drei Abschnitte) | *Wiedergabe:* Spielt, Pausiert (1 Bit). *Lautstärke:* Lautstärke (5.001), Stumm (1 Bit). *Text:* Titel, Interpret, Album, Quelle (auf 14 Zeichen gekürzt) und der **Text, wenn nichts läuft** |
+- **Name** und einen Schalter *Aufgabe aktiv*
+- **Aktionen**: der Aktionseditor von Home Assistant (Dienstaufrufe, Verzögerungen,
+  Bedingungen, Benachrichtigungen …). In den Aktionen stehen die Variablen `trigger`
+  (`type`, bei Entitäten außerdem `entity_id`, `from_state`, `to_state`) und `task`
+  zur Verfügung.
+- **Auslöser** (einer oder mehrere, jeder löst die Aufgabe aus)
+- **Benachrichtigung** bei Start, Erfolg und Fehler, einzeln schaltbar
+  (Standard: nur bei Fehler)
 
-**Gruppenadressen aus dem ETS-Projekt:** Hast du in der KNX-Integration ein **ETS-Projekt importiert**
-(KNX → Konfigurieren → ETS-Projekt importieren), bieten alle Adressfelder die Adressen des Projekts als Dropdown an
-(„1/2/3 – Name (Datentyp)“, durchsuchbar). Jedes Feld zeigt nur Adressen mit passendem Datentyp (1 Bit, 5.xxx,
-3.xxx, 17.xxx, 16.xxx), Adressen ohne hinterlegten Datentyp erscheinen überall. Die Felder bleiben frei beschreibbar,
-gespeichert wird nur die Adresse. Ohne importiertes Projekt sind es Textfelder. Die Liste wird beim Öffnen der Seite aus
-der Speicherdatei der KNX-Integration gelesen (eine interne Datei: ändert sich ihr Format, entfällt nur die Auswahl).
+### Auslöser
 
-Der Wert einer Rückmeldung wird bei jeder Änderung gesendet; **Leseanfragen** (GroupValueRead) auf der
-Adresse werden mit dem aktuellen Wert beantwortet. Beim Speichern wird geprüft, ob die Adressen gültig sind
-(3-Ebenen, 2-Ebenen oder frei) und ob jede Szene mit Favorit oder Lautstärke einen Auslöser hat. Der Favorit
-wird als Name gespeichert; bei einem umbenannten Favoriten muss er angepasst werden.
+| Art | Beschreibung |
+| --- | --- |
+| Wochentag und Uhrzeit | Uhrzeit an den gewählten Wochentagen |
+| Monat | Uhrzeit am **ersten**, **letzten** oder einem **bestimmten Tag** des Monats (hat der Monat weniger Tage, gilt der letzte Tag) |
+| Einmaliger Zeitpunkt | Datum und Uhrzeit, liegt in der Zukunft |
+| Intervall | alle N Minuten, gezählt ab dem Start (Home-Assistant-Start oder Neuladen) |
+| Zustand einer Entität | Wechsel in einen Zielzustand (leer = jede Änderung), optional erst nach N Minuten |
+| Grenzwert eines Sensors | Wert steigt über / fällt unter einen Wert (oder Bereich), optional erst nach N Minuten |
 
-**Frühere Szenen 6–8** werden nicht mehr ausgewertet und beim Speichern der Seite gelöscht.
-
-### Ältere Einträge
-
-Bestehende Einträge laufen unverändert weiter, auch mit mehreren Lautsprecher-Profilen und den früheren
-Listen für Befehle und Rückmeldungen. Die neue Seite zeigt dann die Werte des ersten Profils; **beim
-Speichern werden weitere Profile verworfen** (ein Hinweis steht auf der Seite), lege sie als eigene Einträge
-an. Die älteren Befehle und Rückmeldungen bleiben aktiv, bis du im eingeklappten Abschnitt „Ältere Einträge“
-das Löschen wählst (er erscheint nur, wenn es welche gibt).
-
-### Entitäten
-
-- `switch` **Connector aktiv** (aus = keine Befehle und keine Rückmeldungen; beim
-  Einschalten werden die Rückmeldungen neu gesendet)
-- `sensor` **Letzter Befehl** (Zeitstempel; Attribute: Name des Felds, Adresse, Aktion, Wert)
+Zustands- und Grenzwertauslöser lösen nur bei der **Flanke** aus (beim Übergang in die
+Bedingung), nicht bei jeder weiteren Änderung. Hält die Bedingung die Mindestdauer nicht
+ein, wird nichts ausgelöst. Auslöser einer Aufgabe lassen sich hinzufügen und entfernen;
+zum Ändern entfernst du einen Auslöser und legst ihn neu an.
 
 ### Hinweise
 
-- **Eigene Telegramme** (`direction: Outgoing`) werden nie ausgewertet, damit sich die
-  Rückmeldungen nicht selbst auslösen. Verwende für Befehl und Rückmeldung trotzdem
-  getrennte Gruppenadressen, wie in ETS üblich.
-- Die Anmeldung der Adressen bei der KNX-Integration gilt nur zur Laufzeit. Sie wird
-  beim Start, nach `event_knx_reloaded` und alle 5 Minuten wiederholt (idempotent),
-  damit ein Neuladen der KNX-Integration die Funktion nicht stilllegt. Nach einem
-  Neuladen über die Oberfläche kann es bis zu 5 Minuten dauern, bis Befehle wieder
-  ankommen.
-- Relatives Dimmen löst pro Telegramm **einen Schritt** aus (kein weiches Hoch- oder
-  Runterfahren über eine Zeit). Aus dem Blueprint nicht übernommen: Ein/Aus des Players sowie die
-  Erweiterungen für Music Assistant, Squeezebox und Denon.
+- Eine Aufgabe läuft nie doppelt gleichzeitig; ein neuer Auslöser während des Laufs wird
+  ignoriert.
+- Ein Fehler in den Aktionen (z. B. unbekannter Dienst) gilt als fehlgeschlagen und wird
+  gemeldet.
+- Zeitpunkte, die während eines Neustarts von Home Assistant verstreichen, werden nicht
+  nachgeholt.
+
+### Entitäten
+
+- `switch` **Aufgabenplaner aktiv** (aus = Auslöser starten nichts)
+- `button` je Aufgabe (Name der Aufgabe): führt sie sofort aus, auch bei Pause
+- `sensor` **Letzte Aufgabe** (Zeitstempel; Attribute: Aufgabe, Auslöser, Ergebnis, Fehler)
+- `sensor` **Nächste Aufgabe** (nächster Zeitpunkt aller zeitgesteuerten Aufgaben)
+
+## Energiemonitor
+
+Teilt **Netzbezug** und **PV-Eigenverbrauch** eines Hauses mit einem gemeinsamen Zweirichtungszähler und zwei
+Wohneinheiten (jede mit eigenem Zwischenzähler) **zeitgleich anteilig** auf (Summenzähler-Prinzip) und rechnet die
+Verrechnung aus. Einheit A zahlt die Energiekosten zentral, Einheit B betreibt die PV-Anlage und erstattet ihren
+Anteil. Es ist eine **Rechenhilfe, keine Steuer- oder Rechtsberatung** (Umsatzsteuer, Eigenverbraucher beim Netzbetreiber
+und Eigenverbrauchsvergütung klärst du selbst). Gezählt wird ab dem Einrichten, die Zeit davor wird nicht nachgerechnet.
+
+### Konfigurationsseite
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nur „Zähler“ ist aufgeklappt:
+
+- **Zähler:** Netzbezug, Einspeisung, PV-Erzeugung, Zwischenzähler Einheit A und B, jeweils ein Energiesensor in **kWh**, der
+  immer weiter hochzählt. Die Zwischenzähler müssen den Verbrauch **inklusive PV-Strom** messen (der Wechselrichter speist
+  vor ihnen ein).
+- **Einheiten:** Namen der beiden Einheiten (Standard „Altbau“ und „Neubau“), Personenzahl und Wohnfläche (m²) je Einheit
+  (Schlüssel für Wasser und Gas).
+- **Preise:** Strompreis (ct/kWh, Gesamtpreis), **Preis je PV-kWh** von Einheit A (Dropdown mit Vorschlägen 0, 8,17, 16,26 und
+  24,43 ct, auch eigener Wert, Komma erlaubt), Grundpreis (€/Monat) und der Anteil von Einheit B daran (Standard 50 %).
+- **Wasser** und **Gas** (jeweils optional, eingeklappt): ein gemeinsamer Zähler in **m³** (steigender Sensor), Preis je m³
+  und Grundpreis (€/Monat). Wasser wird **nach Personen** verteilt (Duschen, Waschen, Kochen), Gas wahlweise **nach
+  Wohnfläche (Standard, das Heizen überwiegt)** oder nach Personen; der Grundpreis folgt demselben Schlüssel. Einheit A zahlt
+  die Rechnungen, Einheit B erstattet ihren Anteil. Beim Gas den Preis je **m³** eintragen (nicht je kWh).
+- **Allgemeinstrom** (optional, eingeklappt): Gastherme, Außenbeleuchtung, Router u. ä. laufen über den Zwischenzähler von Einheit A.
+  Dieser Teil wird nach einem Schlüssel Einheit B zugerechnet, **bevor** Netzbezug und PV aufgeteilt werden. Entweder ein
+  **Zähler Allgemeinstrom** (kWh, steigend, muss zum Verbrauch von A gehören, z. B. eine Messsteckdose) oder ersatzweise eine
+  **feste Leistung** in W (je verstrichener Zeit gerechnet, höchstens der Verbrauch von A); mit Zähler wird die Leistung
+  ignoriert. **Verteilung nach** Wohnfläche (Standard, passt zur Gastherme), Personen oder je zur Hälfte. Leer und 0 = keine Korrektur.
+
+### Rechenweg
+
+Alle paar Minuten wird der Zeitraum seit dem letzten Stand betrachtet: Eigenverbrauch `S = P − E` (Erzeugung minus
+Einspeisung, nicht negativ), Anteil der Einheit `C_i / (C_A + C_B)` aus den Zwischenzählern. Netzbezug `I` und `S` werden nach
+diesem Anteil auf die Einheiten verteilt. Ein konfigurierter Allgemeinstrom wird vorher von A nach B verschoben (`C_A − g·s_B`,
+`C_B + g·s_B`), ohne Angabe wird er wie der übrige Verbrauch von A mitverteilt. Hat keine Einheit etwas verbraucht, wird
+weiter gesammelt; ist ein Zähler nicht verfügbar, wächst der Zeitraum weiter; fällt ein Zähler zurück (Zählertausch), wird der
+Zeitraum übersprungen. Die Monate der letzten drei Jahre werden gespeichert.
+
+**Verrechnung:** Einheit B schuldet A = Netzstrom von B + Grundpreis-Anteil von B + Wasser- und Gasanteil von B − PV-kWh von A × Preis je PV-kWh
+(negativ: A schuldet B). Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber und fließt nur über den Preis je PV-kWh
+ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen Eigenverbrauchsvergütung 8,17 ct).
+
+### Entitäten
+
+- je Einheit zwei `sensor` **Netzbezug** und **PV-Anteil** (kWh seit dem Einrichten, steigend, für die Energie-Statistik geeignet)
+- `sensor` **Verbrauchsanteil** von Einheit A im Monat (%)
+- `sensor` **Verrechnung Monat** und **Verrechnung Jahr** (Währung der Instanz, Attribute: Richtung, kWh je Einheit, Netzkosten,
+  PV-Gutschrift, Grundpreis, Wasser- und Gasanteil, Allgemeinstrom, Monate)
+- mit Wasser-/Gaszähler: je `sensor` **Verbrauch** (m³) und **Anteil Einheit B** (Währung) für Monat und Jahr
+
+## Stromkosten
+
+Zählt **Energie und Kosten eines vorhandenen Geräts** mit, zum Beispiel einer Zigbee-Steckdose mit Leistungsmessung. Pro Gerät
+eine Instanz. Das Gerät braucht entweder einen eigenen Leistungs- oder Energiesensor, oder (wie bei PowerCalc „fest“) eine Entität mit einer festen Leistung.
+Gezählt wird ab dem Einrichten.
+
+### Einstellungen
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
+
+- **Gerät:** ein Sensor in **W/kW** (Leistung) oder in **Wh/kWh/MWh** (Energiezähler); die Art wird an der Einheit erkannt, eine andere
+  Einheit wird beim Speichern abgelehnt.
+- **Gerät ohne Messung** (statt des Sensors, nicht beides): eine **Entität** (Leuchte, Schalter, Binärsensor, Mediaplayer, Klima …) und
+  eine **feste Leistung** in W. Solange die Entität an ist (alles außer `off`, `idle`, `standby`, `paused`), zählt diese Leistung, sonst die
+  optionale **Standby-Leistung**; bei Leuchten lässt sich die Leistung **nach der Helligkeit skalieren** (0 bis 255). Nicht verfügbar zählt nicht.
+- **Preis:** ein **fester Preis** in ct/kWh und/oder eine **Preis-Entität** (Sensor, `input_number` oder `number`, z. B. ein dynamischer
+  Tarif) mit Einheit €/kWh oder ct/kWh. Die Preis-Entität ersetzt den festen Preis; fällt sie aus, gilt zuerst der letzte gültige
+  Preis, sonst der feste. Mindestens eines von beiden ist nötig. Gerechnet wird nur der Verbrauchspreis, ohne Grundgebühr.
+
+- **Vorhandene Werte** (optional, eingeklappt), damit die Summen nicht bei null beginnen:
+  - **Rückwirkend ab (Datum):** rechnet Energie und Kosten ab diesem Tag aus den **stündlichen Langzeitstatistiken** des Messsensors bis
+    zum Beginn der Zählung nach (Leistung: mittlere Leistung × 1 Stunde, Energiezähler: Differenz). Das geht nur mit einem Messsensor
+    mit Zustandsklasse, den der Recorder nicht ausschließt. Der Preis kommt stündlich aus der Statistik der Preis-Entität, sonst gilt der
+    feste bzw. heutige Preis (ein früherer Preis ist nur so genau, wie du ihn aufgezeichnet hast). Die Rückrechnung läuft einmal je Datum
+    und ersetzt eine frühere; sie fließt in **Tag, Monat, Jahr und gesamt** ein. Nicht für Geräte mit fester Leistung.
+  - **Startwert Energie** und **Startwert Kosten:** werden nur zu den **Summen** (Energie, Kosten gesamt) addiert.
+
+### Rechenweg
+
+- **Leistungssensor:** Die Leistung wird bei jeder Änderung und jede Minute über die Zeit aufsummiert (Trapez). Lücken über 15 Minuten
+  (z. B. ein Neustart) und nicht verfügbare Werte werden nicht aufgerechnet.
+- **Feste Leistung:** Leistung × Zeit mit dem Zustand des vorigen Zeitpunkts, bei jeder Änderung der Entität und jede Minute; Lücken über 15 Minuten zählen nicht.
+- **Energiezähler:** Gezählt wird die Differenz; fällt der Zähler zurück (Zählertausch), wird der Zeitraum übersprungen.
+- Kosten = Energie im Zeitraum × Preis zu diesem Zeitpunkt. Summen und Tage (400) liegen im Speicher und überstehen Neustarts.
+
+### Entitäten
+
+- `sensor` **Energie** (kWh, steigend, im Energie-Dashboard als einzelnes Gerät nutzbar)
+- `sensor` **Kosten heute**, **Kosten Monat**, **Kosten Jahr** und **Kosten gesamt** (Währung von Home Assistant, Attribut `kwh`)
+
+## Verbrauchswächter
+
+Meldet, wenn ein **Durchfluss** oder eine **Leistung** zu lange am Stück anliegt, zum Beispiel Wasser, das länger
+als 15 Minuten läuft (hängende Toilettenspülung, offener Hahn). Eine Instanz überwacht einen Sensor; eine zweite
+Regel (z. B. nachts schon nach 2 Minuten) legst du als weitere Instanz an. Es wird nichts geschaltet, nur gemeldet.
+
+### Konfigurationsseite
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
+
+- **Sensor** mit Zahlenwert (Durchfluss in l/min, Leistung in W). Zählerstände (Summen) sind nicht geeignet.
+- **Schwelle** in der Einheit des Sensors; „läuft“ heißt Wert **größer** als die Schwelle.
+- **Dauer** in Minuten (Standard 15): so lange muss der Wert am Stück über der Schwelle liegen.
+- **Meldung wiederholen alle … Minuten** (0 = nie).
+- **Zeitfenster** (optional, von/bis, auch über Mitternacht): nur dann wird überwacht.
+- **Benachrichtigungen:** App-Push, Sprachausgabe, persistente Meldung (mindestens ein Weg).
+
+### Verhalten
+
+- Fällt der Wert vor Ablauf der Dauer auf die Schwelle oder darunter, beginnt die Dauer neu.
+- Nach der Dauer gibt es **eine** Meldung (mit Sensor, Schwelle und aktuellem Wert). Fällt der Wert danach wieder
+  unter die Schwelle, endet die Warnung von selbst und die Push-Meldung wird entfernt.
+- Ist der Sensor nicht verfügbar oder unbekannt, wird die Dauer zurückgesetzt (keine Fehlalarme); eine
+  bestehende Warnung bleibt bestehen.
+- Außerhalb des Zeitfensters zählt nichts; läuft der Verbrauch beim Fensterbeginn noch, beginnt die Dauer neu,
+  am Fensterende endet eine Warnung. Beim Neustart von Home Assistant beginnt die Dauer von vorn.
+- Die Prüfung läuft bei jeder Wertänderung und einmal pro Minute; gemeldet wird also bis zu eine Minute nach Ablauf.
+
+### Entitäten
+
+- `binary_sensor` **Verbrauchswarnung** (an = Warnung aktiv; Attribute: Sensor, Schwelle, seit)
+- `sensor` **Läuft seit** (Zeitstempel, leer wenn nichts über der Schwelle liegt)
+- `button` **Warnung quittieren** (schaltet die Warnung ab und unterdrückt die Wiederholung, bis der Verbrauch einmal
+  unter die Schwelle gefallen ist)
+- `switch` **Wächter aktiv** (aus = keine Überwachung; beim Einschalten beginnt die Dauer neu)
+
+## LLM-Verbrauch
+
+Überwacht die **Kosten** eines LLM-API-Kontos (**Anthropic**, **OpenAI**), berechnet daraus ein
+**Restguthaben** bzw. **Restbudget** und warnt bei niedrigem Guthaben oder hohem Verbrauch. Je Konto
+eine Instanz. Google Gemini ist nicht dabei: Für einen normalen API-Key gibt es keine Kostenabfrage.
+
+**Voraussetzung:** ein **Admin-Key** der Organisation (Anthropic: `sk-ant-admin01-…`, OpenAI: Admin-Key).
+Ein normaler API-Key funktioniert nicht. So kommst du an den Key:
+
+- **Anthropic:** Claude Console (`platform.claude.com`) → *Settings → Admin keys* → *Create key*. Das dürfen
+  nur Organisations-**Admins**. Ein privater Zugang ohne Organisation hat den Menüpunkt nicht; richte dann
+  zuerst unter *Settings → Organization* eine Organisation ein. Ein Abo bei claude.ai (Pro/Max/Team) ist
+  etwas anderes. Laut Anthropic-Dokumentation akzeptiert die Kosten-Abfrage auch einen persönlichen oder
+  Service-Account-Key, der nicht an einen Workspace gebunden ist; das ist hier nicht getestet (beim Anlegen
+  wird der Key mit einer Abfrage geprüft).
+- **OpenAI:** `platform.openai.com` → Organisations-Einstellungen → *Admin keys* → *Create new admin key*. Das
+  dürfen nur Organisations-**Owner**. Beim Anlegen das Recht für **Nutzung und Kosten** auswählen
+  (Admin-Keys gelten nur für die Verwaltungs-Schnittstellen).
+
+Der Admin-Key kann auch Mitglieder und Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
+Speicher von Home Assistant (die Diagnose schwärzt ihn). Beim Anlegen und beim Ändern wird der Key mit
+einer Abfrage geprüft. Schlägt sie fehl, nennt die Meldung die Ursache (HTTP-Status und Meldung des Anbieters oder den
+Verbindungsfehler), sie steht auch im Protokoll. Leerzeichen und Zeilenumbrüche am Anfang und Ende des Keys
+werden entfernt.
+
+**Wie das Guthaben entsteht:** Die Anbieter liefern nur die **Kosten je Tag** (UTC, mit einigen Stunden
+Verzögerung), kein Guthaben. Zwei Modi:
+
+- **Guthaben (mit Abgleich):** Du trägst das aktuelle Guthaben aus der Konsole des Anbieters ein, in den Einstellungen im Feld
+  *Guthaben abgleichen* auch nach jedem Aufladen. Restguthaben = Betrag − Kosten seit dem Abgleich.
+- **Monatsbudget:** Restbudget = Betrag − Kosten im laufenden Monat (UTC), am Monatsersten beginnt es neu.
+
+Das Restguthaben ist ein Schätzwert (Steuern, Gratis-Guthaben und Rundungen können abweichen); mit dem
+Abgleich holst du es auf den echten Stand zurück. **Bei automatischem Aufladen** stimmt der Modus
+„Guthaben“ nicht (die Aufladungen sind in den Kosten nicht sichtbar): dann *Monatsbudget* wählen und mit
+Tages-/Monatslimit arbeiten.
+
+### Einstellungen
+
+Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld) mit drei Abschnitten; nur „Konto“ ist aufgeklappt:
+
+- **Konto:** Name, **Anbieter**, **Admin-Key** und **Modus** mit **Betrag** (Anbieter und Modus nur beim Anlegen wählbar; in den
+  Einstellungen steht der Key als „neuer Key“, leer = unverändert). Dazu **Abfrageintervall** (Standard 60 Minuten) und **Tokens und
+  Anfragen abfragen** (Standard aus; eine weitere Abfrage je Intervall). Im **Guthaben-Modus** gibt es das Feld **Guthaben abgleichen
+  (aktueller Betrag)**, leer vorbelegt: Ein eingetragener Betrag gilt ab jetzt als Ausgangswert (auch nach jedem Aufladen), leer ändert nichts.
+  Im **Budget-Modus** steht dort das Monatsbudget.
+- **Grenzen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit** für die Kosten; dazu **Warnen, wenn
+  die Prognose das Limit übersteigt** (Standard an)
+- **Benachrichtigung:** die Wege (App-Push, Sprachausgabe, persistente Meldung)
+
+Jede Warnung kommt **einmal je Überschreitung** (Tageslimit einmal pro Tag, Monatslimit einmal pro
+Monat); die Guthabenwarnung meldet eine Entwarnung, sobald das Guthaben wieder über der Grenze liegt.
+Die **Prognose** warnt einmal pro Monat, wenn die erwarteten Monatskosten das Monatslimit (im Modus
+Monatsbudget das Budget) übersteigen, bevor es tatsächlich überschritten ist.
+Schlägt die Abfrage dreimal in Folge fehl, kommt eine Meldung. Wird der Key abgelehnt, kommt sie sofort und
+zusätzlich erscheint ein **Reparaturhinweis** (verschwindet, sobald die Abfrage wieder funktioniert).
+
+### Entitäten
+
+- `sensor` **Restguthaben**, **Kosten heute**, **Kosten im Monat**, **Prognose Monatsende** (in der Währung
+  des Anbieters, derzeit USD) und **Reichweite** (Tage). Prognose und Reichweite rechnen mit den
+  Durchschnittskosten der letzten 7 abgeschlossenen Tage. Den **Verlauf** liefern die Langzeitstatistiken
+  des Recorders (Verlaufs- und Statistikdiagramm).
+- `sensor` **Tokens heute/im Monat** (Eingabe + Ausgabe; Eingabe, Ausgabe und Cache als Attribute) und, nur bei
+  OpenAI, **Anfragen heute/im Monat** – nur mit der Einstellung *Tokens und Anfragen abfragen*
+- `binary_sensor` **LLM-Warnung** (an = Warnung aktiv; Attribute: Warnungen, Fehler)
+- `switch` **LLM-Abfrage aktiv** und `button` **Jetzt abfragen**
 
 ## Home Assistant Updater
 
@@ -536,128 +938,6 @@ Die Erkennung von Supervisor, Core und OS beruht auf den Standard-Entity-IDs
 `update.home_assistant_supervisor_update`, `update.home_assistant_core_update` und
 `update.home_assistant_operating_system_update`.
 
-## Aufgabenplaner
-
-Führt **Aktionen** aus, sobald ein **Auslöser** eintritt. Ein Eintrag enthält **mehrere
-Aufgaben**; Benachrichtigungen gehen an die im Eintrag gewählten Wege (App-Push,
-Sprachausgabe, persistente Meldung).
-
-### Aufgaben
-
-Unter *Konfigurieren* pflegst du die Aufgaben (hinzufügen, bearbeiten, löschen). Eine
-Aufgabe hat:
-
-- **Name** und einen Schalter *Aufgabe aktiv*
-- **Aktionen**: der Aktionseditor von Home Assistant (Dienstaufrufe, Verzögerungen,
-  Bedingungen, Benachrichtigungen …). In den Aktionen stehen die Variablen `trigger`
-  (`type`, bei Entitäten außerdem `entity_id`, `from_state`, `to_state`) und `task`
-  zur Verfügung.
-- **Auslöser** (einer oder mehrere, jeder löst die Aufgabe aus)
-- **Benachrichtigung** bei Start, Erfolg und Fehler, einzeln schaltbar
-  (Standard: nur bei Fehler)
-
-### Auslöser
-
-| Art | Beschreibung |
-| --- | --- |
-| Wochentag und Uhrzeit | Uhrzeit an den gewählten Wochentagen |
-| Monat | Uhrzeit am **ersten**, **letzten** oder einem **bestimmten Tag** des Monats (hat der Monat weniger Tage, gilt der letzte Tag) |
-| Einmaliger Zeitpunkt | Datum und Uhrzeit, liegt in der Zukunft |
-| Intervall | alle N Minuten, gezählt ab dem Start (Home-Assistant-Start oder Neuladen) |
-| Zustand einer Entität | Wechsel in einen Zielzustand (leer = jede Änderung), optional erst nach N Minuten |
-| Grenzwert eines Sensors | Wert steigt über / fällt unter einen Wert (oder Bereich), optional erst nach N Minuten |
-
-Zustands- und Grenzwertauslöser lösen nur bei der **Flanke** aus (beim Übergang in die
-Bedingung), nicht bei jeder weiteren Änderung. Hält die Bedingung die Mindestdauer nicht
-ein, wird nichts ausgelöst. Auslöser einer Aufgabe lassen sich hinzufügen und entfernen;
-zum Ändern entfernst du einen Auslöser und legst ihn neu an.
-
-### Hinweise
-
-- Eine Aufgabe läuft nie doppelt gleichzeitig; ein neuer Auslöser während des Laufs wird
-  ignoriert.
-- Ein Fehler in den Aktionen (z. B. unbekannter Dienst) gilt als fehlgeschlagen und wird
-  gemeldet.
-- Zeitpunkte, die während eines Neustarts von Home Assistant verstreichen, werden nicht
-  nachgeholt.
-
-### Entitäten
-
-- `switch` **Aufgabenplaner aktiv** (aus = Auslöser starten nichts)
-- `button` je Aufgabe (Name der Aufgabe): führt sie sofort aus, auch bei Pause
-- `sensor` **Letzte Aufgabe** (Zeitstempel; Attribute: Aufgabe, Auslöser, Ergebnis, Fehler)
-- `sensor` **Nächste Aufgabe** (nächster Zeitpunkt aller zeitgesteuerten Aufgaben)
-
-## Wecker
-
-Spielt zur Weckzeit eine **Audiodatei** auf einem oder mehreren **Media Playern** ab und
-sendet eine **kritische Push-Meldung** mit den Aktionen **Stoppen** und **Schlummern**. Ein
-Eintrag enthält **mehrere Wecker**; die Push-Ziele gelten für den ganzen Eintrag.
-
-### Wecker
-
-Unter *Konfigurieren* pflegst du die Wecker (hinzufügen, bearbeiten, löschen). Ein Wecker hat:
-
-- **Name**, Schalter *Wecker aktiv*, **Uhrzeit** und **Wochentage**
-- einen oder mehrere **Media Player**
-- die **Audiodatei** aus der Medienauswahl von Home Assistant (lokale Medien, Medienbrowser, Streams)
-- die **Lautstärke** in Prozent (Standard 30)
-- die **Schlummerzeit** (Standard 9 Minuten)
-- **Automatisch stoppen nach** X Minuten (Standard 30, 0 = nie), jeweils pro Klingeln
-- optional **Werktags-/Feiertagsbedingungen** mit Binärsensoren (siehe unten)
-
-### Ablauf
-
-1. Zur Weckzeit wird die **ursprüngliche Lautstärke** jedes Players gemerkt, die
-   eingestellte Lautstärke gesetzt und die Datei abgespielt.
-2. Die Push-Meldung kommt gleichzeitig. **Stoppen** beendet die Wiedergabe und entfernt die
-   Meldung. **Schlummern** stoppt den Ton und startet ihn nach der Schlummerzeit erneut
-   (mit neuer Meldung); das geht beliebig oft.
-3. Bei jedem Ende des Tons (Stoppen, Schlummern, automatisches Stoppen, Wecker
-   ausschalten) wird die **ursprüngliche Lautstärke** der Player **wiederhergestellt**. Das
-   passiert auch nach einem Neustart von Home Assistant mitten im Wecken. Meldet ein Player
-   keine Lautstärke, wird sie nicht zurückgesetzt.
-4. Löst ein Wecker aus, während ein anderer klingelt, wird der laufende beendet.
-
-### Werktags- und Feiertagssensoren
-
-Zur Zeitplanung jedes Weckers (im Wecker-Dialog direkt bei Uhrzeit und Wochentagen) gehören zwei
-optionale Bedingungen mit beliebigen **Binärsensoren**, z. B. dem Sensor der Werktags-Integration
-von Home Assistant:
-
-- **Nur klingeln, wenn an:** mindestens **einer** der gewählten Sensoren muss an sein (ODER),
-  z. B. ein Werktagssensor.
-- **Nicht klingeln, wenn an:** sobald **einer** der gewählten Sensoren an ist (ODER), klingelt der
-  Wecker nicht, z. B. ein Feiertagssensor oder ein Sensor „arbeitsfrei“.
-
-Beide Felder sind UND-verknüpft und gelten zusätzlich zu den Wochentagen. Die Bedingungen
-werden **zur Weckzeit** geprüft. Ein **nicht verfügbarer oder unbekannter** Sensor zählt bei
-„Nur klingeln, wenn an“ als erfüllt und blockiert bei „Nicht klingeln, wenn an“ nie; der Wecker
-klingelt dann eher einmal zu viel als gar nicht. Ein übersprungener Wecker steht mit Grund und
-Sensoren im Attribut `skipped` des Sensors **Letzter Wecker**. Der Sensor **Nächster Wecker** kennt
-die Bedingungen nicht (er kann künftige Werktage nicht vorhersagen) und zeigt den nächsten Termin
-nach Wochentag und Uhrzeit.
-
-### Kritische Meldung
-
-Standardmäßig wird die Push-Meldung als **kritische Meldung** gesendet:
-
-- **iOS:** `interruption-level: critical` mit kritischem Ton, durchbricht „Nicht stören“ und
-  die Stummschaltung.
-- **Android:** Alarm-Kanal (`alarm_stream`) mit hoher Priorität.
-
-In der Companion-App müssen **kritische Hinweise erlaubt** sein. Die Option *Als kritische
-Meldung senden* lässt sich in den Einstellungen abschalten (dann normale Meldung mit den
-beiden Aktionen).
-
-### Entitäten
-
-- `switch` **Wecker aktiv** (aus = alle Wecker pausiert; ein klingelnder Wecker wird gestoppt)
-- `binary_sensor` **Wecker klingelt** (beim Schlummern aus, Attribute `snoozed`, `snooze_until`)
-- `sensor` **Nächster Wecker** und **Letzter Wecker** (Zeitstempel, Attribut `alarm`; beim
-  letzten Wecker außerdem `skipped` mit dem zuletzt übersprungenen Wecker)
-- `button` **Wecker stoppen** und **Schlummern**
-
 ## Integrationsmonitor
 
 Überwacht **alle** Integrationen (außer dieser) und kann für **ausgewählte** Integrationen handeln.
@@ -717,74 +997,6 @@ solche Integration von Hand wieder ein, vergisst er sie.
 - `button` **Jetzt prüfen** und **Deaktivierte aktivieren** (aktiviert alle vom Monitor
   deaktivierten Integrationen wieder)
 
-## LLM-Verbrauch
-
-Überwacht die **Kosten** eines LLM-API-Kontos (**Anthropic**, **OpenAI**), berechnet daraus ein
-**Restguthaben** bzw. **Restbudget** und warnt bei niedrigem Guthaben oder hohem Verbrauch. Je Konto
-eine Instanz. Google Gemini ist nicht dabei: Für einen normalen API-Key gibt es keine Kostenabfrage.
-
-**Voraussetzung:** ein **Admin-Key** der Organisation (Anthropic: `sk-ant-admin01-…`, OpenAI: Admin-Key).
-Ein normaler API-Key funktioniert nicht. So kommst du an den Key:
-
-- **Anthropic:** Claude Console (`platform.claude.com`) → *Settings → Admin keys* → *Create key*. Das dürfen
-  nur Organisations-**Admins**. Ein privater Zugang ohne Organisation hat den Menüpunkt nicht; richte dann
-  zuerst unter *Settings → Organization* eine Organisation ein. Ein Abo bei claude.ai (Pro/Max/Team) ist
-  etwas anderes. Laut Anthropic-Dokumentation akzeptiert die Kosten-Abfrage auch einen persönlichen oder
-  Service-Account-Key, der nicht an einen Workspace gebunden ist; das ist hier nicht getestet (beim Anlegen
-  wird der Key mit einer Abfrage geprüft).
-- **OpenAI:** `platform.openai.com` → Organisations-Einstellungen → *Admin keys* → *Create new admin key*. Das
-  dürfen nur Organisations-**Owner**. Beim Anlegen das Recht für **Nutzung und Kosten** auswählen
-  (Admin-Keys gelten nur für die Verwaltungs-Schnittstellen).
-
-Der Admin-Key kann auch Mitglieder und Schlüssel verwalten; bewahre ihn sorgfältig auf. Er liegt wie alle Zugangsdaten **unverschlüsselt** im
-Speicher von Home Assistant (die Diagnose schwärzt ihn). Beim Anlegen und beim Ändern wird der Key mit
-einer Abfrage geprüft. Schlägt sie fehl, nennt die Meldung die Ursache (HTTP-Status und Meldung des Anbieters oder den
-Verbindungsfehler), sie steht auch im Protokoll. Leerzeichen und Zeilenumbrüche am Anfang und Ende des Keys
-werden entfernt.
-
-**Wie das Guthaben entsteht:** Die Anbieter liefern nur die **Kosten je Tag** (UTC, mit einigen Stunden
-Verzögerung), kein Guthaben. Zwei Modi:
-
-- **Guthaben (mit Abgleich):** Du trägst das aktuelle Guthaben aus der Konsole des Anbieters ein, in den Einstellungen im Feld
-  *Guthaben abgleichen* auch nach jedem Aufladen. Restguthaben = Betrag − Kosten seit dem Abgleich.
-- **Monatsbudget:** Restbudget = Betrag − Kosten im laufenden Monat (UTC), am Monatsersten beginnt es neu.
-
-Das Restguthaben ist ein Schätzwert (Steuern, Gratis-Guthaben und Rundungen können abweichen); mit dem
-Abgleich holst du es auf den echten Stand zurück. **Bei automatischem Aufladen** stimmt der Modus
-„Guthaben“ nicht (die Aufladungen sind in den Kosten nicht sichtbar): dann *Monatsbudget* wählen und mit
-Tages-/Monatslimit arbeiten.
-
-### Einstellungen
-
-Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld) mit drei Abschnitten; nur „Konto“ ist aufgeklappt:
-
-- **Konto:** Name, **Anbieter**, **Admin-Key** und **Modus** mit **Betrag** (Anbieter und Modus nur beim Anlegen wählbar; in den
-  Einstellungen steht der Key als „neuer Key“, leer = unverändert). Dazu **Abfrageintervall** (Standard 60 Minuten) und **Tokens und
-  Anfragen abfragen** (Standard aus; eine weitere Abfrage je Intervall). Im **Guthaben-Modus** gibt es das Feld **Guthaben abgleichen
-  (aktueller Betrag)**, leer vorbelegt: Ein eingetragener Betrag gilt ab jetzt als Ausgangswert (auch nach jedem Aufladen), leer ändert nichts.
-  Im **Budget-Modus** steht dort das Monatsbudget.
-- **Grenzen** (jeweils leer = aus): **Guthaben unter** einem Betrag, **Tageslimit** und **Monatslimit** für die Kosten; dazu **Warnen, wenn
-  die Prognose das Limit übersteigt** (Standard an)
-- **Benachrichtigung:** die Wege (App-Push, Sprachausgabe, persistente Meldung)
-
-Jede Warnung kommt **einmal je Überschreitung** (Tageslimit einmal pro Tag, Monatslimit einmal pro
-Monat); die Guthabenwarnung meldet eine Entwarnung, sobald das Guthaben wieder über der Grenze liegt.
-Die **Prognose** warnt einmal pro Monat, wenn die erwarteten Monatskosten das Monatslimit (im Modus
-Monatsbudget das Budget) übersteigen, bevor es tatsächlich überschritten ist.
-Schlägt die Abfrage dreimal in Folge fehl, kommt eine Meldung. Wird der Key abgelehnt, kommt sie sofort und
-zusätzlich erscheint ein **Reparaturhinweis** (verschwindet, sobald die Abfrage wieder funktioniert).
-
-### Entitäten
-
-- `sensor` **Restguthaben**, **Kosten heute**, **Kosten im Monat**, **Prognose Monatsende** (in der Währung
-  des Anbieters, derzeit USD) und **Reichweite** (Tage). Prognose und Reichweite rechnen mit den
-  Durchschnittskosten der letzten 7 abgeschlossenen Tage. Den **Verlauf** liefern die Langzeitstatistiken
-  des Recorders (Verlaufs- und Statistikdiagramm).
-- `sensor` **Tokens heute/im Monat** (Eingabe + Ausgabe; Eingabe, Ausgabe und Cache als Attribute) und, nur bei
-  OpenAI, **Anfragen heute/im Monat** – nur mit der Einstellung *Tokens und Anfragen abfragen*
-- `binary_sensor` **LLM-Warnung** (an = Warnung aktiv; Attribute: Warnungen, Fehler)
-- `switch` **LLM-Abfrage aktiv** und `button` **Jetzt abfragen**
-
 ## Reparaturhinweise
 
 Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Companion-App-Geräte noch existieren. Fehlt eine, erscheint unter **Einstellungen → System → Reparaturen** ein Hinweis (je fehlender Referenz einer, mit Name des Eintrags und der Entität).
@@ -793,183 +1005,6 @@ Der Hausmeister prüft, ob die in den Einstellungen gewählten Entitäten und Co
 - Zeitpunkt: 5 Minuten nach dem Start, danach stündlich sowie kurz nach dem Löschen oder Umbenennen einer Entität bzw. dem Entfernen eines Geräts.
 - Nicht verfügbare oder deaktivierte Entitäten gelten als vorhanden.
 - Die Hinweise sind nicht automatisch behebbar; sie verschwinden von selbst, sobald die Referenz wieder stimmt (Einstellungen angepasst) oder der Eintrag gelöscht wird.
-
-## IR-Fernbedienung
-
-Sendet Infrarot- (oder Funk-)Befehle über einen oder mehrere **Sender** (`remote`-Entitäten, z. B. Broadlink
-RM4 mini) und ersetzt damit Lern- und Sende-Skripte. Die Codes bleiben im Speicher des Senders (bei Broadlink
-unter dem **Gerätenamen**, z. B. `candle`); die Funktion lernt sie an, übernimmt vorhandene und sendet sie.
-
-### Einrichtung
-
-Beim Anlegen: Name, **Sender** (mehrere möglich, gesendet wird an alle gleichzeitig), **Gerätename beim
-Sender** (bei vorhandenen Skripten der Wert von `device`, lässt sich später nicht ändern), Wiederholungen und
-Pause sowie die Benachrichtigung bei Sendefehlern.
-
-### Einstellungen und Menü
-
-Das Zahnrad öffnet ein kleines Menü: **Einstellungen** (eine Seite mit den Abschnitten *Allgemein* mit Name, Sender,
-Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *Schalter* mit An-/Aus-Befehl;
-*Benachrichtigungen*) sowie die Schritte, die ein Gerät brauchen und deshalb keine Formularfelder sein können:
-
-- **Befehl anlernen:** Name (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`, `light_plus`), Art (Infrarot/Funk)
-  und die Sender. Je Sender erscheint ein Fortschrittsdialog: Taste der Original-Fernbedienung auf den Sender
-  richten und drücken (Zeitlimit etwa 30 Sekunden). Schlägt es an einem Sender fehl, bleiben die erfolgreichen
-  gespeichert und die Ursache wird angezeigt.
-- **Vorhandene Befehle übernehmen:** Liest bei Broadlink-Sendern die dort schon gespeicherten Befehle des Geräts und
-  bietet sie zum Ankreuzen an; weitere Namen kannst du eintippen (dann gilt der Befehl an allen Sendern als
-  angelernt). Danach können die alten Lern- und Sende-Skripte gelöscht werden. Die Funktion liest dafür eine
-  interne Datei der Broadlink-Integration; bei anderen Sendern oder geändertem Format entfällt die Liste, die
-  Handeingabe bleibt.
-- **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
-  gespeichert und lassen sich nicht kopieren). Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog
-  entfällt, jeder aktive Befehl hat eine Taste.
-- **Befehle einem Sender zuordnen** (nur bei mehreren Sendern): Sender wählen, dann Befehle und/oder Gruppen ankreuzen.
-  Nicht angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom Sender gelesen, an dem der Befehl angelernt
-  wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes Anlernen ist nicht nötig. Ist der Code
-  nicht lesbar, wird der Befehl dort angelernt.
-- **Befehlsgruppen:** Eine Gruppe bündelt Befehle (z. B. „Kerze“ mit An, Aus, Timer), damit du sie einem Sender in einem
-  Schritt zuordnen kannst. Gruppe wählen oder einen neuen Namen eintippen, Befehle ankreuzen. Gruppen haben keine eigenen Entitäten.
-- **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
-  genutzter Befehl lässt sich nicht löschen.
-- **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
-  Sprachassistenten (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
-
-### Entitäten und Aktion
-
-- `button` je aktivem Befehl (Name = Befehlsname), gesendet an alle zugeordneten Sender. Bei **mehreren Sendern** zusätzlich je
-  zugeordnetem Sender eine Taste „Befehl – Sender“, die nur an diesen Sender sendet (so bleiben die Räume getrennt).
-- `switch` **Schalter** (nur mit gesetzten An-/Aus-Befehlen; bei mehreren Sendern zusätzlich ein Schalter je Sender mit eigenem angenommenem Zustand), `sensor` **Zuletzt gesendet** (Attribute: Befehl, Ergebnis
-  `ok`/`partial`/`failed`, Fehler je Sender).
-- Aktion `ha_housekeeper.send_ir_command` mit einer Befehlstaste als Ziel und optional abweichenden Wiederholungen.
-- Ein ausgeschalteter oder nicht verfügbarer Sender zählt als Fehler und wird gemeldet (die Meldung verschwindet,
-  sobald wieder alles gesendet wird). Gelöschte `remote`-Entitäten erzeugen einen Reparaturhinweis.
-
-## Verbrauchswächter
-
-Meldet, wenn ein **Durchfluss** oder eine **Leistung** zu lange am Stück anliegt, zum Beispiel Wasser, das länger
-als 15 Minuten läuft (hängende Toilettenspülung, offener Hahn). Eine Instanz überwacht einen Sensor; eine zweite
-Regel (z. B. nachts schon nach 2 Minuten) legst du als weitere Instanz an. Es wird nichts geschaltet, nur gemeldet.
-
-### Konfigurationsseite
-
-Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
-
-- **Sensor** mit Zahlenwert (Durchfluss in l/min, Leistung in W). Zählerstände (Summen) sind nicht geeignet.
-- **Schwelle** in der Einheit des Sensors; „läuft“ heißt Wert **größer** als die Schwelle.
-- **Dauer** in Minuten (Standard 15): so lange muss der Wert am Stück über der Schwelle liegen.
-- **Meldung wiederholen alle … Minuten** (0 = nie).
-- **Zeitfenster** (optional, von/bis, auch über Mitternacht): nur dann wird überwacht.
-- **Benachrichtigungen:** App-Push, Sprachausgabe, persistente Meldung (mindestens ein Weg).
-
-### Verhalten
-
-- Fällt der Wert vor Ablauf der Dauer auf die Schwelle oder darunter, beginnt die Dauer neu.
-- Nach der Dauer gibt es **eine** Meldung (mit Sensor, Schwelle und aktuellem Wert). Fällt der Wert danach wieder
-  unter die Schwelle, endet die Warnung von selbst und die Push-Meldung wird entfernt.
-- Ist der Sensor nicht verfügbar oder unbekannt, wird die Dauer zurückgesetzt (keine Fehlalarme); eine
-  bestehende Warnung bleibt bestehen.
-- Außerhalb des Zeitfensters zählt nichts; läuft der Verbrauch beim Fensterbeginn noch, beginnt die Dauer neu,
-  am Fensterende endet eine Warnung. Beim Neustart von Home Assistant beginnt die Dauer von vorn.
-- Die Prüfung läuft bei jeder Wertänderung und einmal pro Minute; gemeldet wird also bis zu eine Minute nach Ablauf.
-
-### Entitäten
-
-- `binary_sensor` **Verbrauchswarnung** (an = Warnung aktiv; Attribute: Sensor, Schwelle, seit)
-- `sensor` **Läuft seit** (Zeitstempel, leer wenn nichts über der Schwelle liegt)
-- `button` **Warnung quittieren** (schaltet die Warnung ab und unterdrückt die Wiederholung, bis der Verbrauch einmal
-  unter die Schwelle gefallen ist)
-- `switch` **Wächter aktiv** (aus = keine Überwachung; beim Einschalten beginnt die Dauer neu)
-
-## Stromkosten
-
-Zählt **Energie und Kosten eines vorhandenen Geräts** mit, zum Beispiel einer Zigbee-Steckdose mit Leistungsmessung. Pro Gerät
-eine Instanz. Das Gerät braucht entweder einen eigenen Leistungs- oder Energiesensor, oder (wie bei PowerCalc „fest“) eine Entität mit einer festen Leistung.
-Gezählt wird ab dem Einrichten.
-
-### Einstellungen
-
-Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld):
-
-- **Gerät:** ein Sensor in **W/kW** (Leistung) oder in **Wh/kWh/MWh** (Energiezähler); die Art wird an der Einheit erkannt, eine andere
-  Einheit wird beim Speichern abgelehnt.
-- **Gerät ohne Messung** (statt des Sensors, nicht beides): eine **Entität** (Leuchte, Schalter, Binärsensor, Mediaplayer, Klima …) und
-  eine **feste Leistung** in W. Solange die Entität an ist (alles außer `off`, `idle`, `standby`, `paused`), zählt diese Leistung, sonst die
-  optionale **Standby-Leistung**; bei Leuchten lässt sich die Leistung **nach der Helligkeit skalieren** (0 bis 255). Nicht verfügbar zählt nicht.
-- **Preis:** ein **fester Preis** in ct/kWh und/oder eine **Preis-Entität** (Sensor, `input_number` oder `number`, z. B. ein dynamischer
-  Tarif) mit Einheit €/kWh oder ct/kWh. Die Preis-Entität ersetzt den festen Preis; fällt sie aus, gilt zuerst der letzte gültige
-  Preis, sonst der feste. Mindestens eines von beiden ist nötig. Gerechnet wird nur der Verbrauchspreis, ohne Grundgebühr.
-
-- **Vorhandene Werte** (optional, eingeklappt), damit die Summen nicht bei null beginnen:
-  - **Rückwirkend ab (Datum):** rechnet Energie und Kosten ab diesem Tag aus den **stündlichen Langzeitstatistiken** des Messsensors bis
-    zum Beginn der Zählung nach (Leistung: mittlere Leistung × 1 Stunde, Energiezähler: Differenz). Das geht nur mit einem Messsensor
-    mit Zustandsklasse, den der Recorder nicht ausschließt. Der Preis kommt stündlich aus der Statistik der Preis-Entität, sonst gilt der
-    feste bzw. heutige Preis (ein früherer Preis ist nur so genau, wie du ihn aufgezeichnet hast). Die Rückrechnung läuft einmal je Datum
-    und ersetzt eine frühere; sie fließt in **Tag, Monat, Jahr und gesamt** ein. Nicht für Geräte mit fester Leistung.
-  - **Startwert Energie** und **Startwert Kosten:** werden nur zu den **Summen** (Energie, Kosten gesamt) addiert.
-
-### Rechenweg
-
-- **Leistungssensor:** Die Leistung wird bei jeder Änderung und jede Minute über die Zeit aufsummiert (Trapez). Lücken über 15 Minuten
-  (z. B. ein Neustart) und nicht verfügbare Werte werden nicht aufgerechnet.
-- **Feste Leistung:** Leistung × Zeit mit dem Zustand des vorigen Zeitpunkts, bei jeder Änderung der Entität und jede Minute; Lücken über 15 Minuten zählen nicht.
-- **Energiezähler:** Gezählt wird die Differenz; fällt der Zähler zurück (Zählertausch), wird der Zeitraum übersprungen.
-- Kosten = Energie im Zeitraum × Preis zu diesem Zeitpunkt. Summen und Tage (400) liegen im Speicher und überstehen Neustarts.
-
-### Entitäten
-
-- `sensor` **Energie** (kWh, steigend, im Energie-Dashboard als einzelnes Gerät nutzbar)
-- `sensor` **Kosten heute**, **Kosten Monat**, **Kosten Jahr** und **Kosten gesamt** (Währung von Home Assistant, Attribut `kwh`)
-
-## Energiemonitor
-
-Teilt **Netzbezug** und **PV-Eigenverbrauch** eines Hauses mit einem gemeinsamen Zweirichtungszähler und zwei
-Wohneinheiten (jede mit eigenem Zwischenzähler) **zeitgleich anteilig** auf (Summenzähler-Prinzip) und rechnet die
-Verrechnung aus. Einheit A zahlt die Energiekosten zentral, Einheit B betreibt die PV-Anlage und erstattet ihren
-Anteil. Es ist eine **Rechenhilfe, keine Steuer- oder Rechtsberatung** (Umsatzsteuer, Eigenverbraucher beim Netzbetreiber
-und Eigenverbrauchsvergütung klärst du selbst). Gezählt wird ab dem Einrichten, die Zeit davor wird nicht nachgerechnet.
-
-### Konfigurationsseite
-
-Alles steht auf **einer Seite** (Anlegen und Zahnrad, der Name ist ein Feld); nur „Zähler“ ist aufgeklappt:
-
-- **Zähler:** Netzbezug, Einspeisung, PV-Erzeugung, Zwischenzähler Einheit A und B, jeweils ein Energiesensor in **kWh**, der
-  immer weiter hochzählt. Die Zwischenzähler müssen den Verbrauch **inklusive PV-Strom** messen (der Wechselrichter speist
-  vor ihnen ein).
-- **Einheiten:** Namen der beiden Einheiten (Standard „Altbau“ und „Neubau“), Personenzahl und Wohnfläche (m²) je Einheit
-  (Schlüssel für Wasser und Gas).
-- **Preise:** Strompreis (ct/kWh, Gesamtpreis), **Preis je PV-kWh** von Einheit A (Dropdown mit Vorschlägen 0, 8,17, 16,26 und
-  24,43 ct, auch eigener Wert, Komma erlaubt), Grundpreis (€/Monat) und der Anteil von Einheit B daran (Standard 50 %).
-- **Wasser** und **Gas** (jeweils optional, eingeklappt): ein gemeinsamer Zähler in **m³** (steigender Sensor), Preis je m³
-  und Grundpreis (€/Monat). Wasser wird **nach Personen** verteilt (Duschen, Waschen, Kochen), Gas wahlweise **nach
-  Wohnfläche (Standard, das Heizen überwiegt)** oder nach Personen; der Grundpreis folgt demselben Schlüssel. Einheit A zahlt
-  die Rechnungen, Einheit B erstattet ihren Anteil. Beim Gas den Preis je **m³** eintragen (nicht je kWh).
-- **Allgemeinstrom** (optional, eingeklappt): Gastherme, Außenbeleuchtung, Router u. ä. laufen über den Zwischenzähler von Einheit A.
-  Dieser Teil wird nach einem Schlüssel Einheit B zugerechnet, **bevor** Netzbezug und PV aufgeteilt werden. Entweder ein
-  **Zähler Allgemeinstrom** (kWh, steigend, muss zum Verbrauch von A gehören, z. B. eine Messsteckdose) oder ersatzweise eine
-  **feste Leistung** in W (je verstrichener Zeit gerechnet, höchstens der Verbrauch von A); mit Zähler wird die Leistung
-  ignoriert. **Verteilung nach** Wohnfläche (Standard, passt zur Gastherme), Personen oder je zur Hälfte. Leer und 0 = keine Korrektur.
-
-### Rechenweg
-
-Alle paar Minuten wird der Zeitraum seit dem letzten Stand betrachtet: Eigenverbrauch `S = P − E` (Erzeugung minus
-Einspeisung, nicht negativ), Anteil der Einheit `C_i / (C_A + C_B)` aus den Zwischenzählern. Netzbezug `I` und `S` werden nach
-diesem Anteil auf die Einheiten verteilt. Ein konfigurierter Allgemeinstrom wird vorher von A nach B verschoben (`C_A − g·s_B`,
-`C_B + g·s_B`), ohne Angabe wird er wie der übrige Verbrauch von A mitverteilt. Hat keine Einheit etwas verbraucht, wird
-weiter gesammelt; ist ein Zähler nicht verfügbar, wächst der Zeitraum weiter; fällt ein Zähler zurück (Zählertausch), wird der
-Zeitraum übersprungen. Die Monate der letzten drei Jahre werden gespeichert.
-
-**Verrechnung:** Einheit B schuldet A = Netzstrom von B + Grundpreis-Anteil von B + Wasser- und Gasanteil von B − PV-kWh von A × Preis je PV-kWh
-(negativ: A schuldet B). Die Eigenverbrauchsvergütung bleibt beim Anlagenbetreiber und fließt nur über den Preis je PV-kWh
-ein (16,26 ct = Einspeisevergütung 24,43 ct abzüglich der durchschnittlichen Eigenverbrauchsvergütung 8,17 ct).
-
-### Entitäten
-
-- je Einheit zwei `sensor` **Netzbezug** und **PV-Anteil** (kWh seit dem Einrichten, steigend, für die Energie-Statistik geeignet)
-- `sensor` **Verbrauchsanteil** von Einheit A im Monat (%)
-- `sensor` **Verrechnung Monat** und **Verrechnung Jahr** (Währung der Instanz, Attribute: Richtung, kWh je Einheit, Netzkosten,
-  PV-Gutschrift, Grundpreis, Wasser- und Gasanteil, Allgemeinstrom, Monate)
-- mit Wasser-/Gaszähler: je `sensor` **Verbrauch** (m³) und **Anteil Einheit B** (Währung) für Monat und Jahr
 
 ## Entwicklung
 
