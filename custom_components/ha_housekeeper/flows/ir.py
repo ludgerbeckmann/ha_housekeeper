@@ -40,9 +40,6 @@ from ..const import (
     IC_NAME,
     IC_REMOTES,
     IC_TYPE,
-    IG_COMMANDS,
-    IG_ID,
-    IG_NAME,
     IR_TYPE_IR,
     IR_TYPES,
     clean_instance_name,
@@ -180,7 +177,6 @@ class IrOptions:
 
     _learn: dict[str, Any] | None = None
     _assign_remote: str = ""
-    _group_edit: dict[str, Any] = {}
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -236,9 +232,6 @@ class IrOptions:
             lines.append(f"• {command[IC_NAME]}{off}: {len(known)}/{total}")
         return "\n".join(lines) or "–"
 
-    def _ir_groups(self) -> list[dict[str, Any]]:
-        return list(self._current.get(CONF_IR_GROUPS) or [])
-
     def _picker(self, options: list[selector.SelectOptionDict], multiple: bool, **kwargs: Any) -> Any:
         return selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -286,7 +279,6 @@ class IrOptions:
         if self._ir_commands():
             if len(self._ir_remotes()) > 1:
                 options.append("ir_assign")
-            options.append("ir_groups")
         return await self._menu(
             "ir_menu", options, user_input, {"commands": self._ir_listing()}
         )
@@ -328,11 +320,7 @@ class IrOptions:
                 ]
                 name = (flat.pop(CONF_NAME, None) or "").strip()
                 data = {**ir_data(flat), CONF_IR_COMMANDS: kept, CONF_IR_ON: on or None, CONF_IR_OFF: off or None}
-                if delete:
-                    data[CONF_IR_GROUPS] = [
-                        {**g, IG_COMMANDS: [i for i in g[IG_COMMANDS] if i not in delete]}
-                        for g in self._ir_groups()
-                    ]
+                data[CONF_IR_GROUPS] = None       # frühere Befehlsgruppen gibt es nicht mehr
                 self.hass.config_entries.async_update_subentry(
                     self._get_entry(),
                     subentry,
@@ -578,9 +566,8 @@ class IrOptions:
         assigned = [c[IC_ID] for c in commands if remote in (c.get(IC_REMOTES) or [])]
         if user_input is not None:
             selected = set(user_input.get("commands") or [])
-            for group in self._ir_groups():
-                if group[IG_ID] in (user_input.get("groups") or []):
-                    selected |= set(group[IG_COMMANDS])
+            if user_input.get("all_commands"):
+                selected = {c[IC_ID] for c in commands}
             updated: list[dict[str, Any]] = []
             missing: list[str] = []
             for command in commands:
@@ -604,77 +591,15 @@ class IrOptions:
                 placeholders["commands"] = ", ".join(missing)
                 assigned = list(selected & {c[IC_ID] for c in commands})
             else:
-                self._save({CONF_IR_COMMANDS: updated})
+                self._save({CONF_IR_COMMANDS: updated, CONF_IR_GROUPS: None})
                 return await self.async_step_ir_menu()
         fields: dict[Any, Any] = {
             vol.Optional("commands", default=assigned): self._picker(self._command_options(), True)
         }
-        if self._ir_groups():
-            fields[vol.Optional("groups")] = self._picker(
-                [selector.SelectOptionDict(value=g[IG_ID], label=g[IG_NAME]) for g in self._ir_groups()],
-                True,
-            )
+        fields[vol.Optional("all_commands", default=False)] = bool
         return self.async_show_form(
             step_id="ir_assign_edit",
             data_schema=vol.Schema(fields),
             errors=errors,
             description_placeholders=placeholders,
-        )
-
-    # --- Befehlsgruppen -----------------------------------------------------------------
-
-    async def async_step_ir_groups(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Gruppe wählen oder durch Eintippen eines neuen Namens anlegen."""
-        groups = self._ir_groups()
-        if user_input is not None:
-            value = (user_input["group"] or "").strip()
-            known = next((g for g in groups if g[IG_ID] == value), None)
-            if known is None and not value:
-                return await self.async_step_ir_menu()
-            self._group_edit = known or {IG_ID: uuid.uuid4().hex[:8], IG_NAME: value, IG_COMMANDS: []}
-            return await self.async_step_ir_group_edit()
-        return self.async_show_form(
-            step_id="ir_groups",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("group"): self._picker(
-                        [selector.SelectOptionDict(value=g[IG_ID], label=g[IG_NAME]) for g in groups],
-                        False,
-                        custom_value=True,
-                    )
-                }
-            ),
-        )
-
-    async def async_step_ir_group_edit(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Befehle der Gruppe festlegen oder die Gruppe löschen."""
-        group = self._group_edit
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            others = [g for g in self._ir_groups() if g[IG_ID] != group[IG_ID]]
-            if user_input.get("delete"):
-                self._save({CONF_IR_GROUPS: others})
-                return await self.async_step_ir_menu()
-            if not user_input.get("commands"):
-                errors["base"] = "group_empty"
-            else:
-                saved = {**group, IG_COMMANDS: list(user_input["commands"])}
-                self._save({CONF_IR_GROUPS: [*others, saved]})
-                return await self.async_step_ir_menu()
-        return self.async_show_form(
-            step_id="ir_group_edit",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional("commands", default=list(group[IG_COMMANDS])): self._picker(
-                        self._command_options(), True
-                    ),
-                    vol.Optional("delete", default=False): bool,
-                }
-            ),
-            errors=errors,
-            description_placeholders={"group": group[IG_NAME]},
         )

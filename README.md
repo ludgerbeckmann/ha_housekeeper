@@ -417,12 +417,11 @@ Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *S
 - **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
   gespeichert und lassen sich nicht kopieren). Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog
   entfällt, jeder aktive Befehl hat eine Taste.
-- **Befehle einem Sender zuordnen** (nur bei mehreren Sendern): Sender wählen, dann Befehle und/oder Gruppen ankreuzen.
-  Nicht angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom Sender gelesen, an dem der Befehl angelernt
-  wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes Anlernen ist nicht nötig. Ist der Code
-  nicht lesbar, wird der Befehl dort angelernt.
-- **Befehlsgruppen:** Eine Gruppe bündelt Befehle (z. B. „Kerze“ mit An, Aus, Timer), damit du sie einem Sender in einem
-  Schritt zuordnen kannst. Gruppe wählen oder einen neuen Namen eintippen, Befehle ankreuzen. Gruppen haben keine eigenen Entitäten.
+- **Befehle einem Sender zuordnen** (nur bei mehreren Sendern): Sender wählen, dann Befehle ankreuzen oder mit dem Haken
+  **Alle Befehle zuordnen** die komplette Liste nehmen. Nicht angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom
+  Sender gelesen, an dem der Befehl angelernt wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes
+  Anlernen ist nicht nötig. Ist der Code nicht lesbar, wird der Befehl dort angelernt. So bildet die Befehlsliste einer Instanz
+  eine Bibliothek, aus der du jedem Sender (z. B. beim Umzug der Kerzen in einen anderen Raum) beliebige Befehle zuweist.
 - **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
   genutzter Befehl lässt sich nicht löschen.
 - **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für

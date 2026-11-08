@@ -590,10 +590,7 @@ IC_ENABLED = "enabled"
 IC_REMOTES = "remotes"            # Sender, denen der Befehl zugeordnet ist
 IC_LEARNED = "learned"            # Sender, bei denen der Code unter seinem Namen gespeichert ist (fehlt = wie IC_REMOTES)
 IC_B64 = "b64"                    # Code als Base64-Text (Broadlink), für Sender ohne eigenen gespeicherten Code
-CONF_IR_GROUPS = "ir_groups"      # Befehlsgruppen: Liste aus id, name, commands (IDs)
-IG_ID = "id"
-IG_NAME = "name"
-IG_COMMANDS = "commands"
+CONF_IR_GROUPS = "ir_groups"      # frühere Befehlsgruppen (gibt es nicht mehr; wird beim Speichern geleert)
 IR_TYPE_IR = "ir"
 IR_TYPE_RF = "rf"
 IR_TYPES = [IR_TYPE_IR, IR_TYPE_RF]
