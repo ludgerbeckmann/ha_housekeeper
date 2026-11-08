@@ -276,8 +276,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   **Zuordnung statt Kopieren:** `IC_REMOTES` = zugeordnete Sender, `IC_LEARNED` = Sender, bei denen der Code unter seinem Namen liegt
   (fehlt bei älteren Befehlen = `IC_REMOTES`, `native_remotes()`), `IC_B64` = Code als Base64 (aus dem Broadlink-Speicher gelesen,
   `async_stored_code()`; beim Anlernen/Übernehmen/Zuordnen gesetzt). `async_send(..., b64, native)` sendet an Sender außerhalb von
-  `native` als `b64:<Code>`. Menüschritte `ir_assign`/`ir_assign_edit` (Befehle/Gruppen je Sender, `code_unavailable`) und
-  `ir_groups`/`ir_group_edit` (`ir_groups` = Liste aus `id`, `name`, `commands`, `group_empty`). Bei mehr als einem Sender gibt es
+  `native` als `b64:<Code>`. Menüschritte `ir_assign`/`ir_assign_edit` (Sender wählen, Befehle ankreuzen oder `all_commands` = alle; `code_unavailable`). Frühere Befehlsgruppen (`ir_groups`) gibt es nicht mehr, sie werden beim Speichern auf `None` gesetzt. Bei mehr als einem Sender gibt es
   zusätzlich Tasten (`<id>_ir_<befehl>_<sender-slug>`) und Schalter (`<id>_ir_power_<sender-slug>`, `assumed_remote` im `Store`) je
   Sender; veraltete werden anhand der Präfixe entfernt. `async_send(command_id, repeats, remote)` sendet nur an einen Sender.
 - `consumption_guard.py`: Je Instanz ein Sensor (`consumption_sensor`) mit Durchfluss/Leistung. Eine **Konfigurationsseite**

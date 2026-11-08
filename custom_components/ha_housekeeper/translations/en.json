@@ -2145,8 +2145,7 @@
             "add_ir_command": "Learn command",
             "learn_ir_command": "Learn command on remotes (again)",
             "import_ir_commands": "Import existing commands",
-            "ir_assign": "Assign commands to a remote",
-            "ir_groups": "Command groups"
+            "ir_assign": "Assign commands to a remote"
           }
         },
         "add_ir_command": {
@@ -2245,25 +2244,10 @@
         },
         "ir_assign_edit": {
           "title": "Commands of {remote}",
-          "description": "Commands this remote sends. Add a group to include all its commands; unchecked commands are removed from this remote. Codes are taken over from the remote where the command was learned (Broadlink).",
+          "description": "Commands this remote sends. “Assign all commands” takes the complete list; unchecked commands are removed from this remote. Codes are taken over from the remote where the command was learned (Broadlink).",
           "data": {
             "commands": "Commands",
-            "groups": "Add groups"
-          }
-        },
-        "ir_groups": {
-          "title": "Command groups",
-          "description": "Choose a group or type a new name to create one. A group bundles commands that you can assign to a remote in one go.",
-          "data": {
-            "group": "Group"
-          }
-        },
-        "ir_group_edit": {
-          "title": "Group “{group}”",
-          "description": "Commands of the group.",
-          "data": {
-            "commands": "Commands",
-            "delete": "Delete group"
+            "all_commands": "Assign all commands"
           }
         }
       },
@@ -2275,8 +2259,7 @@
         "command_in_use": "The command is used by the switch. Change the switch first.",
         "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
         "switch_same": "“On” and “off” must be different commands.",
-        "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead.",
-        "group_empty": "A group needs at least one command."
+        "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead."
       },
       "abort": {},
       "progress": {

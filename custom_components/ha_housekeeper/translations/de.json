@@ -2145,8 +2145,7 @@
             "add_ir_command": "Befehl anlernen",
             "learn_ir_command": "Befehl an Sendern (neu) anlernen",
             "import_ir_commands": "Vorhandene Befehle übernehmen",
-            "ir_assign": "Befehle einem Sender zuordnen",
-            "ir_groups": "Befehlsgruppen"
+            "ir_assign": "Befehle einem Sender zuordnen"
           }
         },
         "add_ir_command": {
@@ -2245,25 +2244,10 @@
         },
         "ir_assign_edit": {
           "title": "Befehle von {remote}",
-          "description": "Befehle, die dieser Sender sendet. Eine Gruppe fügt alle ihre Befehle hinzu; nicht angekreuzte Befehle werden diesem Sender entzogen. Die Codes werden vom Sender übernommen, an dem der Befehl angelernt wurde (Broadlink).",
+          "description": "Befehle, die dieser Sender sendet. „Alle Befehle zuordnen“ nimmt die komplette Liste; nicht angekreuzte Befehle werden diesem Sender entzogen. Die Codes werden vom Sender übernommen, an dem der Befehl angelernt wurde (Broadlink).",
           "data": {
             "commands": "Befehle",
-            "groups": "Gruppen hinzufügen"
-          }
-        },
-        "ir_groups": {
-          "title": "Befehlsgruppen",
-          "description": "Wähle eine Gruppe oder tippe einen neuen Namen ein, um eine anzulegen. Eine Gruppe bündelt Befehle, die du einem Sender in einem Schritt zuordnen kannst.",
-          "data": {
-            "group": "Gruppe"
-          }
-        },
-        "ir_group_edit": {
-          "title": "Gruppe „{group}“",
-          "description": "Befehle der Gruppe.",
-          "data": {
-            "commands": "Befehle",
-            "delete": "Gruppe löschen"
+            "all_commands": "Alle Befehle zuordnen"
           }
         }
       },
@@ -2275,8 +2259,7 @@
         "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
         "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
         "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein.",
-        "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an.",
-        "group_empty": "Eine Gruppe braucht mindestens einen Befehl."
+        "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an."
       },
       "abort": {},
       "progress": {

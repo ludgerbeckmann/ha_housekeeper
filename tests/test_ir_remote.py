@@ -356,7 +356,7 @@ async def test_per_remote_buttons_and_switches(hass: HomeAssistant) -> None:
 async def _assign(hass, entry, remote, **form):
     flow = hass.config_entries.subentries
     result = await _flow_menu(hass, entry)
-    assert "ir_assign" in menu_options(result) and "ir_groups" in menu_options(result)
+    assert "ir_assign" in menu_options(result)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_assign"})
     result = await flow.async_configure(result["flow_id"], {"remote": remote})
     assert result["step_id"] == "ir_assign_edit"
@@ -394,30 +394,16 @@ async def test_assign_without_readable_code_and_unassign(hass: HomeAssistant) ->
     assert saved["c1"]["remotes"] == [R1, R2] and saved["c2"]["remotes"] == [R1]
 
 
-async def test_command_groups(hass: HomeAssistant) -> None:
-    entry, *_ = await _setup(hass, ir_commands=[
+async def test_assign_all_commands_and_clear_old_groups(hass: HomeAssistant) -> None:
+    entry, *_ = await _setup(hass, ir_groups=[{"id": "g", "name": "Kerze", "commands": ["c1"]}], ir_commands=[
         cmd("c1", "Power On", "power_on", remotes=[R1], b64="AA"),
         cmd("c2", "Power Off", "power_off", remotes=[R1], b64="BB"),
         cmd("c3", "Timer 2h", "timer_2h", remotes=[R1], b64="CC"),
     ])
-    flow = hass.config_entries.subentries
     result = await _flow_menu(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_groups"})
-    result = await flow.async_configure(result["flow_id"], {"group": "Kerze"})      # neuer Name
-    assert result["step_id"] == "ir_group_edit"
-    bad = await flow.async_configure(result["flow_id"], {"commands": []})
-    assert bad["errors"] == {"base": "group_empty"}
-    result = await flow.async_configure(result["flow_id"], {"commands": ["c1", "c2"]})
-    assert is_menu(result)
-    (group,) = entry.options["ir_groups"]
-    assert group["name"] == "Kerze" and group["commands"] == ["c1", "c2"]
-    # Gruppe dem zweiten Sender zuordnen
-    done = await _assign(hass, entry, R2, commands=[], groups=[group["id"]])
+    assert "ir_groups" not in menu_options(result)
+    done = await _assign(hass, entry, R2, commands=[], all_commands=True)
     assert is_menu(done)
     saved = {c["id"]: c for c in entry.options["ir_commands"]}
-    assert saved["c1"]["remotes"] == [R1, R2] and saved["c3"]["remotes"] == [R1]
-    # Gruppe löschen
-    result = await flow.async_configure(done["flow_id"], {"next_step_id": "ir_groups"})
-    result = await flow.async_configure(result["flow_id"], {"group": group["id"]})
-    result = await flow.async_configure(result["flow_id"], {"delete": True, "commands": ["c1"]})
-    assert is_menu(result) and entry.options["ir_groups"] == []
+    assert all(c["remotes"] == [R1, R2] for c in saved.values())
+    assert entry.options["ir_groups"] is None                    # frühere Gruppen werden entfernt
