@@ -11,7 +11,7 @@ from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.doorbell import assign_players, profile_summary
 from custom_components.ha_housekeeper.door_guard import rule_summary
 
-from .helpers import make_entry, reconfigure, update_entry
+from .helpers import make_entry, reconfigure
 
 ALL = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -148,46 +148,6 @@ async def test_doorbell_profile_flow_stores_enabled(hass: HomeAssistant) -> None
                       "media": {"media_content_id": "x", "media_content_type": "audio/mpeg"}},
         "profile_2": {}, "profile_3": {}})
     assert result["reason"] == "reconfigure_successful" and entry.options["profiles"][0]["enabled"] is False
-
-
-# --- KNX/Sonos-Profile -------------------------------------------------------------------------------------
-
-
-def speaker(i, player, **over):
-    return {"id": i, "name": f"S {i}", "player": player, "max_volume": 100, "volume_step": 5,
-            "stop_instead_of_pause": False, **over}
-
-
-async def test_knx_disabled_profile_is_inert(hass: HomeAssistant) -> None:
-    play = async_mock_service(hass, "media_player", "media_play")
-    send = async_mock_service(hass, "knx", "send")
-    async_mock_service(hass, "knx", "event_register")
-    for player in ("media_player.a", "media_player.b"):
-        hass.states.async_set(player, "paused", {"volume_level": 0.3})
-    entry = make_entry(domain=DOMAIN, title="Sonos", data={
-        "function_type": "knx_sonos",
-        "speakers": [speaker("a", "media_player.a"), speaker("b", "media_player.b", enabled=False)],
-        "commands": [
-            {"id": "1", "name": "A", "address": "1/0/1", "dpt": "switch", "action": "play", "profile": "a"},
-            {"id": "2", "name": "B", "address": "2/0/1", "dpt": "switch", "action": "play", "profile": "b"}],
-        "status": [{"id": "s", "name": "S", "source": "volume", "address": "5/0/1", "profile": "b"}]})
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.hub_id)
-    await hass.async_block_till_done()
-    ctrl = hass.data[DOMAIN][entry.entry_id]
-    assert ctrl.players == ["media_player.a"]
-    for destination in ("1/0/1", "2/0/1"):
-        hass.bus.async_fire("knx_event", {"data": 1, "destination": destination, "direction": "Incoming",
-                                          "telegramtype": "GroupValueWrite", "value": None, "source": "1.1.1"})
-        await hass.async_block_till_done()
-    assert [c.data["entity_id"] for c in play] == ["media_player.a"]         # nur das aktive Profil
-    assert send == []                                                        # Rückmeldung des ausgeschalteten Profils ruht
-    # Wieder einschalten (Neuladen mit geänderten Optionen)
-    update_entry(hass, entry, {
-        "speakers": [speaker("a", "media_player.a"), speaker("b", "media_player.b")]})
-    await hass.async_block_till_done()
-    assert hass.data[DOMAIN][entry.entry_id].players == ["media_player.a", "media_player.b"]
-    assert [(c.data["address"], c.data["payload"]) for c in send] == [("5/0/1", 30)]
 
 
 # --- Briefkasten ------------------------------------------------------------------------------------------------

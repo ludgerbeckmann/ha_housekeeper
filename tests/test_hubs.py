@@ -243,7 +243,7 @@ async def test_all_functions_are_subentry_types(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_setup(hub.entry_id)
     await hass.async_block_till_done()
     assert set(hub.supported_subentry_types) == {
-        "mailbox", "door_guard", "doorbell", "pool_pump", "knx_sonos",
+        "mailbox", "door_guard", "doorbell", "pool_pump",
         "updater", "task_planner", "alarm_clock", "integration_monitor", "llm_usage", "ir_remote", "consumption_guard", "energy_monitor", "energy_cost"}
 
 
@@ -290,7 +290,6 @@ def test_clean_instance_name() -> None:
     assert clean_instance_name("door_guard", "Türwächter") == ""
     assert clean_instance_name("door_guard", "  Garage ") == "Garage"
     assert clean_instance_name("door_guard", None) == ""
-    assert clean_instance_name("knx_sonos", "KNX/Sonos-Connector Büro") == "Büro"
 
 
 async def test_busy_sibling_defers_the_reload_of_the_whole_hub(hass: HomeAssistant) -> None:
@@ -322,3 +321,15 @@ async def test_busy_sibling_defers_the_reload_of_the_whole_hub(hass: HomeAssista
     await first.async_stop_alarm()
     await hass.async_block_till_done()
     assert hass.data[DOMAIN][bell_id] is not bell and hass.data[DOMAIN][second_id] is not second
+
+
+async def test_removed_function_subentry_is_deleted_on_setup(hass: HomeAssistant) -> None:
+    """Untereinträge der entfernten Funktion „KNX/Sonos-Connector“ blockieren den Hub nicht, sie werden gelöscht."""
+    old = make_entry(domain=DOMAIN, title="Sonos", data={"function_type": "knx_sonos", "player": "media_player.a"})
+    old.add_to_hass(hass)
+    hub = hass.config_entries.async_get_entry(old.hub_id)
+    assert any(s.subentry_type == "knx_sonos" for s in hub.subentries.values())
+    assert await hass.config_entries.async_setup(old.hub_id)
+    await hass.async_block_till_done()
+    assert hub.state is ConfigEntryState.LOADED
+    assert not any(s.subentry_type == "knx_sonos" for s in hub.subentries.values())
