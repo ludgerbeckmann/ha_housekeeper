@@ -401,38 +401,47 @@ Pause sowie die Benachrichtigung bei Sendefehlern.
 
 ### Einstellungen und Menü
 
-Das Zahnrad öffnet ein kleines Menü: **Einstellungen** (eine Seite mit den Abschnitten *Allgemein* mit Name, Sender,
-Wiederholungen und Pause; *Befehle* zum Aktivieren/Deaktivieren und Löschen; *Schalter* mit An-/Aus-Befehl;
-*Benachrichtigungen*) sowie die Schritte, die ein Gerät brauchen und deshalb keine Formularfelder sein können:
+Das Zahnrad öffnet ein kleines Menü mit drei Punkten: **Einstellungen** (eine Seite für fast alles), **Befehl anlernen** und
+**Vorhandene Befehle übernehmen**. Die beiden letzten brauchen ein Gerät (Fortschrittsfenster) und können deshalb keine
+Formularfelder sein.
 
-- **Befehl anlernen:** Name (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`, `light_plus`), Art (Infrarot/Funk)
-  und die Sender. Je Sender erscheint ein Fortschrittsdialog: Taste der Original-Fernbedienung auf den Sender
-  richten und drücken (Zeitlimit etwa 30 Sekunden). Schlägt es an einem Sender fehl, bleiben die erfolgreichen
-  gespeichert und die Ursache wird angezeigt.
-- **Vorhandene Befehle übernehmen:** Liest bei Broadlink-Sendern die dort schon gespeicherten Befehle des Geräts und
-  bietet sie zum Ankreuzen an; weitere Namen kannst du eintippen (dann gilt der Befehl an allen Sendern als
-  angelernt). Danach können die alten Lern- und Sende-Skripte gelöscht werden. Die Funktion liest dafür eine
-  interne Datei der Broadlink-Integration; bei anderen Sendern oder geändertem Format entfällt die Liste, die
-  Handeingabe bleibt.
-- **Befehl an Sendern (neu) anlernen** (auch zum Nachlernen an einem weiteren Sender; Codes werden je Sender
-  gespeichert und lassen sich nicht kopieren). Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog
-  entfällt, jeder aktive Befehl hat eine Taste.
-- **Befehle einem Sender zuordnen** (nur bei mehreren Sendern): Sender wählen, dann Befehle ankreuzen oder mit dem Haken
-  **Alle Befehle zuordnen** die komplette Liste nehmen. Nicht angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom
-  Sender gelesen, an dem der Befehl angelernt wurde (nur Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes
-  Anlernen ist nicht nötig. Ist der Code nicht lesbar, wird der Befehl dort angelernt. So bildet die Befehlsliste einer Instanz
-  eine Bibliothek, aus der du jedem Sender (z. B. beim Umzug der Kerzen in einen anderen Raum) beliebige Befehle zuweist.
-- **Automatik nach Licht und Sonnenuntergang** (Menüpunkt, je Sender): Wähle die **Lichter im Raum** (`light`/`switch`). Geht nach
-  Sonnenuntergang (plus einstellbarem **Versatz**, auch negativ) ein Licht an, sendet die Funktion **Power On** nur an diesen
-  Sender; ist beim Sonnenuntergang schon ein Licht an, wird dann eingeschaltet. Sind **alle** Lichter für die **Wartezeit**
-  (Standard 2 Minuten) aus, kommt **Power Off**. Optional **Spätestens ausschalten um** (täglich, auch wenn noch ein Licht an ist).
-  Voraussetzung sind die Befehle „An“ und „Aus“ des Schalters. Je Sender gibt es einen Schalter **Automatik** zum Pausieren.
-  Sonnenstand und Zeiten stammen aus dem Standort von Home Assistant; unklare Lichtzustände (nicht verfügbar) ändern nichts, bei
-  Neustart wird nicht neu geschaltet. Von Hand geschaltete Kerzen überschreibt die Automatik erst beim nächsten Auslöser.
-- **Löschen** in den Einstellungen (Abschnitt *Befehle*, auf Wunsch auch der Code beim Sender); ein vom Schalter
-  genutzter Befehl lässt sich nicht löschen.
-- **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für
-  Sprachassistenten (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
+**Seite „Einstellungen“** (nur *Allgemein* ist aufgeklappt)
+
+- **Allgemein:** Name, Sender, Wiederholungen und Pause.
+- **Befehle:** Befehle aktivieren/deaktivieren und löschen (auf Wunsch auch der Code beim Sender); ein vom Schalter genutzter
+  Befehl lässt sich nicht löschen. Umbenennen gibt es nicht: Befehl neu anlernen. Ein Test-Dialog entfällt, jeder aktive Befehl hat
+  eine Taste.
+- **Schalter (An/Aus):** Optional zwei Befehle (z. B. Power On und Power Off) als Schalter, praktisch für Sprachassistenten
+  (Alexa, Google, Siri, Assist). Der Zustand ist nur **angenommen**, die Geräte melden nichts zurück.
+- **Sender 1 … Sender 4:** Je Sender ein eigener Abschnitt (die Beschreibung oben zeigt, welcher Sender dahinter steckt):
+  - **Befehle dieses Senders** ankreuzen oder mit dem Haken **Alle Befehle zuordnen** die komplette Liste nehmen. Nicht
+    angekreuzte Befehle werden dem Sender entzogen. Der Code wird vom Sender gelesen, an dem der Befehl angelernt wurde (nur
+    Broadlink), und als `b64:`-Code an den neuen Sender gesendet; erneutes Anlernen ist nicht nötig. Ist der Code nicht lesbar,
+    bleibt die Seite offen und nennt den Befehl: dann dort anlernen. So bildet die Befehlsliste eine Bibliothek, aus der du jedem
+    Sender (z. B. beim Umzug der Kerzen in einen anderen Raum) beliebige Befehle zuweist.
+  - **Automatik nach Licht und Sonnenuntergang:** Wähle die **Lichter im Raum** (`light`/`switch`). Geht nach Sonnenuntergang
+    (plus einstellbarem **Versatz**, auch negativ) ein Licht an, sendet die Funktion **Power On** nur an diesen Sender; ist beim
+    Sonnenuntergang schon ein Licht an, wird dann eingeschaltet. Sind **alle** Lichter für die **Wartezeit** (Standard 2 Minuten)
+    aus, kommt **Power Off**. Optional **Spätestens ausschalten um** (täglich, auch wenn noch ein Licht an ist). Ohne Lichter ist
+    die Automatik aus. Voraussetzung sind die Befehle „An“ und „Aus“ des Schalters. Je Sender gibt es einen Schalter
+    **Automatik** zum Pausieren. Sonnenstand und Zeiten stammen aus dem Standort von Home Assistant; unklare Lichtzustände (nicht
+    verfügbar) ändern nichts, bei Neustart wird nicht neu geschaltet. Von Hand geschaltete Kerzen überschreibt die Automatik
+    erst beim nächsten Auslöser.
+  - Es werden bis zu **vier Sender** pro Instanz unterstützt. Die Abschnitte eines neu hinzugefügten Senders erscheinen nach dem
+    Speichern, beim erneuten Öffnen der Seite.
+- **Benachrichtigungen:** Meldung bei Sendefehlern.
+
+**Menü**
+
+- **Befehl anlernen:** Einen vorhandenen Befehl wählen (neu anlernen, z. B. an einem weiteren Sender; ein eingetippter Name eines
+  vorhandenen Befehls zählt ebenso) oder einen **neuen Namen** eintippen (z. B. „Timer 2h“, „Light +“; daraus wird `timer_2h`,
+  `light_plus`), dazu die Art (Infrarot/Funk, nur bei neuen Befehlen) und die Sender. Je Sender erscheint ein Fortschrittsdialog:
+  Taste der Original-Fernbedienung auf den Sender richten und drücken (Zeitlimit etwa 30 Sekunden). Schlägt es an einem Sender
+  fehl, bleiben die erfolgreichen gespeichert und die Ursache wird angezeigt.
+- **Vorhandene Befehle übernehmen:** Liest bei Broadlink-Sendern die dort schon gespeicherten Befehle des Geräts und bietet sie
+  zum Ankreuzen an; weitere Namen kannst du eintippen (dann gilt der Befehl an allen Sendern als angelernt). Danach können die
+  alten Lern- und Sende-Skripte gelöscht werden. Die Funktion liest dafür eine interne Datei der Broadlink-Integration; bei
+  anderen Sendern oder geändertem Format entfällt die Liste, die Handeingabe bleibt.
 
 ### Entitäten und Aktion
 

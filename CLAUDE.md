@@ -256,10 +256,13 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `baseline_time` neu (nur im Formular, wird nicht gespeichert), leer ändert nichts.
   Der Key wird beim Anlegen/Ändern mit einer Abfrage geprüft (`async_check_key` liefert Fehlerschlüssel und Ursache; die Ursache steht als `{detail}` in den Fehlertexten und im Log; `_get()` meldet HTTP-Status plus `error.message` des Anbieters), Leerraum um den Key wird entfernt, `api_key` steht in
   `TO_REDACT` der Diagnose. In Tests `llm_providers.async_fetch_costs` ersetzen (`fake_costs`).
-- `ir_remote.py` (Einstellungen: Menü `ir_menu` mit `ir_settings` = **eine Seite** (Abschnitte `general` mit Name, Sender, Wiederholungen;
-  `commands` mit `active_commands`/`delete_commands`/`delete_codes`, nur im Formular; `switch`; `notifications`; Speichern =
-  `async_update_subentry` + Abbruch `reconfigure_successful`) plus den interaktiven Schritten `add_ir_command`, `learn_ir_command`,
-  `import_ir_commands`; Umbenennen und Test-Dialog gibt es nicht mehr): Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht
+- `ir_remote.py` (Einstellungen: Menü `ir_menu` mit nur drei Punkten `ir_settings`, `add_ir_command`, `import_ir_commands`; `ir_settings` = **eine Seite**:
+  Abschnitte `general` (offen: Name, Sender, Wiederholungen), `commands` (`active_commands`/`delete_commands`/`delete_codes`, nur im Formular), `switch`,
+  **je Sender ein Abschnitt `sender_1…4`** (`SENDER_SLOTS` = 4, nur für gespeicherte Sender; Felder `commands`, `all_commands`, Automatik `lights`/`sunset_offset`/
+  `off_delay`/`latest_off`; die Sender-Abschnitte werden vor `_flatten_sections()` abgetrennt, weil ihre Feldnamen sich wiederholen; Beschreibung mit Platzhalter
+  `senders` = „Sender n = Name“, Fehler `too_many_remotes`, `code_unavailable` mit Platzhalter `commands`) und `notifications`; Speichern =
+  `async_update_subentry` + Abbruch `reconfigure_successful`; `_apply_senders()` ordnet zu und liest die Codes. `add_ir_command` = vorhandenen Befehl (Auswahl, auch
+  eingetippter Name eines vorhandenen) neu anlernen oder neuen Namen anlegen, danach `ir_learn`; Umbenennen, Test-Dialog und eigene Zuordnungs-/Automatikschritte gibt es nicht mehr): Je Instanz `remotes` (mehrere `remote`-Entitäten), `ir_device` (Gerätename beim Sender, später nicht
   änderbar) und Befehle in `ir_commands` (Schlüssel `IC_*`: `id`, `name` = Anzeige, `code` = Name beim Sender aus
   `command_code()`, `type` ir/rf, `enabled`, `remotes` = Sender, an denen angelernt). Die Codes liegen im Speicher
   des Senders (Broadlink: `.storage/broadlink_remote_<unique_id>_codes`, `{gerät: {befehl: code}}`); Anlernen/Senden/
@@ -276,10 +279,10 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   **Zuordnung statt Kopieren:** `IC_REMOTES` = zugeordnete Sender, `IC_LEARNED` = Sender, bei denen der Code unter seinem Namen liegt
   (fehlt bei älteren Befehlen = `IC_REMOTES`, `native_remotes()`), `IC_B64` = Code als Base64 (aus dem Broadlink-Speicher gelesen,
   `async_stored_code()`; beim Anlernen/Übernehmen/Zuordnen gesetzt). `async_send(..., b64, native)` sendet an Sender außerhalb von
-  `native` als `b64:<Code>`. Menüschritte `ir_assign`/`ir_assign_edit` (Sender wählen, Befehle ankreuzen oder `all_commands` = alle; `code_unavailable`). Frühere Befehlsgruppen (`ir_groups`) gibt es nicht mehr, sie werden beim Speichern auf `None` gesetzt. Bei mehr als einem Sender gibt es
+  `native` als `b64:<Code>`. Die Zuordnung steht auf der Einstellungsseite (Abschnitt je Sender; Befehle ankreuzen oder `all_commands` = alle; `code_unavailable`). Frühere Befehlsgruppen (`ir_groups`) gibt es nicht mehr, sie werden beim Speichern auf `None` gesetzt. Bei mehr als einem Sender gibt es
   zusätzlich Tasten (`<id>_ir_<befehl>_<sender-slug>`) und Schalter (`<id>_ir_power_<sender-slug>`, `assumed_remote` im `Store`) je
   Sender; veraltete werden anhand der Präfixe entfernt. `async_send(command_id, repeats, remote)` sendet nur an einen Sender.
-  **Automatik** (`ir_auto` = `{sender: {lights, sunset_offset, off_delay, latest_off}}`, Menüschritte `ir_auto`/`ir_auto_edit`, Prüfung `auto_needs_switch`: braucht
+  **Automatik** (`ir_auto` = `{sender: {lights, sunset_offset, off_delay, latest_off}}` (Abschnitt je Sender der Einstellungsseite), Prüfung `auto_needs_switch`: braucht
   `ir_on_command`/`ir_off_command`): `auto_rules()` nur mit Lichtern und gesetztem Schalter; Listener auf die Lichter (`_on_light_change`), `async_track_sunset`
   mit Versatz und optional `async_track_time_change` für `latest_off`. `_lights_on[sender]` = die Automatik hat eingeschaltet (nicht der Lichtzustand): Power On beim
   ersten Licht an, wenn `_is_dark()` (nach Sonnenuntergang + Versatz oder vor Sonnenaufgang, `get_astral_event_date`); Power Off nach `off_delay`, wenn alle Lichter

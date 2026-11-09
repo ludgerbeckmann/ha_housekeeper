@@ -68,6 +68,9 @@ from .common import (
 _CLEARABLE = (CONF_MOBILE_TARGETS, CONF_TTS_ENTITY, CONF_TTS_PLAYER)
 SECTION_COMMANDS = "commands"
 SECTION_SWITCH = "switch"
+SECTION_SENDER = "sender_"
+SF_COMMANDS = "commands"       # Befehle eines Senders (im Abschnitt „Sender n“)
+SF_ALL = "all_commands"        # alle Befehle diesem Sender zuordnen
 
 
 def _remote_selector() -> selector.EntitySelector:
@@ -102,10 +105,17 @@ def _ir_schema(
     )
 
 
+SENDER_SLOTS = 4
+
+
 def _ir_settings_schema(
-    hass: HomeAssistant, defaults: dict[str, Any], commands: list[dict[str, Any]]
+    hass: HomeAssistant,
+    defaults: dict[str, Any],
+    commands: list[dict[str, Any]],
+    remotes: list[str],
+    sender_defaults: dict[str, dict[str, Any]],
 ) -> vol.Schema:
-    """Die Seite: Allgemein (Name, Sender, Wiederholungen), Befehle, Schalter und Benachrichtigung (nur „Allgemein“ offen)."""
+    """Die Seite: Allgemein (offen), Befehle, Schalter, je Sender ein Abschnitt (Befehle und Automatik), Benachrichtigung."""
 
     def _section(fields: dict[Any, Any], collapsed: bool = True) -> Any:
         return section(vol.Schema(fields), {"collapsed": collapsed})
@@ -143,16 +153,36 @@ def _ir_settings_schema(
         vol.Optional(CONF_IR_ON, description=_suggest(CONF_IR_ON, defaults)): _picker(False),
         vol.Optional(CONF_IR_OFF, description=_suggest(CONF_IR_OFF, defaults)): _picker(False),
     }
-    return vol.Schema(
-        {
-            vol.Required(SECTION_GENERAL): _section(general, collapsed=False),
-            vol.Required(SECTION_COMMANDS): _section(command_fields),
-            vol.Required(SECTION_SWITCH): _section(switch_fields),
-            vol.Required(SECTION_NOTIFICATIONS): _section(
-                _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
-            ),
-        }
+    sections: dict[Any, Any] = {
+        vol.Required(SECTION_GENERAL): _section(general, collapsed=False),
+        vol.Required(SECTION_COMMANDS): _section(command_fields),
+        vol.Required(SECTION_SWITCH): _section(switch_fields),
+    }
+    for index, remote in enumerate(remotes[:SENDER_SLOTS], start=1):
+        mine = sender_defaults.get(remote, {})
+        assigned = mine.get(SF_COMMANDS)
+        if assigned is None:
+            assigned = [c[IC_ID] for c in commands if remote in (c.get(IC_REMOTES) or [])]
+        sections[vol.Required(f"{SECTION_SENDER}{index}")] = _section(
+            {
+                vol.Optional(SF_COMMANDS, default=assigned): _picker(True),
+                vol.Required(SF_ALL, default=False): bool,
+                vol.Optional(IA_LIGHTS, description=_suggest(IA_LIGHTS, mine)): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)
+                ),
+                vol.Required(IA_OFFSET, default=mine.get(IA_OFFSET, 0)): _number(-240, 240, "min"),
+                vol.Required(
+                    IA_OFF_DELAY, default=mine.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY)
+                ): _number(0, 120, "min"),
+                vol.Optional(IA_LATEST_OFF, description=_suggest(IA_LATEST_OFF, mine)): (
+                    selector.TimeSelector()
+                ),
+            }
+        )
+    sections[vol.Required(SECTION_NOTIFICATIONS)] = _section(
+        _notify_fields(hass, {**_POOL_NOTIFY_DEFAULTS, **defaults}, with_action=False)
     )
+    return vol.Schema(sections)
 
 
 def _validate_ir(user_input: dict[str, Any], with_device: bool) -> dict[str, str]:
@@ -182,8 +212,6 @@ class IrOptions:
     """Options-Flow-Schritte: IR-Fernbedienung."""
 
     _learn: dict[str, Any] | None = None
-    _assign_remote: str = ""
-    _auto_remote: str = ""
 
     # --- Hilfen ------------------------------------------------------------
 
@@ -202,22 +230,6 @@ class IrOptions:
             selector.SelectOptionDict(value=r, label=self._remote_name(r))
             for r in self._ir_remotes()
         ]
-
-    def _command_picker(self, *extra: Any) -> vol.Schema:
-        fields: dict[Any, Any] = {
-            vol.Required("command"): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=[
-                        selector.SelectOptionDict(value=c[IC_ID], label=c[IC_NAME])
-                        for c in self._ir_commands()
-                    ],
-                    mode=selector.SelectSelectorMode.LIST,
-                )
-            )
-        }
-        for item in extra:
-            fields.update(item)
-        return vol.Schema(fields)
 
     def _learn_on_field(self, default: list[str]) -> dict[Any, Any]:
         return {
@@ -279,27 +291,77 @@ class IrOptions:
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Kleines Menü: Einstellungen (eine Seite) sowie Anlernen und Übernehmen von Befehlen."""
-        options = ["ir_settings", "add_ir_command"]
-        if self._ir_commands():
-            options.append("learn_ir_command")
-        options.append("import_ir_commands")
-        if self._ir_commands():
-            if len(self._ir_remotes()) > 1:
-                options.append("ir_assign")
-            options.append("ir_auto")
         return await self._menu(
-            "ir_menu", options, user_input, {"commands": self._ir_listing()}
+            "ir_menu",
+            ["ir_settings", "add_ir_command", "import_ir_commands"],
+            user_input,
+            {"commands": self._ir_listing()},
         )
+
+    def _senders_text(self) -> str:
+        remotes = self._ir_remotes()[:SENDER_SLOTS]
+        return "\n".join(f"Sender {i} = {self._remote_name(r)}" for i, r in enumerate(remotes, 1)) or "–"
+
+    async def _apply_senders(
+        self, commands: list[dict[str, Any]], sender_inputs: dict[str, dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any], list[str]]:
+        """Befehle den Sendern zuordnen (Code wird gelesen) und die Automatik je Sender übernehmen."""
+        remotes = self._ir_remotes()
+        rules = dict(self._current.get(CONF_IR_AUTO) or {})
+        missing: list[str] = []
+        for index, remote in enumerate(remotes[:SENDER_SLOTS], start=1):
+            form = sender_inputs.get(f"{SECTION_SENDER}{index}")
+            if form is None:
+                continue
+            selected = (
+                {c[IC_ID] for c in commands}
+                if form.get(SF_ALL)
+                else set(form.get(SF_COMMANDS) or [])
+            )
+            updated: list[dict[str, Any]] = []
+            for command in commands:
+                known = list(command.get(IC_REMOTES) or [])
+                if command[IC_ID] in selected and remote not in known:
+                    resolved = await self._ensure_b64(command)
+                    if resolved is None:
+                        missing.append(command[IC_NAME])
+                        updated.append(command)
+                        continue
+                    # ältere Befehle: bisherige Sender merken, bei denen der Code unter seinem Namen liegt
+                    command = {**resolved, IC_LEARNED: command.get(IC_LEARNED, list(known))}
+                    known.append(remote)
+                elif command[IC_ID] not in selected and remote in known:
+                    known.remove(remote)
+                updated.append({**command, IC_REMOTES: [r for r in remotes if r in known]})
+            commands = updated
+            if lights := list(form.get(IA_LIGHTS) or []):
+                rules[remote] = {
+                    IA_LIGHTS: lights,
+                    IA_OFFSET: int(form.get(IA_OFFSET) or 0),
+                    IA_OFF_DELAY: int(form.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY) or 0),
+                    IA_LATEST_OFF: form.get(IA_LATEST_OFF) or None,
+                }
+            else:
+                rules.pop(remote, None)
+        return commands, rules, missing
 
     async def async_step_ir_settings(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Alle Einstellungen auf einer Seite: Name, Sender, Wiederholungen, Befehle, Schalter, Meldungen."""
+        """Alle Einstellungen auf einer Seite: Name, Sender, Befehle, Schalter, je Sender Befehle und Automatik, Meldungen."""
         errors: dict[str, str] = {}
         subentry = self._get_reconfigure_subentry()
         defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
         commands = self._ir_commands()
+        sender_defaults: dict[str, dict[str, Any]] = {
+            remote: dict(rule) for remote, rule in (self._current.get(CONF_IR_AUTO) or {}).items()
+        }
+        placeholders = {"senders": self._senders_text(), "commands": ""}
         if user_input is not None:
+            user_input = dict(user_input)
+            sender_inputs = {
+                key: user_input.pop(key) for key in list(user_input) if key.startswith(SECTION_SENDER)
+            }
             flat = _flatten_sections(user_input)
             errors = _validate_ir(flat, with_device=False)
             active = set(flat.pop(CONF_IR_ACTIVE, None) or [])
@@ -307,12 +369,26 @@ class IrOptions:
             delete_codes = bool(flat.pop(CONF_IR_DELETE_CODES, True))
             on, off = flat.get(CONF_IR_ON), flat.get(CONF_IR_OFF)
             if not errors:
-                if bool(on) != bool(off):
+                if len(flat[CONF_REMOTES]) > SENDER_SLOTS:
+                    errors["base"] = "too_many_remotes"
+                elif bool(on) != bool(off):
                     errors["base"] = "switch_incomplete"
                 elif on and on == off:
                     errors["base"] = "switch_same"
                 elif {on, off} & delete:
                     errors["base"] = "command_in_use"
+                elif not (on and off) and any(f.get(IA_LIGHTS) for f in sender_inputs.values()):
+                    errors["base"] = "auto_needs_switch"
+            kept: list[dict[str, Any]] = []
+            rules: dict[str, Any] = {}
+            if not errors:
+                kept = [
+                    {**c, IC_ENABLED: c[IC_ID] in active} for c in commands if c[IC_ID] not in delete
+                ]
+                kept, rules, missing = await self._apply_senders(kept, sender_inputs)
+                if missing:
+                    errors["base"] = "code_unavailable"
+                    placeholders["commands"] = ", ".join(missing)
             if not errors:
                 for command in commands:
                     if command[IC_ID] in delete and delete_codes:
@@ -321,14 +397,15 @@ class IrOptions:
                             await ir_remote.async_delete(
                                 self.hass, remote, self._current[CONF_IR_DEVICE], command[IC_CODE]
                             )
-                kept = [
-                    {**c, IC_ENABLED: c[IC_ID] in active}
-                    for c in commands
-                    if c[IC_ID] not in delete
-                ]
                 name = (flat.pop(CONF_NAME, None) or "").strip()
-                data = {**ir_data(flat), CONF_IR_COMMANDS: kept, CONF_IR_ON: on or None, CONF_IR_OFF: off or None}
-                data[CONF_IR_GROUPS] = None       # frühere Befehlsgruppen gibt es nicht mehr
+                data = {
+                    **ir_data(flat),
+                    CONF_IR_COMMANDS: kept,
+                    CONF_IR_ON: on or None,
+                    CONF_IR_OFF: off or None,
+                    CONF_IR_AUTO: rules,
+                    CONF_IR_GROUPS: None,         # frühere Befehlsgruppen gibt es nicht mehr
+                }
                 self.hass.config_entries.async_update_subentry(
                     self._get_entry(),
                     subentry,
@@ -339,10 +416,16 @@ class IrOptions:
                 )
                 return self.async_abort(reason="reconfigure_successful")
             defaults = {**defaults, **flat, CONF_IR_ACTIVE: list(active), CONF_IR_ON: on, CONF_IR_OFF: off}
+            for index, remote in enumerate(self._ir_remotes()[:SENDER_SLOTS], start=1):
+                if form := sender_inputs.get(f"{SECTION_SENDER}{index}"):
+                    sender_defaults[remote] = dict(form)
         return self.async_show_form(
             step_id="ir_settings",
-            data_schema=_ir_settings_schema(self.hass, defaults, commands),
+            data_schema=_ir_settings_schema(
+                self.hass, defaults, commands, self._ir_remotes(), sender_defaults
+            ),
             errors=errors,
+            description_placeholders=placeholders,
         )
 
     # --- Befehle anlegen und anlernen ---------------------------------------------
@@ -350,47 +433,39 @@ class IrOptions:
     async def async_step_add_ir_command(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
+        """Befehl anlernen: vorhandenen wählen (neu anlernen, auch an weiteren Sendern) oder einen neuen Namen eintippen."""
         defaults: dict[str, Any] = {}
         if user_input is not None:
-            code = ir_remote.command_code(user_input[IC_NAME])
-            if any(c[IC_CODE] == code for c in self._ir_commands()):
-                errors["base"] = "command_exists"
-                defaults = user_input
-            else:
-                command = {
-                    IC_ID: uuid.uuid4().hex[:8],
-                    IC_NAME: user_input[IC_NAME].strip(),
-                    IC_CODE: code,
-                    IC_TYPE: user_input[IC_TYPE],
-                    IC_ENABLED: True,
-                    IC_REMOTES: [],
-                }
-                return await self._start_learn(command, user_input["learn_on"], is_new=True)
+            value = (user_input["command"] or "").strip()
+            commands = self._ir_commands()
+            code = ir_remote.command_code(value)
+            existing = next((c for c in commands if c[IC_ID] == value), None) or next(
+                (c for c in commands if c[IC_CODE] == code), None
+            )
+            if existing is not None:
+                return await self._start_learn(existing, user_input["learn_on"], is_new=False)
+            command = {
+                IC_ID: uuid.uuid4().hex[:8],
+                IC_NAME: value,
+                IC_CODE: code,
+                IC_TYPE: user_input[IC_TYPE],
+                IC_ENABLED: True,
+                IC_REMOTES: [],
+            }
+            return await self._start_learn(command, user_input["learn_on"], is_new=True)
         return self.async_show_form(
             step_id="add_ir_command",
             data_schema=vol.Schema(
                 {
-                    vol.Required(IC_NAME, description=_suggest(IC_NAME, defaults)): str,
+                    vol.Required("command"): self._picker(
+                        self._command_options(), False, custom_value=True
+                    ),
                     vol.Required(IC_TYPE, default=defaults.get(IC_TYPE, IR_TYPE_IR)): _select(
                         IR_TYPES, "ir_type", mode=selector.SelectSelectorMode.LIST
                     ),
                     **self._learn_on_field(defaults.get("learn_on", self._ir_remotes())),
                 }
             ),
-            errors=errors,
-        )
-
-    async def async_step_learn_ir_command(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Befehl an weiteren Sendern anlernen oder dort neu anlernen."""
-        if user_input is not None:
-            command = next(c for c in self._ir_commands() if c[IC_ID] == user_input["command"])
-            return await self._start_learn(command, user_input["learn_on"], is_new=False)
-        return self.async_show_form(
-            step_id="learn_ir_command",
-            data_schema=self._command_picker(self._learn_on_field(self._ir_remotes())),
         )
 
     async def _start_learn(
@@ -537,152 +612,4 @@ class IrOptions:
                 }
             ),
             description_placeholders={"device": device, "found": str(len(options))},
-        )
-
-
-    # --- Sender zuordnen -------------------------------------------------------------
-
-    async def async_step_ir_assign(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Sender wählen, dem Befehle (einzeln oder als Gruppe) zugeordnet werden."""
-        if user_input is not None:
-            self._assign_remote = user_input["remote"]
-            return await self.async_step_ir_assign_edit()
-        return self.async_show_form(
-            step_id="ir_assign",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("remote"): selector.SelectSelector(
-                        selector.SelectSelectorConfig(
-                            options=self._remote_options(),
-                            mode=selector.SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
-
-    async def async_step_ir_assign_edit(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Befehle und Gruppen des gewählten Senders: nicht angekreuzte Befehle werden ihm entzogen."""
-        remote = self._assign_remote
-        commands = self._ir_commands()
-        errors: dict[str, str] = {}
-        placeholders = {"remote": self._remote_name(remote), "commands": ""}
-        assigned = [c[IC_ID] for c in commands if remote in (c.get(IC_REMOTES) or [])]
-        if user_input is not None:
-            selected = set(user_input.get("commands") or [])
-            if user_input.get("all_commands"):
-                selected = {c[IC_ID] for c in commands}
-            updated: list[dict[str, Any]] = []
-            missing: list[str] = []
-            for command in commands:
-                known = list(command.get(IC_REMOTES) or [])
-                if command[IC_ID] in selected and remote not in known:
-                    resolved = await self._ensure_b64(command)
-                    if resolved is None:
-                        missing.append(command[IC_NAME])
-                        updated.append(command)
-                        continue
-                    # ältere Befehle: bisherige Sender merken, bei denen der Code unter seinem Namen liegt
-                    command = {**resolved, IC_LEARNED: command.get(IC_LEARNED, list(known))}
-                    known.append(remote)
-                elif command[IC_ID] not in selected and remote in known:
-                    known.remove(remote)
-                updated.append(
-                    {**command, IC_REMOTES: [r for r in self._ir_remotes() if r in known]}
-                )
-            if missing:
-                errors["base"] = "code_unavailable"
-                placeholders["commands"] = ", ".join(missing)
-                assigned = list(selected & {c[IC_ID] for c in commands})
-            else:
-                self._save({CONF_IR_COMMANDS: updated, CONF_IR_GROUPS: None})
-                return await self.async_step_ir_menu()
-        fields: dict[Any, Any] = {
-            vol.Optional("commands", default=assigned): self._picker(self._command_options(), True)
-        }
-        fields[vol.Optional("all_commands", default=False)] = bool
-        return self.async_show_form(
-            step_id="ir_assign_edit",
-            data_schema=vol.Schema(fields),
-            errors=errors,
-            description_placeholders=placeholders,
-        )
-
-    # --- Automatik: Kerzen nach Licht und Sonnenuntergang ---------------------------
-
-    async def async_step_ir_auto(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Sender wählen (bei nur einem Sender entfällt die Auswahl)."""
-        if user_input is None and len(self._ir_remotes()) == 1:
-            user_input = {"remote": self._ir_remotes()[0]}
-        if user_input is not None:
-            self._auto_remote = user_input["remote"]
-            return await self.async_step_ir_auto_edit()
-        return self.async_show_form(
-            step_id="ir_auto",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("remote"): selector.SelectSelector(
-                        selector.SelectSelectorConfig(
-                            options=self._remote_options(),
-                            mode=selector.SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
-
-    async def async_step_ir_auto_edit(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Lichter, Versatz zum Sonnenuntergang, Wartezeit und spätestes Ausschalten des gewählten Senders."""
-        remote = self._auto_remote
-        rules = dict(self._current.get(CONF_IR_AUTO) or {})
-        current = rules.get(remote) or {}
-        errors: dict[str, str] = {}
-        defaults = current
-        if user_input is not None:
-            lights = list(user_input.get(IA_LIGHTS) or [])
-            defaults = {**user_input}
-            if lights and not (self._current.get(CONF_IR_ON) and self._current.get(CONF_IR_OFF)):
-                errors["base"] = "auto_needs_switch"
-            else:
-                if lights:
-                    rules[remote] = {
-                        IA_LIGHTS: lights,
-                        IA_OFFSET: int(user_input.get(IA_OFFSET) or 0),
-                        IA_OFF_DELAY: int(user_input.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY) or 0),
-                        IA_LATEST_OFF: user_input.get(IA_LATEST_OFF) or None,
-                    }
-                else:
-                    rules.pop(remote, None)
-                self._save({CONF_IR_AUTO: rules})
-                return await self.async_step_ir_menu()
-        return self.async_show_form(
-            step_id="ir_auto_edit",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(IA_LIGHTS, description=_suggest(IA_LIGHTS, defaults)): (
-                        selector.EntitySelector(
-                            selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)
-                        )
-                    ),
-                    vol.Required(IA_OFFSET, default=defaults.get(IA_OFFSET, 0)): _number(
-                        -240, 240, "min"
-                    ),
-                    vol.Required(
-                        IA_OFF_DELAY, default=defaults.get(IA_OFF_DELAY, DEFAULT_IA_OFF_DELAY)
-                    ): _number(0, 120, "min"),
-                    vol.Optional(IA_LATEST_OFF, description=_suggest(IA_LATEST_OFF, defaults)): (
-                        selector.TimeSelector()
-                    ),
-                }
-            ),
-            errors=errors,
-            description_placeholders={"remote": self._remote_name(remote)},
         )
