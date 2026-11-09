@@ -1,9 +1,5 @@
-# Home Assistant Hausmeister
-
 [![Validate](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml/badge.svg)](https://github.com/ludgerbeckmann/ha_housekeeper/actions/workflows/validate.yml)
-[![Release](https://img.shields.io/github/v/release/ludgerbeckmann/ha_housekeeper)](https://github.com/ludgerbeckmann/ha_housekeeper/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-blue.svg)
 
 Eine Custom Integration mit **13 Smart-Home-Funktionen** in einer Installation: Briefkasten, Türwächter,
 Türklingel, Pool, Wecker, Stromkosten und mehr. Es gibt **einen Hub „Funktionen“**; jede **Instanz** (eine
