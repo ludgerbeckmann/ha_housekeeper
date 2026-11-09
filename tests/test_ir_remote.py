@@ -172,10 +172,10 @@ async def test_learn_flow_per_remote(hass: HomeAssistant) -> None:
     hass.services.async_register("remote", "learn_command", _learn)
     flow = hass.config_entries.subentries
     result = await _flow_menu(hass, entry)
-    assert "learn_ir_command" not in menu_options(result)
+    assert menu_options(result) == ["ir_settings", "add_ir_command", "import_ir_commands"]
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_ir_command"})
     result = await flow.async_configure(
-        result["flow_id"], {"name": "Light +", "type": "ir", "learn_on": [R1, R2]}
+        result["flow_id"], {"command": "Light +", "type": "ir", "learn_on": [R1, R2]}
     )
     for remote in (R1, R2):                                 # je Sender ein Fortschrittsdialog
         assert result["type"] is FlowResultType.SHOW_PROGRESS
@@ -189,7 +189,6 @@ async def test_learn_flow_per_remote(hass: HomeAssistant) -> None:
     (saved,) = entry.options["ir_commands"]
     assert saved["name"] == "Light +" and saved["code"] == "light_plus"
     assert saved["remotes"] == [R1, R2]
-    assert "learn_ir_command" in menu_options(result)
 
 
 async def test_learn_failure_keeps_successful_remote(hass: HomeAssistant) -> None:
@@ -205,7 +204,7 @@ async def test_learn_failure_keeps_successful_remote(hass: HomeAssistant) -> Non
     result = await _flow_menu(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_ir_command"})
     result = await flow.async_configure(
-        result["flow_id"], {"name": "Mode", "type": "ir", "learn_on": [R1, R2]}
+        result["flow_id"], {"command": "Mode", "type": "ir", "learn_on": [R1, R2]}
     )
     for _ in range(2):
         await hass.async_block_till_done()
@@ -218,15 +217,27 @@ async def test_learn_failure_keeps_successful_remote(hass: HomeAssistant) -> Non
     assert is_menu(await flow.async_configure(result["flow_id"], {}))
 
 
-async def test_add_command_duplicate(hass: HomeAssistant) -> None:
+async def test_learn_existing_command_again_instead_of_duplicate(hass: HomeAssistant) -> None:
     entry, *_ = await _setup(hass)
+    learned = []
+
+    async def _learn(call):
+        learned.append(call)
+        await asyncio.sleep(0)
+
+    hass.services.async_register("remote", "learn_command", _learn)
     flow = hass.config_entries.subentries
     result = await _flow_menu(hass, entry)
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_ir_command"})
-    result = await flow.async_configure(
-        result["flow_id"], {"name": "power on", "type": "ir", "learn_on": [R1]}
+    result = await flow.async_configure(                          # Name eines vorhandenen Befehls: neu anlernen
+        result["flow_id"], {"command": "power on", "type": "ir", "learn_on": [R2]}
     )
-    assert result["errors"] == {"base": "command_exists"}
+    assert result["type"] is FlowResultType.SHOW_PROGRESS
+    assert result["description_placeholders"]["command"] == "Power On"
+    await hass.async_block_till_done()
+    result = await flow.async_configure(result["flow_id"])
+    assert is_menu(result)
+    assert len(entry.options["ir_commands"]) == 3 and [c.data["command"] for c in learned] == [["power_on"]]
 
 
 async def test_import_from_broadlink_storage(hass: HomeAssistant, hass_storage) -> None:
@@ -251,8 +262,8 @@ async def test_import_from_broadlink_storage(hass: HomeAssistant, hass_storage) 
     assert by_code["mode_candle"]["remotes"] == [R1, R2]        # von Hand: an allen Sendern angenommen
 
 
-def _page(**over):
-    """Eingaben der Einstellungsseite, verteilt auf die Abschnitte."""
+def _page(sender_1=None, sender_2=None, **over):
+    """Eingaben der Einstellungsseite, verteilt auf die Abschnitte (je Sender ein Abschnitt)."""
     commands = {"active_commands": ["c1", "c2", "c3"], "delete_commands": [], "delete_codes": True}
     switch = {}
     general = {"name": "Kerze", "remotes": [R1, R2], "num_repeats": 1, "delay_secs": 0.5}
@@ -264,6 +275,8 @@ def _page(**over):
         else:
             general[key] = value
     return {"general": general, "commands": commands, "switch": switch,
+            "sender_1": sender_1 if sender_1 is not None else {"commands": ["c1", "c2", "c3"]},
+            "sender_2": sender_2 if sender_2 is not None else {"commands": ["c1", "c2"]},
             "notifications": {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": False}}
 
 
@@ -280,7 +293,7 @@ async def test_settings_page_switch_and_delete(hass: HomeAssistant) -> None:
     flow = hass.config_entries.subentries
     result = await _open_page(hass, entry)
     assert result["step_id"] == "ir_settings"
-    assert list(result["data_schema"].schema) == ["general", "commands", "switch", "notifications"]
+    assert list(result["data_schema"].schema) == ["general", "commands", "switch", "sender_1", "sender_2", "notifications"]
     bad = await flow.async_configure(result["flow_id"], _page(ir_on_command="c1"))
     assert bad["errors"] == {"base": "switch_incomplete"}
     result = await _open_page(hass, entry)
@@ -353,14 +366,13 @@ async def test_per_remote_buttons_and_switches(hass: HomeAssistant) -> None:
     assert hass.states.get(sw1).state == "unknown"                              # Sender getrennt
 
 
-async def _assign(hass, entry, remote, **form):
-    flow = hass.config_entries.subentries
-    result = await _flow_menu(hass, entry)
-    assert "ir_assign" in menu_options(result)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_assign"})
-    result = await flow.async_configure(result["flow_id"], {"remote": remote})
-    assert result["step_id"] == "ir_assign_edit"
-    return await flow.async_configure(result["flow_id"], form)
+async def _assign(hass, entry, sender_2):
+    """Sender 2 (Küche) auf der Einstellungsseite Befehle zuordnen."""
+    result = await _open_page(hass, entry)
+    assert result["step_id"] == "ir_settings"
+    return await hass.config_entries.subentries.async_configure(
+        result["flow_id"], _page(sender_2=sender_2)
+    )
 
 
 async def test_assign_takes_code_from_broadlink_storage(hass: HomeAssistant, hass_storage) -> None:
@@ -371,8 +383,8 @@ async def test_assign_takes_code_from_broadlink_storage(hass: HomeAssistant, has
     }
     entry, controller, sent, push = await _setup(hass)
     # c3 ist nur an R1 angelernt: R2 zuordnen, der Code wird aus dem Speicher von R1 gelesen
-    done = await _assign(hass, entry, R2, commands=["c1", "c2", "c3"])
-    assert is_menu(done)
+    done = await _assign(hass, entry, {"commands": ["c1", "c2", "c3"]})
+    assert done["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
     saved = {c["id"]: c for c in entry.options["ir_commands"]}
     assert saved["c3"]["remotes"] == [R1, R2] and saved["c3"]["b64"] == "QkJC"
@@ -384,12 +396,12 @@ async def test_assign_takes_code_from_broadlink_storage(hass: HomeAssistant, has
 
 async def test_assign_without_readable_code_and_unassign(hass: HomeAssistant) -> None:
     entry, *_ = await _setup(hass)
-    bad = await _assign(hass, entry, R2, commands=["c1", "c2", "c3"])           # kein Code lesbar
+    bad = await _assign(hass, entry, {"commands": ["c1", "c2", "c3"]})           # kein Code lesbar
     assert bad["errors"] == {"base": "code_unavailable"}
     assert bad["description_placeholders"]["commands"] == "Timer 2h"
     # Befehl dem Sender entziehen
-    done = await _assign(hass, entry, R2, commands=["c1"])
-    assert is_menu(done)
+    done = await _assign(hass, entry, {"commands": ["c1"]})
+    assert done["reason"] == "reconfigure_successful"
     saved = {c["id"]: c for c in entry.options["ir_commands"]}
     assert saved["c1"]["remotes"] == [R1, R2] and saved["c2"]["remotes"] == [R1]
 
@@ -400,10 +412,10 @@ async def test_assign_all_commands_and_clear_old_groups(hass: HomeAssistant) -> 
         cmd("c2", "Power Off", "power_off", remotes=[R1], b64="BB"),
         cmd("c3", "Timer 2h", "timer_2h", remotes=[R1], b64="CC"),
     ])
-    result = await _flow_menu(hass, entry)
-    assert "ir_groups" not in menu_options(result)
-    done = await _assign(hass, entry, R2, commands=[], all_commands=True)
-    assert is_menu(done)
+    page = _page(sender_1={"commands": ["c1", "c2", "c3"]}, sender_2={"commands": [], "all_commands": True})
+    result = await _open_page(hass, entry)
+    done = await hass.config_entries.subentries.async_configure(result["flow_id"], page)
+    assert done["reason"] == "reconfigure_successful"
     saved = {c["id"]: c for c in entry.options["ir_commands"]}
     assert all(c["remotes"] == [R1, R2] for c in saved.values())
     assert entry.options["ir_groups"] is None                    # frühere Gruppen werden entfernt
@@ -498,28 +510,33 @@ async def test_auto_latest_off(hass: HomeAssistant, freezer) -> None:
     assert [(c.data["entity_id"], c.data["command"]) for c in sent] == [(R1, ["power_off"])]
 
 
-async def test_auto_dialog(hass: HomeAssistant, freezer) -> None:
+async def test_auto_on_settings_page(hass: HomeAssistant, freezer) -> None:
     entry, controller, sent, push = await _setup(hass)                 # ohne An-/Aus-Befehle des Schalters
     flow = hass.config_entries.subentries
-    result = await _flow_menu(hass, entry)
-    assert "ir_auto" in menu_options(result)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_auto"})
-    result = await flow.async_configure(result["flow_id"], {"remote": R2})
-    assert result["step_id"] == "ir_auto_edit"
-    data = {"lights": [LIGHT], "sunset_offset": -15, "off_delay": 5}
-    bad = await flow.async_configure(result["flow_id"], data)
+    sender_2 = {"commands": ["c1", "c2"], "lights": [LIGHT], "sunset_offset": -15, "off_delay": 5}
+    result = await _open_page(hass, entry)
+    assert list(result["data_schema"].schema)[3:5] == ["sender_1", "sender_2"]      # ein Abschnitt je Sender
+    assert "Sender 2 = " in result["description_placeholders"]["senders"]
+    bad = await flow.async_configure(result["flow_id"], _page(sender_2=sender_2))
     assert bad["errors"] == {"base": "auto_needs_switch"}
-    hass.config_entries.async_update_subentry(
-        next(iter(hass.config_entries.async_entries(DOMAIN))),
-        next(iter(next(iter(hass.config_entries.async_entries(DOMAIN))).subentries.values())),
-        data={**next(iter(next(iter(hass.config_entries.async_entries(DOMAIN))).subentries.values())).data,
-              "ir_on_command": "c1", "ir_off_command": "c2"},
+    result = await _open_page(hass, entry)
+    done = await flow.async_configure(
+        result["flow_id"], _page(sender_2=sender_2, ir_on_command="c1", ir_off_command="c2")
     )
-    await hass.async_block_till_done()
-    result = await _flow_menu(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "ir_auto"})
-    result = await flow.async_configure(result["flow_id"], {"remote": R2})
-    done = await flow.async_configure(result["flow_id"], data)
-    assert is_menu(done)
+    assert done["reason"] == "reconfigure_successful"
     assert entry.options["ir_auto"][R2] == {
         "lights": [LIGHT], "sunset_offset": -15, "off_delay": 5, "latest_off": None}
+    # Lichter leeren: Automatik des Senders entfällt
+    result = await _open_page(hass, entry)
+    done = await flow.async_configure(
+        result["flow_id"], _page(ir_on_command="c1", ir_off_command="c2")
+    )
+    assert done["reason"] == "reconfigure_successful" and entry.options["ir_auto"] == {}
+
+
+async def test_settings_page_rejects_more_than_four_senders(hass: HomeAssistant) -> None:
+    entry, *_ = await _setup(hass)
+    result = await _open_page(hass, entry)
+    five = [f"remote.r{i}" for i in range(5)]
+    bad = await hass.config_entries.subentries.async_configure(result["flow_id"], _page(remotes=five))
+    assert bad["errors"] == {"base": "too_many_remotes"}

@@ -2146,30 +2146,19 @@
           "menu_options": {
             "ir_settings": "Settings",
             "add_ir_command": "Learn command",
-            "learn_ir_command": "Learn command on remotes (again)",
-            "import_ir_commands": "Import existing commands",
-            "ir_assign": "Assign commands to a remote",
-            "ir_auto": "Automatic by light and sunset"
+            "import_ir_commands": "Import existing commands"
           }
         },
         "add_ir_command": {
           "title": "Learn command",
-          "description": "After “Next” the command is learned on the selected senders one after another: point the original remote at the sender and press the button.",
+          "description": "Choose an existing command (learn it again, e.g. on another sender) or type a new name. After “Next” the command is learned on the selected senders one after another: point the original remote at the sender and press the button.",
           "data": {
-            "name": "Command name",
-            "type": "Type",
+            "command": "Command",
+            "type": "Type (new commands only)",
             "learn_on": "Learn on"
           },
           "data_description": {
-            "name": "e.g. Power On, Timer 2h or Light +. This becomes the command name on the sender (power_on, timer_2h, light_plus)."
-          }
-        },
-        "learn_ir_command": {
-          "title": "Learn command (again)",
-          "description": "Learns the command on the selected senders (an existing code is replaced).",
-          "data": {
-            "command": "Command",
-            "learn_on": "Learn on"
+            "command": "Select an existing command or type a new name, e.g. Power On, Timer 2h or Light +. This becomes the command name on the sender (power_on, timer_2h, light_plus)."
           }
         },
         "ir_learn_done": {
@@ -2222,6 +2211,86 @@
                 "ir_off_command": "“Off” command"
               }
             },
+            "sender_1": {
+              "name": "Sender 1",
+              "description": "Commands of this sender and the automation of its candles (Power On after sunset when a light of the room turns on, Power Off when all lights are off). Needs the “On” and “Off” commands in the “Switch” section.",
+              "data": {
+                "commands": "Commands of this sender",
+                "all_commands": "Assign all commands",
+                "lights": "Lights in the room",
+                "sunset_offset": "Offset to sunset (minutes)",
+                "off_delay": "Waiting time before switching off (minutes)",
+                "latest_off": "Switch off at the latest at"
+              },
+              "data_description": {
+                "commands": "The codes are taken over from the sender where a command was learned (Broadlink). Unchecked commands are removed from this sender.",
+                "all_commands": "Takes the complete command list for this sender.",
+                "lights": "Lights or switches of the room. Leave empty to turn the automation off.",
+                "sunset_offset": "Positive = later than sunset, negative = earlier.",
+                "off_delay": "All lights must stay off this long.",
+                "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
+              }
+            },
+            "sender_2": {
+              "name": "Sender 2",
+              "description": "Commands of this sender and the automation of its candles (Power On after sunset when a light of the room turns on, Power Off when all lights are off). Needs the “On” and “Off” commands in the “Switch” section.",
+              "data": {
+                "commands": "Commands of this sender",
+                "all_commands": "Assign all commands",
+                "lights": "Lights in the room",
+                "sunset_offset": "Offset to sunset (minutes)",
+                "off_delay": "Waiting time before switching off (minutes)",
+                "latest_off": "Switch off at the latest at"
+              },
+              "data_description": {
+                "commands": "The codes are taken over from the sender where a command was learned (Broadlink). Unchecked commands are removed from this sender.",
+                "all_commands": "Takes the complete command list for this sender.",
+                "lights": "Lights or switches of the room. Leave empty to turn the automation off.",
+                "sunset_offset": "Positive = later than sunset, negative = earlier.",
+                "off_delay": "All lights must stay off this long.",
+                "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
+              }
+            },
+            "sender_3": {
+              "name": "Sender 3",
+              "description": "Commands of this sender and the automation of its candles (Power On after sunset when a light of the room turns on, Power Off when all lights are off). Needs the “On” and “Off” commands in the “Switch” section.",
+              "data": {
+                "commands": "Commands of this sender",
+                "all_commands": "Assign all commands",
+                "lights": "Lights in the room",
+                "sunset_offset": "Offset to sunset (minutes)",
+                "off_delay": "Waiting time before switching off (minutes)",
+                "latest_off": "Switch off at the latest at"
+              },
+              "data_description": {
+                "commands": "The codes are taken over from the sender where a command was learned (Broadlink). Unchecked commands are removed from this sender.",
+                "all_commands": "Takes the complete command list for this sender.",
+                "lights": "Lights or switches of the room. Leave empty to turn the automation off.",
+                "sunset_offset": "Positive = later than sunset, negative = earlier.",
+                "off_delay": "All lights must stay off this long.",
+                "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
+              }
+            },
+            "sender_4": {
+              "name": "Sender 4",
+              "description": "Commands of this sender and the automation of its candles (Power On after sunset when a light of the room turns on, Power Off when all lights are off). Needs the “On” and “Off” commands in the “Switch” section.",
+              "data": {
+                "commands": "Commands of this sender",
+                "all_commands": "Assign all commands",
+                "lights": "Lights in the room",
+                "sunset_offset": "Offset to sunset (minutes)",
+                "off_delay": "Waiting time before switching off (minutes)",
+                "latest_off": "Switch off at the latest at"
+              },
+              "data_description": {
+                "commands": "The codes are taken over from the sender where a command was learned (Broadlink). Unchecked commands are removed from this sender.",
+                "all_commands": "Takes the complete command list for this sender.",
+                "lights": "Lights or switches of the room. Leave empty to turn the automation off.",
+                "sunset_offset": "Positive = later than sunset, negative = earlier.",
+                "off_delay": "All lights must stay off this long.",
+                "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
+              }
+            },
             "notifications": {
               "name": "Notifications",
               "description": "How and where problems with sending are reported.",
@@ -2237,57 +2306,20 @@
                 "mobile_targets": "Devices with the Home Assistant companion app. Multiple devices possible; sent via the notify.mobile_app_… service of the device."
               }
             }
-          }
-        },
-        "ir_assign": {
-          "title": "Assign commands",
-          "description": "Choose the remote that should get commands. Each remote can then be operated separately.",
-          "data": {
-            "remote": "Remote"
-          }
-        },
-        "ir_assign_edit": {
-          "title": "Commands of {remote}",
-          "description": "Commands this remote sends. “Assign all commands” takes the complete list; unchecked commands are removed from this remote. Codes are taken over from the remote where the command was learned (Broadlink).",
-          "data": {
-            "commands": "Commands",
-            "all_commands": "Assign all commands"
-          }
-        },
-        "ir_auto": {
-          "title": "Automatic: choose remote",
-          "description": "Choose the remote (room) whose candles should be switched automatically.",
-          "data": {
-            "remote": "Remote"
-          }
-        },
-        "ir_auto_edit": {
-          "title": "Automatic for {remote}",
-          "description": "Power On is sent to this remote when a light of the room turns on after sunset (or sunset comes while a light is on). Power Off is sent when all lights have been off for the waiting time. Leave the lights empty to turn the automation off. Needs the “On” and “Off” commands of the switch in the settings.",
-          "data": {
-            "lights": "Lights in the room",
-            "sunset_offset": "Offset to sunset (minutes)",
-            "off_delay": "Waiting time before switching off (minutes)",
-            "latest_off": "Switch off at the latest at"
           },
-          "data_description": {
-            "lights": "Lights or switches of the room. “On” as soon as one is on (after sunset).",
-            "sunset_offset": "Positive = later than sunset, negative = earlier.",
-            "off_delay": "All lights must stay off this long.",
-            "latest_off": "Optional. At this time Power Off is sent even if a light is still on."
-          }
+          "description": "All settings of this remote on one page. Each sender has its own section with its commands and the automation by light and sunset:\n{senders}"
         }
       },
       "error": {
         "no_remotes": "At least one sender is required.",
         "no_device": "The device name must not be empty.",
-        "command_exists": "This command already exists.",
         "learn_failed": "Learning failed: {detail}",
         "command_in_use": "The command is used by the switch. Change the switch first.",
         "switch_incomplete": "The switch needs “on” and “off” (or leave both empty).",
         "switch_same": "“On” and “off” must be different commands.",
         "code_unavailable": "The code of these commands could not be read: {commands}. Learn them on this remote instead.",
-        "auto_needs_switch": "The automation needs the “On” and “Off” commands of the switch in the settings (“Switch” section)."
+        "auto_needs_switch": "The automation needs the “On” and “Off” commands of the switch in the settings (“Switch” section).",
+        "too_many_remotes": "A maximum of four senders per instance is supported."
       },
       "abort": {},
       "progress": {

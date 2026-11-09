@@ -2146,30 +2146,19 @@
           "menu_options": {
             "ir_settings": "Einstellungen",
             "add_ir_command": "Befehl anlernen",
-            "learn_ir_command": "Befehl an Sendern (neu) anlernen",
-            "import_ir_commands": "Vorhandene Befehle übernehmen",
-            "ir_assign": "Befehle einem Sender zuordnen",
-            "ir_auto": "Automatik nach Licht und Sonnenuntergang"
+            "import_ir_commands": "Vorhandene Befehle übernehmen"
           }
         },
         "add_ir_command": {
           "title": "Befehl anlernen",
-          "description": "Nach „Weiter“ wird der Befehl nacheinander an den gewählten Sendern angelernt: Taste der Original-Fernbedienung auf den Sender richten und drücken.",
+          "description": "Wähle einen vorhandenen Befehl (erneut anlernen, z. B. an einem weiteren Sender) oder tippe einen neuen Namen ein. Nach „Weiter“ wird der Befehl nacheinander an den gewählten Sendern angelernt: Original-Fernbedienung auf den Sender richten und die Taste drücken.",
           "data": {
-            "name": "Name des Befehls",
-            "type": "Art",
+            "command": "Befehl",
+            "type": "Art (nur bei neuen Befehlen)",
             "learn_on": "Anlernen an"
           },
           "data_description": {
-            "name": "z. B. Power On, Timer 2h oder Light +. Daraus entsteht der Befehlsname beim Sender (power_on, timer_2h, light_plus)."
-          }
-        },
-        "learn_ir_command": {
-          "title": "Befehl (neu) anlernen",
-          "description": "Lernt den Befehl an den gewählten Sendern an (ein vorhandener Code wird ersetzt).",
-          "data": {
-            "command": "Befehl",
-            "learn_on": "Anlernen an"
+            "command": "Vorhandenen Befehl wählen oder neuen Namen eintippen, z. B. Power On, Timer 2h oder Light +. Daraus wird der Befehlsname beim Sender (power_on, timer_2h, light_plus)."
           }
         },
         "ir_learn_done": {
@@ -2222,6 +2211,86 @@
                 "ir_off_command": "Befehl „Aus“"
               }
             },
+            "sender_1": {
+              "name": "Sender 1",
+              "description": "Befehle dieses Senders und die Automatik seiner Kerzen (Power On nach Sonnenuntergang, wenn ein Licht des Raums angeht, Power Off, wenn alle Lichter aus sind). Braucht die Befehle „An“ und „Aus“ im Abschnitt „Schalter“.",
+              "data": {
+                "commands": "Befehle dieses Senders",
+                "all_commands": "Alle Befehle zuordnen",
+                "lights": "Lichter im Raum",
+                "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
+                "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
+                "latest_off": "Spätestens ausschalten um"
+              },
+              "data_description": {
+                "commands": "Die Codes werden vom Sender übernommen, an dem ein Befehl angelernt wurde (Broadlink). Nicht angekreuzte Befehle werden diesem Sender entzogen.",
+                "all_commands": "Nimmt die komplette Befehlsliste für diesen Sender.",
+                "lights": "Lichter oder Schalter des Raums. Leer = Automatik aus.",
+                "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
+                "off_delay": "Alle Lichter müssen so lange aus bleiben.",
+                "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
+              }
+            },
+            "sender_2": {
+              "name": "Sender 2",
+              "description": "Befehle dieses Senders und die Automatik seiner Kerzen (Power On nach Sonnenuntergang, wenn ein Licht des Raums angeht, Power Off, wenn alle Lichter aus sind). Braucht die Befehle „An“ und „Aus“ im Abschnitt „Schalter“.",
+              "data": {
+                "commands": "Befehle dieses Senders",
+                "all_commands": "Alle Befehle zuordnen",
+                "lights": "Lichter im Raum",
+                "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
+                "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
+                "latest_off": "Spätestens ausschalten um"
+              },
+              "data_description": {
+                "commands": "Die Codes werden vom Sender übernommen, an dem ein Befehl angelernt wurde (Broadlink). Nicht angekreuzte Befehle werden diesem Sender entzogen.",
+                "all_commands": "Nimmt die komplette Befehlsliste für diesen Sender.",
+                "lights": "Lichter oder Schalter des Raums. Leer = Automatik aus.",
+                "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
+                "off_delay": "Alle Lichter müssen so lange aus bleiben.",
+                "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
+              }
+            },
+            "sender_3": {
+              "name": "Sender 3",
+              "description": "Befehle dieses Senders und die Automatik seiner Kerzen (Power On nach Sonnenuntergang, wenn ein Licht des Raums angeht, Power Off, wenn alle Lichter aus sind). Braucht die Befehle „An“ und „Aus“ im Abschnitt „Schalter“.",
+              "data": {
+                "commands": "Befehle dieses Senders",
+                "all_commands": "Alle Befehle zuordnen",
+                "lights": "Lichter im Raum",
+                "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
+                "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
+                "latest_off": "Spätestens ausschalten um"
+              },
+              "data_description": {
+                "commands": "Die Codes werden vom Sender übernommen, an dem ein Befehl angelernt wurde (Broadlink). Nicht angekreuzte Befehle werden diesem Sender entzogen.",
+                "all_commands": "Nimmt die komplette Befehlsliste für diesen Sender.",
+                "lights": "Lichter oder Schalter des Raums. Leer = Automatik aus.",
+                "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
+                "off_delay": "Alle Lichter müssen so lange aus bleiben.",
+                "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
+              }
+            },
+            "sender_4": {
+              "name": "Sender 4",
+              "description": "Befehle dieses Senders und die Automatik seiner Kerzen (Power On nach Sonnenuntergang, wenn ein Licht des Raums angeht, Power Off, wenn alle Lichter aus sind). Braucht die Befehle „An“ und „Aus“ im Abschnitt „Schalter“.",
+              "data": {
+                "commands": "Befehle dieses Senders",
+                "all_commands": "Alle Befehle zuordnen",
+                "lights": "Lichter im Raum",
+                "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
+                "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
+                "latest_off": "Spätestens ausschalten um"
+              },
+              "data_description": {
+                "commands": "Die Codes werden vom Sender übernommen, an dem ein Befehl angelernt wurde (Broadlink). Nicht angekreuzte Befehle werden diesem Sender entzogen.",
+                "all_commands": "Nimmt die komplette Befehlsliste für diesen Sender.",
+                "lights": "Lichter oder Schalter des Raums. Leer = Automatik aus.",
+                "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
+                "off_delay": "Alle Lichter müssen so lange aus bleiben.",
+                "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
+              }
+            },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit Probleme beim Senden gemeldet werden.",
@@ -2237,57 +2306,20 @@
                 "mobile_targets": "Geräte mit der Home-Assistant-Companion-App. Mehrere Geräte möglich; gesendet wird über den Dienst notify.mobile_app_… des Geräts."
               }
             }
-          }
-        },
-        "ir_assign": {
-          "title": "Befehle zuordnen",
-          "description": "Wähle den Sender, dem Befehle zugeordnet werden sollen. Jeder Sender lässt sich danach einzeln bedienen.",
-          "data": {
-            "remote": "Sender"
-          }
-        },
-        "ir_assign_edit": {
-          "title": "Befehle von {remote}",
-          "description": "Befehle, die dieser Sender sendet. „Alle Befehle zuordnen“ nimmt die komplette Liste; nicht angekreuzte Befehle werden diesem Sender entzogen. Die Codes werden vom Sender übernommen, an dem der Befehl angelernt wurde (Broadlink).",
-          "data": {
-            "commands": "Befehle",
-            "all_commands": "Alle Befehle zuordnen"
-          }
-        },
-        "ir_auto": {
-          "title": "Automatik: Sender wählen",
-          "description": "Wähle den Sender (Raum), dessen Kerzen automatisch geschaltet werden sollen.",
-          "data": {
-            "remote": "Sender"
-          }
-        },
-        "ir_auto_edit": {
-          "title": "Automatik für {remote}",
-          "description": "Power On geht an diesen Sender, wenn nach Sonnenuntergang ein Licht des Raums angeht (oder der Sonnenuntergang kommt, während schon ein Licht an ist). Power Off geht an den Sender, wenn alle Lichter für die Wartezeit aus waren. Ohne Lichter ist die Automatik aus. Sie braucht die Befehle „An“ und „Aus“ des Schalters in den Einstellungen.",
-          "data": {
-            "lights": "Lichter im Raum",
-            "sunset_offset": "Versatz zum Sonnenuntergang (Minuten)",
-            "off_delay": "Wartezeit vor dem Ausschalten (Minuten)",
-            "latest_off": "Spätestens ausschalten um"
           },
-          "data_description": {
-            "lights": "Lichter oder Schalter des Raums. „An“, sobald eines an ist (nach Sonnenuntergang).",
-            "sunset_offset": "Positiv = später als der Sonnenuntergang, negativ = früher.",
-            "off_delay": "Alle Lichter müssen so lange aus bleiben.",
-            "latest_off": "Optional. Zu dieser Uhrzeit wird Power Off auch gesendet, wenn noch ein Licht an ist."
-          }
+          "description": "Alle Einstellungen dieser Fernbedienung auf einer Seite. Jeder Sender hat einen eigenen Abschnitt mit seinen Befehlen und der Automatik nach Licht und Sonnenuntergang:\n{senders}"
         }
       },
       "error": {
         "no_remotes": "Mindestens ein Sender wird benötigt.",
         "no_device": "Der Gerätename darf nicht leer sein.",
-        "command_exists": "Diesen Befehl gibt es schon.",
         "learn_failed": "Anlernen fehlgeschlagen: {detail}",
         "command_in_use": "Der Befehl wird vom Schalter verwendet. Zuerst den Schalter ändern.",
         "switch_incomplete": "Für den Schalter werden „An“ und „Aus“ benötigt (oder beide leer lassen).",
         "switch_same": "„An“ und „Aus“ müssen verschiedene Befehle sein.",
         "code_unavailable": "Der Code dieser Befehle konnte nicht gelesen werden: {commands}. Lerne sie stattdessen an diesem Sender an.",
-        "auto_needs_switch": "Die Automatik braucht die Befehle „An“ und „Aus“ des Schalters in den Einstellungen (Abschnitt „Schalter“)."
+        "auto_needs_switch": "Die Automatik braucht die Befehle „An“ und „Aus“ des Schalters in den Einstellungen (Abschnitt „Schalter“).",
+        "too_many_remotes": "Pro Instanz werden höchstens vier Sender unterstützt."
       },
       "abort": {},
       "progress": {
