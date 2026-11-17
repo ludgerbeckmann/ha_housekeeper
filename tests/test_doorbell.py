@@ -153,6 +153,37 @@ async def test_ringtone_with_volume(hass: HomeAssistant) -> None:
     assert m["play"][0].data["media_content_type"] == "audio/mpeg"
 
 
+ANNOUNCE = 1048576 | 512             # MEDIA_ANNOUNCE | PLAY_MEDIA
+
+
+async def test_ringtone_is_announced_on_players_that_support_it(hass: HomeAssistant) -> None:
+    m = _mocks(hass)
+    hass.states.async_set("media_player.bedroom", "playing", {"supported_features": ANNOUNCE})
+    await _setup(hass, profiles=[NIGHT_RING])
+    await _ring(hass, _at(23, weekday=4))
+    assert m["volume"] == []                                   # Lautstärke bleibt unverändert
+    (call,) = m["play"]
+    assert call.data["entity_id"] == "media_player.bedroom" and call.data["announce"] is True
+    assert call.data["extra"] == {"volume": 30}
+    assert call.data["media_content_id"] == MEDIA["media_content_id"]
+
+
+async def test_ringtone_mixed_players_announce_or_plain(hass: HomeAssistant) -> None:
+    m = _mocks(hass)
+    hass.states.async_set("media_player.kitchen", "playing", {"supported_features": ANNOUNCE})
+    hass.states.async_set("media_player.hall", "idle", {"supported_features": 512})
+    profile = {**ALL_DAY, "volume": 40}
+    await _setup(hass, profiles=[profile])
+    await _ring(hass, _at(12))
+    by_entity = {str(c.data["entity_id"]): c.data for c in m["play"]}
+    assert by_entity["media_player.kitchen"]["announce"] is True
+    assert by_entity["media_player.kitchen"]["extra"] == {"volume": 40}
+    assert by_entity["['media_player.hall']"] == {                    # Player ohne Ansage: wie bisher
+        "entity_id": ["media_player.hall"], "media_content_id": MEDIA["media_content_id"],
+        "media_content_type": "audio/mpeg"}
+    assert [c.data for c in m["volume"]] == [{"entity_id": ["media_player.hall"], "volume_level": 0.4}]
+
+
 async def test_dedupe_between_matching_profiles(hass: HomeAssistant) -> None:
     m = _mocks(hass)
     await _setup(hass, profiles=[DAY_TTS, ALL_DAY])

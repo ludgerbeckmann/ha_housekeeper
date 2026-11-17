@@ -285,6 +285,12 @@ ausgeschalteter Platz wird nicht geprüft und nicht verwendet. Jeder Platz hat d
 - die Ausgabe: **Ansage (TTS)** mit TTS-Dienst und eigenem Text, oder **Klingelton**
   aus der Medienbibliothek
 - optional eine Lautstärke (0 = unverändert)
+- **Klingelton als Ansage:** Meldet ein Player den Ansage-Modus (z. B. Sonos), wird der Klingelton als Ansage über der laufenden
+  Wiedergabe gespielt: die Musik wird kurz abgesenkt und danach fortgesetzt, statt beendet zu werden. Die eingestellte Lautstärke
+  gilt dann nur für die Ansage, die Lautstärke des Lautsprechers bleibt unverändert. Jeder dieser Lautsprecher bekommt seinen
+  eigenen Aufruf, alle gleichzeitig. Andere Player verhalten sich wie bisher (Lautstärke setzen, Ton abspielen). Bei Sonos muss
+  Home Assistant die Lautsprecher im Netzwerk direkt erreichen; vollständig gleichzeitig wird es nur mit einer Lautsprecher-Gruppe.
+  Der Ansagetext (TTS) läuft wie bisher über `tts.speak`.
 
 **Benachrichtigung** (optional)
 

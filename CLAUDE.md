@@ -98,7 +98,9 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `profile` = Name des Platzes: `profile_no_output` usw.); `legacy` nur mit mehr als drei Profilen. Die Plätze entsprechen der Reihenfolge in
   `options["profiles"]` (`slots_to_profiles()`: bis zum letzten benutzten Platz, Lücken als ausgeschaltetes Profil, ID bleibt; Profile ab dem
   vierten bleiben unverändert, der Schalter `clear_legacy_rules` löscht sie). Nur eingeschaltete Plätze werden geprüft (`_validate_slot()`).
-  Tests: `bell_page()`/`slot()` in `tests/test_doorbell.py`. Audio über `async_safe_call`.
+  Tests: `bell_page()`/`slot()` in `tests/test_doorbell.py`. Audio über `async_safe_call`. **Klingelton:** Player mit `MediaPlayerEntityFeature.MEDIA_ANNOUNCE` (`_can_announce()`, aus `supported_features`) bekommen je Player einen
+  `play_media`-Aufruf mit `announce: true` und `extra.volume` (Profil-Lautstärke nur für die Ansage, kein `volume_set`), alle per `asyncio.gather` gleichzeitig; die übrigen Player
+  wie bisher in einem Aufruf (erst `volume_set`). TTS bleibt `tts.speak`.
 - `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und
   `pool_dry_run.py` sind reine Logik ohne HA-Imports und unverändert aus dem
   Ursprungsprojekt. Der Controller ist der einzige mit `async def async_stop`

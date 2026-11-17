@@ -10,6 +10,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
@@ -256,18 +257,25 @@ class DoorbellController:
 
     # --- Audio ---------------------------------------------------------------
 
+    def _can_announce(self, player: str) -> bool:
+        """Meldet der Player den Ansage-Modus (z. B. Sonos)? Dann läuft laufende Musik weiter."""
+        state = self.hass.states.get(player)
+        features = int(state.attributes.get("supported_features") or 0) if state else 0
+        return bool(features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE)
+
     async def _play(self, profile: dict[str, Any], players: list[str]) -> None:
-        if volume := int(profile.get(P_VOLUME) or 0):
-            await async_safe_call(
-                self.hass,
-                "media_player",
-                "volume_set",
-                {"entity_id": players, "volume_level": volume / 100},
-            )
+        volume = int(profile.get(P_VOLUME) or 0)
         if profile.get(P_MODE) == MODE_TTS:
             if not (profile.get(P_TTS_ENTITY) and profile.get(P_TEXT)):
                 _LOGGER.warning("Profil %s: TTS-Dienst oder Text fehlt", profile.get(P_NAME))
                 return
+            if volume:
+                await async_safe_call(
+                    self.hass,
+                    "media_player",
+                    "volume_set",
+                    {"entity_id": players, "volume_level": volume / 100},
+                )
             await async_safe_call(
                 self.hass,
                 "tts",
@@ -283,16 +291,36 @@ class DoorbellController:
         if not media.get("media_content_id"):
             _LOGGER.warning("Profil %s: kein Klingelton gewählt", profile.get(P_NAME))
             return
-        await async_safe_call(
-            self.hass,
-            "media_player",
-            "play_media",
-            {
-                "entity_id": players,
-                "media_content_id": media["media_content_id"],
-                "media_content_type": media.get("media_content_type", "music"),
-            },
-        )
+        data = {
+            "media_content_id": media["media_content_id"],
+            "media_content_type": media.get("media_content_type", "music"),
+        }
+        announcers = [p for p in players if self._can_announce(p)]
+        others = [p for p in players if p not in announcers]
+
+        async def _announce(player: str) -> None:
+            # als Ansage über der laufenden Wiedergabe; die Lautstärke gilt nur für die Ansage
+            extra = {"extra": {"volume": volume}} if volume else {}
+            await async_safe_call(
+                self.hass,
+                "media_player",
+                "play_media",
+                {"entity_id": player, "announce": True, **data, **extra},
+            )
+
+        async def _plain() -> None:
+            if volume:
+                await async_safe_call(
+                    self.hass,
+                    "media_player",
+                    "volume_set",
+                    {"entity_id": others, "volume_level": volume / 100},
+                )
+            await async_safe_call(
+                self.hass, "media_player", "play_media", {"entity_id": others, **data}
+            )
+
+        await asyncio.gather(*(_announce(p) for p in announcers), *([_plain()] if others else []))
 
     # --- Push ----------------------------------------------------------------
 
