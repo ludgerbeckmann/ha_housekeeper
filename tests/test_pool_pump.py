@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntryState
@@ -32,6 +33,10 @@ async def _setup(hass, windows, pump_state=STATE_OFF):
 async def _tick(hass, freezer, minutes):
     freezer.tick(timedelta(minutes=minutes))
     async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    # der Zeitgeber-Task wird nicht verfolgt: die Schleife kurz weiterlaufen lassen
+    for _ in range(3):
+        await asyncio.sleep(0)
     await hass.async_block_till_done()
 
 

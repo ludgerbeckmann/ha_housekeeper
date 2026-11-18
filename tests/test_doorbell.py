@@ -133,6 +133,15 @@ async def test_ring_tts_and_push_in_window(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.bell_last_ring").state != "unknown"
 
 
+async def test_ring_push_is_delivered_immediately(hass: HomeAssistant) -> None:
+    m = _mocks(hass)
+    await _setup(hass)
+    await _ring(hass, _at(12))
+    data = m["push"][0].data["data"]
+    assert data["ttl"] == 0 and data["priority"] == "high"
+    assert data["push"] == {"interruption-level": "time-sensitive"}
+
+
 async def test_ring_outside_window_only_push(hass: HomeAssistant) -> None:
     m = _mocks(hass)
     await _setup(hass, profiles=[DAY_TTS, PUSH_ALL])

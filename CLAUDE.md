@@ -59,7 +59,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Entitäten (`binary_sensor.py`, `sensor.py`, `button.py`, `switch.py`, Basis
   `FunctionEntity` in `entity.py`) spiegeln nur den Controller über ein
   Dispatcher-Signal; `binary_sensor.py`/`sensor.py` wählen per `isinstance`.
-- `notify.py`: gemeinsame Benachrichtigungswege (`Notifier`) und `entry_opt()`.
+- `notify.py`: gemeinsame Benachrichtigungswege (`Notifier`) und `entry_opt()`. Push an mehrere Geräte läuft **gleichzeitig** (`_gather()`, jeder Aufruf wartet auf den Push-Server; ohne Ziele wird nichts aufgerufen).
   Ein in den Optionen auf `None` gesetzter Wert überdeckt den Wert aus den
   Daten (so lassen sich optionale Felder leeren, siehe `_with_cleared`).
 - Türwächter: Die Einstellungen sind **feste Felder auf einer Seite** (`async_step_door_settings`, kein Menü, Name als Feld,
@@ -98,7 +98,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   `profile` = Name des Platzes: `profile_no_output` usw.); `legacy` nur mit mehr als drei Profilen. Die Plätze entsprechen der Reihenfolge in
   `options["profiles"]` (`slots_to_profiles()`: bis zum letzten benutzten Platz, Lücken als ausgeschaltetes Profil, ID bleibt; Profile ab dem
   vierten bleiben unverändert, der Schalter `clear_legacy_rules` löscht sie). Nur eingeschaltete Plätze werden geprüft (`_validate_slot()`).
-  Tests: `bell_page()`/`slot()` in `tests/test_doorbell.py`. Audio über `async_safe_call`. **Klingelton:** Player mit `MediaPlayerEntityFeature.MEDIA_ANNOUNCE` (`_can_announce()`, aus `supported_features`) bekommen je Player einen
+  Tests: `bell_page()`/`slot()` in `tests/test_doorbell.py`. Audio über `async_safe_call`. **Zustellung:** `async_ring()` startet Ton, Push und das Speichern gleichzeitig (`asyncio.gather`); der Klingel-Push trägt `RING_PUSH_EXTRA` (`ttl: 0`, `priority: high`, iOS `push.interruption-level: time-sensitive`), damit er sofort ankommt und Fokus-Modi durchbricht. **Klingelton:** Player mit `MediaPlayerEntityFeature.MEDIA_ANNOUNCE` (`_can_announce()`, aus `supported_features`) bekommen je Player einen
   `play_media`-Aufruf mit `announce: true` und `extra.volume` (Profil-Lautstärke nur für die Ansage, kein `volume_set`), alle per `asyncio.gather` gleichzeitig; die übrigen Player
   wie bisher in einem Aufruf (erst `volume_set`). TTS bleibt `tts.speak`.
 - `pool_pump.py`: Controller (Port von `PoolManager`). `pool_schedule.py` und

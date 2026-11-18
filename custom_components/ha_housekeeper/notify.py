@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import asyncio
 import logging
 from typing import Any
 
@@ -131,6 +132,13 @@ class Notifier:
     async def _call(self, domain: str, service: str, data: dict) -> None:
         await async_safe_call(self._hass, domain, service, data)
 
+    @staticmethod
+    async def _gather(calls) -> None:
+        """Aufrufe gleichzeitig ausführen (ohne Aufrufe nichts tun)."""
+        pending = list(calls)
+        if pending:
+            await asyncio.gather(*pending)
+
     def _targets(self) -> list[str]:
         if not self._opt(CONF_MOBILE_ENABLED, False):
             return []
@@ -152,10 +160,11 @@ class Notifier:
             data["actions"] = actions
         if extra:
             data.update(extra)
-        for target in self._targets():
-            await self._call(
-                "notify", target, {"title": title, "message": message, "data": data}
-            )
+        # Push an alle Geräte gleichzeitig: jeder Aufruf wartet auf den Push-Server
+        await self._gather(
+            self._call("notify", target, {"title": title, "message": message, "data": data})
+            for target in self._targets()
+        )
 
         if self._opt(CONF_TTS_ENABLED, False):
             tts_entity = self._opt(CONF_TTS_ENTITY)
@@ -183,12 +192,14 @@ class Notifier:
             )
 
     async def async_clear(self, kind: str = "") -> None:
-        for target in self._targets():
-            await self._call(
+        await self._gather(
+            self._call(
                 "notify",
                 target,
                 {"message": "clear_notification", "data": {"tag": self.tag(kind)}},
             )
+            for target in self._targets()
+        )
         if self._opt(CONF_PERSISTENT_ENABLED, False):
             await self._call(
                 "persistent_notification",
