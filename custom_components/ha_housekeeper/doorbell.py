@@ -51,6 +51,14 @@ from .notify import Notifier, async_safe_call, entry_opt
 
 _LOGGER = logging.getLogger(__name__)
 
+# Klingel-Push sofort zustellen: nicht zwischenspeichern, hohe Priorität (Android), auf iOS
+# zeitkritisch (durchbricht Fokus-Modi)
+RING_PUSH_EXTRA: dict[str, Any] = {
+    "ttl": 0,
+    "priority": "high",
+    "push": {"interruption-level": "time-sensitive"},
+}
+
 STORE_VERSION = 1
 _IGNORED_STATES = (STATE_UNAVAILABLE, STATE_UNKNOWN)
 
@@ -242,13 +250,14 @@ class DoorbellController:
                 return
             self._last_trigger = now
             self.last_ring = dt_util.utcnow()
-            await self._async_save()
 
         now = dt_util.now()
         profiles = self._profiles()
+        # Ton, Push und Speichern gleichzeitig: nichts wartet auf das Schreiben des Speichers
         results = await asyncio.gather(
             *(self._play(profile, players) for profile, players in assign_players(profiles, now)),
             *(self._push(profile, targets) for profile, targets in assign_push(profiles, now)),
+            *([] if test else [self._async_save()]),
             return_exceptions=True,
         )
         for result in results:
@@ -326,7 +335,7 @@ class DoorbellController:
 
     async def _push(self, profile: dict[str, Any], targets: list[str]) -> None:
         await self._notifier_for(targets).async_send(
-            profile.get(P_MESSAGE) or DEFAULT_RING_MESSAGE
+            profile.get(P_MESSAGE) or DEFAULT_RING_MESSAGE, extra=RING_PUSH_EXTRA
         )
         hours = float(
             DEFAULT_CLEAR_HOURS

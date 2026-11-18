@@ -297,6 +297,8 @@ ausgeschalteter Platz wird nicht geprüft und nicht verwendet. Jeder Platz hat d
 - **App-Push** an ein oder mehrere Companion-App-Geräte, Push-Text und **„Push nach X
   Stunden löschen“** (0 = nie). Gelöscht wird per `clear_notification` über denselben
   Tag, ein erneutes Klingeln ersetzt die Meldung und startet die Löschfrist neu.
+  Der Push geht an alle Geräte **gleichzeitig** und wird möglichst sofort zugestellt (hohe Priorität,
+  nicht zwischengespeichert, auf iOS „zeitkritisch“, also auch bei aktivem Fokus).
 
 Bestehende Profile werden der Reihe nach in die Plätze übernommen. Profile ab dem vierten laufen unverändert weiter und werden
 nur über den Schalter im Abschnitt „Ältere Profile“ (sichtbar, wenn es welche gibt) gelöscht. Ein Platz, der ausgeschaltet ist

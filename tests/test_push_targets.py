@@ -1,5 +1,7 @@
 """Push-Ziele: native Geräteauswahl der Companion-App, intern der Dienst notify.mobile_app_<gerät>."""
 
+import asyncio
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
@@ -83,6 +85,28 @@ async def test_notifier_sends_once_per_device_and_keeps_actions(hass: HomeAssist
     assert data["actions"] == [{"action": "A", "title": "Ja"}] and data["push"] == {"x": 1}
     await notifier.async_clear("x")
     assert ludger_calls[-1].data["message"] == "clear_notification" and len(ludger_calls) == 2
+
+
+async def test_notifier_sends_to_all_devices_at_the_same_time(hass: HomeAssistant) -> None:
+    both_started = asyncio.Event()
+    started: list[str] = []
+
+    def handler(name: str):
+        async def _call(call) -> None:
+            started.append(name)
+            if len(started) == 2:
+                both_started.set()
+            # läuft nur weiter, wenn der zweite Aufruf schon begonnen hat (nicht nacheinander)
+            await asyncio.wait_for(both_started.wait(), 2)
+        return _call
+
+    hass.services.async_register("notify", "mobile_app_a", handler("a"))
+    hass.services.async_register("notify", "mobile_app_b", handler("b"))
+    options = {"mobile_enabled": True, "mobile_targets": ["mobile_app_a", "mobile_app_b"]}
+    notifier = Notifier(
+        hass, lambda key, default=None: options.get(key, default), "tag", lambda: "Titel")
+    await notifier.async_send("Hallo")
+    assert sorted(started) == ["a", "b"]
 
 
 async def test_form_prefills_legacy_targets_as_devices(hass: HomeAssistant) -> None:
