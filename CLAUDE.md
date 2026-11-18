@@ -184,6 +184,7 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   dem Gerät zu (nicht zuordenbare bleiben stehen). Notify-**Entitäten** kommen nicht infrage,
   weil sie keine Aktionen und keine kritische Meldung können. Alle Sende-Wege laufen über
   `Notifier._targets()`.
+- `task_planner.py`: Auslöser einer Aufgabe (`TR_TYPE`): `weekly`, `monthly`, `sun`, `once`, `interval`, `state`, `threshold`. **Sonnenstand** (`TRIG_SUN`): `event` (`sunrise`/`sunset`), `offset_minutes` (−720…720, negativ = davor), `weekdays`; registriert über `async_track_sunrise`/`async_track_sunset` mit Versatz (die Wochentagsprüfung läuft im Callback über das lokale Datum, `day_matches()`); `trigger_next(…, hass=)`/`next_run(…, hass=)` brauchen `hass` (`get_astral_event_next`, sucht bis zu 16 Ereignisse weit nach einem passenden Wochentag), ohne `hass` kein Sonnenzeitpunkt. Tests mit `freezer` und Zeitzone `US/Pacific` (`SUN_FREEZE`).
 - `alarm_clock.py`: Wecker in `options["alarms"]` (Schlüssel `A_*`), Push-Einstellungen im
   Eintrag (`mobile_*`, `critical`, `message`). Beim Wecken werden die **ursprünglichen
   Lautstärken** der Player gemerkt (`_restore`, auch im `Store`), Lautstärke gesetzt,

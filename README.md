@@ -30,7 +30,7 @@ Jede Funktion ist ein eigener Abschnitt weiter unten (Link in der ersten Spalte)
 | Funktion | Beschreibung |
 | --- | --- |
 | [Poolsteuerung](#poolsteuerung) | Schaltet die Poolpumpe nach Zeitplan und erkennt Trockenlauf über einen Leistungssensor |
-| [Aufgabenplaner](#aufgabenplaner) | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Zustände, Grenzwerte) |
+| [Aufgabenplaner](#aufgabenplaner) | Führt frei definierte Aktionen aus, wenn Auslöser eintreten (Zeitpunkte, Monatstage, Sonnenstand, Zustände, Grenzwerte) |
 
 ### Energie und Kosten
 
@@ -584,6 +584,7 @@ Aufgabe hat:
 | --- | --- |
 | Wochentag und Uhrzeit | Uhrzeit an den gewählten Wochentagen |
 | Monat | Uhrzeit am **ersten**, **letzten** oder einem **bestimmten Tag** des Monats (hat der Monat weniger Tage, gilt der letzte Tag) |
+| Sonnenaufgang oder -untergang | Zum **Sonnenaufgang** oder **-untergang** deines Standorts, mit **Versatz in Minuten** (negativ = davor, z. B. −30), optional nur an bestimmten Wochentagen |
 | Einmaliger Zeitpunkt | Datum und Uhrzeit, liegt in der Zukunft |
 | Intervall | alle N Minuten, gezählt ab dem Start (Home-Assistant-Start oder Neuladen) |
 | Zustand einer Entität | Wechsel in einen Zielzustand (leer = jede Änderung), optional erst nach N Minuten |

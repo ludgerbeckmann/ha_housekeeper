@@ -393,3 +393,100 @@ async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
     result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_task"})
     result = await flow.async_configure(result["flow_id"], {"task": task_id})
     assert entry.options["tasks"] == []
+
+
+# --- Sonnenauf- und -untergang -------------------------------------------------
+
+SUN_FREEZE = "2026-06-15 20:00:00+00:00"      # Montag 13:00 in US/Pacific, vor dem Sonnenuntergang
+
+
+def _sun(event="sunset", offset=0, weekdays=None):
+    return {
+        "type": "sun", "event": event, "offset_minutes": offset,
+        "weekdays": weekdays or ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    }
+
+
+async def test_sun_trigger_next_and_summary(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.helpers.sun import get_astral_event_next
+
+    await hass.config.async_set_time_zone("US/Pacific")
+    freezer.move_to(SUN_FREEZE)
+    now = dt_util.now()
+    assert trigger_next(_sun(), now) is None           # ohne hass kein Sonnenstand
+    expected = dt_util.as_local(
+        get_astral_event_next(hass, "sunset", now, offset=timedelta(minutes=-30))
+    )
+    assert trigger_next(_sun(offset=-30), now, hass=hass) == expected
+    # Wochentagsfilter: der nächste passende Tag, nie der heutige Montag
+    later = trigger_next(_sun(weekdays=["tue"]), now, hass=hass)
+    assert later is not None and later.weekday() == 1 and later.date() > now.date()
+    tasks = [_task([_sun(offset=-30)])]
+    assert next_run(tasks, now, hass=hass) == expected
+
+    hass.config.language = "en"
+    assert trigger_summary(hass, _sun(offset=-30)) == "sunset −30 min, daily"
+    assert trigger_summary(hass, _sun("sunrise", 15, ["mon"])) == "sunrise +15 min, mon"
+    assert trigger_summary(hass, _sun("sunrise")) == "sunrise, daily"
+    hass.config.language = "de"
+    assert trigger_summary(hass, _sun("sunset", -30)) == "Sonnenuntergang −30 min, täglich"
+
+
+async def test_sun_trigger_fires_with_offset(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.helpers.sun import get_astral_event_next
+
+    calls = async_mock_service(hass, "test", "run")
+    freezer.move_to(SUN_FREEZE)
+    await _setup(hass, [_task([_sun(offset=-30)])])
+    await hass.config.async_set_time_zone("US/Pacific")
+    fire = get_astral_event_next(
+        hass, "sunset", dt_util.utcnow(), offset=timedelta(minutes=-30)
+    )
+    freezer.move_to(fire - timedelta(seconds=60))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert not calls                                   # noch 60 Sekunden vor dem Versatz
+    freezer.move_to(fire + timedelta(seconds=2))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert len(calls) == 1
+
+
+async def test_sun_trigger_respects_weekdays(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.helpers.sun import get_astral_event_next
+
+    calls = async_mock_service(hass, "test", "run")
+    freezer.move_to(SUN_FREEZE)
+    await _setup(hass, [_task([_sun(weekdays=["tue"])])])    # heute ist Montag
+    await hass.config.async_set_time_zone("US/Pacific")
+    fire = get_astral_event_next(hass, "sunset", dt_util.utcnow())
+    freezer.move_to(fire + timedelta(seconds=2))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert not calls
+
+
+async def test_sun_trigger_in_options_flow(hass: HomeAssistant) -> None:
+    hass.config.language = "en"
+    entry, _ = await _setup(hass, [])
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_task"})
+    result = await flow.async_configure(
+        result["flow_id"],
+        {"name": "Licht", "enabled": True, "actions": [{"action": "test.run"}],
+         "notify_start": False, "notify_success": False, "notify_error": True},
+    )
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
+    result = await flow.async_configure(result["flow_id"], {"type": "sun"})
+    assert result["step_id"] == "trigger_sun"
+    bad = await flow.async_configure(
+        result["flow_id"], {"event": "sunset", "offset_minutes": -30, "weekdays": []}
+    )
+    assert bad["errors"] == {"base": "no_weekday"}
+    result = await flow.async_configure(
+        result["flow_id"],
+        {"event": "sunset", "offset_minutes": -30, "weekdays": ["mon", "tue"]},
+    )
+    assert result["step_id"] == "task_triggers"
+    assert "sunset −30 min, mon, tue" in result["description_placeholders"]["triggers"]

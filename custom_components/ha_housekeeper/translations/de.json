@@ -67,6 +67,7 @@
       "options": {
         "weekly": "Wochentag und Uhrzeit",
         "monthly": "Monat (erster, letzter oder bestimmter Tag)",
+        "sun": "Sonnenaufgang oder -untergang (mit Versatz)",
         "once": "Einmaliger Zeitpunkt",
         "interval": "Intervall",
         "state": "Zustand einer Entität",
@@ -128,6 +129,12 @@
       "options": {
         "eur": "€/kWh",
         "ct": "ct/kWh"
+      }
+    },
+    "sun_event": {
+      "options": {
+        "sunrise": "Sonnenaufgang",
+        "sunset": "Sonnenuntergang"
       }
     }
   },
@@ -1539,6 +1546,17 @@
           },
           "data_description": {
             "month_day": "Nur bei „Bestimmter Tag“. Hat der Monat weniger Tage, gilt der letzte Tag."
+          }
+        },
+        "trigger_sun": {
+          "title": "Auslöser: Sonnenaufgang oder -untergang",
+          "data": {
+            "event": "Ereignis",
+            "offset_minutes": "Versatz (Minuten)",
+            "weekdays": "Wochentage"
+          },
+          "data_description": {
+            "offset_minutes": "Negativ = davor, positiv = danach, z. B. -30 für 30 Minuten vor Sonnenuntergang. Gilt für den Standort deiner Home-Assistant-Installation."
           }
         },
         "trigger_once": {

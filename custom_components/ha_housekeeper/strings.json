@@ -67,6 +67,7 @@
       "options": {
         "weekly": "Weekday and time",
         "monthly": "Month (first, last or specific day)",
+        "sun": "Sunrise or sunset (with offset)",
         "once": "One-time date and time",
         "interval": "Interval",
         "state": "Entity state",
@@ -128,6 +129,12 @@
       "options": {
         "eur": "€/kWh",
         "ct": "ct/kWh"
+      }
+    },
+    "sun_event": {
+      "options": {
+        "sunrise": "Sunrise",
+        "sunset": "Sunset"
       }
     }
   },
@@ -1539,6 +1546,17 @@
           },
           "data_description": {
             "month_day": "Only for \"Specific day\". If the month is shorter, the last day is used."
+          }
+        },
+        "trigger_sun": {
+          "title": "Trigger: sunrise or sunset",
+          "data": {
+            "event": "Event",
+            "offset_minutes": "Offset (minutes)",
+            "weekdays": "Weekdays"
+          },
+          "data_description": {
+            "offset_minutes": "Negative = before, positive = after the event, e.g. -30 for 30 minutes before sunset. Based on the location of your Home Assistant."
           }
         },
         "trigger_once": {
