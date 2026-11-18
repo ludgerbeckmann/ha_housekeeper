@@ -22,6 +22,8 @@ from ..const import (
     CONF_TASKS,
     MONTH_FIRST,
     MONTH_MODES,
+    SUN_EVENTS,
+    SUN_SET,
     TASK_ACTIONS,
     TASK_ENABLED,
     TASK_ID,
@@ -34,10 +36,12 @@ from ..const import (
     TR_AT,
     TR_BELOW,
     TR_ENTITY,
+    TR_EVENT,
     TR_FOR,
     TR_MINUTES,
     TR_MONTH_DAY,
     TR_MONTH_MODE,
+    TR_OFFSET,
     TR_TIME,
     TR_TO_STATE,
     TR_TYPE,
@@ -46,6 +50,7 @@ from ..const import (
     TRIG_MONTHLY,
     TRIG_ONCE,
     TRIG_STATE,
+    TRIG_SUN,
     TRIG_THRESHOLD,
     TRIG_WEEKLY,
     TRIGGER_TYPES,
@@ -344,6 +349,28 @@ class TaskPlannerOptions:
                 vol.Required(TR_TIME, default="08:00:00"): selector.TimeSelector(),
             },
             user_input,
+        )
+
+    async def async_step_trigger_sun(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        def validate(data: dict[str, Any]) -> dict[str, str]:
+            return {} if data.get(TR_WEEKDAYS) else {"base": "no_weekday"}
+
+        return await self._async_add_trigger(
+            "trigger_sun",
+            TRIG_SUN,
+            {
+                vol.Required(TR_EVENT, default=SUN_SET): _select(
+                    SUN_EVENTS, "sun_event", mode=selector.SelectSelectorMode.LIST
+                ),
+                vol.Required(TR_OFFSET, default=0): _number(-720, 720, "min"),
+                vol.Required(TR_WEEKDAYS, default=list(WEEKDAYS)): _select(
+                    WEEKDAYS, "weekday", multiple=True, mode=selector.SelectSelectorMode.LIST
+                ),
+            },
+            user_input,
+            validate,
         )
 
     async def async_step_trigger_once(

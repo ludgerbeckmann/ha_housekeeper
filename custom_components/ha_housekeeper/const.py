@@ -393,6 +393,8 @@ TR_TO_STATE = "to_state"
 TR_FOR = "for_minutes"
 TR_ABOVE = "above"
 TR_BELOW = "below"
+TR_EVENT = "event"
+TR_OFFSET = "offset_minutes"
 
 TRIG_WEEKLY = "weekly"
 TRIG_MONTHLY = "monthly"
@@ -400,9 +402,14 @@ TRIG_ONCE = "once"
 TRIG_INTERVAL = "interval"
 TRIG_STATE = "state"
 TRIG_THRESHOLD = "threshold"
+TRIG_SUN = "sun"
+SUN_RISE = "sunrise"
+SUN_SET = "sunset"
+SUN_EVENTS = [SUN_RISE, SUN_SET]
 TRIGGER_TYPES = [
     TRIG_WEEKLY,
     TRIG_MONTHLY,
+    TRIG_SUN,
     TRIG_ONCE,
     TRIG_INTERVAL,
     TRIG_STATE,

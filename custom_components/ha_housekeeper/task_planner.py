@@ -17,11 +17,14 @@ from homeassistant.helpers.event import (
     async_call_later,
     async_track_point_in_time,
     async_track_state_change_event,
+    async_track_sunrise,
+    async_track_sunset,
     async_track_time_change,
     async_track_time_interval,
 )
 from homeassistant.helpers.script import Script
 from homeassistant.helpers.storage import Store
+from homeassistant.helpers.sun import get_astral_event_next
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -29,6 +32,8 @@ from .const import (
     DOMAIN,
     MONTH_FIRST,
     MONTH_LAST,
+    SUN_EVENTS,
+    SUN_RISE,
     TASK_ACTIONS,
     TASK_ENABLED,
     TASK_ID,
@@ -41,10 +46,12 @@ from .const import (
     TR_AT,
     TR_BELOW,
     TR_ENTITY,
+    TR_EVENT,
     TR_FOR,
     TR_MINUTES,
     TR_MONTH_DAY,
     TR_MONTH_MODE,
+    TR_OFFSET,
     TR_TIME,
     TR_TO_STATE,
     TR_TYPE,
@@ -53,6 +60,7 @@ from .const import (
     TRIG_MONTHLY,
     TRIG_ONCE,
     TRIG_STATE,
+    TRIG_SUN,
     TRIG_THRESHOLD,
     TRIG_WEEKLY,
     WEEKDAYS,
@@ -79,6 +87,9 @@ _TEXT = {
         "monthly": "{rule} um {time}",
         "once": "einmalig am {at}",
         "interval": "alle {minutes} Minuten",
+        "sunrise": "Sonnenaufgang",
+        "sunset": "Sonnenuntergang",
+        "sun": "{event}{offset}, {days}",
         "state": "{entity} wechselt zu „{state}“",
         "state_any": "{entity} ändert sich",
         "threshold": "{entity} {cond}",
@@ -101,6 +112,9 @@ _TEXT = {
         "monthly": "{rule} at {time}",
         "once": "once on {at}",
         "interval": "every {minutes} minutes",
+        "sunrise": "sunrise",
+        "sunset": "sunset",
+        "sun": "{event}{offset}, {days}",
         "state": "{entity} changes to \"{state}\"",
         "state_any": "{entity} changes",
         "threshold": "{entity} {cond}",
@@ -140,11 +154,33 @@ def day_matches(trigger: dict[str, Any], day: date) -> bool:
     return WEEKDAYS[day.weekday()] in (trigger.get(TR_WEEKDAYS) or WEEKDAYS)
 
 
+def sun_offset(trigger: dict[str, Any]) -> timedelta:
+    """Versatz eines Sonnenstand-Auslösers (negativ = davor)."""
+    return timedelta(minutes=float(trigger.get(TR_OFFSET) or 0))
+
+
 def trigger_next(
-    trigger: dict[str, Any], now: datetime, anchor: datetime | None = None
+    trigger: dict[str, Any],
+    now: datetime,
+    anchor: datetime | None = None,
+    hass: HomeAssistant | None = None,
 ) -> datetime | None:
     """Nächster Zeitpunkt eines Zeit-Auslösers nach `now` (lokale Zeit), sonst None."""
     kind = trigger.get(TR_TYPE)
+    if kind == TRIG_SUN:
+        event = trigger.get(TR_EVENT)
+        if hass is None or event not in SUN_EVENTS:
+            return None
+        point = now
+        for _ in range(16):  # höchstens zwei Wochen weit suchen (Wochentagsfilter)
+            found = get_astral_event_next(hass, event, point, offset=sun_offset(trigger))
+            if found is None:
+                return None
+            local = dt_util.as_local(found)
+            if day_matches(trigger, local.date()):
+                return local
+            point = found
+        return None
     if kind in (TRIG_WEEKLY, TRIG_MONTHLY):
         at = dt_util.parse_time(str(trigger.get(TR_TIME, "")))
         if at is None:
@@ -229,6 +265,15 @@ def trigger_summary(hass: HomeAssistant, trigger: dict[str, Any]) -> str:
         mode = trigger.get(TR_MONTH_MODE, MONTH_FIRST)
         rule = text[f"month_{mode}"].format(day=trigger.get(TR_MONTH_DAY, 1))
         return text["monthly"].format(rule=rule, time=str(trigger.get(TR_TIME, ""))[:5])
+    if kind == TRIG_SUN:
+        days = trigger.get(TR_WEEKDAYS) or WEEKDAYS
+        minutes = _number(trigger.get(TR_OFFSET)) or 0
+        offset = "" if not minutes else f" {'+' if minutes > 0 else '−'}{_fmt(abs(minutes))} min"
+        return text["sun"].format(
+            event=text[trigger.get(TR_EVENT) or SUN_RISE],
+            offset=offset,
+            days=text["daily"] if len(days) == 7 else ", ".join(days),
+        )
     if kind == TRIG_ONCE:
         return text["once"].format(at=str(trigger.get(TR_AT, ""))[:16].replace("T", " "))
     if kind == TRIG_INTERVAL:
@@ -267,7 +312,10 @@ def task_summary(hass: HomeAssistant, task: dict[str, Any]) -> str:
 
 
 def next_run(
-    tasks: list[dict[str, Any]], now: datetime, anchor: datetime | None = None
+    tasks: list[dict[str, Any]],
+    now: datetime,
+    anchor: datetime | None = None,
+    hass: HomeAssistant | None = None,
 ) -> datetime | None:
     """Nächster Zeitpunkt aller aktiven Aufgaben mit Zeit-Auslöser."""
     best: datetime | None = None
@@ -275,7 +323,7 @@ def next_run(
         if not task.get(TASK_ENABLED, True):
             continue
         for trigger in task.get(TASK_TRIGGERS) or []:
-            candidate = trigger_next(trigger, now, anchor)
+            candidate = trigger_next(trigger, now, anchor, hass)
             if candidate is not None and (best is None or candidate < best):
                 best = candidate
     return best
@@ -321,7 +369,7 @@ class TaskPlannerController(ReloadWhenIdle):
 
     @property
     def next_run(self) -> datetime | None:
-        return next_run(self.tasks, dt_util.now(), self._anchor)
+        return next_run(self.tasks, dt_util.now(), self._anchor, self.hass)
 
     def task(self, task_id: str) -> dict[str, Any] | None:
         return next((t for t in self.tasks if t.get(TASK_ID) == task_id), None)
@@ -394,6 +442,18 @@ class TaskPlannerController(ReloadWhenIdle):
                     self.hass, _on_time, hour=at.hour, minute=at.minute, second=at.second
                 )
             )
+        elif kind == TRIG_SUN:
+            event = trigger.get(TR_EVENT)
+            if event not in SUN_EVENTS:
+                raise ValueError("ungültiges Sonnenstand-Ereignis")
+
+            @callback
+            def _on_sun(task=task, trigger=trigger) -> None:
+                if day_matches(trigger, dt_util.now().date()):
+                    self._fire(task, trigger)
+
+            track = async_track_sunrise if event == SUN_RISE else async_track_sunset
+            self._unsubs.append(track(self.hass, _on_sun, sun_offset(trigger)))
         elif kind == TRIG_ONCE:
             when = trigger_next(trigger, dt_util.now())
             if when is None:
