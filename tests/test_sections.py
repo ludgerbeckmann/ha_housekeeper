@@ -2,10 +2,11 @@
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.ha_housekeeper.const import DOMAIN
 
-from .helpers import is_menu, make_entry, reconfigure, new_instance
+from .helpers import make_entry, reconfigure, new_instance
 
 NOTIFY_FIELDS = {"mobile_enabled", "mobile_targets", "tts_enabled", "tts_entity",
                  "tts_player", "persistent_enabled"}
@@ -63,7 +64,7 @@ async def test_options_forms_have_sections(hass: HomeAssistant) -> None:
         assert "name" not in _fields(next(v for k, v in schema.items() if str(k) == "general"))
 
 
-async def test_planner_options_only_notifications_section(hass: HomeAssistant) -> None:
+async def test_planner_settings_page_has_sections(hass: HomeAssistant) -> None:
     entry = make_entry(
         domain=DOMAIN, title="Planer",
         data={"function_type": "task_planner", "name": "Planer", "tasks": [],
@@ -74,16 +75,18 @@ async def test_planner_options_only_notifications_section(hass: HomeAssistant) -
     await hass.async_block_till_done()
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "tp_general"})
-    assert [str(k) for k in result["data_schema"].schema] == ["notifications"]
+    assert result["step_id"] == "tp_settings"          # direkt die Seite, kein Menü
+    assert [str(k) for k in result["data_schema"].schema] == ["general", "tasks", "notifications"]
     bad = await flow.async_configure(
         result["flow_id"],
-        {"notifications": {"mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False}},
+        {"general": {"name": "Planer"}, "tasks": {"task_action": "none"},
+         "notifications": {"mobile_enabled": True, "tts_enabled": False, "persistent_enabled": False}},
     )
     assert bad["errors"] == {"base": "no_targets"}
     ok = await flow.async_configure(
         bad["flow_id"],
-        {"notifications": {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": False}},
+        {"general": {"name": "Planer"}, "tasks": {"task_action": "none"},
+         "notifications": {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": False}},
     )
-    assert is_menu(ok)
+    assert ok["type"] is FlowResultType.ABORT and ok["reason"] == "reconfigure_successful"
     assert entry.options["persistent_enabled"] is False

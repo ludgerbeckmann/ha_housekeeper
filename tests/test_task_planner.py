@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from .helpers import is_menu, menu_options, sectioned, make_entry, reconfigure, update_entry, new_instance
+from .helpers import is_menu, sectioned, make_entry, reconfigure, update_entry, new_instance
 from custom_components.ha_housekeeper.const import DOMAIN
 from custom_components.ha_housekeeper.task_planner import (
     month_day_matches,
@@ -287,112 +287,135 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     assert ok["data"]["tasks"] == []
 
 
-async def test_options_flow_add_edit_delete_task(hass: HomeAssistant) -> None:
+NOTIFY_OFF = {"mobile_enabled": False, "tts_enabled": False, "persistent_enabled": True}
+
+
+def _page(action: str = "none", task: str | None = None, name: str = "Planer", **notify) -> dict:
+    """Eingaben der Einstellungsseite (Abschnitte general, tasks, notifications)."""
+    tasks = {"task_action": action, **({"task": task} if task else {})}
+    return {"general": {"name": name}, "tasks": tasks, "notifications": {**NOTIFY_OFF, **notify}}
+
+
+def _task_page(name="Müll", actions=None, add=None, remove=None, **over) -> dict:
+    """Eingaben der Aufgabenseite (Abschnitte task, run, triggers)."""
+    triggers = {**({"trigger_add": add} if add else {}), **({"trigger_remove": remove} if remove else {})}
+    return {
+        "task": {"name": name, "enabled": True, "notify_start": False, "notify_success": True,
+                 "notify_error": True, **over},
+        "run": {"actions": [{"action": "test.run"}] if actions is None else actions},
+        "triggers": triggers,
+    }
+
+
+async def test_settings_page_has_no_menu_and_validates(hass: HomeAssistant) -> None:
     hass.config.language = "en"
     entry, _ = await _setup(hass, [])
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    assert is_menu(result) and result["step_id"] == "tp_menu"
-    assert "edit_task" not in menu_options(result)
+    assert result["step_id"] == "tp_settings" and not is_menu(result)
+    # ohne Aufgaben nur „nichts“ und „anlegen“; „bearbeiten/löschen“ gibt es noch nicht
+    task_field = next(v for k, v in result["data_schema"].schema.items() if str(k) == "tasks")
+    action = next(v for k, v in task_field.schema.schema.items() if str(k) == "task_action")
+    assert action.config["options"] == ["none", "add"]
+    bad = await flow.async_configure(result["flow_id"], _page(mobile_enabled=True))
+    assert bad["errors"] == {"base": "no_targets"}
+    ok = await flow.async_configure(bad["flow_id"], _page())
+    assert ok["type"] is FlowResultType.ABORT and ok["reason"] == "reconfigure_successful"
 
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_task"})
+
+async def test_task_page_add_edit_delete(hass: HomeAssistant) -> None:
+    hass.config.language = "en"
+    entry, _ = await _setup(hass, [])
+    flow = hass.config_entries.subentries
+
+    # Anlegen: Einstellungsseite -> Aufgabenseite (eine Seite für Name, Aktionen, Auslöser)
+    result = await reconfigure(hass, entry)
+    result = await flow.async_configure(result["flow_id"], _page("add"))
     assert result["step_id"] == "task_edit"
-    bad = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Müll", "enabled": True, "actions": [], "notify_start": False,
-         "notify_success": False, "notify_error": True},
-    )
+    assert [str(k) for k in result["data_schema"].schema] == ["task", "run", "triggers"]
+    bad = await flow.async_configure(result["flow_id"], _task_page(actions=[]))
     assert bad["errors"] == {"base": "no_actions"}
-    result = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Müll", "enabled": True, "actions": [{"action": "test.run"}],
-         "notify_start": False, "notify_success": True, "notify_error": True},
-    )
-    assert result["step_id"] == "task_triggers"
-    assert "delete_trigger" not in menu_options(result)
 
-    # Wochentag
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "weekly"})
+    # Auslöser hinzufügen: Formular der Art, danach zurück auf die Aufgabenseite
+    result = await flow.async_configure(bad["flow_id"], _task_page(add="weekly"))
     assert result["step_id"] == "trigger_weekly"
-    bad = await flow.async_configure(result["flow_id"], {"time": "07:00:00", "weekdays": []})
-    assert bad["errors"] == {"base": "no_weekday"}
     result = await flow.async_configure(result["flow_id"], {"time": "07:00:00", "weekdays": ["mon", "thu"]})
-    assert result["step_id"] == "task_triggers"
-    assert "weekly" not in result["description_placeholders"]["triggers"]
+    assert result["step_id"] == "task_edit"
     assert "mon, thu at 07:00" in result["description_placeholders"]["triggers"]
+    # zweiter Auslöser (Intervall)
+    result = await flow.async_configure(result["flow_id"], _task_page(add="interval"))
+    result = await flow.async_configure(result["flow_id"], {"minutes": 90})
+    assert result["step_id"] == "task_edit"
+    # Speichern ohne Art
+    done = await flow.async_configure(result["flow_id"], _task_page())
+    assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
+    tasks = entry.options["tasks"]
+    assert len(tasks) == 1 and tasks[0]["name"] == "Müll"
+    assert [t["type"] for t in tasks[0]["triggers"]] == ["weekly", "interval"]
+    assert tasks[0]["notify_success"] is True
+    task_id = tasks[0]["id"]
+    await hass.async_block_till_done()
 
-    # Monat
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "monthly"})
+    # Bearbeiten: Name ändern, ersten Auslöser entfernen
+    result = await reconfigure(hass, entry)
+    edit_bad = await flow.async_configure(result["flow_id"], _page("edit"))
+    assert edit_bad["errors"] == {"base": "task_required"}
+    result = await flow.async_configure(edit_bad["flow_id"], _page("edit", task_id))
+    assert result["step_id"] == "task_edit"
+    done = await flow.async_configure(result["flow_id"], _task_page("Müll raus", remove=["0"]))
+    assert done["type"] is FlowResultType.ABORT
+    tasks = entry.options["tasks"]
+    assert tasks[0]["name"] == "Müll raus" and tasks[0]["id"] == task_id
+    assert [t["type"] for t in tasks[0]["triggers"]] == ["interval"]
+    await hass.async_block_till_done()
+
+    # Löschen über die Einstellungsseite
+    result = await reconfigure(hass, entry)
+    done = await flow.async_configure(result["flow_id"], _page("delete", task_id))
+    assert done["type"] is FlowResultType.ABORT
+    assert entry.options["tasks"] == []
+
+
+async def test_all_trigger_types_in_task_page(hass: HomeAssistant) -> None:
+    hass.config.language = "en"
+    entry, _ = await _setup(hass, [])
+    flow = hass.config_entries.subentries
+    result = await reconfigure(hass, entry)
+    result = await flow.async_configure(result["flow_id"], _page("add"))
+    result = await flow.async_configure(result["flow_id"], _task_page(add="monthly"))
     result = await flow.async_configure(
         result["flow_id"], {"month_mode": "last", "month_day": 1, "time": "18:00:00"}
     )
     # Zustand: Mindestdauer ohne Zielzustand
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "state"})
+    result = await flow.async_configure(result["flow_id"], _task_page(add="state"))
     bad = await flow.async_configure(result["flow_id"], {"entity_id": DOOR, "for_minutes": 5})
     assert bad["errors"] == {"base": "for_needs_state"}
     result = await flow.async_configure(
-        result["flow_id"], {"entity_id": DOOR, "to_state": "on", "for_minutes": 5}
+        bad["flow_id"], {"entity_id": DOOR, "to_state": "on", "for_minutes": 5}
     )
     # Grenzwert
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "threshold"})
+    result = await flow.async_configure(result["flow_id"], _task_page(add="threshold"))
     bad = await flow.async_configure(result["flow_id"], {"entity_id": SENSOR, "for_minutes": 0})
     assert bad["errors"] == {"base": "no_threshold"}
     bad = await flow.async_configure(
-        result["flow_id"], {"entity_id": SENSOR, "above": 30, "below": 20, "for_minutes": 0}
+        bad["flow_id"], {"entity_id": SENSOR, "above": 30, "below": 20, "for_minutes": 0}
     )
     assert bad["errors"] == {"base": "min_ge_max"}
     result = await flow.async_configure(
-        result["flow_id"], {"entity_id": SENSOR, "above": 30, "for_minutes": 0}
+        bad["flow_id"], {"entity_id": SENSOR, "above": 30, "for_minutes": 0}
     )
-    # einmalig + Intervall
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "once"})
+    # einmalig
+    result = await flow.async_configure(result["flow_id"], _task_page(add="once"))
     bad = await flow.async_configure(result["flow_id"], {"at": "2020-01-01 10:00:00"})
     assert bad["errors"] == {"base": "in_past"}
     future = (dt_util.now() + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
-    result = await flow.async_configure(result["flow_id"], {"at": future})
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "interval"})
-    result = await flow.async_configure(result["flow_id"], {"minutes": 90})
-
-    # Einen Auslöser wieder entfernen (den Intervall-Auslöser)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"trigger": "5"})
-    assert result["step_id"] == "task_triggers"
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "task_save"})
-    assert result["step_id"] == "tp_menu"
-
-    tasks = entry.options["tasks"]
-    assert len(tasks) == 1 and tasks[0]["name"] == "Müll"
-    assert [t["type"] for t in tasks[0]["triggers"]] == ["weekly", "monthly", "state", "threshold", "once"]
-    assert tasks[0]["triggers"][3] == {"type": "threshold", "entity_id": SENSOR, "above": 30, "for_minutes": 0}
-    assert tasks[0]["triggers"][2]["for_minutes"] == 5
-    assert tasks[0]["notify_success"] is True
-    await hass.async_block_till_done()
-
-    # Bearbeiten: Name ändern, Auslöser bleiben erhalten
-    task_id = tasks[0]["id"]
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "edit_task"})
-    result = await flow.async_configure(result["flow_id"], {"task": task_id})
-    assert result["step_id"] == "task_edit"
-    result = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Müll raus", "enabled": True, "actions": [{"action": "test.run"}],
-         "notify_start": False, "notify_success": False, "notify_error": True},
-    )
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "task_save"})
-    tasks = entry.options["tasks"]
-    assert len(tasks) == 1 and tasks[0]["name"] == "Müll raus" and tasks[0]["id"] == task_id
-    assert len(tasks[0]["triggers"]) == 5
-
-    # Löschen
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "delete_task"})
-    result = await flow.async_configure(result["flow_id"], {"task": task_id})
-    assert entry.options["tasks"] == []
+    result = await flow.async_configure(bad["flow_id"], {"at": future})
+    done = await flow.async_configure(result["flow_id"], _task_page())
+    assert done["type"] is FlowResultType.ABORT
+    triggers = entry.options["tasks"][0]["triggers"]
+    assert [t["type"] for t in triggers] == ["monthly", "state", "threshold", "once"]
+    assert triggers[2] == {"type": "threshold", "entity_id": SENSOR, "above": 30, "for_minutes": 0}
+    assert triggers[1]["for_minutes"] == 5
 
 
 # --- Sonnenauf- und -untergang -------------------------------------------------
@@ -471,22 +494,16 @@ async def test_sun_trigger_in_options_flow(hass: HomeAssistant) -> None:
     entry, _ = await _setup(hass, [])
     flow = hass.config_entries.subentries
     result = await reconfigure(hass, entry)
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_task"})
-    result = await flow.async_configure(
-        result["flow_id"],
-        {"name": "Licht", "enabled": True, "actions": [{"action": "test.run"}],
-         "notify_start": False, "notify_success": False, "notify_error": True},
-    )
-    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_trigger"})
-    result = await flow.async_configure(result["flow_id"], {"type": "sun"})
+    result = await flow.async_configure(result["flow_id"], _page("add"))
+    result = await flow.async_configure(result["flow_id"], _task_page("Licht", add="sun"))
     assert result["step_id"] == "trigger_sun"
     bad = await flow.async_configure(
         result["flow_id"], {"event": "sunset", "offset_minutes": -30, "weekdays": []}
     )
     assert bad["errors"] == {"base": "no_weekday"}
     result = await flow.async_configure(
-        result["flow_id"],
+        bad["flow_id"],
         {"event": "sunset", "offset_minutes": -30, "weekdays": ["mon", "tue"]},
     )
-    assert result["step_id"] == "task_triggers"
+    assert result["step_id"] == "task_edit"
     assert "sunset −30 min, mon, tue" in result["description_placeholders"]["triggers"]

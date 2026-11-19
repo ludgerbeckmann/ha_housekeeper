@@ -16,8 +16,6 @@ ENTRIES = {
     "pool_pump": {"function_type": "pool_pump", "name": "Pool", "pump_entity": "switch.p"},
     "alarm_clock": {"function_type": "alarm_clock", "name": "Wecker", "alarms": [],
                     "mobile_enabled": False},
-    "task_planner": {"function_type": "task_planner", "name": "Planer", "tasks": [],
-                     "persistent_enabled": True},
 }
 
 
@@ -48,7 +46,7 @@ async def test_menu_selection_dispatches(hass: HomeAssistant) -> None:
     assert result["step_id"] == "alarm_edit" and not is_menu(result)
     # ungültige Auswahl wird abgelehnt
     _, menu = await _open(
-        hass, {**ENTRIES["task_planner"], "name": "Planer 2"}
+        hass, {**ENTRIES["alarm_clock"], "name": "Wecker 2"}
     )
     with pytest.raises(Exception):  # noqa: B017
         await flow.async_configure(menu["flow_id"], {"next_step_id": "gibt_es_nicht"})
@@ -65,8 +63,7 @@ def test_translations_cover_all_menu_options() -> None:
             for step_id, step in sub["step"].items()
         }
         menus = {step_id: step["menu_options"] for step_id, step in steps.items() if "menu_options" in step}
-        assert set(menus) == {"pool_menu", "tp_menu",
-                              "task_triggers", "alarm_menu", "ir_menu"}, name
+        assert set(menus) == {"pool_menu", "alarm_menu", "ir_menu"}, name
         assert not any("done" in labels for labels in menus.values()), name
         # jeder Eintrag, den ein Menü anbieten kann, hat in seinem Menü eine Beschriftung
         labels = {option for options in menus.values() for option in options}
@@ -74,6 +71,5 @@ def test_translations_cover_all_menu_options() -> None:
             path.read_text(encoding="utf-8") for path in (COMPONENT / "flows").glob("*.py")
         )
         for option in ("pool_general", "add_window", "dry_run", "heater",
-                       "tp_general", "add_task", "add_trigger", "delete_trigger", "task_save",
                        "alarm_general", "add_alarm", "edit_alarm", "delete_alarm"):
             assert option in labels and f'"{option}"' in source, (name, option)

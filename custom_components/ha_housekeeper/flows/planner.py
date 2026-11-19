@@ -7,11 +7,17 @@ import uuid
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import ConfigFlowResult, SubentryFlowResult
+from homeassistant.data_entry_flow import section
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import selector
 from homeassistant.util import dt as dt_util
 
+from ..const import (
+    clean_instance_name,
+    instance_name,
+    instance_title,
+)
 from ..const import (
     CONF_MOBILE_ENABLED,
     CONF_MOBILE_TARGETS,
@@ -90,144 +96,205 @@ def _validate_planner(user_input: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+TASK_ACTION_CHOICES = ["none", "add", "edit", "delete"]
+FIELD_TASK_ACTION = "task_action"
+FIELD_TASK = "task"
+SECTION_TASKS = "tasks"
+SECTION_TASK = "task"
+SECTION_RUN = "run"
+SECTION_TRIGGERS = "triggers"
+TR_ADD = "trigger_add"
+TR_REMOVE = "trigger_remove"
+
+
 class TaskPlannerOptions:
-    """Options-Flow-Schritte: Aufgabenplaner."""
+    """Dialogschritte des Aufgabenplaners: Einstellungsseite und Aufgabenseite (kein Menü)."""
 
     def _tasks(self) -> list[dict[str, Any]]:
         return list(self._current.get(CONF_TASKS) or [])
 
-    async def async_step_tp_menu(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        options = ["tp_general", "add_task"]
-        if self._tasks():
-            options += ["edit_task", "delete_task"]
-        options.append("rename")
-        return await self._menu("tp_menu", options, user_input)
+    def _task_listing(self) -> str:
+        tasks = self._tasks()
+        return "\n".join(f"• {task_summary(self.hass, t)}" for t in tasks) or "–"
 
-    async def async_step_tp_general(
+    def _settings_schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        tasks = self._tasks()
+        task_fields: dict[Any, Any] = {
+            vol.Optional(FIELD_TASK_ACTION, default="none"): _select(
+                TASK_ACTION_CHOICES if tasks else ["none", "add"],
+                "task_action",
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        }
+        if tasks:
+            task_fields[vol.Optional(FIELD_TASK)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(
+                            value=t[TASK_ID], label=task_summary(self.hass, t)
+                        )
+                        for t in tasks
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
+        base = _planner_schema(self.hass, defaults, with_name=True)
+        sections: dict[Any, Any] = {}
+        for key, value in base.schema.items():
+            sections[key] = value
+            if str(key) == "general":
+                sections[vol.Required(SECTION_TASKS)] = section(
+                    vol.Schema(task_fields), {"collapsed": False}
+                )
+        return vol.Schema(sections)
+
+    async def async_step_tp_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         errors: dict[str, str] = {}
-        defaults = self._current
+        subentry = self._get_reconfigure_subentry()
+        defaults = {**self._current, CONF_NAME: instance_name(subentry.title)}
         if user_input is not None:
-            user_input = _flatten_sections(user_input)
-            errors = _validate_planner(user_input)
+            picked = dict(user_input.get(SECTION_TASKS) or {})
+            flat = _flatten_sections(
+                {k: v for k, v in user_input.items() if k != SECTION_TASKS}
+            )
+            action = picked.get(FIELD_TASK_ACTION) or "none"
+            task_id = picked.get(FIELD_TASK)
+            tasks = self._tasks()
+            errors = _validate_planner(flat)
+            if not errors and action in ("edit", "delete") and not any(
+                t[TASK_ID] == task_id for t in tasks
+            ):
+                errors["base"] = "task_required"
             if not errors:
-                self._save(_with_cleared(user_input))
-                return await self.async_step_tp_menu()
-            defaults = user_input
+                name = (flat.get(CONF_NAME) or "").strip()
+                data = {
+                    **subentry.data,
+                    **_with_cleared({k: v for k, v in flat.items() if k != CONF_NAME}),
+                }
+                if action == "delete":
+                    data[CONF_TASKS] = [t for t in tasks if t[TASK_ID] != task_id]
+                self.hass.config_entries.async_update_subentry(
+                    self._get_entry(),
+                    subentry,
+                    title=instance_title(
+                        self.hass,
+                        self.function_type,
+                        clean_instance_name(self.function_type, name),
+                    ),
+                    data=data,
+                )
+                if action == "add":
+                    self._edit_id = None
+                    self._draft = {TASK_TRIGGERS: []}
+                    return await self.async_step_task_edit()
+                if action == "edit":
+                    task = next(t for t in tasks if t[TASK_ID] == task_id)
+                    self._edit_id = task[TASK_ID]
+                    self._draft = {**task, TASK_TRIGGERS: list(task.get(TASK_TRIGGERS) or [])}
+                    return await self.async_step_task_edit()
+                return self.async_abort(reason="reconfigure_successful")
+            defaults = {**defaults, **flat}
         return self.async_show_form(
-            step_id="tp_general",
-            data_schema=_planner_schema(self.hass, defaults, with_name=False),
+            step_id="tp_settings",
+            data_schema=self._settings_schema(defaults),
             errors=errors,
+            description_placeholders={"tasks": self._task_listing()},
         )
 
-    def _task_picker_schema(self) -> vol.Schema:
+    def _task_schema(self, d: dict[str, Any]) -> vol.Schema:
+        triggers = list(d.get(TASK_TRIGGERS) or [])
+        trigger_fields: dict[Any, Any] = {
+            vol.Optional(TR_ADD): _select(
+                TRIGGER_TYPES, "trigger_type", mode=selector.SelectSelectorMode.DROPDOWN
+            )
+        }
+        if triggers:
+            trigger_fields[vol.Optional(TR_REMOVE)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(
+                            value=str(i), label=trigger_summary(self.hass, t)
+                        )
+                        for i, t in enumerate(triggers)
+                    ],
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
         return vol.Schema(
             {
-                vol.Required("task"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[
-                            selector.SelectOptionDict(
-                                value=t[TASK_ID], label=task_summary(self.hass, t)
-                            )
-                            for t in self._tasks()
-                        ],
-                        mode=selector.SelectSelectorMode.LIST,
-                    )
-                )
+                vol.Required(SECTION_TASK): section(
+                    vol.Schema(
+                        {
+                            vol.Required(TASK_NAME, description=_suggest(TASK_NAME, d)): str,
+                            vol.Required(TASK_ENABLED, default=d.get(TASK_ENABLED, True)): bool,
+                            vol.Required(
+                                TASK_NOTIFY_START, default=d.get(TASK_NOTIFY_START, False)
+                            ): bool,
+                            vol.Required(
+                                TASK_NOTIFY_SUCCESS, default=d.get(TASK_NOTIFY_SUCCESS, False)
+                            ): bool,
+                            vol.Required(
+                                TASK_NOTIFY_ERROR, default=d.get(TASK_NOTIFY_ERROR, True)
+                            ): bool,
+                        }
+                    ),
+                    {"collapsed": False},
+                ),
+                vol.Required(SECTION_RUN): section(
+                    vol.Schema(
+                        {
+                            vol.Required(
+                                TASK_ACTIONS, description=_suggest(TASK_ACTIONS, d)
+                            ): selector.ActionSelector()
+                        }
+                    ),
+                    {"collapsed": False},
+                ),
+                vol.Required(SECTION_TRIGGERS): section(
+                    vol.Schema(trigger_fields), {"collapsed": False}
+                ),
             }
-        )
-
-    async def async_step_add_task(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        self._edit_id = None
-        self._draft = {TASK_TRIGGERS: []}
-        return await self.async_step_task_edit()
-
-    async def async_step_edit_task(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            task = next(t for t in self._tasks() if t[TASK_ID] == user_input["task"])
-            self._edit_id = task[TASK_ID]
-            self._draft = {**task, TASK_TRIGGERS: list(task.get(TASK_TRIGGERS) or [])}
-            return await self.async_step_task_edit()
-        return self.async_show_form(
-            step_id="edit_task", data_schema=self._task_picker_schema()
-        )
-
-    async def async_step_delete_task(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            self._save(
-                {CONF_TASKS: [t for t in self._tasks() if t[TASK_ID] != user_input["task"]]}
-            )
-            return await self.async_step_tp_menu()
-        return self.async_show_form(
-            step_id="delete_task", data_schema=self._task_picker_schema()
         )
 
     async def async_step_task_edit(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
+        """Eine Seite je Aufgabe: Name, Meldungen, Aktionen und Auslöser (hinzufügen/entfernen)."""
         errors: dict[str, str] = {}
-        d = self._draft
+        shown = self._draft
         if user_input is not None:
-            if not user_input.get(TASK_ACTIONS):
+            flat = _flatten_sections(user_input)
+            remove = {int(i) for i in flat.pop(TR_REMOVE, None) or []}
+            add = flat.pop(TR_ADD, None)
+            if not flat.get(TASK_ACTIONS):
                 errors["base"] = "no_actions"
+                shown = {**self._draft, **flat}
             else:
-                self._draft = {**d, **user_input}
-                return await self.async_step_task_triggers()
-            d = user_input
+                triggers = [
+                    t
+                    for i, t in enumerate(self._draft.get(TASK_TRIGGERS) or [])
+                    if i not in remove
+                ]
+                self._draft = {**self._draft, **flat, TASK_TRIGGERS: triggers}
+                if add:
+                    return await getattr(self, f"async_step_trigger_{add}")()
+                return self._save_task()
+        triggers = shown.get(TASK_TRIGGERS) or []
         return self.async_show_form(
             step_id="task_edit",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(TASK_NAME, description=_suggest(TASK_NAME, d)): str,
-                    vol.Required(TASK_ENABLED, default=d.get(TASK_ENABLED, True)): bool,
-                    vol.Required(
-                        TASK_ACTIONS, description=_suggest(TASK_ACTIONS, d)
-                    ): selector.ActionSelector(),
-                    vol.Required(
-                        TASK_NOTIFY_START, default=d.get(TASK_NOTIFY_START, False)
-                    ): bool,
-                    vol.Required(
-                        TASK_NOTIFY_SUCCESS, default=d.get(TASK_NOTIFY_SUCCESS, False)
-                    ): bool,
-                    vol.Required(
-                        TASK_NOTIFY_ERROR, default=d.get(TASK_NOTIFY_ERROR, True)
-                    ): bool,
-                }
-            ),
+            data_schema=self._task_schema(shown),
             errors=errors,
-        )
-
-    async def async_step_task_triggers(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        triggers = self._draft.get(TASK_TRIGGERS) or []
-        options = ["add_trigger"]
-        if triggers:
-            options.append("delete_trigger")
-        options.append("task_save")
-        listing = "\n".join(f"• {trigger_summary(self.hass, t)}" for t in triggers)
-        return await self._menu(
-            "task_triggers",
-            options,
-            user_input,
-            {
-                "task": str(self._draft.get(TASK_NAME, "")),
-                "triggers": listing or "–",
+            description_placeholders={
+                "task": str(shown.get(TASK_NAME) or "–"),
+                "triggers": "\n".join(f"• {trigger_summary(self.hass, t)}" for t in triggers)
+                or "–",
             },
         )
 
-    async def async_step_task_save(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    def _save_task(self) -> SubentryFlowResult:
         d = self._draft
         task = {
             TASK_ID: self._edit_id or uuid.uuid4().hex[:8],
@@ -245,50 +312,7 @@ class TaskPlannerOptions:
         else:
             tasks.append(task)
         self._save({CONF_TASKS: tasks})
-        return await self.async_step_tp_menu()
-
-    async def async_step_add_trigger(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            return await getattr(self, f"async_step_trigger_{user_input[TR_TYPE]}")()
-        return self.async_show_form(
-            step_id="add_trigger",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(TR_TYPE, default=TRIG_WEEKLY): _select(
-                        TRIGGER_TYPES, "trigger_type", mode=selector.SelectSelectorMode.LIST
-                    )
-                }
-            ),
-        )
-
-    async def async_step_delete_trigger(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        triggers = list(self._draft.get(TASK_TRIGGERS) or [])
-        if user_input is not None:
-            del triggers[int(user_input["trigger"])]
-            self._draft = {**self._draft, TASK_TRIGGERS: triggers}
-            return await self.async_step_task_triggers()
-        return self.async_show_form(
-            step_id="delete_trigger",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("trigger"): selector.SelectSelector(
-                        selector.SelectSelectorConfig(
-                            options=[
-                                selector.SelectOptionDict(
-                                    value=str(i), label=trigger_summary(self.hass, t)
-                                )
-                                for i, t in enumerate(triggers)
-                            ],
-                            mode=selector.SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
+        return self.async_abort(reason="reconfigure_successful")
 
     async def _async_add_trigger(
         self,
@@ -311,7 +335,7 @@ class TaskPlannerOptions:
                     **self._draft,
                     TASK_TRIGGERS: [*(self._draft.get(TASK_TRIGGERS) or []), trigger],
                 }
-                return await self.async_step_task_triggers()
+                return await self.async_step_task_edit()
         return self.async_show_form(
             step_id=step_id, data_schema=vol.Schema(fields), errors=errors
         )

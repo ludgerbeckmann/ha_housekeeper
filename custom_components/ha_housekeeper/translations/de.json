@@ -136,6 +136,14 @@
         "sunrise": "Sonnenaufgang",
         "sunset": "Sonnenuntergang"
       }
+    },
+    "task_action": {
+      "options": {
+        "none": "Nichts, nur die Einstellungen speichern",
+        "add": "Neue Aufgabe anlegen",
+        "edit": "Ausgewählte Aufgabe bearbeiten",
+        "delete": "Ausgewählte Aufgabe löschen"
+      }
     }
   },
   "entity": {
@@ -1451,20 +1459,31 @@
             }
           }
         },
-        "tp_menu": {
+        "tp_settings": {
           "title": "Aufgabenplaner",
-          "description": "Aufgaben und Einstellungen des Aufgabenplaners.",
-          "menu_options": {
-            "tp_general": "Einstellungen",
-            "add_task": "Aufgabe hinzufügen",
-            "edit_task": "Aufgabe bearbeiten",
-            "delete_task": "Aufgabe löschen",
-            "rename": "Umbenennen"
-          }
-        },
-        "tp_general": {
-          "title": "Einstellungen",
+          "description": "Aufgaben:\n{tasks}\n\nWähle unten, ob du eine Aufgabe anlegen, bearbeiten oder löschen willst. Meldungen gehen an die hier gewählten Wege.",
           "sections": {
+            "general": {
+              "name": "Allgemein",
+              "description": "Name des Aufgabenplaners.",
+              "data": {
+                "name": "Name (angezeigt als „Aufgabenplaner: Name“)"
+              },
+              "data_description": {
+                "name": "Optional. Leer = „Aufgabenplaner“. Nur den Namen der Instanz eintragen, z. B. „Büro“; der Funktionsname wird automatisch vorangestellt."
+              }
+            },
+            "tasks": {
+              "name": "Aufgaben",
+              "description": "Was willst du mit den Aufgaben tun? Die Einstellungen werden in jedem Fall gespeichert.",
+              "data": {
+                "task_action": "Aktion",
+                "task": "Aufgabe"
+              },
+              "data_description": {
+                "task": "Nötig für „Bearbeiten“ und „Löschen“."
+              }
+            },
             "notifications": {
               "name": "Benachrichtigungen",
               "description": "Wie und womit der Aufgabenplaner meldet. Die Meldungen je Aufgabe wählst du bei der Aufgabe.",
@@ -1482,52 +1501,45 @@
             }
           }
         },
-        "edit_task": {
-          "title": "Aufgabe bearbeiten",
-          "data": {
-            "task": "Aufgabe"
-          }
-        },
-        "delete_task": {
-          "title": "Aufgabe löschen",
-          "data": {
-            "task": "Aufgabe"
-          }
-        },
         "task_edit": {
           "title": "Aufgabe",
-          "description": "Die Aktionen werden ausgeführt, sobald einer der Auslöser (nächster Schritt) eintritt. Meldungen gehen an die in den Einstellungen gewählten Wege.",
-          "data": {
-            "name": "Name",
-            "enabled": "Aufgabe aktiv",
-            "actions": "Aktionen",
-            "notify_start": "Benachrichtigen beim Start",
-            "notify_success": "Benachrichtigen bei Erfolg",
-            "notify_error": "Benachrichtigen bei Fehler"
-          },
-          "data_description": {
-            "actions": "Beliebige Home-Assistant-Aktionen, z. B. Dienstaufrufe, Verzögerungen, Bedingungen oder eine Benachrichtigung. In den Aktionen stehen die Variablen trigger und task zur Verfügung."
-          }
-        },
-        "task_triggers": {
-          "title": "Auslöser",
-          "description": "Aufgabe „{task}“. Sobald einer dieser Auslöser eintritt, läuft die Aufgabe:\n{triggers}",
-          "menu_options": {
-            "add_trigger": "Auslöser hinzufügen",
-            "delete_trigger": "Auslöser entfernen",
-            "task_save": "Aufgabe speichern"
-          }
-        },
-        "add_trigger": {
-          "title": "Auslöser hinzufügen",
-          "data": {
-            "type": "Art des Auslösers"
-          }
-        },
-        "delete_trigger": {
-          "title": "Auslöser entfernen",
-          "data": {
-            "trigger": "Auslöser"
+          "description": "Aufgabe „{task}“. Die Aktionen laufen, sobald einer der Auslöser eintritt. Aktuelle Auslöser:\n{triggers}\n\nUm einen Auslöser hinzuzufügen, wähle unter „Auslöser“ die Art und sende das Formular ab: Das Formular der Art öffnet sich, danach kommst du hierher zurück. Ohne Art absenden speichert die Aufgabe.",
+          "sections": {
+            "task": {
+              "name": "Aufgabe",
+              "data": {
+                "name": "Name",
+                "enabled": "Aufgabe aktiv",
+                "notify_start": "Bei Start melden",
+                "notify_success": "Bei Erfolg melden",
+                "notify_error": "Bei Fehler melden"
+              },
+              "data_description": {
+                "notify_start": "Meldungen gehen an die in den Einstellungen gewählten Wege."
+              }
+            },
+            "run": {
+              "name": "Aktionen",
+              "description": "Laufen, sobald einer der Auslöser eintritt.",
+              "data": {
+                "actions": "Aktionen"
+              },
+              "data_description": {
+                "actions": "Beliebige Home-Assistant-Aktionen, z. B. Dienstaufrufe, Verzögerungen, Bedingungen oder eine Benachrichtigung. In den Aktionen stehen die Variablen trigger und task zur Verfügung."
+              }
+            },
+            "triggers": {
+              "name": "Auslöser",
+              "description": "Ohne Auslöser läuft die Aufgabe nur über ihren Button.",
+              "data": {
+                "trigger_add": "Auslöser hinzufügen",
+                "trigger_remove": "Auslöser entfernen"
+              },
+              "data_description": {
+                "trigger_add": "Art des neuen Auslösers. Leer lassen, um nur zu speichern.",
+                "trigger_remove": "Wähle die Auslöser, die entfernt werden sollen."
+              }
+            }
           }
         },
         "trigger_weekly": {
@@ -1637,7 +1649,8 @@
         "in_past": "Der Zeitpunkt liegt in der Vergangenheit.",
         "for_needs_state": "Eine Mindestdauer braucht einen Zielzustand.",
         "no_threshold": "Mindestens „Über“ oder „Unter“ muss gesetzt sein.",
-        "no_media": "Wähle eine Audiodatei."
+        "no_media": "Wähle eine Audiodatei.",
+        "task_required": "Wähle die Aufgabe für diese Aktion."
       },
       "abort": {
         "pump_configured": "Diese Pumpe ist bereits für einen anderen Pool eingerichtet."

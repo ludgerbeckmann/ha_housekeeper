@@ -566,8 +566,14 @@ Sprachausgabe, persistente Meldung).
 
 ### Aufgaben
 
-Unter *Konfigurieren* pflegst du die Aufgaben (hinzufügen, bearbeiten, löschen). Eine
-Aufgabe hat:
+Das Zahnrad öffnet **eine Einstellungsseite** (kein Menü) mit den Abschnitten *Allgemein*
+(Name), *Aufgaben* und *Benachrichtigungen*. Unter *Aufgaben* wählst du, ob du eine Aufgabe
+**anlegen**, **bearbeiten** oder **löschen** willst (bei Bearbeiten und Löschen zusätzlich die
+Aufgabe); die Einstellungen werden in jedem Fall gespeichert. Anlegen und Bearbeiten öffnen
+**eine Seite je Aufgabe** mit den Abschnitten *Aufgabe*, *Aktionen* und *Auslöser*. Dort fügst du
+einen Auslöser hinzu, indem du seine Art wählst und absendest: Das Formular der Art öffnet
+sich, danach kommst du zur Aufgabenseite zurück. Auslöser entfernst du in derselben
+Seite per Mehrfachauswahl. Absenden ohne Art speichert die Aufgabe. Eine Aufgabe hat:
 
 - **Name** und einen Schalter *Aufgabe aktiv*
 - **Aktionen**: der Aktionseditor von Home Assistant (Dienstaufrufe, Verzögerungen,
