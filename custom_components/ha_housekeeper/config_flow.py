@@ -91,7 +91,7 @@ _MENU_STEPS = {
     FUNCTION_DOORBELL: "bell_settings",
     FUNCTION_POOL: "pool_menu",
     FUNCTION_UPDATER: "upd_settings",
-    FUNCTION_TASK_PLANNER: "tp_menu",
+    FUNCTION_TASK_PLANNER: "tp_settings",
     FUNCTION_ALARM: "alarm_menu",
     FUNCTION_MONITOR: "mon_settings",
     FUNCTION_LLM: "llm_settings",

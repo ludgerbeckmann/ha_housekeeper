@@ -136,6 +136,14 @@
         "sunrise": "Sunrise",
         "sunset": "Sunset"
       }
+    },
+    "task_action": {
+      "options": {
+        "none": "Nothing, just save the settings",
+        "add": "Add a new task",
+        "edit": "Edit the selected task",
+        "delete": "Delete the selected task"
+      }
     }
   },
   "entity": {
@@ -1451,20 +1459,31 @@
             }
           }
         },
-        "tp_menu": {
+        "tp_settings": {
           "title": "Task planner",
-          "description": "Tasks and settings of the task planner.",
-          "menu_options": {
-            "tp_general": "Settings",
-            "add_task": "Add task",
-            "edit_task": "Edit task",
-            "delete_task": "Delete task",
-            "rename": "Rename"
-          }
-        },
-        "tp_general": {
-          "title": "Settings",
+          "description": "Tasks:\n{tasks}\n\nChoose below whether to add, edit or delete a task. Notifications go to the channels selected here.",
           "sections": {
+            "general": {
+              "name": "General",
+              "description": "Name of the task planner.",
+              "data": {
+                "name": "Name (shown as “Task planner: Name”)"
+              },
+              "data_description": {
+                "name": "Optional. Empty = “Task planner”. Enter only the name of the instance, e.g. “Office”; the function name is prepended automatically."
+              }
+            },
+            "tasks": {
+              "name": "Tasks",
+              "description": "What do you want to do with the tasks? The settings are saved either way.",
+              "data": {
+                "task_action": "Action",
+                "task": "Task"
+              },
+              "data_description": {
+                "task": "Needed for “Edit” and “Delete”."
+              }
+            },
             "notifications": {
               "name": "Notifications",
               "description": "How and with what the task planner reports. Choose the messages per task in the task itself.",
@@ -1482,52 +1501,45 @@
             }
           }
         },
-        "edit_task": {
-          "title": "Edit task",
-          "data": {
-            "task": "Task"
-          }
-        },
-        "delete_task": {
-          "title": "Delete task",
-          "data": {
-            "task": "Task"
-          }
-        },
         "task_edit": {
           "title": "Task",
-          "description": "The actions run as soon as one of the triggers (next step) occurs. Messages go to the channels selected in the settings.",
-          "data": {
-            "name": "Name",
-            "enabled": "Task enabled",
-            "actions": "Actions",
-            "notify_start": "Notify on start",
-            "notify_success": "Notify on success",
-            "notify_error": "Notify on error"
-          },
-          "data_description": {
-            "actions": "Any Home Assistant actions, e.g. service calls, delays, conditions or a notification. The variables trigger and task are available in the actions."
-          }
-        },
-        "task_triggers": {
-          "title": "Triggers",
-          "description": "Task \"{task}\". As soon as one of these triggers occurs, the task runs:\n{triggers}",
-          "menu_options": {
-            "add_trigger": "Add trigger",
-            "delete_trigger": "Remove trigger",
-            "task_save": "Save task"
-          }
-        },
-        "add_trigger": {
-          "title": "Add trigger",
-          "data": {
-            "type": "Type of trigger"
-          }
-        },
-        "delete_trigger": {
-          "title": "Remove trigger",
-          "data": {
-            "trigger": "Trigger"
+          "description": "Task “{task}”. The actions run as soon as one of the triggers occurs. Current triggers:\n{triggers}\n\nTo add a trigger, choose its type under “Triggers” and submit: the form for that type opens and you return here afterwards. Submit without a type to save the task.",
+          "sections": {
+            "task": {
+              "name": "Task",
+              "data": {
+                "name": "Name",
+                "enabled": "Task enabled",
+                "notify_start": "Notify on start",
+                "notify_success": "Notify on success",
+                "notify_error": "Notify on error"
+              },
+              "data_description": {
+                "notify_start": "Messages go to the channels selected in the settings."
+              }
+            },
+            "run": {
+              "name": "Actions",
+              "description": "Run as soon as one of the triggers occurs.",
+              "data": {
+                "actions": "Actions"
+              },
+              "data_description": {
+                "actions": "Any Home Assistant actions, e.g. service calls, delays, conditions or a notification. The variables trigger and task are available in the actions."
+              }
+            },
+            "triggers": {
+              "name": "Triggers",
+              "description": "Without a trigger the task only runs via its button.",
+              "data": {
+                "trigger_add": "Add trigger",
+                "trigger_remove": "Remove triggers"
+              },
+              "data_description": {
+                "trigger_add": "Type of the new trigger. Leave empty to only save.",
+                "trigger_remove": "Select the triggers to remove."
+              }
+            }
           }
         },
         "trigger_weekly": {
@@ -1637,7 +1649,8 @@
         "in_past": "The time is in the past.",
         "for_needs_state": "A minimum duration needs a target state.",
         "no_threshold": "Set at least \"Above\" or \"Below\".",
-        "no_media": "Select an audio file."
+        "no_media": "Select an audio file.",
+        "task_required": "Choose the task for this action."
       },
       "abort": {
         "pump_configured": "This pump is already configured for another pool."
