@@ -346,6 +346,9 @@
       },
       "consumption_acknowledge": {
         "name": "Acknowledge warning"
+      },
+      "monitor_reset_known": {
+        "name": "Reset ratings"
       }
     },
     "switch": {
@@ -435,6 +438,32 @@
     "llm_auth_failed": {
       "title": "Access denied: {entry}",
       "description": "The provider rejected the key of the function \"{entry}\" (LLM usage): invalid, revoked, expired or not an admin key (a normal API key is not enough). Anthropic: Console → Settings → Admin keys; OpenAI: organization settings → Admin keys. Enter a valid admin key in the settings of the function. This notice disappears by itself as soon as the query works again."
+    },
+    "monitor_review": {
+      "title": "Integration monitor: {count} faults to review",
+      "description": "The integration monitor “{entry}” reports {count} fault(s) you have not rated yet. Open the form and mark the ones that are normal (for example devices that are switched off at night). Faults you leave unmarked keep being reported.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Review faults",
+            "description": "{count} fault(s) are waiting. Mark the ones that are normal. Everything you leave unmarked keeps being reported and is not asked again.",
+            "data": {
+              "known": "Normal, do not report any more",
+              "known_until_recovery": "Normal until it works again"
+            },
+            "data_description": {
+              "known": "The fault is no longer reported as long as it stays the same kind of fault.",
+              "known_until_recovery": "Reported again when the integration has worked in between and fails again."
+            }
+          }
+        },
+        "error": {
+          "chosen_twice": "A fault can only be in one of the two lists."
+        },
+        "abort": {
+          "nothing_to_review": "There is nothing left to review."
+        }
+      }
     }
   },
   "config_subentries": {

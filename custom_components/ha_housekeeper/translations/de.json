@@ -346,6 +346,9 @@
       },
       "consumption_acknowledge": {
         "name": "Warnung quittieren"
+      },
+      "monitor_reset_known": {
+        "name": "Bewertungen zurücksetzen"
       }
     },
     "switch": {
@@ -435,6 +438,32 @@
     "llm_auth_failed": {
       "title": "Zugang abgelehnt: {entry}",
       "description": "Der Anbieter hat den Key der Funktion „{entry}“ (LLM-Verbrauch) abgelehnt: ungültig, widerrufen, abgelaufen oder kein Admin-Key (ein normaler API-Key reicht nicht). Anthropic: Console → Settings → Admin keys; OpenAI: Organisations-Einstellungen → Admin keys. Trage in den Einstellungen der Funktion einen gültigen Admin-Key ein. Dieser Hinweis verschwindet von selbst, sobald die Abfrage wieder funktioniert."
+    },
+    "monitor_review": {
+      "title": "Integrationsmonitor: {count} Störungen prüfen",
+      "description": "Der Integrationsmonitor „{entry}“ meldet {count} Störung(en), die du noch nicht eingeschätzt hast. Öffne das Formular und markiere die, die normal sind (z. B. Geräte, die nachts aus sind). Nicht markierte Störungen werden weiter gemeldet.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Störungen prüfen",
+            "description": "{count} Störung(en) warten. Markiere die, die normal sind. Alles Nichtmarkierte wird weiter gemeldet und nicht noch einmal gefragt.",
+            "data": {
+              "known": "Normal, nicht mehr melden",
+              "known_until_recovery": "Normal, bis sie wieder funktioniert"
+            },
+            "data_description": {
+              "known": "Die Störung wird nicht mehr gemeldet, solange es dieselbe Art von Störung bleibt.",
+              "known_until_recovery": "Wird wieder gemeldet, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt."
+            }
+          }
+        },
+        "error": {
+          "chosen_twice": "Eine Störung kann nur in einer der beiden Listen stehen."
+        },
+        "abort": {
+          "nothing_to_review": "Es gibt nichts mehr zu prüfen."
+        }
+      }
     }
   },
   "config_subentries": {

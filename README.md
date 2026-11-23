@@ -934,6 +934,23 @@ Batteriegeräte, Drucker, Klimaanlage) oft normal, z. B. bei ausgeschaltetem Wan
 Meldung dafür aus und nimm stattdessen Brücken und Dienste, bei denen ein Ausfall zählt (MQTT, Zigbee2MQTT, ZHA, KNX,
 Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.), in die **Whitelist von „Nur melden“** auf.
 
+### Störungen einschätzen (Assistent)
+
+Sobald es gemeldete Störungen gibt, die du noch nicht eingeschätzt hast, legt der Monitor unter
+*Einstellungen → Reparaturen* den Hinweis **„Integrationsmonitor: n Störungen prüfen“** an. Er öffnet ein Formular mit
+zwei Listen aller gemeldeten Störungen:
+
+- **Normal, nicht mehr melden:** Die Störung wird nicht mehr gemeldet, solange es dieselbe Art von Störung bleibt.
+- **Normal, bis sie wieder funktioniert:** Wie oben, aber sobald die Integration zwischendurch funktioniert hat und erneut
+  ausfällt, wird sie wieder gemeldet und gefragt (gut für saisonale Geräte, z. B. die Poolheizung im Winter).
+
+Alles, was du nicht markierst, wird weiter gemeldet und nicht noch einmal gefragt. In der Sammelmeldung stehen danach nur die
+nicht als normal markierten Störungen, am Ende „+ n als normal markiert“; solange noch etwas auf deine Einschätzung wartet,
+steht dort auch ein Hinweis (ein Tipp auf den Push öffnet die Reparaturen). Wechselt eine Integration die Art der Störung (z. B.
+von Fehlerstatus zu „alle Entitäten nicht verfügbar“), gilt sie als neu. Die Einschätzungen bleiben über Neustarts erhalten und
+lassen sich mit dem Button **Bewertungen zurücksetzen** löschen. „Normal“ betrifft nur die Meldung: Regeln für **Neu laden** und
+**Deaktivieren** wirken unverändert.
+
 ### Aktionen
 
 „Neu laden“ und „Deaktivieren“ wirken **einmal je Störung** auf die Integrationen ihrer Liste. Eine vom Monitor deaktivierte
@@ -949,8 +966,9 @@ solche Integration von Hand wieder ein, vergisst er sie.
 - `switch` **Monitor aktiv** (aus = keine Prüfung, keine Meldungen, keine Aktionen)
 - `binary_sensor` **Integrationsstörung** (an = mindestens eine Störung; Attribut: Integrationen)
 - `sensor` **Integrationen mit Störung** und **Vom Monitor deaktiviert** (Anzahl, Namen als Attribut)
-- `button` **Jetzt prüfen** und **Deaktivierte aktivieren** (aktiviert alle vom Monitor
-  deaktivierten Integrationen wieder)
+- `button` **Jetzt prüfen**, **Deaktivierte aktivieren** (aktiviert alle vom Monitor
+  deaktivierten Integrationen wieder) und **Bewertungen zurücksetzen**
+- Der Sensor **Integrationen mit Störung** hat zusätzlich das Attribut `known` (als normal markierte Integrationen)
 
 ## Reparaturhinweise
 

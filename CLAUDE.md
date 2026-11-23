@@ -239,6 +239,16 @@ Arbeitsweise angelehnt an `ludgerbeckmann/ha_smart_ventilation`.
   Monitor merkt sich seine Deaktivierungen in `disabled` (Store) und aktiviert **nur diese** wieder: über die
   Anwesenheitsentität (`on`/`home`, Listener auf deren Zustand) oder den Button. Von Hand aktivierte
   oder gelöschte Einträge werden vergessen. Kein `busy`/`ReloadWhenIdle` (der Zustand liegt im `Store`).
+  **Assistent „Störungen prüfen“:** `known` im `Store` = Integration -> `{kind, until_recovery}` („als normal markiert“); `is_known()` gilt nur für dieselbe Art
+  (`kind`), eine andere Art oder (bei `until_recovery`) die Rückkehr zu `STATUS_OK` oder eine gelöschte Integration verwirft die Markierung (in `_async_check`).
+  `pending_review()` = gemeldete, nicht markierte Störungen ohne `reviewed` (Flag in der Störung, ersetzt sich, wenn sie neu entsteht); `_sync_issue()` legt den
+  **behebbaren** Hinweis `<id>_monitor_review` an (`data` = `{entry_id}`) bzw. löscht ihn. Das Formular ist `repairs.py` (`MonitorReviewFlow`, `async_create_fix_flow`
+  sucht den Controller in `hass.data[DOMAIN]`): zwei Mehrfachauswahlen `known`/`known_until_recovery` aller ausstehenden Störungen (Fehler `chosen_twice`), `async_review()`
+  markiert, unmarkierte angezeigte Störungen bekommen `reviewed`. Die Sammelmeldung (`_async_flush_summary`) enthält nur nicht markierte Störungen, Fußzeilen „+ n als normal markiert“
+  und (solange etwas aussteht) der Hinweis mit `extra={"url": "/config/repairs"}`; beide Fußzeilen stehen als `~known|n`/`~review` im Vergleichsschlüssel. Button
+  `monitor_reset_known` (`async_reset_known()`), Sensor `monitor_faulty` hat das Attribut `known`. Ältere gespeicherte Störungen ohne `state`/`entities`/`since` werden bei
+  jeder Prüfung aufgefrischt; die Zeitangabe zeigt bei älteren Störungen das Datum (`_fault_line()`). Manifest `after_dependencies` enthält `repairs` (Import in `repairs.py`).
+  Tests: `two_faults()`/`open_review()` in `tests/test_integration_monitor.py` (Formular direkt über `async_create_fix_flow`).
 - `llm_usage.py` / `llm_providers.py`: Je Instanz ein Anbieterkonto (`anthropic`, `openai`). `llm_providers.py`
   fragt per aiohttp die **Kosten je Tag (UTC)** ab (`async_fetch_costs()`, Anthropic `/v1/organizations/cost_report`
   mit `x-api-key` (Admin-Key), `amount` in **Cent** als Dezimalstring; OpenAI `/v1/organization/costs`, `amount.value`),
