@@ -84,7 +84,13 @@ def _add_entities(hass: HomeAssistant, controller, async_add_entities) -> None:
                     registry.async_remove(entity.entity_id)
         async_add_entities(buttons)
     elif isinstance(controller, IntegrationMonitorController):
-        async_add_entities([MonitorCheckNowButton(controller), MonitorReenableButton(controller)])
+        async_add_entities(
+            [
+                MonitorCheckNowButton(controller),
+                MonitorReenableButton(controller),
+                MonitorResetKnownButton(controller),
+            ]
+        )
     elif isinstance(controller, AlarmClockController):
         async_add_entities([AlarmStopButton(controller), AlarmSnoozeButton(controller)])
     elif isinstance(controller, TaskPlannerController):
@@ -232,6 +238,18 @@ class MonitorReenableButton(FunctionEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self._controller.async_reenable_all()
+
+
+class MonitorResetKnownButton(FunctionEntity, ButtonEntity):
+    """Setzt alle Einschätzungen („normal“) zurück, Störungen werden wieder gemeldet und gefragt."""
+
+    _attr_icon = "mdi:restore"
+
+    def __init__(self, controller) -> None:
+        super().__init__(controller, "monitor_reset_known")
+
+    async def async_press(self) -> None:
+        await self._controller.async_reset_known()
 
 
 class LlmRefreshButton(FunctionEntity, ButtonEntity):

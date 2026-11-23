@@ -362,7 +362,10 @@ class MonitorFaultySensor(FunctionEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"integrations": self._controller.faulty_titles}
+        return {
+            "integrations": self._controller.faulty_titles,
+            "known": self._controller.known_titles,
+        }
 
 
 class MonitorDisabledSensor(FunctionEntity, SensorEntity):

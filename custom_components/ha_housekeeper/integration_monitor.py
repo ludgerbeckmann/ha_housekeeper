@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryDisabler, Confi
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
@@ -86,6 +87,8 @@ ERROR_STATES = (
 PRESENT_STATES = (STATE_ON, "home")
 
 SUMMARY_KIND = "summary"
+REVIEW_ISSUE = "monitor_review"
+REVIEW_URL = "/config/repairs"
 
 _TEXT = {
     "de": {
@@ -93,6 +96,8 @@ _TEXT = {
         KIND_UNAVAILABLE: "alle {count} Entitäten nicht verfügbar",
         "header": "Gestörte Integrationen ({count}):",
         "line": "• {name} – {kind} (seit {since})",
+        "known": "+ {count} als normal markiert",
+        "review": "{count} Störungen warten auf deine Einschätzung (Einstellungen → Reparaturen).",
         MON_ACTION_RELOAD: "neu geladen",
         MON_ACTION_DISABLE: "deaktiviert",
         "failed": "Aktion fehlgeschlagen",
@@ -103,6 +108,8 @@ _TEXT = {
         KIND_UNAVAILABLE: "all {count} entities unavailable",
         "header": "Faulty integrations ({count}):",
         "line": "• {name} – {kind} (since {since})",
+        "known": "+ {count} marked as normal",
+        "review": "{count} faults are waiting for your review (Settings → Repairs).",
         MON_ACTION_RELOAD: "reloaded",
         MON_ACTION_DISABLE: "disabled",
         "failed": "action failed",
@@ -208,6 +215,8 @@ class IntegrationMonitorController:
         self._names: dict[str, str] = {}
         # vom Monitor deaktivierte Integrationen: Integration -> ID der Regel
         self.disabled: dict[str, str] = {}
+        # als normal markierte Störungen: Integration -> {"kind", "until_recovery"}
+        self.known: dict[str, dict[str, Any]] = {}
         self._since: dict[str, tuple[str, datetime]] = {}
         self._get = entry_opt(entry)
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
@@ -278,6 +287,74 @@ class IntegrationMonitorController:
     def disabled_titles(self) -> list[str]:
         return [self._title(i) for i in self.disabled]
 
+    def is_known(self, eid: str, fault: dict[str, Any]) -> bool:
+        """Hat der Nutzer diese Störung (Integration und Art) als normal markiert?"""
+        known = self.known.get(eid)
+        return bool(known) and known.get("kind") == fault.get("kind")
+
+    @property
+    def known_titles(self) -> list[str]:
+        return [self._title(i) for i, f in self.faults.items() if self.is_known(i, f)]
+
+    def pending_review(self) -> list[str]:
+        """Gemeldete Störungen, die der Nutzer noch nicht eingeschätzt hat."""
+        return [
+            eid
+            for eid, fault in self.faults.items()
+            if fault.get("reported") and not fault.get("reviewed") and not self.is_known(eid, fault)
+        ]
+
+    async def fault_label(self, eid: str) -> str:
+        """Zeile einer Störung ohne Aufzählungszeichen (Auswahl im Reparaturformular)."""
+        return (await self._fault_line(eid, self.faults[eid])).removeprefix("• ")
+
+    @callback
+    def _sync_issue(self) -> None:
+        """Reparaturhinweis „Störungen prüfen“, solange etwas auf eine Einschätzung wartet."""
+        issue_id = f"{self.entry.entry_id}_{REVIEW_ISSUE}"
+        count = len(self.pending_review())
+        if count:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=REVIEW_ISSUE,
+                translation_placeholders={"count": str(count), "entry": self.entry.title},
+                data={"entry_id": self.entry.entry_id},
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+
+    async def async_review(
+        self, shown: list[str], known: list[str], until_recovery: list[str]
+    ) -> None:
+        """Einschätzung aus dem Reparaturformular übernehmen.
+
+        Angezeigte Störungen ohne Auswahl bleiben „weiter melden“ und werden nicht noch einmal gefragt.
+        """
+        for eid in shown:
+            fault = self.faults.get(eid)
+            if fault is None:
+                continue
+            if eid in known or eid in until_recovery:
+                self.known[eid] = {"kind": fault["kind"], "until_recovery": eid not in known}
+            else:
+                fault["reviewed"] = True
+        await self._async_flush_summary(dt_util.utcnow())
+        await self._async_save()
+        self._sync_issue()
+
+    async def async_reset_known(self) -> None:
+        """Alle Einschätzungen zurücksetzen (Button): Störungen werden wieder gemeldet und gefragt."""
+        self.known.clear()
+        for fault in self.faults.values():
+            fault.pop("reviewed", None)
+        await self._async_flush_summary(dt_util.utcnow())
+        await self._async_save()
+        self._sync_issue()
+
     # --- Lebenszyklus --------------------------------------------------------
 
     async def async_start(self) -> None:
@@ -285,6 +362,7 @@ class IntegrationMonitorController:
         self.enabled = bool(stored.get("enabled", True))
         self.faults = dict(stored.get("faults") or {})
         self.disabled = dict(stored.get("disabled") or {})
+        self.known = dict(stored.get("known") or {})
         self.summary = dict(stored.get("summary") or self.summary)
         for fault in self.faults.values():  # ältere Einträge: `notified` hieß später `reported`
             fault.setdefault("reported", fault.get("notified", False))
@@ -330,6 +408,7 @@ class IntegrationMonitorController:
                 "enabled": self.enabled,
                 "faults": self.faults,
                 "disabled": self.disabled,
+                "known": self.known,
                 "summary": self.summary,
             }
         )
@@ -383,6 +462,16 @@ class IntegrationMonitorController:
             if eid not in entries and eid not in self.disabled:
                 del self.faults[eid]
                 changed = True
+        # Markierungen verfallen: Integration gelöscht, Art gewechselt oder (bei „bis sie wieder
+        # funktioniert“) die Integration läuft wieder
+        for eid, mark in list(self.known.items()):
+            if (
+                eid not in entries
+                or current.get(eid, mark["kind"]) != mark["kind"]
+                or (mark.get("until_recovery") and status.get(eid) == STATUS_OK)
+            ):
+                del self.known[eid]
+                changed = True
 
         for eid, kind in current.items():
             if now - self._since[eid][1] < self.grace:
@@ -401,6 +490,15 @@ class IntegrationMonitorController:
                 }
                 self.faults[eid] = fault
                 changed = True
+            else:  # ältere Einträge ohne Angaben auffrischen
+                entities = count_entities(self.hass, entries[eid])
+                state = entries[eid].state.value
+                since = fault.get("since") or self._since[eid][1].isoformat()
+                if (fault.get("entities"), fault.get("state"), fault.get("since")) != (
+                    entities, state, since
+                ):
+                    fault.update(entities=entities, state=state, since=since)
+                    changed = True
             if not fault["acted"]:
                 await self._async_handle_fault(eid, entries[eid], fault)
                 changed = True
@@ -412,6 +510,7 @@ class IntegrationMonitorController:
 
         changed |= await self._async_reenable_present(save=False)
         changed |= await self._async_flush_summary(now)
+        self._sync_issue()
         if changed:
             await self._async_save()
         else:
@@ -462,11 +561,16 @@ class IntegrationMonitorController:
             state=fault.get("state", ""), count=fault.get("entities", 0)
         )
         since = dt_util.parse_datetime(fault.get("since") or "")
-        line = text["line"].format(
-            name=name,
-            kind=kind,
-            since=dt_util.as_local(since).strftime("%H:%M") if since else "?",
-        )
+        local = dt_util.as_local(since) if since else None
+        if local is None:
+            when = "?"
+        elif local.date() == dt_util.now().date():
+            when = local.strftime("%H:%M")
+        elif (self.hass.config.language or "").startswith("de"):
+            when = local.strftime("%d.%m. %H:%M")
+        else:
+            when = local.strftime("%m/%d %H:%M")
+        line = text["line"].format(name=name, kind=kind, since=when)
         result = fault.get("result")
         return f"{line}; {text[result]}" if result else line
 
@@ -475,8 +579,16 @@ class IntegrationMonitorController:
 
         Wird die Liste leer, verschwindet die Meldung sofort. Gibt zurück, ob sich Zustand
         geändert hat (zum Speichern)."""
-        reported = {eid: f for eid, f in self.faults.items() if f.get("reported")}
+        wanted = {eid: f for eid, f in self.faults.items() if f.get("reported")}
+        reported = {eid: f for eid, f in wanted.items() if not self.is_known(eid, f)}
+        known_count = len(wanted) - len(reported)
+        review_count = len(self.pending_review())
         key = sorted(f"{eid}|{f['kind']}|{f.get('result') or ''}" for eid, f in reported.items())
+        if key:  # Fußzeilen ändern die Meldung, nur wenn es überhaupt Störungen zu melden gibt
+            if known_count:
+                key.append(f"~known|{known_count}")
+            if review_count:
+                key.append("~review")
         notifier = self._notifier()
         if key == self.summary.get("sent"):
             changed = self.summary.get("pending") is not None
@@ -495,11 +607,17 @@ class IntegrationMonitorController:
         lines = [await self._fault_line(eid, f) for eid, f in reported.items()]
         lines.sort(key=str.casefold)
         text = self._text()
-        message = "\n".join([text["header"].format(count=len(lines)), *lines])
+        footer = []
+        if known_count:
+            footer.append(text["known"].format(count=known_count))
+        if review_count:
+            footer.append(text["review"].format(count=review_count))
+        message = "\n".join([text["header"].format(count=len(lines)), *lines, *footer])
         await notifier.async_send(
             message,
             kind=SUMMARY_KIND,
             spoken=text["spoken"].format(count=len(lines)),
+            extra={"url": REVIEW_URL, "clickAction": REVIEW_URL} if review_count else None,
         )
         self.summary = {"sent": key, "pending": None}
         return True
