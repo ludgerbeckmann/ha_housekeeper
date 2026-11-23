@@ -696,3 +696,17 @@ async def test_older_faults_show_the_date(hass: HomeAssistant) -> None:
     assert "/" in await ctrl._fault_line(printer.entry_id, fault)      # englisch: MM/TT hh:mm
     today = {**fault, "since": dt_util.utcnow().isoformat()}
     assert "/" not in await ctrl._fault_line(printer.entry_id, today)
+
+
+def test_fixable_issue_has_a_fix_flow_and_no_description() -> None:
+    """Hassfest erlaubt bei behebbaren Hinweisen nur `fix_flow`, keine `description`."""
+    import json
+    from pathlib import Path
+
+    base = Path(__file__).parent.parent / "custom_components" / "ha_housekeeper"
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        issue = json.loads((base / name).read_text(encoding="utf-8"))["issues"]["monitor_review"]
+        assert "fix_flow" in issue and "description" not in issue, name
+        assert {"title", "description", "data", "data_description"} <= set(issue["fix_flow"]["step"]["init"])
+        assert {"chosen_twice"} <= set(issue["fix_flow"]["error"])
+        assert {"nothing_to_review"} <= set(issue["fix_flow"]["abort"])

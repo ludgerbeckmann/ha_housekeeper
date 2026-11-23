@@ -441,7 +441,6 @@
     },
     "monitor_review": {
       "title": "Integration monitor: {count} faults to review",
-      "description": "The integration monitor “{entry}” reports {count} fault(s) you have not rated yet. Open the form and mark the ones that are normal (for example devices that are switched off at night). Faults you leave unmarked keep being reported.",
       "fix_flow": {
         "step": {
           "init": {

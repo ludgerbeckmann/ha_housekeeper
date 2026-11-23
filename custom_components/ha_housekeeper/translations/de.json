@@ -441,7 +441,6 @@
     },
     "monitor_review": {
       "title": "Integrationsmonitor: {count} Störungen prüfen",
-      "description": "Der Integrationsmonitor „{entry}“ meldet {count} Störung(en), die du noch nicht eingeschätzt hast. Öffne das Formular und markiere die, die normal sind (z. B. Geräte, die nachts aus sind). Nicht markierte Störungen werden weiter gemeldet.",
       "fix_flow": {
         "step": {
           "init": {
