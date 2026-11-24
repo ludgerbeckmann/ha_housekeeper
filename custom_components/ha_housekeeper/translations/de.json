@@ -443,9 +443,9 @@
       "title": "Integrationsmonitor: {count} Störungen prüfen",
       "fix_flow": {
         "step": {
-          "init": {
+          "review": {
             "title": "Störungen prüfen",
-            "description": "{count} Störung(en) warten. Markiere die, die normal sind. Alles Nichtmarkierte wird weiter gemeldet und nicht noch einmal gefragt.",
+            "description": "{count} Störung(en) warten:\n{faults}\n\nMarkiere die, die normal sind. „Normal, nicht mehr melden“ stoppt die Meldungen, solange es dieselbe Art von Störung bleibt; „Normal, bis sie wieder funktioniert“ meldet sie wieder, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt. Alles Nichtmarkierte wird weiter gemeldet und nicht noch einmal gefragt.",
             "data": {
               "known": "Normal, nicht mehr melden",
               "known_until_recovery": "Normal, bis sie wieder funktioniert"

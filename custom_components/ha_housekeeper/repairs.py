@@ -25,6 +25,10 @@ class MonitorReviewFlow(RepairsFlow):
         self._controller = controller
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Start: Home Assistant übergibt hier Startdaten (`issue_id`), das ist kein Formular."""
+        return await self.async_step_review()
+
+    async def async_step_review(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         controller = self._controller
         pending = controller.pending_review() if controller else []
         if not pending:
@@ -38,10 +42,8 @@ class MonitorReviewFlow(RepairsFlow):
             else:
                 await controller.async_review(pending, known, until)
                 return self.async_create_entry(data={})
-        options = [
-            selector.SelectOptionDict(value=eid, label=await controller.fault_label(eid))
-            for eid in pending
-        ]
+        labels = {eid: await controller.fault_label(eid) for eid in pending}
+        options = [selector.SelectOptionDict(value=eid, label=label) for eid, label in labels.items()]
 
         def _field() -> selector.SelectSelector:
             return selector.SelectSelector(
@@ -51,7 +53,7 @@ class MonitorReviewFlow(RepairsFlow):
             )
 
         return self.async_show_form(
-            step_id="init",
+            step_id="review",
             data_schema=vol.Schema(
                 {
                     vol.Optional(FIELD_KNOWN, default=list((user_input or {}).get(FIELD_KNOWN) or [])): _field(),
@@ -59,7 +61,10 @@ class MonitorReviewFlow(RepairsFlow):
                 }
             ),
             errors=errors,
-            description_placeholders={"count": str(len(pending))},
+            description_placeholders={
+                "count": str(len(pending)),
+                "faults": "\n".join(f"• {label}" for label in labels.values()),
+            },
         )
 
 

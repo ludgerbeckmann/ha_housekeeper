@@ -540,12 +540,31 @@ def review_issue(hass, ctrl):
     return ir.async_get(hass).async_get_issue(DOMAIN, f"{ctrl.entry.entry_id}_monitor_review")
 
 
+class Review:
+    """Das Reparaturformular, bedient über den echten Reparatur-Manager von Home Assistant."""
+
+    def __init__(self, manager, form):
+        self.manager = manager
+        self.form = form
+
+    async def submit(self, data):
+        return await self.manager.async_configure(self.form["flow_id"], data)
+
+
 async def open_review(hass, ctrl):
-    """Das Formular des Reparaturhinweises öffnen (wie es die Reparaturen tun)."""
+    """Das Formular des Reparaturhinweises öffnen, genau wie es die Reparaturen tun.
+
+    Der Start übergibt Daten (`issue_id`); das ist kein abgesendetes Formular.
+    """
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, "repairs", {})
     issue = review_issue(hass, ctrl)
-    flow = await async_create_fix_flow(hass, issue.issue_id, issue.data)
-    flow.hass = hass
-    return flow, await flow.async_step_init()
+    manager = hass.data["repairs"]["flow_manager"]
+    form = await manager.async_init(
+        DOMAIN, context={"issue_id": issue.issue_id}, data={"issue_id": issue.issue_id}
+    )
+    return Review(manager, form), form
 
 
 async def two_faults(hass, **over):
@@ -569,9 +588,11 @@ async def test_pending_faults_create_a_fixable_issue_and_a_hint(hass: HomeAssist
 async def test_review_marks_known_and_reports_the_rest(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, form = await open_review(hass, ctrl)
-    assert form["type"] is FlowResultType.FORM and form["step_id"] == "init"
-    assert form["description_placeholders"] == {"count": "2"}
-    done = await flow.async_step_init({"known": [printer.entry_id], "known_until_recovery": []})
+    assert form["type"] is FlowResultType.FORM and form["step_id"] == "review"
+    assert form["description_placeholders"]["count"] == "2"
+    assert "Drucker" in form["description_placeholders"]["faults"]
+    assert "Lampe" in form["description_placeholders"]["faults"]
+    done = await flow.submit({"known": [printer.entry_id], "known_until_recovery": []})
     assert done["type"] is FlowResultType.CREATE_ENTRY
     assert ctrl.known == {printer.entry_id: {"kind": "error", "until_recovery": False}}
     assert ctrl.known_titles == ["Drucker"]
@@ -585,7 +606,7 @@ async def test_review_marks_known_and_reports_the_rest(hass: HomeAssistant) -> N
 async def test_known_faults_are_silent_and_the_list_clears_when_all_are_known(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init(
+    await flow.submit(
         {"known": [printer.entry_id], "known_until_recovery": [lamp.entry_id]})
     assert push[-1].data["message"] == "clear_notification"  # nichts mehr zu melden
     count = len(push)
@@ -596,7 +617,7 @@ async def test_known_faults_are_silent_and_the_list_clears_when_all_are_known(ha
 async def test_form_rejects_a_fault_in_both_lists(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    bad = await flow.async_step_init(
+    bad = await flow.submit(
         {"known": [printer.entry_id], "known_until_recovery": [printer.entry_id]})
     assert bad["type"] is FlowResultType.FORM and bad["errors"] == {"base": "chosen_twice"}
     assert ctrl.known == {}
@@ -605,7 +626,7 @@ async def test_form_rejects_a_fault_in_both_lists(hass: HomeAssistant) -> None:
 async def test_until_recovery_is_asked_again_after_it_worked(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [], "known_until_recovery": [printer.entry_id, lamp.entry_id]})
+    await flow.submit({"known": [], "known_until_recovery": [printer.entry_id, lamp.entry_id]})
     assert ctrl.known[printer.entry_id]["until_recovery"] is True
     printer.mock_state(hass, ConfigEntryState.LOADED)       # läuft wieder
     await ctrl.async_check()
@@ -619,7 +640,7 @@ async def test_until_recovery_is_asked_again_after_it_worked(hass: HomeAssistant
 async def test_permanent_mark_survives_a_recovery(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [printer.entry_id], "known_until_recovery": []})
+    await flow.submit({"known": [printer.entry_id], "known_until_recovery": []})
     printer.mock_state(hass, ConfigEntryState.LOADED)
     await ctrl.async_check()
     printer.mock_state(hass, ConfigEntryState.SETUP_ERROR)
@@ -630,7 +651,7 @@ async def test_permanent_mark_survives_a_recovery(hass: HomeAssistant) -> None:
 async def test_a_different_kind_of_fault_is_new(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [printer.entry_id], "known_until_recovery": []})
+    await flow.submit({"known": [printer.entry_id], "known_until_recovery": []})
     printer.mock_state(hass, ConfigEntryState.LOADED)       # kein Fehler mehr, aber alle Entitäten weg
     add_entities(hass, printer, ["unavailable", "unavailable"])
     await check(ctrl)
@@ -642,7 +663,7 @@ async def test_a_different_kind_of_fault_is_new(hass: HomeAssistant) -> None:
 async def test_reset_button_clears_the_ratings(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [printer.entry_id], "known_until_recovery": []})
+    await flow.submit({"known": [printer.entry_id], "known_until_recovery": []})
     registry = er.async_get(hass)
     button = next(e.entity_id for e in registry.entities.values()
                   if e.platform == DOMAIN and e.translation_key == "monitor_reset_known")
@@ -655,7 +676,7 @@ async def test_reset_button_clears_the_ratings(hass: HomeAssistant) -> None:
 async def test_known_survives_a_restart_and_shows_in_the_sensor(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [printer.entry_id], "known_until_recovery": []})
+    await flow.submit({"known": [printer.entry_id], "known_until_recovery": []})
     await hass.async_block_till_done()
     sensor = next(e.entity_id for e in er.async_get(hass).entities.values()
                   if e.platform == DOMAIN and e.translation_key == "monitor_faulty")
@@ -665,15 +686,53 @@ async def test_known_survives_a_restart_and_shows_in_the_sensor(hass: HomeAssist
     assert hass.data[DOMAIN][ctrl.entry.entry_id].known == ctrl.known
 
 
+async def test_opening_the_form_does_not_answer_it(hass: HomeAssistant) -> None:
+    """Regression: der Start des Reparaturablaufs übergibt Daten und darf nichts markieren."""
+    printer, lamp, ctrl, push = await two_faults(hass)
+    review, form = await open_review(hass, ctrl)
+    assert form["type"] is FlowResultType.FORM
+    assert len(ctrl.pending_review()) == 2 and ctrl.known == {}
+    assert review_issue(hass, ctrl) is not None
+    assert [f.get("reviewed") for f in ctrl.faults.values()] == [None, None]
+    schema = form["data_schema"].schema
+    assert {str(k) for k in schema} == {"known", "known_until_recovery"}
+
+
 async def test_form_without_pending_faults_aborts(hass: HomeAssistant) -> None:
+    from custom_components.ha_housekeeper.repairs import MonitorReviewFlow
+
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, _ = await open_review(hass, ctrl)
-    await flow.async_step_init({"known": [printer.entry_id, lamp.entry_id], "known_until_recovery": []})
-    again = await flow.async_step_init()
+    await flow.submit({"known": [printer.entry_id, lamp.entry_id], "known_until_recovery": []})
+    late = MonitorReviewFlow(ctrl)
+    late.hass = hass
+    again = await late.async_step_init({"issue_id": "x"})
     assert again["type"] is FlowResultType.ABORT and again["reason"] == "nothing_to_review"
     orphan = await async_create_fix_flow(hass, "x", {"entry_id": "gibt-es-nicht"})
     orphan.hass = hass
     assert (await orphan.async_step_init())["type"] is FlowResultType.ABORT
+
+
+async def test_wrong_review_marks_from_the_old_bug_are_reset_once(hass: HomeAssistant) -> None:
+    printer, lamp, ctrl, push = await two_faults(hass)
+    for fault in ctrl.faults.values():          # so sah der Speicher nach dem Fehler aus
+        fault["reviewed"] = True
+    await ctrl._store.async_save(
+        {"enabled": True, "faults": ctrl.faults, "known": {}, "disabled": {}, "summary": ctrl.summary}
+    )
+    await hass.config_entries.async_reload(ctrl.entry.hub_entry_id)
+    await hass.async_block_till_done()
+    ctrl2 = hass.data[DOMAIN][ctrl.entry.entry_id]
+    assert len(ctrl2.pending_review()) == 2     # werden wieder gefragt
+    await ctrl2.async_check()
+    assert review_issue(hass, ctrl2) is not None
+    # eine echte Antwort bleibt danach erhalten
+    flow, _ = await open_review(hass, ctrl2)
+    await flow.submit({"known": [], "known_until_recovery": []})
+    await hass.config_entries.async_reload(ctrl.entry.hub_entry_id)
+    await hass.async_block_till_done()
+    ctrl3 = hass.data[DOMAIN][ctrl.entry.entry_id]
+    assert ctrl3.pending_review() == []
 
 
 async def test_old_faults_without_details_are_refreshed(hass: HomeAssistant) -> None:
@@ -707,6 +766,7 @@ def test_fixable_issue_has_a_fix_flow_and_no_description() -> None:
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         issue = json.loads((base / name).read_text(encoding="utf-8"))["issues"]["monitor_review"]
         assert "fix_flow" in issue and "description" not in issue, name
-        assert {"title", "description", "data", "data_description"} <= set(issue["fix_flow"]["step"]["init"])
+        assert {"title", "description", "data", "data_description"} <= set(issue["fix_flow"]["step"]["review"])
+        assert "init" not in issue["fix_flow"]["step"], name
         assert {"chosen_twice"} <= set(issue["fix_flow"]["error"])
         assert {"nothing_to_review"} <= set(issue["fix_flow"]["abort"])
