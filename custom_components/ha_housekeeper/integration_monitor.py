@@ -363,6 +363,10 @@ class IntegrationMonitorController:
         self.faults = dict(stored.get("faults") or {})
         self.disabled = dict(stored.get("disabled") or {})
         self.known = dict(stored.get("known") or {})
+        if not stored.get("review_fixed"):
+            # bis 0.60.0 hat ein Fehler im Formular alle Störungen sofort als „eingeschätzt“ markiert
+            for fault in self.faults.values():
+                fault.pop("reviewed", None)
         self.summary = dict(stored.get("summary") or self.summary)
         for fault in self.faults.values():  # ältere Einträge: `notified` hieß später `reported`
             fault.setdefault("reported", fault.get("notified", False))
@@ -409,6 +413,7 @@ class IntegrationMonitorController:
                 "faults": self.faults,
                 "disabled": self.disabled,
                 "known": self.known,
+                "review_fixed": True,
                 "summary": self.summary,
             }
         )

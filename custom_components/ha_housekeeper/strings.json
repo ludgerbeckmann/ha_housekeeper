@@ -443,9 +443,9 @@
       "title": "Integration monitor: {count} faults to review",
       "fix_flow": {
         "step": {
-          "init": {
+          "review": {
             "title": "Review faults",
-            "description": "{count} fault(s) are waiting. Mark the ones that are normal. Everything you leave unmarked keeps being reported and is not asked again.",
+            "description": "{count} fault(s) are waiting:\n{faults}\n\nMark the ones that are normal. “Normal, do not report any more” stops the reports as long as it stays the same kind of fault; “Normal until it works again” reports it again if the integration works in between and fails again. Everything you leave unmarked keeps being reported and is not asked again.",
             "data": {
               "known": "Normal, do not report any more",
               "known_until_recovery": "Normal until it works again"
