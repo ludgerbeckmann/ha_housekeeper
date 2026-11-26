@@ -18,18 +18,20 @@ CHOICE_REPORT = "report"
 CHOICE_KNOWN = "known"
 CHOICE_UNTIL = "until_recovery"
 CHOICES = [CHOICE_REPORT, CHOICE_KNOWN, CHOICE_UNTIL]
+MAX_ROWS = 40  # so viele Zeilen („Störung 1…40“) hat die Übersetzung; der Rest kommt beim nächsten Öffnen
 
 
 class MonitorReviewFlow(RepairsFlow):
     """Eine Seite: je gemeldeter Störung ein Dropdown (weiter melden / normal / normal bis zur Wiederkehr).
 
-    Die Zeile einer Störung ist ihr Text; er dient zugleich als Feldname, denn Beschriftungen
-    für wechselnde Zeilen lassen sich nicht übersetzen.
+    Die Zeilen heißen „Störung 1 … n“ (Beschriftungen wechselnder Zeilen lassen sich nicht
+    übersetzen, das Frontend zeigt auch keinen Feldnamen an); die Beschreibung listet sie
+    nummeriert, und jede Antwort nennt die Integration („Powercalc: Lampe → Weiter melden“).
     """
 
     def __init__(self, controller: IntegrationMonitorController | None) -> None:
         self._controller = controller
-        self._fields: dict[str, str] = {}  # Zeilentext -> ID des Eintrags
+        self._fields: dict[str, str] = {}  # Feld „fault_1“ -> ID des Eintrags
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Start: Home Assistant übergibt hier Startdaten (`issue_id`), das ist kein Formular."""
@@ -43,34 +45,36 @@ class MonitorReviewFlow(RepairsFlow):
         if user_input is not None and self._fields:
             known: list[str] = []
             until: list[str] = []
-            for label, eid in self._fields.items():
-                choice = user_input.get(label, CHOICE_REPORT)
+            for field, eid in self._fields.items():
+                choice = user_input.get(field, CHOICE_REPORT)
                 if choice == CHOICE_KNOWN:
                     known.append(eid)
                 elif choice == CHOICE_UNTIL:
                     until.append(eid)
             await controller.async_review(list(self._fields.values()), known, until)
             return self.async_create_entry(data={})
-        labels = {eid: await controller.fault_label(eid) for eid in pending}
-        self._fields = {}
-        for eid, label in sorted(labels.items(), key=lambda item: item[1].casefold()):
-            unique, n = label, 2
-            while unique in self._fields:
-                unique, n = f"{label} ({n})", n + 1
-            self._fields[unique] = eid
-        choice = selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=CHOICES,
-                translation_key="monitor_review_choice",
-                mode=selector.SelectSelectorMode.DROPDOWN,
+        lines = {eid: await controller.fault_label(eid) for eid in pending}
+        ordered = sorted(lines, key=lambda eid: lines[eid].casefold())[:MAX_ROWS]
+        texts = controller.choice_texts()
+        self._fields = {f"fault_{i}": eid for i, eid in enumerate(ordered, 1)}
+        schema: dict[Any, Any] = {}
+        for field, eid in self._fields.items():
+            name = await controller.fault_name(eid)
+            schema[vol.Optional(field, default=CHOICE_REPORT)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(value=choice, label=f"{name} → {texts[choice]}")
+                        for choice in CHOICES
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
             )
-        )
         return self.async_show_form(
             step_id="review",
-            data_schema=vol.Schema({vol.Optional(label, default=CHOICE_REPORT): choice for label in self._fields}),
+            data_schema=vol.Schema(schema),
             description_placeholders={
                 "count": str(len(pending)),
-                "faults": "\n".join(f"{i}. {label}" for i, label in enumerate(self._fields, 1)),
+                "faults": "\n".join(f"{i}. {lines[eid]}" for i, eid in enumerate(ordered, 1)),
             },
         )
 

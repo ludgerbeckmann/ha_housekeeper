@@ -144,13 +144,6 @@
         "edit": "Ausgewählte Aufgabe bearbeiten",
         "delete": "Ausgewählte Aufgabe löschen"
       }
-    },
-    "monitor_review_choice": {
-      "options": {
-        "report": "Weiter melden",
-        "known": "Normal, nicht mehr melden",
-        "until_recovery": "Normal, bis sie wieder funktioniert"
-      }
     }
   },
   "entity": {
@@ -452,7 +445,49 @@
         "step": {
           "review": {
             "title": "Störungen prüfen",
-            "description": "{count} Störung(en) warten, je eine Zeile:\n{faults}\n\nWähle je Störung: „Weiter melden“ (Standard), „Normal, nicht mehr melden“ (stoppt die Meldungen, solange es dieselbe Art von Störung bleibt) oder „Normal, bis sie wieder funktioniert“ (meldet sie wieder, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt). Störungen auf „Weiter melden“ werden weiter gemeldet und nicht noch einmal gefragt."
+            "description": "{count} Störung(en) warten. Die Zeilen darunter sind wie diese Liste nummeriert:\n{faults}\n\nWähle je Zeile: „Weiter melden“ (Standard), „Normal, nicht mehr melden“ (stoppt die Meldungen, solange es dieselbe Art von Störung bleibt) oder „Normal, bis sie wieder funktioniert“ (meldet sie wieder, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt). Die gewählte Antwort nennt auch die Integration. Störungen auf „Weiter melden“ werden weiter gemeldet und nicht noch einmal gefragt.",
+            "data": {
+              "fault_1": "Störung 1",
+              "fault_2": "Störung 2",
+              "fault_3": "Störung 3",
+              "fault_4": "Störung 4",
+              "fault_5": "Störung 5",
+              "fault_6": "Störung 6",
+              "fault_7": "Störung 7",
+              "fault_8": "Störung 8",
+              "fault_9": "Störung 9",
+              "fault_10": "Störung 10",
+              "fault_11": "Störung 11",
+              "fault_12": "Störung 12",
+              "fault_13": "Störung 13",
+              "fault_14": "Störung 14",
+              "fault_15": "Störung 15",
+              "fault_16": "Störung 16",
+              "fault_17": "Störung 17",
+              "fault_18": "Störung 18",
+              "fault_19": "Störung 19",
+              "fault_20": "Störung 20",
+              "fault_21": "Störung 21",
+              "fault_22": "Störung 22",
+              "fault_23": "Störung 23",
+              "fault_24": "Störung 24",
+              "fault_25": "Störung 25",
+              "fault_26": "Störung 26",
+              "fault_27": "Störung 27",
+              "fault_28": "Störung 28",
+              "fault_29": "Störung 29",
+              "fault_30": "Störung 30",
+              "fault_31": "Störung 31",
+              "fault_32": "Störung 32",
+              "fault_33": "Störung 33",
+              "fault_34": "Störung 34",
+              "fault_35": "Störung 35",
+              "fault_36": "Störung 36",
+              "fault_37": "Störung 37",
+              "fault_38": "Störung 38",
+              "fault_39": "Störung 39",
+              "fault_40": "Störung 40"
+            }
           }
         },
         "abort": {

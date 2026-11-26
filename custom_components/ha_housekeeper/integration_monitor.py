@@ -96,6 +96,9 @@ _TEXT = {
         KIND_UNAVAILABLE: "alle {count} Entitäten nicht verfügbar",
         "header": "Gestörte Integrationen ({count}):",
         "line": "• {name} – {kind} (seit {since})",
+        "choice_report": "Weiter melden",
+        "choice_known": "Normal, nicht mehr melden",
+        "choice_until": "Normal, bis sie wieder funktioniert",
         "known": "+ {count} als normal markiert",
         "review": "{count} Störungen warten auf deine Einschätzung (Einstellungen → Reparaturen).",
         MON_ACTION_RELOAD: "neu geladen",
@@ -108,6 +111,9 @@ _TEXT = {
         KIND_UNAVAILABLE: "all {count} entities unavailable",
         "header": "Faulty integrations ({count}):",
         "line": "• {name} – {kind} (since {since})",
+        "choice_report": "Keep reporting",
+        "choice_known": "Normal, do not report any more",
+        "choice_until": "Normal until it works again",
         "known": "+ {count} marked as normal",
         "review": "{count} faults are waiting for your review (Settings → Repairs).",
         MON_ACTION_RELOAD: "reloaded",
@@ -556,12 +562,26 @@ class IntegrationMonitorController:
                 self._names[domain] = domain
         return self._names[domain]
 
-    async def _fault_line(self, eid: str, fault: dict[str, Any]) -> str:
-        text = self._text()
+    async def fault_name(self, eid: str) -> str:
+        """Name einer Integration in Meldungen: „Shelly: shelly-poolpumpe“."""
         entry = self.hass.config_entries.async_get_entry(eid)
         name = await self._integration_name(entry.domain) if entry else eid
         if entry and entry.title and entry.title.casefold() != name.casefold():
             name = f"{name}: {entry.title}"
+        return name
+
+    def choice_texts(self) -> dict[str, str]:
+        """Auswahltexte des Reparaturformulars in der Sprache von Home Assistant."""
+        text = self._text()
+        return {
+            "report": text["choice_report"],
+            "known": text["choice_known"],
+            "until_recovery": text["choice_until"],
+        }
+
+    async def _fault_line(self, eid: str, fault: dict[str, Any]) -> str:
+        text = self._text()
+        name = await self.fault_name(eid)
         kind = text[fault["kind"]].format(
             state=fault.get("state", ""), count=fault.get("entities", 0)
         )

@@ -144,13 +144,6 @@
         "edit": "Edit the selected task",
         "delete": "Delete the selected task"
       }
-    },
-    "monitor_review_choice": {
-      "options": {
-        "report": "Keep reporting",
-        "known": "Normal, do not report any more",
-        "until_recovery": "Normal until it works again"
-      }
     }
   },
   "entity": {
@@ -452,7 +445,49 @@
         "step": {
           "review": {
             "title": "Review faults",
-            "description": "{count} fault(s) are waiting, one row each:\n{faults}\n\nChoose per fault: “Keep reporting” (default), “Normal, do not report any more” (stops the reports as long as it stays the same kind of fault) or “Normal until it works again” (reports it again if the integration works in between and fails again). Faults you leave on “Keep reporting” keep being reported and are not asked again."
+            "description": "{count} fault(s) are waiting. The rows below are numbered like this list:\n{faults}\n\nChoose per row: “Keep reporting” (default), “Normal, do not report any more” (stops the reports as long as it stays the same kind of fault) or “Normal until it works again” (reports it again if the integration works in between and fails again). The selected answer also names the integration. Faults you leave on “Keep reporting” keep being reported and are not asked again.",
+            "data": {
+              "fault_1": "Fault 1",
+              "fault_2": "Fault 2",
+              "fault_3": "Fault 3",
+              "fault_4": "Fault 4",
+              "fault_5": "Fault 5",
+              "fault_6": "Fault 6",
+              "fault_7": "Fault 7",
+              "fault_8": "Fault 8",
+              "fault_9": "Fault 9",
+              "fault_10": "Fault 10",
+              "fault_11": "Fault 11",
+              "fault_12": "Fault 12",
+              "fault_13": "Fault 13",
+              "fault_14": "Fault 14",
+              "fault_15": "Fault 15",
+              "fault_16": "Fault 16",
+              "fault_17": "Fault 17",
+              "fault_18": "Fault 18",
+              "fault_19": "Fault 19",
+              "fault_20": "Fault 20",
+              "fault_21": "Fault 21",
+              "fault_22": "Fault 22",
+              "fault_23": "Fault 23",
+              "fault_24": "Fault 24",
+              "fault_25": "Fault 25",
+              "fault_26": "Fault 26",
+              "fault_27": "Fault 27",
+              "fault_28": "Fault 28",
+              "fault_29": "Fault 29",
+              "fault_30": "Fault 30",
+              "fault_31": "Fault 31",
+              "fault_32": "Fault 32",
+              "fault_33": "Fault 33",
+              "fault_34": "Fault 34",
+              "fault_35": "Fault 35",
+              "fault_36": "Fault 36",
+              "fault_37": "Fault 37",
+              "fault_38": "Fault 38",
+              "fault_39": "Fault 39",
+              "fault_40": "Fault 40"
+            }
           }
         },
         "abort": {
