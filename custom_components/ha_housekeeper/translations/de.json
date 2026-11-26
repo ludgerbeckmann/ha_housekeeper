@@ -144,6 +144,13 @@
         "edit": "Ausgewählte Aufgabe bearbeiten",
         "delete": "Ausgewählte Aufgabe löschen"
       }
+    },
+    "monitor_review_choice": {
+      "options": {
+        "report": "Weiter melden",
+        "known": "Normal, nicht mehr melden",
+        "until_recovery": "Normal, bis sie wieder funktioniert"
+      }
     }
   },
   "entity": {
@@ -445,19 +452,8 @@
         "step": {
           "review": {
             "title": "Störungen prüfen",
-            "description": "{count} Störung(en) warten:\n{faults}\n\nMarkiere die, die normal sind. „Normal, nicht mehr melden“ stoppt die Meldungen, solange es dieselbe Art von Störung bleibt; „Normal, bis sie wieder funktioniert“ meldet sie wieder, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt. Alles Nichtmarkierte wird weiter gemeldet und nicht noch einmal gefragt.",
-            "data": {
-              "known": "Normal, nicht mehr melden",
-              "known_until_recovery": "Normal, bis sie wieder funktioniert"
-            },
-            "data_description": {
-              "known": "Die Störung wird nicht mehr gemeldet, solange es dieselbe Art von Störung bleibt.",
-              "known_until_recovery": "Wird wieder gemeldet, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt."
-            }
+            "description": "{count} Störung(en) warten, je eine Zeile:\n{faults}\n\nWähle je Störung: „Weiter melden“ (Standard), „Normal, nicht mehr melden“ (stoppt die Meldungen, solange es dieselbe Art von Störung bleibt) oder „Normal, bis sie wieder funktioniert“ (meldet sie wieder, wenn die Integration zwischendurch funktioniert hat und erneut ausfällt). Störungen auf „Weiter melden“ werden weiter gemeldet und nicht noch einmal gefragt."
           }
-        },
-        "error": {
-          "chosen_twice": "Eine Störung kann nur in einer der beiden Listen stehen."
         },
         "abort": {
           "nothing_to_review": "Es gibt nichts mehr zu prüfen."

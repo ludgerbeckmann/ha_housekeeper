@@ -14,15 +14,22 @@ from homeassistant.helpers import selector
 from .const import DOMAIN
 from .integration_monitor import IntegrationMonitorController
 
-FIELD_KNOWN = "known"
-FIELD_UNTIL = "known_until_recovery"
+CHOICE_REPORT = "report"
+CHOICE_KNOWN = "known"
+CHOICE_UNTIL = "until_recovery"
+CHOICES = [CHOICE_REPORT, CHOICE_KNOWN, CHOICE_UNTIL]
 
 
 class MonitorReviewFlow(RepairsFlow):
-    """Eine Seite: welche der gemeldeten Störungen sind normal?"""
+    """Eine Seite: je gemeldeter Störung ein Dropdown (weiter melden / normal / normal bis zur Wiederkehr).
+
+    Die Zeile einer Störung ist ihr Text; er dient zugleich als Feldname, denn Beschriftungen
+    für wechselnde Zeilen lassen sich nicht übersetzen.
+    """
 
     def __init__(self, controller: IntegrationMonitorController | None) -> None:
         self._controller = controller
+        self._fields: dict[str, str] = {}  # Zeilentext -> ID des Eintrags
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Start: Home Assistant übergibt hier Startdaten (`issue_id`), das ist kein Formular."""
@@ -33,37 +40,37 @@ class MonitorReviewFlow(RepairsFlow):
         pending = controller.pending_review() if controller else []
         if not pending:
             return self.async_abort(reason="nothing_to_review")
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            known = list(user_input.get(FIELD_KNOWN) or [])
-            until = list(user_input.get(FIELD_UNTIL) or [])
-            if set(known) & set(until):
-                errors["base"] = "chosen_twice"
-            else:
-                await controller.async_review(pending, known, until)
-                return self.async_create_entry(data={})
+        if user_input is not None and self._fields:
+            known: list[str] = []
+            until: list[str] = []
+            for label, eid in self._fields.items():
+                choice = user_input.get(label, CHOICE_REPORT)
+                if choice == CHOICE_KNOWN:
+                    known.append(eid)
+                elif choice == CHOICE_UNTIL:
+                    until.append(eid)
+            await controller.async_review(list(self._fields.values()), known, until)
+            return self.async_create_entry(data={})
         labels = {eid: await controller.fault_label(eid) for eid in pending}
-        options = [selector.SelectOptionDict(value=eid, label=label) for eid, label in labels.items()]
-
-        def _field() -> selector.SelectSelector:
-            return selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=options, multiple=True, mode=selector.SelectSelectorMode.LIST
-                )
+        self._fields = {}
+        for eid, label in sorted(labels.items(), key=lambda item: item[1].casefold()):
+            unique, n = label, 2
+            while unique in self._fields:
+                unique, n = f"{label} ({n})", n + 1
+            self._fields[unique] = eid
+        choice = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=CHOICES,
+                translation_key="monitor_review_choice",
+                mode=selector.SelectSelectorMode.DROPDOWN,
             )
-
+        )
         return self.async_show_form(
             step_id="review",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(FIELD_KNOWN, default=list((user_input or {}).get(FIELD_KNOWN) or [])): _field(),
-                    vol.Optional(FIELD_UNTIL, default=list((user_input or {}).get(FIELD_UNTIL) or [])): _field(),
-                }
-            ),
-            errors=errors,
+            data_schema=vol.Schema({vol.Optional(label, default=CHOICE_REPORT): choice for label in self._fields}),
             description_placeholders={
                 "count": str(len(pending)),
-                "faults": "\n".join(f"• {label}" for label in labels.values()),
+                "faults": "\n".join(f"{i}. {label}" for i, label in enumerate(self._fields, 1)),
             },
         )
 
