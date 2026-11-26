@@ -26,8 +26,10 @@ jobs:
 
       - name: Prüfen, ob der Tag bereits existiert
         id: check_tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -40,8 +42,10 @@ jobs:
       # bleiben automatisch auf der letzten regulären Version.
       - name: Auf Pre-Release-Versionsschema prüfen
         id: prerelease
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [[ "${{ steps.version.outputs.version }}" == *-* ]]; then
+          if [[ "${VERSION}" == *-* ]]; then
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
@@ -49,7 +53,7 @@ jobs:
 
       - name: Tag und Release erstellen
         if: steps.check_tag.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
