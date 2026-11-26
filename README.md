@@ -938,18 +938,18 @@ Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.), in die **Whitelis
 
 Sobald es gemeldete Störungen gibt, die du noch nicht eingeschätzt hast, legt der Monitor unter
 *Einstellungen → Reparaturen* den Hinweis **„Integrationsmonitor: n Störungen prüfen“** an. Er öffnet ein Formular mit
-zwei Listen aller gemeldeten Störungen:
+**einer Zeile je Störung** (der Text der Störung) und einem Dropdown mit genau einer Antwort:
 
+- **Weiter melden** (vorausgewählt): Die Störung bleibt in der Sammelmeldung und wird nicht noch einmal gefragt.
 - **Normal, nicht mehr melden:** Die Störung wird nicht mehr gemeldet, solange es dieselbe Art von Störung bleibt.
 - **Normal, bis sie wieder funktioniert:** Wie oben, aber sobald die Integration zwischendurch funktioniert hat und erneut
   ausfällt, wird sie wieder gemeldet und gefragt (gut für saisonale Geräte, z. B. die Poolheizung im Winter).
 
-Alles, was du nicht markierst, wird weiter gemeldet und nicht noch einmal gefragt. In der Sammelmeldung stehen danach nur die
-nicht als normal markierten Störungen, am Ende „+ n als normal markiert“; solange noch etwas auf deine Einschätzung wartet,
-steht dort auch ein Hinweis (ein Tipp auf den Push öffnet die Reparaturen). Wechselt eine Integration die Art der Störung (z. B.
-von Fehlerstatus zu „alle Entitäten nicht verfügbar“), gilt sie als neu. Die Einschätzungen bleiben über Neustarts erhalten und
-lassen sich mit dem Button **Bewertungen zurücksetzen** löschen. „Normal“ betrifft nur die Meldung: Regeln für **Neu laden** und
-**Deaktivieren** wirken unverändert.
+In der Sammelmeldung stehen danach nur die nicht als normal markierten Störungen, am Ende „+ n als normal markiert“; solange
+noch etwas auf deine Einschätzung wartet, steht dort auch ein Hinweis (ein Tipp auf den Push öffnet die Reparaturen). Wechselt
+eine Integration die Art der Störung (z. B. von Fehlerstatus zu „alle Entitäten nicht verfügbar“), gilt sie als neu. Die
+Einschätzungen bleiben über Neustarts erhalten und lassen sich mit dem Button **Bewertungen zurücksetzen** löschen. „Normal“
+betrifft nur die Meldung: Regeln für **Neu laden** und **Deaktivieren** wirken unverändert.
 
 ### Aktionen
 

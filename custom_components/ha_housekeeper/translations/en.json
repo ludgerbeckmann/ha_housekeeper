@@ -144,6 +144,13 @@
         "edit": "Edit the selected task",
         "delete": "Delete the selected task"
       }
+    },
+    "monitor_review_choice": {
+      "options": {
+        "report": "Keep reporting",
+        "known": "Normal, do not report any more",
+        "until_recovery": "Normal until it works again"
+      }
     }
   },
   "entity": {
@@ -445,19 +452,8 @@
         "step": {
           "review": {
             "title": "Review faults",
-            "description": "{count} fault(s) are waiting:\n{faults}\n\nMark the ones that are normal. “Normal, do not report any more” stops the reports as long as it stays the same kind of fault; “Normal until it works again” reports it again if the integration works in between and fails again. Everything you leave unmarked keeps being reported and is not asked again.",
-            "data": {
-              "known": "Normal, do not report any more",
-              "known_until_recovery": "Normal until it works again"
-            },
-            "data_description": {
-              "known": "The fault is no longer reported as long as it stays the same kind of fault.",
-              "known_until_recovery": "Reported again when the integration has worked in between and fails again."
-            }
+            "description": "{count} fault(s) are waiting, one row each:\n{faults}\n\nChoose per fault: “Keep reporting” (default), “Normal, do not report any more” (stops the reports as long as it stays the same kind of fault) or “Normal until it works again” (reports it again if the integration works in between and fails again). Faults you leave on “Keep reporting” keep being reported and are not asked again."
           }
-        },
-        "error": {
-          "chosen_twice": "A fault can only be in one of the two lists."
         },
         "abort": {
           "nothing_to_review": "There is nothing left to review."
