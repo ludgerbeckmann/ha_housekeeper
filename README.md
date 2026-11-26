@@ -938,7 +938,7 @@ Hue-Bridge, Router und Netzwerkgeräte, Sonos, Wetter u. ä.), in die **Whitelis
 
 Sobald es gemeldete Störungen gibt, die du noch nicht eingeschätzt hast, legt der Monitor unter
 *Einstellungen → Reparaturen* den Hinweis **„Integrationsmonitor: n Störungen prüfen“** an. Er öffnet ein Formular mit
-**einer Zeile je Störung** (der Text der Störung) und einem Dropdown mit genau einer Antwort:
+**einer Zeile je Störung** („Störung 1“, „Störung 2“ …, die Beschreibung listet sie nummeriert mit allen Angaben) und einem Dropdown mit genau einer Antwort; die gewählte Antwort nennt auch die Integration, z. B. „Powercalc: Lampe → Weiter melden“:
 
 - **Weiter melden** (vorausgewählt): Die Störung bleibt in der Sammelmeldung und wird nicht noch einmal gefragt.
 - **Normal, nicht mehr melden:** Die Störung wird nicht mehr gemeldet, solange es dieselbe Art von Störung bleibt.

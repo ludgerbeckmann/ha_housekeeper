@@ -570,9 +570,10 @@ async def open_review(hass, ctrl):
 def pick(form, **choices):
     """Antworten für das Formular: je Integrationsname eine Wahl, alles andere „weiter melden“."""
     answers = {}
-    for key in form["data_schema"].schema:
+    for key, validator in form["data_schema"].schema.items():
+        label = validator.config["options"][0]["label"]          # „Name → Antwort“
         answers[str(key)] = next(
-            (value for name, value in choices.items() if name in str(key)), "report")
+            (value for name, value in choices.items() if name in label), "report")
     return answers
 
 
@@ -623,23 +624,27 @@ async def test_known_faults_are_silent_and_the_list_clears_when_all_are_known(ha
     assert len(push) == count and ctrl.summary["sent"] == []
 
 
-async def test_form_has_one_dropdown_per_fault_with_the_fault_as_label(hass: HomeAssistant) -> None:
+async def test_rows_are_numbered_and_each_answer_names_the_integration(hass: HomeAssistant) -> None:
     printer, lamp, ctrl, push = await two_faults(hass)
     flow, form = await open_review(hass, ctrl)
-    keys = [str(k) for k in form["data_schema"].schema]
-    assert len(keys) == 2 and "Lampe" in keys[0] and "Drucker" in keys[1]     # sortiert, je Störung eine Zeile
-    assert "setup_retry" in keys[0] and "setup_error" in keys[1]
-    assert all(k.default() == "report" for k in form["data_schema"].schema)    # vorbelegt: weiter melden
-    desc = form["description_placeholders"]["faults"]
-    assert desc.startswith("1. ") and "Drucker" in desc and "Lampe" in desc
+    schema = form["data_schema"].schema
+    assert [str(k) for k in schema] == ["fault_1", "fault_2"]                  # nummeriert, je Störung eine Zeile
+    assert all(k.default() == "report" for k in schema)                         # vorbelegt: weiter melden
+    options = [[o["label"] for o in v.config["options"]] for v in schema.values()]
+    assert options[0][0] == "lamp_x: Lampe → Keep reporting"                    # die Antwort nennt die Integration
+    assert options[1][1] == "printer_x: Drucker → Normal, do not report any more"
+    assert options[1][2].endswith("→ Normal until it works again")
+    desc = form["description_placeholders"]["faults"].splitlines()               # gleiche Nummern in der Beschreibung
+    assert desc[0].startswith("1. lamp_x: Lampe") and desc[1].startswith("2. printer_x: Drucker")
+    assert "setup_retry" in desc[0] and "setup_error" in desc[1]
     # eine Antwort je Störung, es gibt keinen Konflikt mehr
-    done = await flow.submit({keys[1]: "known", keys[0]: "until_recovery"})
+    done = await flow.submit({"fault_2": "known", "fault_1": "until_recovery"})
     assert done["type"] is FlowResultType.CREATE_ENTRY
     assert ctrl.known[printer.entry_id]["until_recovery"] is False
     assert ctrl.known[lamp.entry_id]["until_recovery"] is True
 
 
-async def test_identical_rows_get_distinct_field_names(hass: HomeAssistant) -> None:
+async def test_identical_rows_stay_distinct(hass: HomeAssistant) -> None:
     from custom_components.ha_housekeeper.repairs import MonitorReviewFlow
 
     foreign(hass, "Drucker", ConfigEntryState.SETUP_ERROR, "printer_x")
@@ -649,10 +654,22 @@ async def test_identical_rows_get_distinct_field_names(hass: HomeAssistant) -> N
     flow = MonitorReviewFlow(ctrl)
     flow.hass = hass
     form = await flow.async_step_init({"issue_id": "x"})
-    keys = [str(k) for k in form["data_schema"].schema]
-    assert len(keys) == 2 and len(set(keys)) == 2 and keys[1].endswith("(2)")
-    await flow.async_step_review(pick(form, **{"(2)": "known"}))
+    assert [str(k) for k in form["data_schema"].schema] == ["fault_1", "fault_2"]
+    await flow.async_step_review({"fault_2": "known"})
     assert len(ctrl.known) == 1                                   # nur die zweite Zeile war „normal“
+
+
+async def test_the_form_shows_at_most_the_rows_the_translation_has(hass: HomeAssistant) -> None:
+    import json
+    from pathlib import Path
+
+    from custom_components.ha_housekeeper import repairs
+
+    base = Path(repairs.__file__).parent
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        data = json.loads((base / name).read_text(encoding="utf-8"))
+        rows = data["issues"]["monitor_review"]["fix_flow"]["step"]["review"]["data"]
+        assert set(rows) == {f"fault_{i}" for i in range(1, repairs.MAX_ROWS + 1)}, name
 
 
 async def test_until_recovery_is_asked_again_after_it_worked(hass: HomeAssistant) -> None:
